@@ -1,7 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
-
+//scemochilegge
 public class CorsoCucina {
 
 	private String idCorso;
