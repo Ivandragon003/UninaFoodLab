@@ -1,6 +1,6 @@
 package model;
-import java.time.LocalDate;
 
+import java.time.LocalDate;
 
 public class Persona {
 	private String codFiscale;
@@ -9,11 +9,10 @@ public class Persona {
 	private String email;
 	private LocalDate dataNascita;
 
-	
-	public Persona(String codFiscale,String nome,String cognome) {
-		this.codFiscale=codFiscale;
-		this.nome=nome;
-		this.cognome=cognome;
+	public Persona(String codFiscale, String nome, String cognome) {
+		this.codFiscale = codFiscale;
+		this.nome = nome;
+		this.cognome = cognome;
 
 	}
 
