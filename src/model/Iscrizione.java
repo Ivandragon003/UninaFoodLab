@@ -1,130 +1,48 @@
 package model;
 
-import java.util.*;
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class Iscrizione {
 
-    private String codFiscaleUtente;  
-    private int idCorsoCucina;         
-    private LocalDate dataIscrizione; 
-    private boolean stato;            
+    private Utente utente;
+    private CorsoCucina corso;
+    private LocalDate dataIscrizione;
+    private boolean stato; // true = attiva, false = ritirata
 
-
-    public Iscrizione(String codFiscaleUtente, int idCorsoCucina, LocalDate dataIscrizione, boolean stato) {
-        this.codFiscaleUtente = codFiscaleUtente;
-        this.idCorsoCucina = idCorsoCucina;
+    public Iscrizione(Utente utente, CorsoCucina corso, LocalDate dataIscrizione) {
+        if (utente == null || corso == null || dataIscrizione == null)
+            throw new IllegalArgumentException("Utente, corso e data non possono essere null");
+        this.utente = utente;
+        this.corso = corso;
         this.dataIscrizione = dataIscrizione;
-        this.stato = stato;
+        this.stato = true; 
     }
 
-    
-    public String getCodFiscaleUtente() {
-        return codFiscaleUtente;
+    // Getter e Setter
+    public Utente getUtente() { return utente; }
+    public CorsoCucina getCorso() { return corso; }
+    public LocalDate getDataIscrizione() { return dataIscrizione; }
+    public boolean isStato() { return stato; }
+    public void setStato(boolean stato) { this.stato = stato; }
+
+    public String toStringUtente() { return "Utente: " + utente.getNome() + " " + utente.getCognome(); }
+    public String toStringCorso() { return "Corso: " + corso.getNomeCorso(); }
+    public String toStringDataIscrizione() { return "Data Iscrizione: " + dataIscrizione; }
+    public String toStringStato() { return "Stato: " + (stato ? "Attiva" : "Ritirata"); }
+
+    // equals e hashCode basati su utente + corso (chiave univoca)
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Iscrizione)) return false;
+        Iscrizione that = (Iscrizione) o;
+        return Objects.equals(utente, that.utente) &&
+               Objects.equals(corso, that.corso);
     }
 
-    public void setCodFiscaleUtente(String codFiscaleUtente) {
-        this.codFiscaleUtente = codFiscaleUtente;
-    }
-
-    public int getIdCorsoCucina() {
-        return idCorsoCucina;
-    }
-
-    public void setIdCorsoCucina(int idCorsoCucina) {
-        this.idCorsoCucina = idCorsoCucina;
-    }
-
-    public LocalDate getDataIscrizione() {
-        return dataIscrizione;
-    }
-
-    public void setDataIscrizione(LocalDate dataIscrizione) {
-        this.dataIscrizione = dataIscrizione;
-    }
-
-    public boolean isStato() {
-        return stato;
-    }
-
-    public void setStato(boolean stato) {
-        this.stato = stato;
-    }
-
-//    @Override
-//    public String toString() {
-//        return "Iscrizione{" +
-//                "codFiscaleUtente='" + codFiscaleUtente + '\'' +
-//                ", idCorsoCucina=" + idCorsoCucina +
-//                ", dataIscrizione=" + dataIscrizione +
-//                ", stato=" + stato +
-//                '}';
-//    }
-//}
-    
-    private Map<CorsoCucina, Map<Utente, Boolean>> iscrizioni;
-
-    public Iscrizione() {
-        iscrizioni = new HashMap<>();
-    }
-
-    // Metodo per iscrivere un utente ad un corso
-    public boolean iscriviUtente(CorsoCucina corso, Utente utente) {
-        if (corso == null || utente == null) {
-            return false; // validazione input
-        }
-
-        iscrizioni.putIfAbsent(corso, new HashMap<>());
-        Map<Utente, Boolean> iscritti = iscrizioni.get(corso);
-
-        // 1. Controllo doppia iscrizione attiva
-        if (iscritti.containsKey(utente) && iscritti.get(utente)) {
-            System.out.println( utente + " è già iscritto al corso " + corso);
-            return false;
-        }
-
-        // 2. Controllo capienza massima (contiamo solo quelli attivi)
-        long iscrittiAttivi = iscritti.values().stream().filter(Boolean::booleanValue).count();
-        if (iscrittiAttivi >= corso.getNumeroPosti()) {
-            System.out.println( corso + " è già pieno!");
-            return false;
-        }
-
-        // Iscrizione attiva
-        iscritti.put(utente, true);
-        System.out.println(utente + " iscritto con successo al corso " + corso);
-        return true;
-    }
-
-    // Metodo per disiscrivere un utente (imposta stato a false)
-    public boolean disiscriviUtente(CorsoCucina corso, Utente utente) {
-        if (corso == null || utente == null) return false;
-        Map<Utente, Boolean> iscritti = iscrizioni.get(corso);
-        if (iscritti != null && iscritti.containsKey(utente) && iscritti.get(utente)) {
-            iscritti.put(utente, false);
-            System.out.println(utente + " è stato disiscritto dal corso " + corso);
-            return true;
-        }
-        return false;
-    }
-
-    // Metodo per ottenere solo gli iscritti attivi
-    public Set<Utente> getIscrittiAttivi(CorsoCucina corso) {
-        Map<Utente, Boolean> iscritti = iscrizioni.get(corso);
-        if (iscritti == null) return Collections.emptySet();
-
-        Set<Utente> attivi = new HashSet<>();
-        for (Map.Entry<Utente, Boolean> entry : iscritti.entrySet()) {
-            if (entry.getValue()) {
-                attivi.add(entry.getKey());
-            }
-        }
-        return attivi;
-    }
-
-    // Metodo per controllare lo stato di iscrizione di un utente
-    public boolean getStatoIscrizione(CorsoCucina corso, Utente utente) {
-        Map<Utente, Boolean> iscritti = iscrizioni.get(corso);
-        return iscritti != null && iscritti.getOrDefault(utente, false);
+    @Override
+    public int hashCode() {
+        return Objects.hash(utente, corso);
     }
 }
