@@ -65,10 +65,14 @@ public class InPresenza extends Sessione {
 	public List<Adesione> getAdesioniSessione() {
         return adesioniSessione;
     }
-
+    
     public void aggiungiAdesione(Adesione adesione) {
+        if (adesioniSessione.size() >= numeroPosti) {
+            throw new IllegalStateException("Numero massimo di posti raggiunto per questa sessione.");
+        }
         if (!adesioniSessione.contains(adesione)) {
             adesioniSessione.add(adesione);
         }
     }
+
 }

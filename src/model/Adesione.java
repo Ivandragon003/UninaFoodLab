@@ -1,88 +1,48 @@
 package model;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Objects;
 
 public class Adesione {
 
     private LocalDateTime dataAdesione;
-    private boolean stato; // true = attiva, false = ritirata
-    private Map<InPresenza, Map<Utente, Boolean>> adesioni;
+    private boolean stato;
+    private Utente utente;
+    private InPresenza sessione;
 
-
-    
-
-   
-    
-    // Metodo per inviare un'adesione
-    public boolean inviaAdesione(InPresenza sessione, Utente utente, LocalDateTime dataAdesione) {
-        if (sessione == null || utente == null || dataAdesione == null) return false;
-
-        adesioni.putIfAbsent(sessione, new HashMap<>());
-        Map<Utente, Boolean> utentiAdesione = adesioni.get(sessione);
-
-        // Controllo adesione già inviata
-        if (utentiAdesione.containsKey(utente) && utentiAdesione.get(utente)) {
-            System.out.println(utente.getNome() + " ha già inviato adesione per questa sessione.");
-            return false;
-        }
-
-        // Controllo capienza
-        long adesioniAttive = utentiAdesione.values().stream().filter(Boolean::booleanValue).count();
-        if (adesioniAttive >= sessione.getNumeroPosti()) {
-            System.out.println("La sessione è già piena!");
-            return false;
-        }
-
-        // Registra adesione
-        utentiAdesione.put(utente, true);
+    public Adesione(Utente utente, InPresenza sessione, LocalDateTime dataAdesione) {
+        this.utente = utente;
+        this.sessione = sessione;
         this.dataAdesione = dataAdesione;
         this.stato = true;
-
-        // Aggiorna liste bidirezionali
-        utente.aggiungiAdesione(this);
-        sessione.aggiungiAdesione(this);
-
-        System.out.println(utente.getNome() + " ha inviato adesione con successo.");
-        return true;
     }
 
-    // Ritira adesione
-    public boolean ritiraAdesione(InPresenza sessione, Utente utente) {
-        if (sessione == null || utente == null) return false;
-
-        Map<Utente, Boolean> utentiAdesione = adesioni.get(sessione);
-        if (utentiAdesione != null && utentiAdesione.getOrDefault(utente, false)) {
-            utentiAdesione.put(utente, false);
-            this.stato = false;
-            System.out.println(utente.getNome() + " ha ritirato l'adesione.");
-            return true;
-        }
-        return false;
-    }
-
-   
     public LocalDateTime getDataAdesione() { return dataAdesione; }
     public boolean isStato() { return stato; }
     public void setStato(boolean stato) { this.stato = stato; }
+    public Utente getUtente() { return utente; }
+    public InPresenza getSessione() { return sessione; }
 
-    public Set<Utente> getUtentiAdesione(InPresenza sessione) {
-        Map<Utente, Boolean> utentiAdesione = adesioni.get(sessione);
-        if (utentiAdesione == null) return Collections.emptySet();
-        Set<Utente> attivi = new HashSet<>();
-        utentiAdesione.forEach((u, s) -> { if (s) attivi.add(u); });
-        return attivi;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Adesione)) return false;
+        Adesione adesione = (Adesione) o;
+        return Objects.equals(utente, adesione.utente) &&
+               Objects.equals(sessione, adesione.sessione);
     }
 
-    public boolean getStatoAdesione(InPresenza sessione, Utente utente) {
-        Map<Utente, Boolean> utentiAdesione = adesioni.get(sessione);
-        return utentiAdesione != null && utentiAdesione.getOrDefault(utente, false);
+    @Override
+    public int hashCode() {
+        return Objects.hash(utente, sessione);
     }
 
     @Override
     public String toString() {
         return "Adesione{" +
-                "dataAdesione=" + dataAdesione +
+                "utente=" + utente.getNome() +
+                ", sessione=" + sessione.toString() +
+                ", dataAdesione=" + dataAdesione +
                 ", stato=" + stato +
                 '}';
     }
