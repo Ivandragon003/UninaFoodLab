@@ -9,10 +9,10 @@ public class Adesione {
     private boolean stato; // true = attiva, false = ritirata
     private Map<InPresenza, Map<Utente, Boolean>> adesioni;
 
-    // Costruttore vuoto
+
     
 
-    // Costruttore completo: registra subito l'adesione
+   
     
     // Metodo per inviare un'adesione
     public boolean inviaAdesione(InPresenza sessione, Utente utente, LocalDateTime dataAdesione) {
@@ -61,7 +61,7 @@ public class Adesione {
         return false;
     }
 
-    // Getter e setter
+   
     public LocalDateTime getDataAdesione() { return dataAdesione; }
     public boolean isStato() { return stato; }
     public void setStato(boolean stato) { this.stato = stato; }

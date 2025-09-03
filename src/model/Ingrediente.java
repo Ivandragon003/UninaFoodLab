@@ -6,8 +6,8 @@ public class Ingrediente {
 	private String tipo;
 
 	public Ingrediente(String nome, String tipo) {
-		this.nome = nome;
-		this.tipo = tipo;
+		 setNome(nome);
+	     setTipo(tipo);
 	}
 
 	public int getIdIngrediente() {
@@ -15,24 +15,34 @@ public class Ingrediente {
 	}
 
 	public void setIdIngrediente(int idIngrediente) {
-		this.idIngrediente = idIngrediente;
-	}
+        if (idIngrediente <= 0) {
+            throw new IllegalArgumentException("L'ID dell'ingrediente deve essere maggiore di zero.");
+        }
+        this.idIngrediente = idIngrediente;
+    }
 
 	public String getNome() {
 		return nome;
 	}
 
 	public void setNome(String nome) {
-		this.nome = nome;
-	}
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Il nome dell'ingrediente non può essere nullo o vuoto.");
+        }
+        this.nome = nome.trim();
+    }
 
 	public String getTipo() {
 		return tipo;
 	}
 
 	public void setTipo(String tipo) {
-		this.tipo = tipo;
-	}
+        if (tipo == null || tipo.trim().isEmpty()) {
+            throw new IllegalArgumentException("Il tipo dell'ingrediente non può essere nullo o vuoto.");
+        }
+        this.tipo = tipo.trim();
+    }
+	
 	 @Override
 	    public boolean equals(Object obj) {
 	        if (this == obj) return true;
