@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Utente extends Persona {
-    private List<Adesione> adesioniUtente; // lista delle adesioni dell’utente
+    private List<Adesione> adesioniUtente; 
 
     public Utente(String codFiscale, String nome, String cognome) {
         super(codFiscale, nome, cognome);

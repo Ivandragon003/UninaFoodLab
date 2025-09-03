@@ -7,7 +7,7 @@ public enum Frequenza {
 
     private String descrizione;
 
-    // COSTRUTTORE ENUM
+
     private Frequenza(String descrizione) {
         this.descrizione = descrizione;
     }
