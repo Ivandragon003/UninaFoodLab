@@ -104,4 +104,16 @@ public class Ricetta {
 	public int getNumeroIngredienti() {
 		return ingredienti.size();
 	}
+	
+	public String toStringIdRicetta() {
+	    return "ID Ricetta: " + idRicetta;
+	}
+
+	public String toStringNome() {
+	    return "Nome: " + nome;
+	}
+
+	public String toStringTempoPreparazione() {
+	    return "Tempo Preparazione: " + tempoPreparazione;
+	}
 }

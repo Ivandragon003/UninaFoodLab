@@ -55,5 +55,26 @@ public class Persona {
 	public void setDataNascita(LocalDate dataNascita) {
 		this.dataNascita = dataNascita;
 	}
+	
+	public String toStringCodFiscale() {
+	    return "Codice Fiscale: " + codFiscale;
+	}
+
+	public String toStringNome() {
+	    return "Nome: " + nome;
+	}
+
+	public String toStringCognome() {
+	    return "Cognome: " + cognome;
+	}
+
+	public String toStringEmail() {
+	    return "Email: " + email;
+	}
+
+	public String toStringDataNascita() {
+	    return "Data di Nascita: " + dataNascita;
+	}
+
 
 }

@@ -42,5 +42,19 @@ public class Chef extends Persona {
 	public void setPassword(String password) {
 		this.passwordHash = Integer.toString(password.hashCode());
 	}
+	public String toStringUsername() {
+	    return "Username: " + username;
+	}
 
+	public String toStringAnniEsperienza() {
+	    return "Anni Esperienza: " + anniEsperienza;
+	}
+
+	public String toStringDisponibilita() {
+	    return "Disponibilità: " + disponibilita;
+	}
+
+	public String toStringPasswordHash() {
+	    return "PasswordHash: " + passwordHash;
+	}
 }

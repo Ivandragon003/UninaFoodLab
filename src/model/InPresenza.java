@@ -46,6 +46,21 @@ public class InPresenza extends Sessione {
 	public void setCAP(int CAP) {
 		this.CAP = CAP;
 	}
+	public String toStringVia() {
+	    return "Via: " + via;
+	}
+
+	public String toStringCitta() {
+	    return "Città: " + citta;
+	}
+
+	public String toStringNumeroPosti() {
+	    return "Numero Posti: " + numeroPosti;
+	}
+
+	public String toStringCAP() {
+	    return "CAP: " + CAP;
+	}
 
 	public List<Adesione> getAdesioniSessione() {
         return adesioniSessione;

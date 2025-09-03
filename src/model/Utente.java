@@ -1,23 +1,22 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Utente extends Persona {
-    private List<Adesione> adesioniUtente;
 
-    public Utente(String codFiscale, String nome, String cognome) {
-        super(codFiscale, nome, cognome);
-        this.adesioniUtente = new ArrayList<>();
-    }
+	public Utente(String codFiscale, String nome, String cognome) {
+		super(codFiscale, nome, cognome);
+		
+	}
+	
+	public String toStringCodFiscale() {
+	    return "Codice Fiscale: " + getCodFiscale();
+	}
 
-    public List<Adesione> getAdesioniUtente() {
-        return adesioniUtente;
-    }
+	public String toStringNome() {
+	    return "Nome: " + getNome();
+	}
 
-    public void aggiungiAdesione(Adesione adesione) {
-        if (!adesioniUtente.contains(adesione)) {
-            adesioniUtente.add(adesione);
-        }
-    }
+	public String toStringCognome() {
+	    return "Cognome: " + getCognome();
+	}
+
 }
