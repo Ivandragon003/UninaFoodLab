@@ -6,34 +6,44 @@ public class Usa {
 	private double quantita;
 
 	public Usa(Ricetta ricetta, Ingrediente ingrediente, double quantita) {
-		this.ricetta = ricetta;
-		this.ingrediente = ingrediente;
-		this.quantita = quantita;
+		 setRicetta(ricetta);
+	     setIngrediente(ingrediente);
+	     setQuantita(quantita);
 	}
 
 	public Ricetta getRicetta() {
 		return ricetta;
 	}
 
-	public void setRicetta(Ricetta ricetta) {
-		this.ricetta = ricetta;
-	}
+	  public void setRicetta(Ricetta ricetta) {
+	        if (ricetta == null) {
+	            throw new IllegalArgumentException("La ricetta non può essere nulla.");
+	        }
+	        this.ricetta = ricetta;
+	    }
 
 	public Ingrediente getIngrediente() {
 		return ingrediente;
 	}
 
 	public void setIngrediente(Ingrediente ingrediente) {
-		this.ingrediente = ingrediente;
-	}
+        if (ingrediente == null) {
+            throw new IllegalArgumentException("L'ingrediente non può essere nullo.");
+        }
+        this.ingrediente = ingrediente;
+    }
+	
 
 	public double getQuantita() {
 		return quantita;
 	}
 
 	public void setQuantita(double quantita) {
-		this.quantita = quantita;
-	}
+        if (quantita <= 0) {
+            throw new IllegalArgumentException("La quantità deve essere maggiore di zero.");
+        }
+        this.quantita = quantita;
+    }
 	
 	public String toStringRicetta() {
 	    return "Ricetta: " + (ricetta != null ? ricetta.getNome() : "null");
