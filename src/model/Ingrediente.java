@@ -1,5 +1,5 @@
 package model;
-
+import java.util.Objects;
 public class Ingrediente {
 	private int idIngrediente;
 	private String nome;
@@ -45,5 +45,15 @@ public class Ingrediente {
 	    public int hashCode() {
 	        return Objects.hash(nome, tipo);
 	    }
-	
+	    public String toStringIdIngrediente() {
+	        return "ID Ingrediente: " + idIngrediente;
+	    }
+
+	    public String toStringNome() {
+	        return "Nome: " + nome;
+	    }
+
+	    public String toStringTipo() {
+	        return "Tipo: " + tipo;
+	    }
 }

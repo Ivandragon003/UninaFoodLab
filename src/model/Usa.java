@@ -34,4 +34,17 @@ public class Usa {
 	public void setQuantita(double quantita) {
 		this.quantita = quantita;
 	}
+	
+	public String toStringRicetta() {
+	    return "Ricetta: " + (ricetta != null ? ricetta.getNome() : "null");
+	}
+
+	public String toStringIngrediente() {
+	    return "Ingrediente: " + (ingrediente != null ? ingrediente.getNome() : "null");
+	}
+
+	public String toStringQuantita() {
+	    return "Quantità: " + quantita;
+	}
+
 }

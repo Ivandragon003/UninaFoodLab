@@ -35,4 +35,17 @@ public class Sessione {
 	public void setDataFineSessione(LocalDateTime dataFineSessione) {
 		this.dataFineSessione = dataFineSessione;
 	}
+	
+	public String toStringIdSessione() {
+	    return "ID Sessione: " + idSessione;
+	}
+
+	public String toStringDataInizioSessione() {
+	    return "Data Inizio Sessione: " + dataInizioSessione;
+	}
+
+	public String toStringDataFineSessione() {
+	    return "Data Fine Sessione: " + dataFineSessione;
+	}
+
 }

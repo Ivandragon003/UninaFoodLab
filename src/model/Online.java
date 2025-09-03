@@ -3,19 +3,24 @@ package model;
 import java.time.LocalDateTime;
 
 public class Online extends Sessione {
-	public String getPiattaformaStreamong() {
-		return piattaformaStreamong;
+	public String getPiattaformaStreaming() {
+		return piattaformaStreaming;
 	}
 
-	public void setPiattaformaStreamong(String piattaformaStreamong) {
-		this.piattaformaStreamong = piattaformaStreamong;
+	public void setPiattaformaStreamong(String piattaformaStreaming) {
+		this.piattaformaStreaming = piattaformaStreaming;
 	}
 
-	private String piattaformaStreamong;
+	private String piattaformaStreaming;
 
-	public Online(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione, String piattaformaStreamong) {
+	public Online(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione, String piattaformaStreaming) {
 		super(dataInizioSessione, dataFineSessione);
-		this.piattaformaStreamong = piattaformaStreamong;
+		this.piattaformaStreaming = piattaformaStreaming;
+	}
+
+	@Override
+	public String toString() {
+		return "Online [piattaformaStreamong=" + piattaformaStreaming + "]";
 	}
 
 }
