@@ -5,13 +5,13 @@ public class Chef extends Persona {
 	private int anniEsperienza;
 	private boolean disponibilita;
 	private String username;
-	private String passwordHash;
+	private String password;
 
 	public Chef(String codFiscale, String nome, String cognome, boolean disponibilita, String username,
 			String password) {
 		super(codFiscale, nome, cognome);
 		this.disponibilita = disponibilita;
-		this.username = username;
+		setUsername(username);
 		setPassword(password);
 	}
 
@@ -20,6 +20,9 @@ public class Chef extends Persona {
 	}
 
 	public void setAnniEsperienza(int anniEsperienza) {
+		if (anniEsperienza < 0) {
+			throw new IllegalArgumentException("Gli anni di esperienza non possono essere negativi.");
+		}
 		this.anniEsperienza = anniEsperienza;
 	}
 
@@ -36,25 +39,35 @@ public class Chef extends Persona {
 	}
 
 	public void setUsername(String username) {
+		if (username == null || username.trim().isEmpty()) {
+			throw new IllegalArgumentException("Username non può essere nullo o vuoto.");
+		}
 		this.username = username;
 	}
 
 	public void setPassword(String password) {
-		this.passwordHash = Integer.toString(password.hashCode());
+		if (password == null) {
+			throw new IllegalArgumentException("La password non può essere nulla.");
+		}
+		if (password.length() < 6) {
+			throw new IllegalArgumentException("La password deve contenere almeno 6 caratteri.");
+		}
+		this.password = password;
 	}
+
 	public String toStringUsername() {
-	    return "Username: " + username;
+		return "Username: " + username;
 	}
 
 	public String toStringAnniEsperienza() {
-	    return "Anni Esperienza: " + anniEsperienza;
+		return "Anni Esperienza: " + anniEsperienza;
 	}
 
 	public String toStringDisponibilita() {
-	    return "Disponibilità: " + disponibilita;
+		return "Disponibilità: " + disponibilita;
 	}
 
-	public String toStringPasswordHash() {
-	    return "PasswordHash: " + passwordHash;
+	public String toStringpassword() {
+		return "password: " + password;
 	}
 }

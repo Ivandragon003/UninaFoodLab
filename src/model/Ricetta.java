@@ -41,13 +41,20 @@ public class Ricetta {
 	//Metodo per aggiungere un ingrediente alla ricetta
 	// Se l'ingrediente esiste già, aggiorna la quantità
 	public boolean aggiungiIngrediente(Ingrediente ingrediente, double quantita) {
-		if (ingrediente == null || quantita <= 0) {
-			return false; // Validazione input
-		}
-
-		ingredienti.put(ingrediente, quantita);
-		return true;
+	    if (ingrediente == null || quantita <= 0) {
+	        throw new IllegalArgumentException("Ingrediente nullo o quantità non valida.");
+	    }
+	    
+	    if (ingredienti.containsKey(ingrediente)) {
+	        // Ingrediente già presente, aggiorna quantità
+	        ingredienti.put(ingrediente, quantita);
+	        return false; // false = non era nuovo
+	    } else {
+	        ingredienti.put(ingrediente, quantita);
+	        return true; // true = nuovo ingrediente aggiunto
+	    }
 	}
+
 
 	// Metodo per rimuovere un ingrediente dalla ricetta
 	public boolean rimuoviIngrediente(Ingrediente ingrediente) {
