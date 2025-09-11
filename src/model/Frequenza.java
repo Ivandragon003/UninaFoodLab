@@ -1,9 +1,10 @@
 package model;
 
 public enum Frequenza {
-    GIORNALIERO("Una lezione ogni giorno"),
-    SETTIMANALE("Una lezione a settimana"),
-    MENSILE("Una lezione al mese");
+    Giornaliero("Una lezione ogni giorno"),
+    OgniDueGiorni("una lezione ogni due giorni"),
+    Settimanale("Una lezione a settimana"),
+    Mensile("Una lezione al mese");
 
     private String descrizione;
 
