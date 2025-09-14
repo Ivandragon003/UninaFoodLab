@@ -23,7 +23,7 @@ public class RicettaDAO {
 	        try (ResultSet rs = ps.getGeneratedKeys()) {
 	            if (rs.next()) {
 	                int id = rs.getInt(1);
-	                r.setIdRicetta(id); // solo qui, dopo l'inserimento
+	                r.setIdRicetta(id); 
 	                return id;
 	            }
 	        }

@@ -56,9 +56,6 @@ public class Chef extends Persona {
 	}
 
 	
-	private String getPasswordForDAO() {
-	    return password;
-	}
 	
 	public String toStringUsername() {
 		return "Username: " + username;

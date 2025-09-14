@@ -22,7 +22,6 @@ public class CorsoCucina {
 	
 	public CorsoCucina(int idCorso, String nomeCorso, double prezzo, String categoria, Frequenza frequenzaCorso,
 			int numeroPosti, int numeroSessioni, LocalDateTime dataInizioCorso, LocalDateTime dataFineCorso) {
-		setIdCorso(idCorso);
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
 		setCategoria(categoria);
@@ -38,12 +37,7 @@ public class CorsoCucina {
 		return idCorso;
 	}
 
-	public void setIdCorso(int idCorso) {
-		if (idCorso <= 0)
-			throw new IllegalArgumentException("ID corso deve essere maggiore di zero");
-		this.idCorso = idCorso;
-	}
-
+	
 	public String getNomeCorso() {
 		return nomeCorso;
 	}

@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public class RistoranteDAO {
 
-    // Inserimento (ritorna id generato)
+    // Inserimento 
     public int save(Ristorante r) throws SQLException {
         String sql = "INSERT INTO ristorante (partitaIva, nome, via, stelleMichelin) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -24,7 +24,7 @@ public class RistoranteDAO {
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
-                    return rs.getInt(1); // restituisce l'ID generato
+                    return rs.getInt(1);
                 }
             }
         }
@@ -122,4 +122,24 @@ public class RistoranteDAO {
             ps.executeUpdate();
         }
     }
+    
+    
+ 
+    public Optional<Integer> findIdByPartitaIvaENome(String partitaIva, String nome) throws SQLException {
+        String sql = "SELECT idRistorante FROM ristorante WHERE partitaIva = ? AND nome = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, partitaIva);
+            ps.setString(2, nome);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getInt("idRistorante"));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
 }
