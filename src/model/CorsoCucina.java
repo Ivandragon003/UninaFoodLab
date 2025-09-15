@@ -18,18 +18,16 @@ public class CorsoCucina {
 
 	
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
-
+	private List<Sessione> sessioni = new ArrayList<>();
 	
 	public CorsoCucina(int idCorso, String nomeCorso, double prezzo, String categoria, Frequenza frequenzaCorso,
-			int numeroPosti, int numeroSessioni, LocalDateTime dataInizioCorso, LocalDateTime dataFineCorso) {
+			int numeroPosti, int numeroSessioni) {
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
 		setCategoria(categoria);
 		setFrequenzaCorso(frequenzaCorso);
 		setNumeroPosti(numeroPosti);
 		setNumeroSessioni(numeroSessioni);
-		setDataInizioCorso(dataInizioCorso);
-		setDataFineCorso(dataFineCorso);
 	}
 
 	// Getter e Setter
@@ -78,6 +76,14 @@ public class CorsoCucina {
 		this.frequenzaCorso = frequenzaCorso;
 	}
 
+	public List<Sessione> getSessioni() {
+		return sessioni;
+	}
+
+	public void setSessioni(List<Sessione> sessioni) {
+		this.sessioni = sessioni;
+	}
+
 	public int getNumeroPosti() {
 		return numeroPosti;
 	}
@@ -109,7 +115,7 @@ public class CorsoCucina {
 			throw new IllegalArgumentException("Data inizio corso non può essere nel passato");
 		this.dataInizioCorso = dataInizioCorso;
 	}
-
+	
 	public LocalDateTime getDataFineCorso() {
 		return dataFineCorso;
 	}
@@ -122,6 +128,17 @@ public class CorsoCucina {
 		this.dataFineCorso = dataFineCorso;
 	}
 
+	// Imposta la data inizio senza controlli (usato solo dal DAO)
+	public void setDataInizioCorsoFromDB(LocalDateTime dataInizioCorso) {
+	    this.dataInizioCorso = dataInizioCorso;
+	}
+
+	// Imposta la data fine senza controlli (usato solo dal DAO)
+	public void setDataFineCorsoFromDB(LocalDateTime dataFineCorso) {
+	    this.dataFineCorso = dataFineCorso;
+	}
+
+	
 	
 	public void aggiungiIscrizione(Iscrizione i) {
 		if (!iscrizioni.contains(i))
