@@ -2,7 +2,7 @@ package model;
 
 import java.time.LocalDate;
 
-public class Persona {
+abstract public class Persona {
 	private String codFiscale;
 	private String nome;
 	private String cognome;

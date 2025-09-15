@@ -1,13 +1,14 @@
 package model;
 
 public enum Frequenza {
-    GIORNALIERO("Una lezione ogni giorno"),
-    SETTIMANALE("Una lezione a settimana"),
-    MENSILE("Una lezione al mese");
+    ogniGiorno("Una lezione ogni giorno"),
+    ogniDueGiorni("una lezione ogni due giorni"),
+    settimanale("Una lezione a settimana"),
+    mensile("Una lezione al mese");
 
     private String descrizione;
 
-    // COSTRUTTORE ENUM
+
     private Frequenza(String descrizione) {
         this.descrizione = descrizione;
     }
