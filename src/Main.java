@@ -1,111 +1,128 @@
-import dao.InPresenzaDAO;
+import dao.CorsoCucinaDAO;
 import dao.OnlineDAO;
-import model.InPresenza;
+import dao.InPresenzaDAO;
+import model.CorsoCucina;
+import model.Frequenza;
 import model.Online;
+import model.InPresenza;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class Main {
-
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
     public static void main(String[] args) {
+        CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
         OnlineDAO onlineDAO = new OnlineDAO();
         InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
 
-        List<Integer> idOnlineCreate = new ArrayList<>();
-        List<Integer> idInPresenzaCreate = new ArrayList<>();
+        CorsoCucina corso = null;
+        Online sessioneOnline = null;
+        InPresenza sessionePresenza = null;
+
+        int idCorso = -1;
+        int idOnline = -1;
+        int idPresenza = -1;
 
         try {
-            System.out.println("=== TEST SESSIONI DAO ===\n");
+            // --- CREA CORSO ---
+            LocalDateTime inizioCorso = LocalDateTime.now().plusDays(1);
+            LocalDateTime fineCorso = inizioCorso.plusHours(4);
 
-            LocalDateTime ora = LocalDateTime.now();
+            corso = new CorsoCucina(
+                    "Corso Test DAO",
+                    100.0,
+                    "Cucina Italiana",
+                    Frequenza.settimanale,
+                    20,
+                    2
+            );
+            corso.setDataInizioCorso(inizioCorso);
+            corso.setDataFineCorso(fineCorso);
 
-            // --- CREAZIONE SESSIONI ONLINE ---
-            Online online1 = new Online(ora.plusDays(10), ora.plusDays(10).plusHours(2), "Zoom");
-            Online online2 = new Online(ora.plusDays(20), ora.plusDays(20).plusHours(3), "Teams");
+            corsoDAO.save(corso);
+            System.out.println("Corso salvato con successo!");
 
-            System.out.println("1. Salvataggio sessioni online");
-            int idOnline1 = onlineDAO.save(online1); // senza idCorso
-            int idOnline2 = onlineDAO.save(online2); // senza idCorso
-            online1.setIdSessione(idOnline1); // settiamo ID nell'oggetto
-            online2.setIdSessione(idOnline2);
-            idOnlineCreate.add(idOnline1);
-            idOnlineCreate.add(idOnline2);
+            // Recupera ID generato
+            List<CorsoCucina> corsi = corsoDAO.findByNomeEsatto("Corso Test DAO");
+            if (!corsi.isEmpty()) idCorso = corsi.get(0).getIdCorso();
 
-            System.out.println("ID Online salvate: " + idOnlineCreate);
+            // --- CREA SESSIONE ONLINE ---
+            sessioneOnline = new Online(
+                    inizioCorso.plusMinutes(30),
+                    inizioCorso.plusHours(2),
+                    "Zoom"
+            );
+            sessioneOnline.setCorsoCucina(corso);
 
-            // --- CREAZIONE SESSIONI IN PRESENZA ---
-            InPresenza inPres1 = new InPresenza(ora.plusDays(5), ora.plusDays(5).plusHours(3), "Via Roma 1", "Napoli", 20, 80100);
-            InPresenza inPres2 = new InPresenza(ora.plusDays(15), ora.plusDays(15).plusHours(2), "Via Milano 10", "Napoli", 15, 80121);
+            idOnline = onlineDAO.save(sessioneOnline);
+            System.out.println("Sessione online salvata con successo con ID: " + idOnline);
 
-            System.out.println("2. Salvataggio sessioni in presenza");
-            int idInPres1 = inPresenzaDAO.save(inPres1); // senza idCorso
-            int idInPres2 = inPresenzaDAO.save(inPres2); // senza idCorso
-            inPres1.setIdSessione(idInPres1);
-            inPres2.setIdSessione(idInPres2);
-            idInPresenzaCreate.add(idInPres1);
-            idInPresenzaCreate.add(idInPres2);
+            // --- CREA SESSIONE IN PRESENZA ---
+            sessionePresenza = new InPresenza(
+                    inizioCorso.plusHours(2),
+                    inizioCorso.plusHours(3),
+                    "Via Roma 10",
+                    "Napoli",
+                    15,
+                    80100
+            );
+            sessionePresenza.setCorsoCucina(corso); // se la sessione ha campo corso
+            idPresenza = inPresenzaDAO.save(sessionePresenza);
+            System.out.println("Sessione in presenza salvata con successo con ID: " + idPresenza);
 
-            System.out.println("ID InPresenza salvate: " + idInPresenzaCreate);
+            // --- TEST FUNZIONI DAO ---
 
-            // --- LETTURA TUTTE LE SESSIONI ---
-            System.out.println("\n3. Recupero tutte le sessioni online");
-            for (Online o : onlineDAO.getAll()) {
-                System.out.println("- Online piattaforma: " + o.getPiattaformaStreaming() +
-                        ", inizio: " + o.getDataInizioSessione().format(FORMATTER));
-            }
+            // Aggiorna corso
+            corso.setPrezzo(120.0);
+            corsoDAO.update(corso);
+            System.out.println("Corso aggiornato con successo!");
 
-            System.out.println("\n4. Recupero tutte le sessioni in presenza");
-            for (InPresenza i : inPresenzaDAO.getAll()) {
-                System.out.println("- InPresenza: " + i.getVia() + ", " + i.getCitta() +
-                        ", posti: " + i.getNumeroPosti() +
-                        ", inizio: " + i.getDataInizioSessione().format(FORMATTER));
-            }
+            // Aggiorna sessione online
+            sessioneOnline.setPiattaformaStreaming("Google Meet");
+            onlineDAO.update(idOnline, sessioneOnline);
+            System.out.println("Sessione online aggiornata con successo!");
 
-            // --- UPDATE DI UNA SESSIONE ---
-            System.out.println("\n5. Update sessione online");
-            online1.setPiattaformaStreaming("Google Meet");
-            onlineDAO.update(idOnline1, online1); // passa ID separato
-            Optional<Online> onlineAggiornata = onlineDAO.findById(idOnline1);
-            onlineAggiornata.ifPresent(o -> System.out.println("Piattaforma aggiornata: " + o.getPiattaformaStreaming()));
+            // Aggiorna sessione in presenza
+            sessionePresenza.setNumeroPosti(18);
+            inPresenzaDAO.update(idPresenza, sessionePresenza);
+            System.out.println("Sessione in presenza aggiornata con successo!");
 
-            System.out.println("\n6. Update sessione in presenza");
-            inPres1.setNumeroPosti(25);
-            inPresenzaDAO.update(idInPres1, inPres1); // Passa l'ID al DAO
-            Optional<InPresenza> inPresAggiornata = inPresenzaDAO.findById(idInPres1);
-            inPresAggiornata.ifPresent(i -> System.out.println("Numero posti aggiornato: " + i.getNumeroPosti()));
+            // Lettura da DB
+            Optional<CorsoCucina> corsoLetto = corsoDAO.findById(idCorso);
+            corsoLetto.ifPresent(c -> System.out.println("Corso letto: " + c.toStringNomeCorso()));
+
+            Optional<Online> onlineLetto = onlineDAO.findById(idOnline);
+            onlineLetto.ifPresent(o -> System.out.println("Sessione online letta: " + o.getPiattaformaStreaming()));
+
+            Optional<InPresenza> inPresenzaLetto = inPresenzaDAO.findById(idPresenza);
+            inPresenzaLetto.ifPresent(p -> System.out.println("Sessione in presenza letta: " + p.getVia()));
+
+            // Lista completa
+            List<CorsoCucina> tuttiCorsi = corsoDAO.getAll();
+            System.out.println("Numero corsi nel DB: " + tuttiCorsi.size());
+
+            List<Online> tutteOnline = onlineDAO.getAll();
+            System.out.println("Numero sessioni online nel DB: " + tutteOnline.size());
+
+            List<InPresenza> tutteInPresenza = inPresenzaDAO.getAll();
+            System.out.println("Numero sessioni in presenza nel DB: " + tutteInPresenza.size());
+
+            System.out.println("Test completato con successo!");
 
         } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            // --- PULIZIA ---
-            System.out.println("\n7. Eliminazione sessioni appena create");
+            System.err.println("Errore durante il test: " + e.getMessage());
+            System.err.println("Eliminazione dei dati creati...");
 
-            for (int id : idOnlineCreate) {
-                try {
-                    onlineDAO.delete(id);
-                    System.out.println("Online ID " + id + " eliminata");
-                } catch (SQLException e) {
-                    System.err.println("Errore eliminazione Online ID " + id + ": " + e.getMessage());
-                }
-            }
-
-            for (int id : idInPresenzaCreate) {
-                try {
-                    inPresenzaDAO.delete(id);
-                    System.out.println("InPresenza ID " + id + " eliminata");
-                } catch (SQLException e) {
-                    System.err.println("Errore eliminazione InPresenza ID " + id + ": " + e.getMessage());
-                }
+            try {
+                if (idOnline != -1) onlineDAO.delete(idOnline);
+                if (idPresenza != -1) inPresenzaDAO.delete(idPresenza);
+                if (idCorso != -1) corsoDAO.delete(idCorso);
+                System.out.println("Dati eliminati.");
+            } catch (SQLException ex) {
+                System.err.println("Errore durante l'eliminazione: " + ex.getMessage());
             }
         }
-
-        System.out.println("\n=== TEST COMPLETATI ===");
     }
 }

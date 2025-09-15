@@ -6,6 +6,7 @@ abstract public class Sessione {
 	private int idSessione;
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
+	private CorsoCucina corsoCucina;
 
 	public Sessione(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione) {
 		this.dataInizioSessione = dataInizioSessione;
@@ -35,17 +36,26 @@ abstract public class Sessione {
 	public void setDataFineSessione(LocalDateTime dataFineSessione) {
 		this.dataFineSessione = dataFineSessione;
 	}
-	
+
+	public CorsoCucina getCorsoCucina() {
+	    return corsoCucina;
+	}
+
+	public void setCorsoCucina(CorsoCucina corsoCucina) {
+	    if (corsoCucina == null) throw new IllegalArgumentException("Corso obbligatorio");
+	    this.corsoCucina = corsoCucina;
+	}
+
 	public String toStringIdSessione() {
-	    return "ID Sessione: " + idSessione;
+		return "ID Sessione: " + idSessione;
 	}
 
 	public String toStringDataInizioSessione() {
-	    return "Data Inizio Sessione: " + dataInizioSessione;
+		return "Data Inizio Sessione: " + dataInizioSessione;
 	}
 
 	public String toStringDataFineSessione() {
-	    return "Data Fine Sessione: " + dataFineSessione;
+		return "Data Fine Sessione: " + dataFineSessione;
 	}
 
 }

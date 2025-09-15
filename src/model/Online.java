@@ -3,10 +3,21 @@ package model;
 import java.time.LocalDateTime;
 
 public class Online extends Sessione {
-	public String getPiattaformaStreaming() {
-		return piattaformaStreaming;
-	}
+    private String piattaformaStreaming;
 
-	public void setPiattaformaStreaming(String piattaformaStreaming) {
-		this.piattaformaStreaming = piattaformaStreaming;
-	}
+    public Online(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione, String piattaformaStreaming) {
+        super(dataInizioSessione, dataFineSessione);
+        setPiattaformaStreaming(piattaformaStreaming); // usa il setter per garantire non null
+    }
+
+    public String getPiattaformaStreaming() {
+        return piattaformaStreaming;
+    }
+
+    public void setPiattaformaStreaming(String piattaformaStreaming) {
+        if (piattaformaStreaming == null ) {
+            throw new IllegalArgumentException("La piattaforma di streaming non può essere null o vuota");
+        }
+        this.piattaformaStreaming = piattaformaStreaming;
+    }
+}

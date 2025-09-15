@@ -23,18 +23,18 @@ public class InPresenzaDAO {
             ps.setTimestamp(2, Timestamp.valueOf(sessione.getDataFineSessione()));
             ps.setString(3, sessione.getVia());
             ps.setString(4, sessione.getCitta());
-            ps.setString(5, String.valueOf(sessione.getCAP()));
+            ps.setInt(5, sessione.getCAP());
             ps.setInt(6, sessione.getNumeroPosti());
 
             ps.executeUpdate();
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
-                    return rs.getInt(1); 
+                    return rs.getInt(1); // ritorna l'ID generato dal DB
                 }
             }
         }
-        return -1; 
+        return -1; // inserimento fallito
     }
 
     // Aggiornamento tramite ID
@@ -48,7 +48,7 @@ public class InPresenzaDAO {
             ps.setTimestamp(2, Timestamp.valueOf(sessione.getDataFineSessione()));
             ps.setString(3, sessione.getVia());
             ps.setString(4, sessione.getCitta());
-            ps.setString(5, String.valueOf(sessione.getCAP()));
+            ps.setInt(5, sessione.getCAP());
             ps.setInt(6, sessione.getNumeroPosti());
             ps.setInt(7, idSessione);
 
@@ -70,7 +70,7 @@ public class InPresenzaDAO {
         return Optional.empty();
     }
 
-    // Lettura
+    // Lettura tutte le sessioni in presenza
     public List<InPresenza> getAll() throws SQLException {
         List<InPresenza> list = new ArrayList<>();
         String sql = "SELECT * FROM sessione WHERE tipo='inPresenza' ORDER BY datainiziosessione";
@@ -85,7 +85,7 @@ public class InPresenzaDAO {
         return list;
     }
 
-    // Eliminazione 
+    // Eliminazione
     public void delete(int idSessione) throws SQLException {
         String sql = "DELETE FROM sessione WHERE idsessione=?";
         try (Connection conn = DBConnection.getConnection();
@@ -96,17 +96,20 @@ public class InPresenzaDAO {
         }
     }
 
-  
+    // Mapping ResultSet -> InPresenza
     private InPresenza mapResultSetToInPresenza(ResultSet rs) throws SQLException {
         LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
         LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
         String via = rs.getString("via");
         String citta = rs.getString("citta");
         int posti = rs.getInt("numeroposti");
-        int cap = Integer.parseInt(rs.getString("cap"));
+        int cap = rs.getInt("cap");
 
         InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
-        sessione.setIdSessione(rs.getInt("idsessione")); // ID generato dal DB
+
+        // Imposta l'ID generato dal DB
+        sessione.setIdSessione(rs.getInt("idsessione"));
+
         return sessione;
     }
 }
