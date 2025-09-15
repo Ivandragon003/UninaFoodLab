@@ -10,3 +10,4 @@ public class Online extends Sessione {
 	public void setPiattaformaStreaming(String piattaformaStreaming) {
 		this.piattaformaStreaming = piattaformaStreaming;
 	}
+}

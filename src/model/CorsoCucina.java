@@ -20,7 +20,7 @@ public class CorsoCucina {
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
 	private List<Sessione> sessioni = new ArrayList<>();
 	
-	public CorsoCucina(int idCorso, String nomeCorso, double prezzo, String categoria, Frequenza frequenzaCorso,
+	public CorsoCucina(String nomeCorso, double prezzo, String categoria, Frequenza frequenzaCorso,
 			int numeroPosti, int numeroSessioni) {
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
