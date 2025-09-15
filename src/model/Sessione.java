@@ -3,6 +3,7 @@ package model;
 import java.time.LocalDateTime;
 
 public class Sessione {
+abstract public class Sessione {
 	private int idSessione;
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
@@ -35,7 +36,7 @@ public class Sessione {
 	public void setDataFineSessione(LocalDateTime dataFineSessione) {
 		this.dataFineSessione = dataFineSessione;
 	}
-	
+
 	public String toStringIdSessione() {
 	    return "ID Sessione: " + idSessione;
 	}
@@ -47,5 +48,3 @@ public class Sessione {
 	public String toStringDataFineSessione() {
 	    return "Data Fine Sessione: " + dataFineSessione;
 	}
-
-}
