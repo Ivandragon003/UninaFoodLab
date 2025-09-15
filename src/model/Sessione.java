@@ -2,7 +2,7 @@ package model;
 
 import java.time.LocalDateTime;
 
-abstract public class Sessione {
+public class Sessione {
 	private int idSessione;
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;

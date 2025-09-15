@@ -7,7 +7,7 @@ public class Online extends Sessione {
 		return piattaformaStreaming;
 	}
 
-	public void setPiattaformaStreaming(String piattaformaStreaming) {
+	public void setPiattaformaStreamong(String piattaformaStreaming) {
 		this.piattaformaStreaming = piattaformaStreaming;
 	}
 
