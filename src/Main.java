@@ -51,7 +51,7 @@ public class Main {
             // --- CREA SESSIONE ONLINE ---
             sessioneOnline = new Online(
                     inizioCorso.plusMinutes(30),
-                    inizioCorso.plusHours(2),
+                    inizioCorso.plusHours(1),
                     "Zoom"
             );
             sessioneOnline.setCorsoCucina(corso);
@@ -63,7 +63,7 @@ public class Main {
             sessionePresenza = new InPresenza(
                     inizioCorso.plusHours(2),
                     inizioCorso.plusHours(3),
-                    "Via Roma 10",
+                    "Via Roma 410",
                     "Napoli",
                     15,
                     80100

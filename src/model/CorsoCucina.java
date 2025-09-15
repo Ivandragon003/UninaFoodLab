@@ -9,7 +9,7 @@ public class CorsoCucina {
 	private int idCorso;
 	private String nomeCorso;
 	private double prezzo;
-	private String categoria;
+	private String argomento;
 	private Frequenza frequenzaCorso;
 	private int numeroPosti;
 	private int numeroSessioni;
@@ -20,11 +20,11 @@ public class CorsoCucina {
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
 	private List<Sessione> sessioni = new ArrayList<>();
 	
-	public CorsoCucina(String nomeCorso, double prezzo, String categoria, Frequenza frequenzaCorso,
+	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso,
 			int numeroPosti, int numeroSessioni) {
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
-		setCategoria(categoria);
+		setArgomento(argomento);
 		setFrequenzaCorso(frequenzaCorso);
 		setNumeroPosti(numeroPosti);
 		setNumeroSessioni(numeroSessioni);
@@ -56,14 +56,14 @@ public class CorsoCucina {
 		this.prezzo = prezzo;
 	}
 
-	public String getCategoria() {
-		return categoria;
+	public String getArgomento() {
+		return argomento;
 	}
 
-	public void setCategoria(String categoria) {
-		if (categoria == null || categoria.trim().isEmpty())
+	public void setArgomento(String argomento) {
+		if (argomento == null || argomento.trim().isEmpty())
 			throw new IllegalArgumentException("Categoria non può essere vuota");
-		this.categoria = categoria.trim();
+		this.argomento = argomento.trim();
 	}
 
 	public Frequenza getFrequenzaCorso() {
@@ -167,7 +167,7 @@ public class CorsoCucina {
 	}
 
 	public String toStringCategoria() {
-		return "Categoria: " + categoria;
+		return "Categoria: " + argomento;
 	}
 
 	public String toStringFrequenza() {

@@ -21,7 +21,7 @@ public class CorsoCucinaDAO {
 				PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
 			ps.setString(1, corso.getNomeCorso());
-			ps.setString(2, corso.getCategoria());
+			ps.setString(2, corso.getArgomento());
 			ps.setString(3, corso.getFrequenzaCorso().name());
 			ps.setBigDecimal(4, java.math.BigDecimal.valueOf(corso.getPrezzo()));
 			ps.setInt(5, corso.getNumeroPosti());
@@ -33,7 +33,6 @@ public class CorsoCucinaDAO {
 
 			try (ResultSet rs = ps.getGeneratedKeys()) {
 				if (rs.next()) {
-					// Imposta l'ID generato dal DB tramite riflessione
 					Field field = CorsoCucina.class.getDeclaredField("idCorso");
 					field.setAccessible(true);
 					field.setInt(corso, rs.getInt(1));
@@ -51,7 +50,7 @@ public class CorsoCucinaDAO {
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, corso.getNomeCorso());
-			ps.setString(2, corso.getCategoria());
+			ps.setString(2, corso.getArgomento());
 			ps.setString(3, corso.getFrequenzaCorso().name());
 			ps.setBigDecimal(4, java.math.BigDecimal.valueOf(corso.getPrezzo()));
 			ps.setInt(5, corso.getNumeroPosti());
@@ -115,7 +114,6 @@ public class CorsoCucinaDAO {
 	}
 
 	private CorsoCucina mapResultSetToCorso(ResultSet rs) throws SQLException {
-
 		CorsoCucina corso = new CorsoCucina(rs.getString("nomeCorso"), rs.getDouble("prezzo"),
 				rs.getString("argomento"), Frequenza.valueOf(rs.getString("frequenzaCorso")), rs.getInt("numeroPosti"),
 				rs.getInt("numeroSessioni"));

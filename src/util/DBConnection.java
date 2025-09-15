@@ -6,19 +6,23 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-	private static final String URL = "jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true";
-	private static final String USER = "postgres.knvggfhdcilpqhozvmkp";
-	private static final String PASSWORD = "#federicoII";
+    private static final String URL = "jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true";
+    private static final String USER = "postgres.knvggfhdcilpqhozvmkp";
+    private static final String PASSWORD = "#federicoII";
 
-	public static Connection getConnection() {
-		try {
-			return DriverManager.getConnection(URL, USER, PASSWORD);
-		} catch (SQLException e) {
+   
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
+    }
 
-			System.err.println("Errore di connessione al database: " + e.getMessage());
-			e.printStackTrace();
-
-			throw new RuntimeException("Impossibile connettersi al database", e);
-		}
-	}
+ 
+    public static void close(Connection conn) {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
