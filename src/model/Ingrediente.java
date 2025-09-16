@@ -14,12 +14,6 @@ public class Ingrediente {
 		return idIngrediente;
 	}
 
-	public void setIdIngrediente(int idIngrediente) {
-        if (idIngrediente <= 0) {
-            throw new IllegalArgumentException("L'ID dell'ingrediente deve essere maggiore di zero.");
-        }
-        this.idIngrediente = idIngrediente;
-    }
 
 	public String getNome() {
 		return nome;

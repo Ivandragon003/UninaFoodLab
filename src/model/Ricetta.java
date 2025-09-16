@@ -18,12 +18,6 @@ public class Ricetta {
 		return idRicetta;
 	}
 
-	public void setIdRicetta(int idRicetta) {
-		if (idRicetta <= 0) {
-			throw new IllegalArgumentException("L'ID della ricetta deve essere maggiore di zero.");
-		}
-		this.idRicetta = idRicetta;
-	}
 
 	public String getNome() {
 		return nome;
