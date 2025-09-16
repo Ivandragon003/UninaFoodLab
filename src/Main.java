@@ -1,7 +1,7 @@
 
 
 import dao.OnlineDAO;
-import dao.CorsoCucinaDAO;  // devi avere questo DAO
+import dao.CorsoCucinaDAO;
 import model.Online;
 import model.CorsoCucina;
 
