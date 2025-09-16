@@ -1,5 +1,6 @@
 import dao.CorsoCucinaDAO;
 import dao.OnlineDAO;
+import dao.IscrizioneDAO;
 import dao.InPresenzaDAO;
 import model.CorsoCucina;
 import model.Frequenza;
