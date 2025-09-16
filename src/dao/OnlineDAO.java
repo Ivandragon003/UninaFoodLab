@@ -109,23 +109,31 @@ public class OnlineDAO {
 
         Online sessione = new Online(inizio, fine, piattaforma);
 
-        String nomeCorso = rs.getString("nomecorso"); // minuscolo
+        String nomeCorso = rs.getString("nomecorso");
         if (nomeCorso != null) {
             Frequenza freq = null;
             String freqStr = rs.getString("frequenzacorso");
             if (freqStr != null) freq = Frequenza.valueOf(freqStr);
+
+            int numeroposti = rs.getInt("numeroposti");
+            if (rs.wasNull() || numeroposti <= 0) numeroposti = 1; // default 1
+
+            int numerosessioni = rs.getInt("numerosessioni");
+            if (rs.wasNull() || numerosessioni <= 0) numerosessioni = 1; // default 1
 
             CorsoCucina corso = new CorsoCucina(
                     nomeCorso,
                     rs.getDouble("prezzo"),
                     rs.getString("argomento"),
                     freq,
-                    rs.getInt("numeroposti"),
-                    rs.getInt("numerosessioni")
+                    numeroposti,
+                    numerosessioni
             );
+
             sessione.setCorsoCucina(corso);
         }
 
         return sessione;
     }
+
 }

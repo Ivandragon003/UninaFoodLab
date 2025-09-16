@@ -55,7 +55,7 @@ public class LavoraDAO {
                 Chef chef = new Chef(cf, "", "", true, "placeholderUsername", "placeholder123");
                 Ristorante ristorante = new Ristorante("", "00000000000", "");
                 
-                // Usa reflection per settare l'idRistorante privato
+                
                 setIdRistorante(ristorante, idRistorante);
                 
                 list.add(new Lavora(chef, ristorante));

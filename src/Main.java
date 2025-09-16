@@ -1,74 +1,87 @@
-import dao.IscrizioneDAO;
-import dao.CorsoCucinaDAO;  // DAO per salvare i corsi
+
+
+import dao.OnlineDAO;
+import dao.CorsoCucinaDAO;  // devi avere questo DAO
+import model.Online;
 import model.CorsoCucina;
-import model.Iscrizione;
-import model.Utente;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 public class Main {
+
     public static void main(String[] args) {
+        OnlineDAO dao = new OnlineDAO();
+        CorsoCucinaDAO corsoDao = new CorsoCucinaDAO(); // DAO per i corsi
+
+        int idSessioneGenerata = -1;
+
         try {
-            // DAO
-            IscrizioneDAO iscrizioneDAO = new IscrizioneDAO();
-            CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO(); // se vuoi salvare il corso
-
-            // ==============================
-            // Utente esistente nel DB
-            // ==============================
-            Utente utente = new Utente("RSSMRA85M01H501U", "Mario", "Rossi");
-            utente.setEmail("mario.rossi@email.com");
-            utente.setDataNascita(LocalDate.of(1985, 1, 1));
-
-            // ==============================
-            // Corso esistente o nuovo
-            // ==============================
-            CorsoCucina corso = new CorsoCucina("Pasta Fresca", 100.0, "Cucina Italiana",
-                                                null, 20, 5);
-            // Se il corso non è ancora nel DB, lo salviamo
-            if (corso.getIdCorso() == 0) { // id non assegnato
-                int idCorso = corsoDAO.save(corso); // save restituisce l'id generato dal DB
-                corso.setIdCorso(idCorso);
-                System.out.println("Corso salvato con successo con ID: " + idCorso);
+            // 1️⃣ Prendi un corso esistente dal DB
+            List<CorsoCucina> corsi = corsoDao.getAll();
+            if (corsi.isEmpty()) {
+                System.err.println("Nessun corso trovato nel DB. Inserisci prima un corso!");
+                return;
             }
+            CorsoCucina corso = corsi.get(0); // prendi il primo corso disponibile
 
-            // ==============================
-            // Creazione iscrizione
-            // ==============================
-            Iscrizione iscrizione = new Iscrizione(utente, corso, true);
-            iscrizione.setVotiAvuti(8);
+            // 2️⃣ Crea sessione online
+            Online sessione = new Online(
+                    LocalDateTime.now().plusDays(1),
+                    LocalDateTime.now().plusDays(1).plusHours(2),
+                    "Zoom"
+            );
+            sessione.setCorsoCucina(corso);
 
-            // ==============================
-            // Salvataggio iscrizione
-            // ==============================
-            iscrizioneDAO.save(iscrizione);
-            System.out.println("Iscrizione salvata!");
+            // 3️⃣ Inserimento sessione online
+            idSessioneGenerata = dao.save(sessione);
+            System.out.println("Sessione online inserita con ID: " + idSessioneGenerata);
 
-            // ==============================
-            // Controllo esistenza iscrizione
-            // ==============================
-            boolean exists = iscrizioneDAO.exists(utente.getCodFiscale(), corso.getIdCorso());
-            System.out.println("Esiste iscrizione? " + (exists ? "Sì" : "No"));
+            // 4️⃣ Lettura tramite findById
+            Optional<Online> letto = dao.findById(idSessioneGenerata);
+            letto.ifPresentOrElse(
+                    s -> System.out.println("Trovato: " + s.getPiattaformaStreaming() + ", corso: " +
+                            (s.getCorsoCucina() != null ? s.getCorsoCucina().getNomeCorso() : "null")),
+                    () -> System.out.println("Sessione non trovata")
+            );
 
-            // ==============================
-            // Stampa tutte le iscrizioni
-            // ==============================
-            for (Iscrizione i : iscrizioneDAO.getAllFull()) {
-                System.out.println(i.getUtente().getNome() + " " + i.getUtente().getCognome() +
-                                   " - " + i.getCorso().getNomeCorso() +
-                                   " - Voti: " + (i.getVotiAvuti() != null ? i.getVotiAvuti() : "N/A") +
-                                   " - Stato: " + (i.isStato() ? "Attivo" : "Non attivo"));
-            }
+            // 5️⃣ Lettura di tutte le sessioni online
+            List<Online> tutte = dao.getAll();
+            System.out.println("Totale sessioni online nel DB: " + tutte.size());
 
-            // ==============================
-            // Cancellazione iscrizione (pulizia)
-            // ==============================
-            iscrizioneDAO.delete(utente.getCodFiscale(), corso.getIdCorso());
-            System.out.println("Iscrizione cancellata!");
+            // 6️⃣ Aggiornamento della sessione
+            sessione.setPiattaformaStreaming("Google Meet");
+            dao.update(idSessioneGenerata, sessione);
+            System.out.println("Sessione aggiornata");
+
+            // 7️⃣ Lettura dopo aggiornamento
+            letto = dao.findById(idSessioneGenerata);
+            letto.ifPresent(s -> System.out.println("Dopo update: piattaforma = " + s.getPiattaformaStreaming()));
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Errore DAO: " + e.getMessage());
+
+            // Pulizia in caso di errore
+            if (idSessioneGenerata != -1) {
+                try {
+                    dao.delete(idSessioneGenerata);
+                    System.out.println("Sessione inserita rimossa a causa dell'errore.");
+                } catch (SQLException ex) {
+                    System.err.println("Errore durante la rimozione della sessione inserita: " + ex.getMessage());
+                }
+            }
+        } finally {
+            // Pulizia finale
+            if (idSessioneGenerata != -1) {
+                try {
+                    dao.delete(idSessioneGenerata);
+                    System.out.println("Sessione rimossa definitivamente.");
+                } catch (SQLException e) {
+                    System.err.println("Errore durante la rimozione finale della sessione: " + e.getMessage());
+                }
+            }
         }
     }
 }

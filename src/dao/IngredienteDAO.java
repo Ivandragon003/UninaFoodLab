@@ -11,26 +11,23 @@ import java.util.Optional;
 public class IngredienteDAO {
 
     // Inserimento 
-	public int save(Ingrediente i) throws SQLException {
-	    String sql = "INSERT INTO ingrediente (nome, tipo) VALUES (?, ?)";
-	    try (Connection conn = DBConnection.getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    public int save(Ingrediente i) throws SQLException {
+        String sql = "INSERT INTO ingrediente (nome, tipo) VALUES (?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	        ps.setString(1, i.getNome());
-	        ps.setString(2, i.getTipo());
-	        ps.executeUpdate();
+            ps.setString(1, i.getNome());
+            ps.setString(2, i.getTipo());
+            ps.executeUpdate();
 
-	        try (ResultSet rs = ps.getGeneratedKeys()) {
-	            if (rs.next()) {
-	                int id = rs.getInt(1);
-	                i.setIdIngrediente(id); // solo qui, dopo l'inserimento
-	                return id;
-	            }
-	        }
-	    }
-	    return -1;
-	}
-
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1); 
+                }
+            }
+        }
+        throw new SQLException("Inserimento ingrediente fallito, nessun id generato.");
+    }
 
     // Lettura singola per ID
     public Optional<Ingrediente> findById(int id) throws SQLException {
@@ -41,11 +38,11 @@ public class IngredienteDAO {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
+                    // Non possiamo impostare l'ID, quindi ritorniamo solo nome e tipo
                     Ingrediente i = new Ingrediente(
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
-                    i.setIdIngrediente(id);
                     return Optional.of(i);
                 }
             }
@@ -66,7 +63,6 @@ public class IngredienteDAO {
                         rs.getString("nome"),
                         rs.getString("tipo")
                 );
-                i.setIdIngrediente(rs.getInt("idIngrediente"));
                 list.add(i);
             }
         }
@@ -87,7 +83,6 @@ public class IngredienteDAO {
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
-                    i.setIdIngrediente(rs.getInt("idIngrediente"));
                     list.add(i);
                 }
             }
@@ -109,7 +104,6 @@ public class IngredienteDAO {
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
-                    i.setIdIngrediente(rs.getInt("idIngrediente"));
                     list.add(i);
                 }
             }
@@ -141,8 +135,4 @@ public class IngredienteDAO {
         }
     }
 
-    // Eliminazione tramite oggetto
-    public void delete(Ingrediente i) throws SQLException {
-        delete(i.getIdIngrediente());
-    }
 }
