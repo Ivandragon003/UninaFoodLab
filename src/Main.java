@@ -1,86 +1,82 @@
-
-
-import dao.OnlineDAO;
-import dao.CorsoCucinaDAO;  // devi avere questo DAO
-import model.Online;
+import dao.CorsoCucinaDAO;
+import dao.ChefDAO;
+import dao.TieneDAO;
+import model.Chef;
 import model.CorsoCucina;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public class Main {
 
     public static void main(String[] args) {
-        OnlineDAO dao = new OnlineDAO();
-        CorsoCucinaDAO corsoDao = new CorsoCucinaDAO(); // DAO per i corsi
+        ChefDAO chefDAO = new ChefDAO();
+        CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
+        TieneDAO tieneDAO = new TieneDAO();
 
-        int idSessioneGenerata = -1;
+        // CF e ID corso da usare
+        String cfChef = "RSSMRA80A01H501U";
+        int idCorso = 1;
 
         try {
-            // 1️⃣ Prendi un corso esistente dal DB
-            List<CorsoCucina> corsi = corsoDao.getAll();
-            if (corsi.isEmpty()) {
-                System.err.println("Nessun corso trovato nel DB. Inserisci prima un corso!");
-                return;
+            // 🔹 Controllo se lo chef esiste, altrimenti lo creo
+            Optional<Chef> chefOpt = chefDAO.findByCodFiscale(cfChef);
+            if (chefOpt.isEmpty()) {
+                Chef chef = new Chef(cfChef, "Mario", "Rossi", true, "mariorossi", "password123");
+                chefDAO.save(chef,"password123");
+                System.out.println("Chef creato: " + cfChef);
             }
-            CorsoCucina corso = corsi.get(0); // prendi il primo corso disponibile
 
-            // 2️⃣ Crea sessione online
-            Online sessione = new Online(
-                    LocalDateTime.now().plusDays(1),
-                    LocalDateTime.now().plusDays(1).plusHours(2),
-                    "Zoom"
-            );
-            sessione.setCorsoCucina(corso);
+            // 🔹 Controllo se il corso esiste, altrimenti lo creo
+            Optional<CorsoCucina> corsoOpt = corsoDAO.findById(idCorso);
+            if (corsoOpt.isEmpty()) {
+                CorsoCucina corso = new CorsoCucina("Corso Base di Cucina", 100.0, "Base", null, 20, 5);
+                corsoDAO.save(corso);
+                System.out.println("Corso creato: " + idCorso);
+            }
 
-            // 3️⃣ Inserimento sessione online
-            idSessioneGenerata = dao.save(sessione);
-            System.out.println("Sessione online inserita con ID: " + idSessioneGenerata);
+            // 🔹 Inserimento associazione chef-corso solo se non esiste
+            boolean associazioneEsiste = tieneDAO.getCorsiByChef(cfChef).stream()
+                    .anyMatch(c -> c.getIdCorso() == idCorso);
+            if (!associazioneEsiste) {
+                System.out.println("Test save...");
+                tieneDAO.save(cfChef, idCorso);
+                System.out.println("Associazione chef-corso salvata: " + cfChef + " -> " + idCorso);
+            } else {
+                System.out.println("Associazione già presente: " + cfChef + " -> " + idCorso);
+            }
 
-            // 4️⃣ Lettura tramite findById
-            Optional<Online> letto = dao.findById(idSessioneGenerata);
-            letto.ifPresentOrElse(
-                    s -> System.out.println("Trovato: " + s.getPiattaformaStreaming() + ", corso: " +
-                            (s.getCorsoCucina() != null ? s.getCorsoCucina().getNomeCorso() : "null")),
-                    () -> System.out.println("Sessione non trovata")
-            );
+            // 🔹 Recupera tutti i corsi di uno chef
+            System.out.println("Test getCorsiByChef...");
+            List<CorsoCucina> corsi = tieneDAO.getCorsiByChef(cfChef);
+            corsi.forEach(c -> System.out.println("Corso di chef: " + c.getNomeCorso()));
 
-            // 5️⃣ Lettura di tutte le sessioni online
-            List<Online> tutte = dao.getAll();
-            System.out.println("Totale sessioni online nel DB: " + tutte.size());
+            // 🔹 Recupera tutti gli chef di un corso
+            System.out.println("Test getChefByCorso...");
+            List<Chef> chefList = tieneDAO.getChefByCorso(idCorso);
+            chefList.forEach(c -> System.out.println("Chef del corso: " + c.getUsername()));
 
-            // 6️⃣ Aggiornamento della sessione
-            sessione.setPiattaformaStreaming("Google Meet");
-            dao.update(idSessioneGenerata, sessione);
-            System.out.println("Sessione aggiornata");
+            // 🔹 Test deleteByChef
+            System.out.println("Test deleteByChef...");
+            tieneDAO.deleteByChef(cfChef);
+            System.out.println("Tutte le associazioni di chef rimosse: " + cfChef);
 
-            // 7️⃣ Lettura dopo aggiornamento
-            letto = dao.findById(idSessioneGenerata);
-            letto.ifPresent(s -> System.out.println("Dopo update: piattaforma = " + s.getPiattaformaStreaming()));
+            // 🔹 Test deleteByCorso
+            System.out.println("Test deleteByCorso...");
+            tieneDAO.deleteByCorso(idCorso);
+            System.out.println("Tutte le associazioni del corso rimosse: " + idCorso);
 
         } catch (SQLException e) {
             System.err.println("Errore DAO: " + e.getMessage());
 
-            // Pulizia in caso di errore
-            if (idSessioneGenerata != -1) {
-                try {
-                    dao.delete(idSessioneGenerata);
-                    System.out.println("Sessione inserita rimossa a causa dell'errore.");
-                } catch (SQLException ex) {
-                    System.err.println("Errore durante la rimozione della sessione inserita: " + ex.getMessage());
-                }
-            }
         } finally {
-            // Pulizia finale
-            if (idSessioneGenerata != -1) {
-                try {
-                    dao.delete(idSessioneGenerata);
-                    System.out.println("Sessione rimossa definitivamente.");
-                } catch (SQLException e) {
-                    System.err.println("Errore durante la rimozione finale della sessione: " + e.getMessage());
-                }
+            // 🔹 Pulizia: elimina sempre l'associazione anche in caso di errore
+            try {
+                tieneDAO.delete(cfChef, idCorso);
+                System.out.println("Associazione chef-corso rimossa in cleanup: " + cfChef + " -> " + idCorso);
+            } catch (SQLException ex) {
+                System.err.println("Errore durante la pulizia: " + ex.getMessage());
             }
         }
     }

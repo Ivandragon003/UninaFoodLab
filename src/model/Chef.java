@@ -1,4 +1,5 @@
 package model;
+import java.util.*;
 
 public class Chef extends Persona {
 
@@ -6,6 +7,7 @@ public class Chef extends Persona {
 	private boolean disponibilita;
 	private String username;
 	private String password;
+	private List<CorsoCucina> corsi = new ArrayList<>();
 
 	public Chef(String codFiscale, String nome, String cognome, boolean disponibilita, String username,
 			String password) {
@@ -43,6 +45,14 @@ public class Chef extends Persona {
 			throw new IllegalArgumentException("Username non può essere nullo o vuoto.");
 		}
 		this.username = username;
+	}
+
+	public List<CorsoCucina> getCorsi() {
+		return corsi;
+	}
+
+	public void setCorsi(List<CorsoCucina> corsi) {
+		this.corsi = corsi;
 	}
 
 	public void setPassword(String password) {
