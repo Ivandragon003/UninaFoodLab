@@ -11,22 +11,25 @@ import java.util.List;
 
 public class IscrizioneDAO {
 
-    public void save(Iscrizione i) throws SQLException {
-        if (i == null || i.getUtente() == null || i.getCorso() == null) {
+    public void save(Iscrizione iscrizione) throws SQLException {
+        if (iscrizione == null || iscrizione.getUtente() == null || iscrizione.getCorso() == null) {
             throw new IllegalArgumentException("Iscrizione, Utente o Corso null");
         }
+
         String sql = "INSERT INTO iscritto (codFiscale, idCorsoCucina, votiAvuti, stato) VALUES (?, ?, ?, ?)";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, i.getUtente().getCodFiscale());
-            ps.setInt(2, i.getCorso().getIdCorso());
-            if (i.getVotiAvuti() != null) {
-                ps.setInt(3, i.getVotiAvuti());
+            ps.setString(1, iscrizione.getUtente().getCodFiscale());
+            ps.setInt(2, iscrizione.getCorso().getIdCorso());
+            if (iscrizione.getVotiAvuti() != null) {
+                ps.setInt(3, iscrizione.getVotiAvuti());
             } else {
                 ps.setNull(3, Types.INTEGER);
             }
-            ps.setBoolean(4, i.isStato());
+            ps.setBoolean(4, iscrizione.isStato());
+
             ps.executeUpdate();
         }
     }
@@ -56,6 +59,7 @@ public class IscrizioneDAO {
     public List<Iscrizione> getAll() throws SQLException {
         List<Iscrizione> list = new ArrayList<>();
         String sql = "SELECT codFiscale, idCorsoCucina, votiAvuti, stato FROM iscritto";
+
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -72,9 +76,11 @@ public class IscrizioneDAO {
 
                 Iscrizione i = new Iscrizione(u, c, stato);
                 i.setVotiAvuti(voti);
+
                 list.add(i);
             }
         }
+
         return list;
     }
 
@@ -85,16 +91,18 @@ public class IscrizioneDAO {
                      "c.numeroSessioni, i.votiAvuti, i.stato " +
                      "FROM iscritto i " +
                      "JOIN utente u ON i.codFiscale = u.codFiscale " +
-                     "JOIN corsoCucina c ON i.idCorsoCucina = c.idCorsoCucina";
+                     "JOIN corsocucina c ON i.idCorsoCucina = c.idCorsoCucina";
 
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Utente u = new Utente(rs.getString("codFiscale"),
-                                      rs.getString("u_nome"),
-                                      rs.getString("u_cognome"));
+                Utente u = new Utente(
+                        rs.getString("codFiscale"),
+                        rs.getString("u_nome"),
+                        rs.getString("u_cognome")
+                );
                 u.setEmail(rs.getString("email"));
                 Date data = rs.getDate("dataNascita");
                 if (data != null) u.setDataNascita(data.toLocalDate());
@@ -116,6 +124,7 @@ public class IscrizioneDAO {
                 list.add(i);
             }
         }
+
         return list;
     }
 }
