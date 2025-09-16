@@ -101,7 +101,7 @@ public class OnlineDAO {
         return list;
     }
 
-    // Mapping ResultSet → Online
+    // Mapping ResultSet
     private Online mapResultSetToOnline(ResultSet rs) throws SQLException {
         LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
         LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
@@ -116,10 +116,10 @@ public class OnlineDAO {
             if (freqStr != null) freq = Frequenza.valueOf(freqStr);
 
             int numeroposti = rs.getInt("numeroposti");
-            if (rs.wasNull() || numeroposti <= 0) numeroposti = 1; // default 1
+            if (rs.wasNull() || numeroposti <= 0) numeroposti = 1; 
 
             int numerosessioni = rs.getInt("numerosessioni");
-            if (rs.wasNull() || numerosessioni <= 0) numerosessioni = 1; // default 1
+            if (rs.wasNull() || numerosessioni <= 0) numerosessioni = 1; 
 
             CorsoCucina corso = new CorsoCucina(
                     nomeCorso,

@@ -15,6 +15,7 @@ public class CorsoCucina {
 	private int numeroSessioni;
 	private LocalDateTime dataInizioCorso;
 	private LocalDateTime dataFineCorso;
+	private List<Chef> chef = new ArrayList<>();
 
 	
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
@@ -102,6 +103,14 @@ public class CorsoCucina {
 		if (numeroSessioni <= 0)
 			throw new IllegalArgumentException("Il numero di sessioni deve essere maggiore di zero");
 		this.numeroSessioni = numeroSessioni;
+	}
+
+	public List<Chef> getChef() {
+		return chef;
+	}
+
+	public void setChef(List<Chef> chef) {
+		this.chef = chef;
 	}
 
 	public LocalDateTime getDataInizioCorso() {

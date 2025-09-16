@@ -1,12 +1,14 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.util.*;
 
 abstract public class Sessione {
 	private int idSessione;
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
 	private CorsoCucina corsoCucina;
+	private List<Sessione> sessioni;
 
 	public Sessione(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione) {
 		this.dataInizioSessione = dataInizioSessione;
@@ -41,6 +43,14 @@ abstract public class Sessione {
 	public void setCorsoCucina(CorsoCucina corsoCucina) {
 	    if (corsoCucina == null) throw new IllegalArgumentException("Corso obbligatorio");
 	    this.corsoCucina = corsoCucina;
+	}
+
+	public List<Sessione> getSessioni() {
+		return sessioni;
+	}
+
+	public void setSessioni(List<Sessione> sessioni) {
+		this.sessioni = sessioni;
 	}
 
 	public String toStringIdSessione() {
