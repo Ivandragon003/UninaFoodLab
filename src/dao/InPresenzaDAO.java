@@ -118,8 +118,6 @@ public class InPresenzaDAO {
 
 	    InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
 
-	    // Non impostiamo l'ID nella classe
-
 	    String nomeCorso = rs.getString("nomeCorso");
 	    if (nomeCorso != null) {
 	        Frequenza freq = null;

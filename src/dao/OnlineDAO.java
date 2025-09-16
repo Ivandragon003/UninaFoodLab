@@ -96,25 +96,33 @@ public class OnlineDAO {
 	// Mapping
 	private Online mapResultSetToOnline(ResultSet rs) throws SQLException {
 
-		LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
-		LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
-		String piattaforma = rs.getString("piattaformastreaming");
+	    LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
+	    LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
+	    String piattaforma = rs.getString("piattaformastreaming");
 
-		Online sessione = new Online(inizio, fine, piattaforma);
-		int idSessione = rs.getInt("idsessione");
-		if (rs.getString("nomeCorso") != null) {
-			Frequenza freq = null;
-			try {
-				freq = Frequenza.valueOf(rs.getString("frequenzaCorso"));
-			} catch (IllegalArgumentException ignored) {
-			}
+	    Online sessione = new Online(inizio, fine, piattaforma);
 
-			CorsoCucina corso = new CorsoCucina(rs.getString("nomeCorso"), rs.getDouble("prezzo"),
-					rs.getString("argomento"), freq, rs.getInt("numeroPosti"), rs.getInt("numeroSessioni"));
-			sessione.setCorsoCucina(corso);
-		}
+	    String nomeCorso = rs.getString("nomeCorso");
+	    if (nomeCorso != null) {
+	        Frequenza freq = null;
+	        try {
+	            String freqStr = rs.getString("frequenzaCorso");
+	            if (freqStr != null) freq = Frequenza.valueOf(freqStr);
+	        } catch (IllegalArgumentException ignored) {}
 
-		return sessione;
+	        CorsoCucina corso = new CorsoCucina(
+	                nomeCorso,
+	                rs.getDouble("prezzo"),
+	                rs.getString("argomento"),
+	                freq,
+	                rs.getInt("numeroPostiCorso"),    // usa alias
+	                rs.getInt("numeroSessioniCorso")  // usa alias
+	        );
+	        sessione.setCorsoCucina(corso);
+	    }
+
+	    return sessione;
 	}
+
 
 }
