@@ -4,7 +4,6 @@ import model.Utente;
 import util.DBConnection;
 
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -121,7 +120,7 @@ public class UtenteDAO {
         }
     }
 
-    // Helper
+   
     private Utente mapResultSetToUtente(ResultSet rs) throws SQLException {
         Utente u = new Utente(
                 rs.getString("codFiscale"),
