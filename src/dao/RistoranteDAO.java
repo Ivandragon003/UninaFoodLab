@@ -74,7 +74,7 @@ public class RistoranteDAO {
         return list;
     }
 
-    // Ricerca per nome parziale (LIKE)
+    // Ricerca 
     public List<Ristorante> searchByNome(String partialNome) throws SQLException {
         List<Ristorante> list = new ArrayList<>();
         String sql = "SELECT * FROM ristorante WHERE nome ILIKE ?";

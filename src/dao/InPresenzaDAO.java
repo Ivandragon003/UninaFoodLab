@@ -107,35 +107,35 @@ public class InPresenzaDAO {
 		}
 	}
 
-	// Mapping ResultSet
+	// Mapping 
 	private InPresenza mapResultSetToInPresenza(ResultSet rs) throws SQLException {
-		LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
-		LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
-		String via = rs.getString("via");
-		String citta = rs.getString("citta");
-		int posti = rs.getInt("numeroposti");
-		int cap = rs.getInt("cap");
+	    LocalDateTime inizio = rs.getTimestamp("datainiziosessione").toLocalDateTime();
+	    LocalDateTime fine = rs.getTimestamp("datafinesessione").toLocalDateTime();
+	    String via = rs.getString("via");
+	    String citta = rs.getString("citta");
+	    int posti = rs.getInt("numeroposti");
+	    int cap = rs.getInt("cap");
 
-		InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
-		sessione.setIdSessione(rs.getInt("idsessione"));
+	    InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
 
-		// Costruzione corso se presente
-		String nomeCorso = rs.getString("nomeCorso");
-		if (nomeCorso != null) {
-			Frequenza freq = null;
-			try {
-				String freqStr = rs.getString("frequenzaCorso");
-				if (freqStr != null)
-					freq = Frequenza.valueOf(freqStr);
-			} catch (IllegalArgumentException ignored) {
-			}
+	    // Non impostiamo l'ID nella classe
 
-			CorsoCucina corso = new CorsoCucina(nomeCorso, rs.getDouble("prezzo"), rs.getString("argomento"), freq,
-					rs.getInt("postiCorso"), rs.getInt("sessioniCorso"));
-			sessione.setCorsoCucina(corso);
-		}
+	    String nomeCorso = rs.getString("nomeCorso");
+	    if (nomeCorso != null) {
+	        Frequenza freq = null;
+	        try {
+	            String freqStr = rs.getString("frequenzaCorso");
+	            if (freqStr != null)
+	                freq = Frequenza.valueOf(freqStr);
+	        } catch (IllegalArgumentException ignored) {
+	        }
 
-		return sessione;
+	        CorsoCucina corso = new CorsoCucina(nomeCorso, rs.getDouble("prezzo"), rs.getString("argomento"), freq,
+	                rs.getInt("postiCorso"), rs.getInt("sessioniCorso"));
+	        sessione.setCorsoCucina(corso);
+	    }
+
+	    return sessione;
 	}
 
 }

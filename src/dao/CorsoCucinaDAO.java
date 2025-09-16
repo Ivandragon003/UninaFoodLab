@@ -4,9 +4,7 @@ import model.CorsoCucina;
 import model.Frequenza;
 import util.DBConnection;
 
-import java.lang.reflect.Field;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,8 +15,7 @@ public class CorsoCucinaDAO {
 		String sql = "INSERT INTO corsocucina "
 				+ "(nomeCorso, argomento, frequenzaCorso, prezzo, numeroPosti, numeroSessioni, dataInizioCorso, dataFineCorso) "
 				+ "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?, ?)";
-		try (Connection conn = DBConnection.getConnection();
-				PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, corso.getNomeCorso());
 			ps.setString(2, corso.getArgomento());
@@ -30,16 +27,6 @@ public class CorsoCucinaDAO {
 			ps.setTimestamp(8, Timestamp.valueOf(corso.getDataFineCorso()));
 
 			ps.executeUpdate();
-
-			try (ResultSet rs = ps.getGeneratedKeys()) {
-				if (rs.next()) {
-					Field field = CorsoCucina.class.getDeclaredField("idCorso");
-					field.setAccessible(true);
-					field.setInt(corso, rs.getInt(1));
-				}
-			} catch (NoSuchFieldException | IllegalAccessException e) {
-				throw new RuntimeException("Errore impostando l'ID del corso", e);
-			}
 		}
 	}
 
@@ -114,22 +101,22 @@ public class CorsoCucinaDAO {
 	}
 
 	private CorsoCucina mapResultSetToCorso(ResultSet rs) throws SQLException {
-		CorsoCucina corso = new CorsoCucina(rs.getString("nomeCorso"), rs.getDouble("prezzo"),
-				rs.getString("argomento"), Frequenza.valueOf(rs.getString("frequenzaCorso")), rs.getInt("numeroPosti"),
-				rs.getInt("numeroSessioni"));
+	    CorsoCucina corso = new CorsoCucina(
+	        rs.getString("nomeCorso"),
+	        rs.getDouble("prezzo"),
+	        rs.getString("argomento"),
+	        Frequenza.valueOf(rs.getString("frequenzaCorso")),
+	        rs.getInt("numeroPosti"),    // senza alias
+	        rs.getInt("numeroSessioni")  // senza alias
+	    );
 
-		try {
-			Field field = CorsoCucina.class.getDeclaredField("idCorso");
-			field.setAccessible(true);
-			field.setInt(corso, rs.getInt("idCorsoCucina"));
-		} catch (NoSuchFieldException | IllegalAccessException e) {
-			throw new RuntimeException("Errore impostando l'ID del corso", e);
-		}
+	    Timestamp tsInizio = rs.getTimestamp("dataInizioCorso");
+	    Timestamp tsFine = rs.getTimestamp("dataFineCorso");
+	    if (tsInizio != null) corso.setDataInizioCorsoFromDB(tsInizio.toLocalDateTime());
+	    if (tsFine != null) corso.setDataFineCorsoFromDB(tsFine.toLocalDateTime());
 
-		corso.setDataInizioCorsoFromDB(rs.getTimestamp("dataInizioCorso").toLocalDateTime());
-		corso.setDataFineCorsoFromDB(rs.getTimestamp("dataFineCorso").toLocalDateTime());
-
-		return corso;
+	    return corso;
 	}
+
 
 }

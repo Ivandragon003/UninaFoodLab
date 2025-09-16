@@ -17,9 +17,6 @@ abstract public class Sessione {
 		return idSessione;
 	}
 
-	public void setIdSessione(int idSessione) {
-		this.idSessione = idSessione;
-	}
 
 	public LocalDateTime getDataInizioSessione() {
 		return dataInizioSessione;
