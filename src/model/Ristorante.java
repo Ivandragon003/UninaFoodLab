@@ -1,5 +1,8 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Ristorante {
 	private Integer idRistorante;
 	private String partitaIva;
@@ -7,10 +10,21 @@ public class Ristorante {
 	private String via;
 	private int stelleMichelin;
 
+	private List<Chef> chefList = new ArrayList<>();
+	private List<Ristorante> ristoranti = new ArrayList<>();
+
 	public Ristorante(String via, String partitaIva, String nome) throws IllegalArgumentException {
 		this.via = via;
 		setPartitaIva(partitaIva);
 		setNome(nome);
+	}
+
+	public List<Ristorante> getRistoranti() {
+		return ristoranti;
+	}
+
+	public List<Chef> getChef() {
+		return chefList;
 	}
 
 	public Integer getIdRistorante() {
@@ -63,4 +77,3 @@ public class Ristorante {
 		}
 	}
 }
-

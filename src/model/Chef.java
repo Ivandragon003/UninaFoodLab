@@ -1,4 +1,5 @@
 package model;
+
 import java.util.*;
 
 public class Chef extends Persona {
@@ -8,6 +9,7 @@ public class Chef extends Persona {
 	private String username;
 	private String password;
 	private List<CorsoCucina> corsi = new ArrayList<>();
+	private List<Ristorante> ristoranti = new ArrayList<>();
 
 	public Chef(String codFiscale, String nome, String cognome, boolean disponibilita, String username,
 			String password) {
@@ -19,6 +21,10 @@ public class Chef extends Persona {
 
 	public int getAnniEsperienza() {
 		return anniEsperienza;
+	}
+
+	public List<Ristorante> getRistoranti() {
+		return ristoranti;
 	}
 
 	public void setAnniEsperienza(int anniEsperienza) {
@@ -51,10 +57,6 @@ public class Chef extends Persona {
 		return corsi;
 	}
 
-	public void setCorsi(List<CorsoCucina> corsi) {
-		this.corsi = corsi;
-	}
-
 	public void setPassword(String password) {
 		if (password == null) {
 			throw new IllegalArgumentException("La password non può essere nulla.");
@@ -65,8 +67,6 @@ public class Chef extends Persona {
 		this.password = password;
 	}
 
-	
-	
 	public String toStringUsername() {
 		return "Username: " + username;
 	}
