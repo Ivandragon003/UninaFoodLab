@@ -1,56 +1,42 @@
 package service;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import model.Adesione;
-import model.InPresenza;
-import model.Utente;
 import dao.AdesioneDAO;
+import model.Adesione;
+import model.Utente;
+import model.InPresenza;
+
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public class GestioneAdesioni {
 
-	private AdesioneDAO adesioneDAO;
-
-	public GestioneAdesioni() {
-		this.adesioneDAO = new AdesioneDAO();
-	}
+	private final AdesioneDAO adesioneDAO;
 
 	public GestioneAdesioni(AdesioneDAO adesioneDAO) {
 		this.adesioneDAO = adesioneDAO;
 	}
 
-	public boolean inviaAdesione(InPresenza sessione, Utente utente, LocalDateTime dataAdesione) {
-		if (sessione == null || utente == null || dataAdesione == null) {
-			throw new IllegalArgumentException("Parametri non validi");
+	public void aggiungiAdesione(Utente utente, InPresenza sessione, LocalDateTime data) throws SQLException {
+		Adesione adesione = new Adesione(utente, sessione, data);
+
+		if (!utente.getAdesioniUtente().contains(adesione)) {
+			utente.getAdesioniUtente().add(adesione);
+			adesioneDAO.save(adesione);
+		} else {
+			throw new IllegalArgumentException("Adesione già esistente per questa sessione");
 		}
-		return adesioneDAO.inserisci(new Adesione(utente, sessione, dataAdesione));
 	}
 
-	public boolean ritiraAdesione(InPresenza sessione, Utente utente) {
-		if (sessione == null || utente == null) {
-			throw new IllegalArgumentException("Parametri non validi");
+	public void rimuoviAdesione(Utente utente, Adesione adesione) throws SQLException {
+		if (utente.getAdesioniUtente().remove(adesione)) {
+			adesioneDAO.delete(adesione.getUtente().getCodFiscale(), adesione.getSessione().getIdSessione());
+		} else {
+			throw new IllegalArgumentException("Adesione non trovata");
 		}
-		return adesioneDAO.ritira(sessione, utente);
 	}
 
-	public Set<Utente> getUtentiAdesione(InPresenza sessione) {
-		if (sessione == null) {
-			throw new IllegalArgumentException("Sessione nulla");
-		}
-		return adesioneDAO.trovaUtentiPerSessione(sessione);
-	}
-
-	public boolean esisteAdesione(InPresenza sessione, Utente utente) {
-		if (sessione == null || utente == null) {
-			throw new IllegalArgumentException("Parametri non validi");
-		}
-		return adesioneDAO.esiste(sessione, utente);
-	}
-
-	public int contaAdesioni(InPresenza sessione) {
-		if (sessione == null) {
-			throw new IllegalArgumentException("Sessione nulla");
-		}
-		return adesioneDAO.contaPerSessione(sessione);
+	public Set<Utente> getPartecipantiInPresenza(int idSessione) throws SQLException {
+		return adesioneDAO.getPartecipantiInPresenza(idSessione);
 	}
 }

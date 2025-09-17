@@ -48,6 +48,15 @@ public class UsaDAO {
             ps.executeUpdate();
         }
     }
+    
+    public void deleteByRicetta(int idRicetta) throws SQLException {
+        String sql = "DELETE FROM Usa WHERE idRicetta = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idRicetta);
+            ps.executeUpdate();
+        }
+    }
 
     // Lettura tutti
     public List<Usa> getAll() throws SQLException {

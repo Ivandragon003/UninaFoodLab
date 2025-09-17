@@ -1,23 +1,45 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public class Utente extends Persona {
-    private List<Adesione> adesioniUtente; 
+	private Set<Adesione> adesioniUtente;
+	private Set<Iscrizione> iscrizioni;
+	private Set<Sessione> sessioniSeguite;
 
-    public Utente(String codFiscale, String nome, String cognome) {
-        super(codFiscale, nome, cognome);
-        this.adesioniUtente = new ArrayList<>();
-    }
+	public Utente(String codFiscale, String nome, String cognome) {
+		super(codFiscale, nome, cognome);
+		this.adesioniUtente = new HashSet<>();
+		this.iscrizioni = new HashSet<>();
+		this.sessioniSeguite = new HashSet<>();
+	}
 
-    public List<Adesione> getAdesioniUtente() {
-        return adesioniUtente;
-    }
+	public Set<Adesione> getAdesioniUtente() {
+		return adesioniUtente;
+	}
 
-    public void aggiungiAdesione(Adesione adesione) {
-        if (!adesioniUtente.contains(adesione)) {
-            adesioniUtente.add(adesione);
-        }
-    }
+	public Set<Iscrizione> getIscrizioni() {
+		return iscrizioni;
+	}
+
+	public Set<Sessione> getSessioniSeguite() {
+		return sessioniSeguite;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof Utente))
+			return false;
+		Utente utente = (Utente) o;
+		return getCodFiscale().equals(utente.getCodFiscale());
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getCodFiscale());
+	}
 }

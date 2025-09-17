@@ -1,76 +1,81 @@
-package services;
-
 package service;
 
-import java.util.*;
+import dao.RicettaDAO;
+import dao.UsaDAO;
+import dao.CucinaDAO;
 
-public class Ricetta {
-	private int idRicetta;
-	private String nome;
-	private int tempoPreparazione;
-	private Map<Ingrediente, Double> ingredienti;
+import model.*;
 
-	public Ricetta(String nome, int tempoPreparazione) {
-		setNome(nome);
-		setTempoPreparazione(tempoPreparazione);
-		this.ingredienti = new HashMap<>();
-	}
+import java.sql.SQLException;
+import java.util.Map;
 
-	public int getIdRicetta() {
-		return idRicetta;
-	}
+public class GestioneRicette {
 
-	public void setIdRicetta(int idRicetta) {
-		if (idRicetta <= 0) {
-			throw new IllegalArgumentException("L'ID della ricetta deve essere maggiore di zero.");
-		}
-		this.idRicetta = idRicetta;
-	}
+    private final RicettaDAO ricettaDAO;
+    private final UsaDAO usaDAO;
+    private final CucinaDAO cucinaDAO;
 
-	public String getNome() {
-		return nome;
-	}
+    public GestioneRicette(RicettaDAO ricettaDAO, UsaDAO usaDAO, CucinaDAO cucinaDAO) {
+        this.ricettaDAO = ricettaDAO;
+        this.usaDAO = usaDAO;
+        this.cucinaDAO = cucinaDAO;
+    }
 
-	public void setNome(String nome) {
-		if (nome == null || nome.trim().isEmpty()) {
-			throw new IllegalArgumentException("Il nome della ricetta non può essere nullo o vuoto.");
-		}
-		this.nome = nome.trim();
-	}
+    // Gestione ricette
+    public void creaRicetta(Ricetta r) throws SQLException {
+        ricettaDAO.save(r);
+    }
 
-	public int getTempoPreparazione() {
-		return tempoPreparazione;
-	}
+    public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
+        ricettaDAO.update(id, r);
+    }
 
-	public void setTempoPreparazione(int tempoPreparazione) {
-		if (tempoPreparazione < 0) {
-			throw new IllegalArgumentException("Il tempo di preparazione non può essere negativo.");
-		}
-		this.tempoPreparazione = tempoPreparazione;
-	}
+    public void cancellaRicetta(int id) throws SQLException {
+        usaDAO.deleteByRicetta(id);  // rimuove tutte le associazioni ingredienti
+        cucinaDAO.deleteByRicetta(id); // rimuove tutte le associazioni sessioni
+        ricettaDAO.delete(id);
+    }
 
-	public Map<Ingrediente, Double> getIngredienti() {
-		return new HashMap<>(ingredienti);
-	}
+    // Gestione ingredienti
+    public void aggiungiIngredienteARicetta(Ricetta r, Ingrediente i, double quantita) throws SQLException {
+        if (!r.getIngredienti().containsKey(i)) {
+            r.getIngredienti().put(i, quantita);
+            usaDAO.save(new Usa(r, i, quantita));
+        } else {
+            throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
+        }
+    }
 
-	public void setIngredienti(Map<Ingrediente, Double> ingredienti) {
-		this.ingredienti = ingredienti != null ? new HashMap<>(ingredienti) : new HashMap<>();
-	}
+    public void rimuoviIngredienteDaRicetta(Ricetta r, Ingrediente i) throws SQLException {
+        if (r.getIngredienti().containsKey(i)) {
+            r.getIngredienti().remove(i);
+            usaDAO.delete(new Usa(r, i, 0));
+        } else {
+            throw new IllegalArgumentException("Ingrediente non presente nella ricetta");
+        }
+    }
 
-	public int getNumeroIngredienti() {
-		return ingredienti.size();
-	}
+    public Map<Ingrediente, Double> getIngredienti(Ricetta r) {
+        return r.getIngredienti();
+    }
 
-	public String toStringIdRicetta() {
-		return "ID Ricetta: " + idRicetta;
-	}
+    // Gestione sessioni
+    public void aggiungiSessioneARicetta(Ricetta r, Sessione s) throws SQLException {
+        if (!r.getSessioni().contains(s)) {
+            r.getSessioni().add(s);
+            cucinaDAO.save(r.getIdRicetta(), s.getIdSessione());
+        } else {
+            throw new IllegalArgumentException("Sessione già associata a questa ricetta");
+        }
+    }
 
-	public String toStringNome() {
-		return "Nome: " + nome;
-	}
+    public void rimuoviSessioneDaRicetta(Ricetta r, Sessione s) throws SQLException {
+        if (r.getSessioni().remove(s)) {
+            cucinaDAO.delete(r.getIdRicetta(), s.getIdSessione());
+        } else {
+            throw new IllegalArgumentException("Sessione non associata a questa ricetta");
+        }
+    }
 
-	public String toStringTempoPreparazione() {
-		return "Tempo Preparazione: " + tempoPreparazione + " minuti";
-	}
 
 }

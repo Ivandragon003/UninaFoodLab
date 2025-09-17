@@ -8,7 +8,7 @@ abstract public class Sessione {
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
 	private CorsoCucina corsoCucina;
-	
+	private Set<Adesione> adesioni = new HashSet<>();
 
 	public Sessione(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione) {
 		this.dataInizioSessione = dataInizioSessione;
@@ -19,6 +19,9 @@ abstract public class Sessione {
 		return idSessione;
 	}
 
+	public Set<Adesione> getAdesioni() {
+		return adesioni;
+	}
 
 	public LocalDateTime getDataInizioSessione() {
 		return dataInizioSessione;
@@ -37,15 +40,15 @@ abstract public class Sessione {
 	}
 
 	public CorsoCucina getCorsoCucina() {
-	    return corsoCucina;
+		return corsoCucina;
 	}
 
 	public void setCorsoCucina(CorsoCucina corsoCucina) {
-	    if (corsoCucina == null) throw new IllegalArgumentException("Corso obbligatorio");
-	    this.corsoCucina = corsoCucina;
+		if (corsoCucina == null)
+			throw new IllegalArgumentException("Corso obbligatorio");
+		this.corsoCucina = corsoCucina;
 	}
 
-	
 	public String toStringIdSessione() {
 		return "ID Sessione: " + idSessione;
 	}

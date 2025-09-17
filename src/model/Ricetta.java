@@ -7,6 +7,7 @@ public class Ricetta {
 	private String nome;
 	private int tempoPreparazione;
 	private Map<Ingrediente, Double> ingredienti;
+	private Set<Sessione> sessioni = new HashSet<>();
 
 	public Ricetta(String nome, int tempoPreparazione) {
 		setNome(nome);
@@ -18,6 +19,9 @@ public class Ricetta {
 		return idRicetta;
 	}
 
+	public Set<Sessione> getSessioni() {
+		return sessioni;
+	}
 
 	public String getNome() {
 		return nome;
