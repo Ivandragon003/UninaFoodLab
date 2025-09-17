@@ -116,18 +116,15 @@ public class LavoraDAO {
         return list;
     }
 
-    public void delete(Lavora l, int idRistoranteGenerato) throws SQLException {
-        if (l == null || l.getChef() == null) {
-            throw new IllegalArgumentException("Lavora o Chef null");
-        }
-        String sql = "DELETE FROM lavora WHERE codFiscale = ? AND idRistorante = ?";
+    public void deleteByRistorante(int idRistorante) throws SQLException {
+        String sql = "DELETE FROM lavora WHERE idRistorante = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, l.getChef().getCodFiscale());
-            ps.setInt(2, idRistoranteGenerato);
+            ps.setInt(1, idRistorante);
             ps.executeUpdate();
         }
     }
+
 
     public void delete(String codFiscale, int idRistorante) throws SQLException {
         String sql = "DELETE FROM lavora WHERE codFiscale = ? AND idRistorante = ?";
@@ -138,6 +135,8 @@ public class LavoraDAO {
             ps.executeUpdate();
         }
     }
+    
+
 
     // Metodo aggiuntivo per verificare se esiste una relazione
     public boolean exists(String codFiscale, int idRistorante) throws SQLException {

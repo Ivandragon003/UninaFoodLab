@@ -8,7 +8,7 @@ abstract public class Sessione {
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
 	private CorsoCucina corsoCucina;
-	private List<Sessione> sessioni;
+	
 
 	public Sessione(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione) {
 		this.dataInizioSessione = dataInizioSessione;
@@ -45,14 +45,7 @@ abstract public class Sessione {
 	    this.corsoCucina = corsoCucina;
 	}
 
-	public List<Sessione> getSessioni() {
-		return sessioni;
-	}
-
-	public void setSessioni(List<Sessione> sessioni) {
-		this.sessioni = sessioni;
-	}
-
+	
 	public String toStringIdSessione() {
 		return "ID Sessione: " + idSessione;
 	}
