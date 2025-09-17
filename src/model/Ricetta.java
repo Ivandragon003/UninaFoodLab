@@ -57,6 +57,21 @@ public class Ricetta {
 		return ingredienti.size();
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof Ricetta))
+			return false;
+		Ricetta ricetta = (Ricetta) o;
+		return idRicetta == ricetta.idRicetta;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(idRicetta);
+	}
+
 	public String toStringIdRicetta() {
 		return "ID Ricetta: " + idRicetta;
 	}
