@@ -1,35 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<!-- cartella dei sorgenti -->
 	<classpathentry kind="src" path="src"/>
-
-	<!-- JDK (Java 24 nel tuo caso) -->
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+	
+	<!-- JDK 21 specifico -->
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-24">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-
-	<!-- Librerie esterne -->
+	
+	<!-- JavaFX Core Libraries -->
 	<classpathentry kind="lib" path="lib/javafx/javafx.base.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.controls.jar"/>
-	<classpathentry kind="lib" path="lib/javafx/javafx.fxml.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.graphics.jar"/>
+	<classpathentry kind="lib" path="lib/javafx/javafx.fxml.jar"/>
+	
+	<!-- JavaFX Additional Libraries -->
 	<classpathentry kind="lib" path="lib/javafx/javafx.media.jar"/>
-	<classpathentry kind="lib" path="lib/javafx/javafx.properties.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.swing.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.web.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx-swt.jar"/>
-	<classpathentry kind="lib" path="lib/javafx/jdk.jsobject.jar"/>
+	
+	<!-- JavaFX Incubator (se necessari) -->
 	<classpathentry kind="lib" path="lib/javafx/jfx.incubator.input.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/jfx.incubator.richtext.jar"/>
-
-	<!-- Jakarta Persistence -->
-	<classpathentry kind="lib" path="lib/javafx/jakarta.persistence-api-3.1.0.jar"/>
-
-	<!-- PostgreSQL JDBC Driver -->
-	<classpathentry kind="lib" path="lib/javafx/postgresql-42.7.7.jar"/>
-
-	<!-- cartella di output -->
+	<classpathentry kind="lib" path="lib/javafx/jdk.jsobject.jar"/>
+	
+	<!-- External Dependencies -->
+	<classpathentry kind="lib" path="lib/jakarta.persistence-api-3.1.0.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-42.7.7.jar"/>
+	
 	<classpathentry kind="output" path="bin"/>
 </classpath>
