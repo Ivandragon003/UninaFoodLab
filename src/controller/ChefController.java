@@ -3,7 +3,6 @@ package controller;
 import model.Chef;
 import service.GestioneChef;
 import java.time.LocalDate;
-
 import java.sql.SQLException;
 
 public class ChefController {
@@ -60,6 +59,8 @@ public class ChefController {
 		Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
 		chef.setEmail(email);
 		chef.setDataNascita(dataNascita);
+
+
 		gestioneChef.creaChef(chef);
 
 		return chef;

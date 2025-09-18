@@ -1,4 +1,4 @@
-package gui;
+package Gui;
 
 import controller.ChefController;
 import javafx.application.Application;
@@ -11,10 +11,11 @@ import model.Chef;
 
 public class LoginChefGUI extends Application {
 
-    private ChefController chefController;
+    private static ChefController chefController;
 
-    public LoginChefGUI(ChefController controller) {
-        this.chefController = controller;
+    // Setter statico per passare il controller da Main
+    public static void setController(ChefController controller) {
+        chefController = controller;
     }
 
     @Override
@@ -70,7 +71,6 @@ public class LoginChefGUI extends Application {
 
         // Azione Registrazione
         registraButton.setOnAction(e -> {
-            // Puoi aprire un nuovo form o dialog per inserire dati e chiamare chefController.registraChef(...)
             messageLabel.setText("Funzione registrazione non ancora implementata");
         });
 
