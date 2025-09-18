@@ -4,6 +4,7 @@ import dao.IngredienteDAO;
 import dao.UsaDAO;
 import model.Ingrediente;
 import model.Usa;
+import model.Ricetta;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -18,7 +19,6 @@ public class GestioneIngrediente {
         this.usaDAO = usaDAO;
     }
 
-    // Crea un nuovo ingrediente e ritorna l'ID generato
     public int creaIngrediente(Ingrediente ingrediente) throws SQLException {
         if (ingrediente.getNome() == null || ingrediente.getNome().isEmpty()) {
             throw new IllegalArgumentException("Nome ingrediente non valido");
@@ -29,7 +29,6 @@ public class GestioneIngrediente {
         return ingredienteDAO.save(ingrediente);
     }
 
-    // Aggiorna un ingrediente esistente tramite ID
     public void aggiornaIngrediente(int id, Ingrediente ingrediente) throws SQLException {
         if (ingrediente.getNome() == null || ingrediente.getNome().isEmpty()) {
             throw new IllegalArgumentException("Nome ingrediente non valido");
@@ -40,42 +39,19 @@ public class GestioneIngrediente {
         ingredienteDAO.update(id, ingrediente);
     }
 
-    // Cancella un ingrediente tramite ID (elimina prima eventuali riferimenti in Usa)
-    public void cancellaIngrediente(int id) throws SQLException {
-        // usa l'istanza non statica
-        usaDAO.deleteByIngrediente(id); // rimuove tutte le righe Usa collegate
-        ingredienteDAO.delete(id);
+    public void cancellaIngrediente(Ingrediente ingrediente) throws SQLException {
+        usaDAO.deleteByIngrediente(ingrediente);
+
+        ingredienteDAO.delete(ingrediente.getIdIngrediente());
     }
 
-    // Restituisce l'ingrediente tramite ID
-    public Ingrediente getIngrediente(int id) throws SQLException {
-        return ingredienteDAO.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Ingrediente non trovato con id: " + id));
-    }
-
-    // Restituisce tutti gli ingredienti
-    public List<Ingrediente> getAllIngredienti() throws SQLException {
-        return ingredienteDAO.getAll();
-    }
-
-    // Ricerca per nome esatto
-    public List<Ingrediente> getIngredientiPerNome(String nome) throws SQLException {
-        return ingredienteDAO.getByNome(nome);
-    }
-
-    // Ricerca per tipo
-    public List<Ingrediente> getIngredientiPerTipo(String tipo) throws SQLException {
-        return ingredienteDAO.getByTipo(tipo);
-    }
-
-    // Aggiunge una relazione Usa tra ingrediente e ricetta
-    public void aggiungiIngredienteARicetta(int idIngrediente, int idRicetta, double quantita) throws SQLException {
-        Usa usa = new Usa(idIngrediente, idRicetta, quantita);
+    public void aggiungiIngredienteARicetta( Ricetta ricetta, Ingrediente ingrediente, double quantita) throws SQLException {
+        Usa usa = new Usa(ricetta, ingrediente, quantita);
         usaDAO.save(usa);
     }
 
-    // Rimuove un ingrediente da una ricetta
-    public void rimuoviIngredienteDaRicetta(int idIngrediente, int idRicetta) throws SQLException {
-        usaDAO.delete(idIngrediente, idRicetta);
+    public void rimuoviIngredienteDaRicetta( Ricetta ricetta, Ingrediente ingrediente, double quantita) throws SQLException {
+        Usa usa = new Usa(ricetta, ingrediente, quantita);
+        usaDAO.delete(usa);
     }
 }

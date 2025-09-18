@@ -57,6 +57,21 @@ public class UsaDAO {
             ps.executeUpdate();
         }
     }
+    
+ // UsaDAO.java
+    public void deleteByIngrediente(Ingrediente ingrediente) throws SQLException {
+        if (ingrediente == null) {
+            throw new IllegalArgumentException("Ingrediente non può essere null");
+        }
+
+        String sql = "DELETE FROM Usa WHERE idIngrediente = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, ingrediente.getIdIngrediente());
+            ps.executeUpdate();
+        }
+    }
+
 
     // Lettura tutti
     public List<Usa> getAll() throws SQLException {
