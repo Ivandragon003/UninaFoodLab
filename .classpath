@@ -2,14 +2,14 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	
-	<!-- JDK 21 specifico -->
+
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-24">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
 	
-	<!-- JavaFX Core Libraries -->
+
 	<classpathentry kind="lib" path="lib/javafx/javafx.base.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.controls.jar"/>
 	<classpathentry kind="lib" path="lib/javafx/javafx.graphics.jar"/>
