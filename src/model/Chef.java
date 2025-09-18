@@ -66,6 +66,10 @@ public class Chef extends Persona {
 		}
 		this.password = password;
 	}
+	
+	public String getPassword() {
+		return password;
+	}
 
 	public String toStringUsername() {
 		return "Username: " + username;
