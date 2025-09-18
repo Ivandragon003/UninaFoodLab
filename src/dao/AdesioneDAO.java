@@ -14,12 +14,12 @@ import java.util.Set;
 public class AdesioneDAO {
 
     // Inserimento di una adesione
-	public void insert(Adesione adesione, int idSessione) throws SQLException {
+	public void save(Adesione adesione) throws SQLException {
 	    String sql = "INSERT INTO adesione (idsessione, codfiscale, stato, dataadesione) VALUES (?, ?, ?, ?)";
 	    try (Connection conn = DBConnection.getConnection();
 	         PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setInt(1, idSessione);  // usa l'id passato
+	        ps.setInt(1, adesione.getSessione().getIdSessione()); 
 	        ps.setString(2, adesione.getUtente().getCodFiscale());
 	        ps.setBoolean(3, adesione.isStato());
 	        ps.setTimestamp(4, Timestamp.valueOf(adesione.getDataAdesione()));
@@ -29,17 +29,19 @@ public class AdesioneDAO {
 	}
 
 
-    // Eliminazione di una adesione per idSessione e codFiscale
-    public void delete(int idSessione, String codFiscale) throws SQLException {
-        String sql = "DELETE FROM adesione WHERE idsessione = ? AND codfiscale = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, idSessione);
-            ps.setString(2, codFiscale);
-            ps.executeUpdate();
-        }
-    }
+    // Eliminazione 
+	public void delete(Adesione adesione) throws SQLException {
+	    String sql = "DELETE FROM adesione WHERE idsessione = ? AND codfiscale = ?";
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, adesione.getSessione().getIdSessione());
+	        ps.setString(2, adesione.getUtente().getCodFiscale());
+	        ps.executeUpdate();
+	    }
+	}
+
 
     // Eliminazione di tutte le adesioni di una sessione
     public void deleteBySessione(int idSessione) throws SQLException {
@@ -53,13 +55,13 @@ public class AdesioneDAO {
     }
 
     // Verifica se esiste un'adesione
-    public boolean exists(int idSessione, String codFiscale) throws SQLException {
+    public boolean exists(Adesione adesione) throws SQLException {
         String sql = "SELECT 1 FROM adesione WHERE idsessione = ? AND codfiscale = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, idSessione);
-            ps.setString(2, codFiscale);
+            ps.setInt(1, adesione.getSessione().getIdSessione());
+            ps.setString(2, adesione.getUtente().getCodFiscale());
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
@@ -67,7 +69,7 @@ public class AdesioneDAO {
         }
     }
 
-    // Recupera tutte le adesioni come oggetti Adesione
+    // Recupera tutte le adesion
     public List<Adesione> getAll() throws SQLException {
         List<Adesione> list = new ArrayList<>();
         String sql = "SELECT a.codfiscale, a.idsessione, a.stato, a.dataadesione, " +
@@ -88,11 +90,11 @@ public class AdesioneDAO {
                 if (rs.getDate("datanascita") != null)
                     u.setDataNascita(rs.getDate("datanascita").toLocalDate());
 
-                InPresenza s = null; // Se vuoi, poi puoi collegare InPresenzaDAO
+                InPresenza s = null;
 
                 Adesione a = new Adesione(u, s, rs.getTimestamp("dataadesione").toLocalDateTime());
 
-                // Imposta lo stato se è false
+              
                 if (!rs.getBoolean("stato")) {
                     a.setStato(false);
                 }

@@ -1,5 +1,7 @@
 package service;
 
+import java.util.Set;
+
 import dao.AdesioneDAO;
 import model.Adesione;
 import model.Utente;
@@ -7,7 +9,6 @@ import model.InPresenza;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class GestioneAdesioni {
 
@@ -28,9 +29,9 @@ public class GestioneAdesioni {
 		}
 	}
 
-	public void rimuoviAdesione(Utente utente, Adesione adesione) throws SQLException {
-		if (utente.getAdesioniUtente().remove(adesione)) {
-			adesioneDAO.delete(adesione.getUtente().getCodFiscale(), adesione.getSessione().getIdSessione());
+	public void rimuoviAdesione(Adesione adesione) throws SQLException {
+		if (adesione.getUtente().getAdesioniUtente().remove(adesione)) {
+			adesioneDAO.delete(adesione);
 		} else {
 			throw new IllegalArgumentException("Adesione non trovata");
 		}
@@ -39,4 +40,5 @@ public class GestioneAdesioni {
 	public Set<Utente> getPartecipantiInPresenza(int idSessione) throws SQLException {
 		return adesioneDAO.getPartecipantiInPresenza(idSessione);
 	}
+
 }
