@@ -4,7 +4,7 @@ import dao.LavoraDAO;
 import dao.RistoranteDAO;
 import model.Chef;
 import model.Ristorante;
-import model.Lavora;
+
 
 import java.sql.SQLException;
 
@@ -39,21 +39,23 @@ public class GestioneRistorante {
 	}
 
 	public void aggiungiChefARistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (!ristorante.getChef().contains(chef)) {
-			ristorante.getChef().add(chef);
-			chef.getRistoranti().add(ristorante);
-			lavoraDAO.save(new Lavora(chef, ristorante));
-		} else {
-			throw new IllegalArgumentException("Chef già lavora in questo ristorante");
-		}
+	    if (!ristorante.getChef().contains(chef)) {
+	        ristorante.getChef().add(chef);
+	        chef.getRistoranti().add(ristorante);
+	        lavoraDAO.addChefToRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
+	    } else {
+	        throw new IllegalArgumentException("Chef già lavora in questo ristorante");
+	    }
 	}
 
 	public void rimuoviChefDaRistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (ristorante.getChef().remove(chef)) {
-			chef.getRistoranti().remove(ristorante);
-			lavoraDAO.delete(chef.getCodFiscale(), ristorante.getIdRistorante());
-		} else {
-			throw new IllegalArgumentException("Chef non lavora in questo ristorante");
-		}
+	    if (ristorante.getChef().contains(chef)) {
+	    	ristorante.getChef().remove(chef);
+	        chef.getRistoranti().remove(ristorante);
+	        lavoraDAO.removeChefFromRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
+	    } else {
+	        throw new IllegalArgumentException("Chef non lavora in questo ristorante");
+	    }
 	}
+
 }

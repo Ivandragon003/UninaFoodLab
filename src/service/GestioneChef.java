@@ -1,26 +1,27 @@
 package service;
 
-import dao.LavoraDAO;
-import dao.TieneDAO;
-import dao.ChefDAO;
-import model.Chef;
-import model.Ristorante;
-import model.Lavora;
-import model.CorsoCucina;
-import java.util.Optional;
 
 import java.sql.SQLException;
+import java.util.Optional;
+
+import dao.ChefDAO;
+import dao.TieneDAO;
+import dao.LavoraDAO;
+import model.Chef;
+import model.CorsoCucina;
+import model.Ristorante;
 
 public class GestioneChef {
 
-	private final LavoraDAO lavoraDAO;
+	;
 	private final TieneDAO tieneDAO;
 	private final ChefDAO chefDAO;
+	private final LavoraDAO lavoraDAO;
 
-	public GestioneChef(ChefDAO chefDAO, LavoraDAO lavoraDAO, TieneDAO tieneDAO) {
-		this.chefDAO = chefDAO;
-		this.lavoraDAO = lavoraDAO;
-		this.tieneDAO = tieneDAO;
+	public GestioneChef(ChefDAO chefDAO, TieneDAO tieneDAO, LavoraDAO lavoraDAO) {
+	    this.chefDAO = chefDAO;
+	    this.tieneDAO = tieneDAO;
+	    this.lavoraDAO = lavoraDAO;
 	}
 
 	public void creaChef(Chef chef) throws SQLException {
@@ -55,23 +56,28 @@ public class GestioneChef {
 	// Ristoranti
 
 	public void aggiungiRistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (!chef.getRistoranti().contains(ristorante)) {
-			chef.getRistoranti().add(ristorante);
-			ristorante.getChef().add(chef);
-			lavoraDAO.save(new Lavora(chef, ristorante));
-		} else {
-			throw new IllegalArgumentException("Ristorante già associato allo chef");
-		}
+	    if (!chef.getRistoranti().contains(ristorante)) {
+	        chef.getRistoranti().add(ristorante);
+	        ristorante.getChef().add(chef);
+
+	        // usa il DAO senza Lavora
+	        lavoraDAO.addChefToRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
+	    } else {
+	        throw new IllegalArgumentException("Ristorante già associato allo chef");
+	    }
 	}
 
 	public void rimuoviRistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (chef.getRistoranti().remove(ristorante)) {
-			ristorante.getChef().remove(chef);
-			lavoraDAO.delete(chef.getCodFiscale(), ristorante.getIdRistorante());
-		} else {
-			throw new IllegalArgumentException("Ristorante non associato allo chef");
-		}
+	    if (chef.getRistoranti().remove(ristorante)) {
+	        ristorante.getChef().remove(chef);
+
+	        // usa il DAO senza Lavora
+	        lavoraDAO.removeChefFromRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
+	    } else {
+	        throw new IllegalArgumentException("Ristorante non associato allo chef");
+	    }
 	}
+
 
 	// Corsi di cucina
 
