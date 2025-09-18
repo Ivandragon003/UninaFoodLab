@@ -6,7 +6,7 @@ import model.Iscrizione;
 import model.Utente;
 
 import java.sql.SQLException;
-import java.util.List;
+
 
 public class GestioneIscrizione {
 
@@ -37,7 +37,4 @@ public class GestioneIscrizione {
         }
     }
 
-    public List<Iscrizione> getIscrizioniUtente(Utente utente) throws SQLException {
-        return iscrizioneDAO.getIscrizioniByUtente(utente);
-    }
 }

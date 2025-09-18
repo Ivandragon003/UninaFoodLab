@@ -34,12 +34,13 @@ public class GestioneUtente {
 	}
 
 	public void rimuoviAdesione(Utente utente, Adesione adesione) throws SQLException {
-		if (utente.getAdesioniUtente().remove(adesione)) {
-			adesioneDAO.delete(adesione.getIdAdesione());
-		} else {
-			throw new IllegalArgumentException("Adesione non trovata per l'utente");
-		}
+	    if (utente.getAdesioniUtente().remove(adesione)) {
+	        adesioneDAO.delete(adesione);
+	    } else {
+	        throw new IllegalArgumentException("Adesione non trovata per l'utente");
+	    }
 	}
+
 
 	// Iscrizioni
 	public void aggiungiIscrizione(Utente utente, Iscrizione iscrizione) throws SQLException {
