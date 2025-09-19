@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.ChefController;
+import controller.CorsiController;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -8,14 +9,16 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import model.Chef;
+import service.GestioneCorsiCucina;
 
 public class LoginChefGUI extends Application {
 
     private static ChefController chefController;
+    private static GestioneCorsiCucina gestioneCorsi;
 
-    // Setter statico per passare il controller da Main
-    public static void setController(ChefController controller) {
+    public static void setController(ChefController controller, GestioneCorsiCucina corsiService) {
         chefController = controller;
+        gestioneCorsi = corsiService;
     }
 
     @Override
@@ -27,54 +30,75 @@ public class LoginChefGUI extends Application {
         grid.setVgap(10);
         grid.setHgap(10);
 
-        // Username
         Label userLabel = new Label("Username:");
         TextField usernameField = new TextField();
         grid.add(userLabel, 0, 0);
         grid.add(usernameField, 1, 0);
 
-        // Password
         Label passLabel = new Label("Password:");
         PasswordField passwordField = new PasswordField();
         grid.add(passLabel, 0, 1);
         grid.add(passwordField, 1, 1);
 
-        // Messaggio di errore / info
         Label messageLabel = new Label();
-        grid.add(messageLabel, 1, 4);
+        messageLabel.setStyle("-fx-text-fill: red;");
+        grid.add(messageLabel, 0, 4, 2, 1);
 
-        // Pulsanti
         Button loginButton = new Button("Login");
         Button resetButton = new Button("Reset");
-        Button registraButton = new Button("Registrazione");
-
+        Button registratiButton = new Button("Registrati");
+        
         grid.add(loginButton, 1, 2);
         grid.add(resetButton, 0, 2);
-        grid.add(registraButton, 1, 3);
+        grid.add(registratiButton, 1, 3);
 
-        // Azione Login
+        // LOGIN
         loginButton.setOnAction(e -> {
             try {
                 Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
                 messageLabel.setText("Login effettuato: " + chef.getUsername());
+                messageLabel.setStyle("-fx-text-fill: green;");
+
+                // Creo menu e passo lo chef loggato e il controller corsi
+                ChefMenuGUI menu = new ChefMenuGUI();
+                menu.setChefLoggato(chef);
+                CorsiController corsiController = new CorsiController(gestioneCorsi, chefController.getGestioneChef(), chef);
+                menu.setController(corsiController);
+
+                // Cambio scena nello stesso stage
+                menu.start(primaryStage);
+
             } catch (Exception ex) {
                 messageLabel.setText("Errore: " + ex.getMessage());
+                messageLabel.setStyle("-fx-text-fill: red;");
             }
         });
 
-        // Azione Reset
+        // RESET
         resetButton.setOnAction(e -> {
             usernameField.clear();
             passwordField.clear();
             messageLabel.setText("");
         });
-
-        // Azione Registrazione
-        registraButton.setOnAction(e -> {
-            messageLabel.setText("Funzione registrazione non ancora implementata");
+        
+        // REGISTRAZIONE
+        registratiButton.setOnAction(e -> {
+            try {
+                RegistrazioneChefGUI registrazioneGUI = new RegistrazioneChefGUI();
+                registrazioneGUI.setController(chefController);
+                
+                // Apro in una nuova finestra
+                Stage registrazioneStage = new Stage();
+                registrazioneStage.setTitle("Registrazione Chef");
+                registrazioneGUI.start(registrazioneStage);
+                
+            } catch (Exception ex) {
+                messageLabel.setText("Errore nell'aprire la registrazione: " + ex.getMessage());
+                messageLabel.setStyle("-fx-text-fill: red;");
+            }
         });
 
-        Scene scene = new Scene(grid, 400, 250);
+        Scene scene = new Scene(grid, 400, 300);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

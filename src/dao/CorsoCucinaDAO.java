@@ -12,23 +12,30 @@ import java.util.Optional;
 public class CorsoCucinaDAO {
 
 	public void save(CorsoCucina corso) throws SQLException {
-		String sql = "INSERT INTO corsocucina "
-				+ "(nomeCorso, argomento, frequenzaCorso, prezzo, numeroPosti, numeroSessioni, dataInizioCorso, dataFineCorso) "
-				+ "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?, ?)";
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+	    String sql = "INSERT INTO corsocucina "
+	            + "(nomeCorso, argomento, frequenzaCorso, prezzo, numeroPosti, numeroSessioni, dataInizioCorso, dataFineCorso) "
+	            + "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?, ?) RETURNING idCorsoCucina";
 
-			ps.setString(1, corso.getNomeCorso());
-			ps.setString(2, corso.getArgomento());
-			ps.setString(3, corso.getFrequenzaCorso().name());
-			ps.setBigDecimal(4, java.math.BigDecimal.valueOf(corso.getPrezzo()));
-			ps.setInt(5, corso.getNumeroPosti());
-			ps.setInt(6, corso.getNumeroSessioni());
-			ps.setTimestamp(7, Timestamp.valueOf(corso.getDataInizioCorso()));
-			ps.setTimestamp(8, Timestamp.valueOf(corso.getDataFineCorso()));
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
 
-			ps.executeUpdate();
-		}
+	        ps.setString(1, corso.getNomeCorso());
+	        ps.setString(2, corso.getArgomento());
+	        ps.setString(3, corso.getFrequenzaCorso().name());
+	        ps.setBigDecimal(4, java.math.BigDecimal.valueOf(corso.getPrezzo()));
+	        ps.setInt(5, corso.getNumeroPosti());
+	        ps.setInt(6, corso.getNumeroSessioni());
+	        ps.setTimestamp(7, Timestamp.valueOf(corso.getDataInizioCorso()));
+	        ps.setTimestamp(8, Timestamp.valueOf(corso.getDataFineCorso()));
+
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                corso.setIdCorso(rs.getInt(1)); 
+	            }
+	        }
+	    }
 	}
+
 
 	public void update(CorsoCucina corso) throws SQLException {
 		String sql = "UPDATE corsocucina SET nomeCorso = ?, argomento = ?, frequenzaCorso = ?::frequenza, "
@@ -99,6 +106,9 @@ public class CorsoCucinaDAO {
 		}
 		return list;
 	}
+	
+
+
 
 	private CorsoCucina mapResultSetToCorso(ResultSet rs) throws SQLException {
 	    CorsoCucina corso = new CorsoCucina(
@@ -106,9 +116,10 @@ public class CorsoCucinaDAO {
 	        rs.getDouble("prezzo"),
 	        rs.getString("argomento"),
 	        Frequenza.valueOf(rs.getString("frequenzaCorso")),
-	        rs.getInt("numeroPosti"),    // senza alias
-	        rs.getInt("numeroSessioni")  // senza alias
+	        rs.getInt("numeroPosti"),
+	        rs.getInt("numeroSessioni")
 	    );
+	    corso.setIdCorso(rs.getInt("idCorsoCucina"));
 
 	    Timestamp tsInizio = rs.getTimestamp("dataInizioCorso");
 	    Timestamp tsFine = rs.getTimestamp("dataFineCorso");
@@ -117,6 +128,7 @@ public class CorsoCucinaDAO {
 
 	    return corso;
 	}
+
 
 
 }

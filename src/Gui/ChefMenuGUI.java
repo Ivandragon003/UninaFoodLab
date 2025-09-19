@@ -1,73 +1,67 @@
 package Gui;
 
-import controller.ChefControllerInterface;
+import controller.CorsiController;
+import controller.VisualizzaCorsiController;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import model.Chef;
 
 public class ChefMenuGUI extends Application {
 
-    private static ChefControllerInterface chefController;
+    private Chef chefLoggato;
+    private CorsiController corsiController;
 
-    public static void setController(ChefControllerInterface controller) {
-        chefController = controller;
+    public void setChefLoggato(Chef chef) {
+        this.chefLoggato = chef;
+    }
+
+    public void setController(CorsiController controller) {
+        this.corsiController = controller;
     }
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Menu Chef");
+        if (chefLoggato == null || corsiController == null) {
+            throw new IllegalStateException("Chef e controller devono essere impostati prima di start().");
+        }
+
+        primaryStage.setTitle("Menu Chef: " + chefLoggato.getUsername());
 
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(20));
         grid.setVgap(10);
         grid.setHgap(10);
 
-        Label userLabel = new Label("Nuovo Username:");
-        TextField usernameField = new TextField();
-        grid.add(userLabel, 0, 0);
-        grid.add(usernameField, 1, 0);
+        Label label = new Label("Benvenuto, " + chefLoggato.getUsername());
+        grid.add(label, 0, 0, 2, 1);
 
-        Label passLabel = new Label("Nuova Password:");
-        PasswordField passwordField = new PasswordField();
-        grid.add(passLabel, 0, 1);
-        grid.add(passwordField, 1, 1);
+        Button visualizzaCorsiBtn = new Button("Visualizza corsi");
+        Button logoutButton = new Button("Logout");
+        grid.add(visualizzaCorsiBtn, 0, 1);
+        grid.add(logoutButton, 1, 1);
 
-        Label messageLabel = new Label();
-        grid.add(messageLabel, 0, 3, 2, 1);
-
-        Button aggiornaButton = new Button("Aggiorna credenziali");
-        aggiornaButton.setOnAction(e -> {
+        // APRI VISUALIZZA CORSI
+        visualizzaCorsiBtn.setOnAction(e -> {
             try {
-                chefController.aggiornaCredenziali(usernameField.getText(), passwordField.getText());
-                messageLabel.setText("Credenziali aggiornate con successo!");
+                VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
+                VisualizzaCorsiController visualizzaController =
+                        new VisualizzaCorsiController(corsiController.getGestioneCorsi(), chefLoggato);
+                corsiGUI.setControllers(corsiController, visualizzaController);
+                corsiGUI.start(new Stage()); // nuova finestra
             } catch (Exception ex) {
-                messageLabel.setText("Errore: " + ex.getMessage());
+                ex.printStackTrace();
             }
         });
-        grid.add(aggiornaButton, 0, 2);
 
-        Button eliminaButton = new Button("Elimina account");
-        eliminaButton.setOnAction(e -> {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Sei sicuro di voler eliminare il tuo account?", ButtonType.YES, ButtonType.NO);
-            alert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.YES) {
-                    try {
-                        chefController.eliminaAccount();
-                        messageLabel.setText("Account eliminato!");
-                        primaryStage.close();
-                    } catch (Exception ex) {
-                        messageLabel.setText("Errore: " + ex.getMessage());
-                    }
-                }
-            });
-        });
-        grid.add(eliminaButton, 1, 2);
+        // LOGOUT
+        logoutButton.setOnAction(e -> primaryStage.close());
 
-        Scene scene = new Scene(grid, 450, 200);
+        Scene scene = new Scene(grid, 400, 200);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

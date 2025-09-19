@@ -15,14 +15,13 @@ public class CorsoCucina {
 	private int numeroSessioni;
 	private LocalDateTime dataInizioCorso;
 	private LocalDateTime dataFineCorso;
-	
-	
+
 	private List<Chef> chef = new ArrayList<>();
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
 	private List<Sessione> sessioni = new ArrayList<>();
-	
-	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso,
-			int numeroPosti, int numeroSessioni) {
+
+	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso, int numeroPosti,
+			int numeroSessioni) {
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
 		setArgomento(argomento);
@@ -31,15 +30,18 @@ public class CorsoCucina {
 		setNumeroSessioni(numeroSessioni);
 	}
 
-	
 	public int getIdCorso() {
 		return idCorso;
+	}
+
+	public void setIdCorso(int idCorso) {
+		this.idCorso = idCorso;
 	}
 
 	public List<Sessione> getSessioni() {
 		return sessioni;
 	}
-	
+
 	public String getNomeCorso() {
 		return nomeCorso;
 	}
@@ -80,7 +82,6 @@ public class CorsoCucina {
 		this.frequenzaCorso = frequenzaCorso;
 	}
 
-
 	public int getNumeroPosti() {
 		return numeroPosti;
 	}
@@ -105,8 +106,6 @@ public class CorsoCucina {
 		return chef;
 	}
 
-	
-	
 	public LocalDateTime getDataInizioCorso() {
 		return dataInizioCorso;
 	}
@@ -118,7 +117,7 @@ public class CorsoCucina {
 			throw new IllegalArgumentException("Data inizio corso non può essere nel passato");
 		this.dataInizioCorso = dataInizioCorso;
 	}
-	
+
 	public LocalDateTime getDataFineCorso() {
 		return dataFineCorso;
 	}
@@ -130,27 +129,21 @@ public class CorsoCucina {
 			throw new IllegalArgumentException("Data fine corso deve essere dopo la data di inizio");
 		this.dataFineCorso = dataFineCorso;
 	}
-	
-	
+
 	public List<Iscrizione> getIscrizioni() {
 		return iscrizioni;
 	}
 
-	
-
 	// usato solo per il dao
 	public void setDataInizioCorsoFromDB(LocalDateTime dataInizioCorso) {
-	    this.dataInizioCorso = dataInizioCorso;
+		this.dataInizioCorso = dataInizioCorso;
 	}
 
-	// usato solo per i dao 
+	// usato solo per i dao
 	public void setDataFineCorsoFromDB(LocalDateTime dataFineCorso) {
-	    this.dataFineCorso = dataFineCorso;
+		this.dataFineCorso = dataFineCorso;
 	}
 
-
-	
-	
 	public String toStringIdCorso() {
 		return "ID Corso: " + idCorso;
 	}
