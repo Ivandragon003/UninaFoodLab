@@ -5,25 +5,29 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import model.Chef;
 
 public class RegistrazioneChefGUI {
 
-    private static ChefController chefController;
+    private final ChefController chefController;
 
-    public static void setController(ChefController controller) {
-        chefController = controller;
+    public RegistrazioneChefGUI(ChefController controller) {
+        this.chefController = controller;
     }
 
-    public void start(Stage primaryStage) {
-        primaryStage.setTitle("Registrazione Chef");
+    public void show(Stage ownerStage) {
+        Stage stage = new Stage();
+        stage.setTitle("Registrazione Chef");
+        stage.initOwner(ownerStage);
+        stage.initModality(Modality.APPLICATION_MODAL);
 
         GridPane grid = new GridPane();
         grid.setPadding(new Insets(20));
         grid.setVgap(10);
         grid.setHgap(10);
 
-        // Campi obbligatori
         TextField codFiscaleField = new TextField();
         TextField nomeField = new TextField();
         TextField cognomeField = new TextField();
@@ -32,22 +36,15 @@ public class RegistrazioneChefGUI {
         TextField usernameField = new TextField();
         PasswordField passwordField = new PasswordField();
         CheckBox disponibilitaBox = new CheckBox("Disponibile");
-        disponibilitaBox.setSelected(true); // Default true
+        disponibilitaBox.setSelected(true);
 
-        grid.add(new Label("Codice Fiscale*:"), 0, 0);
-        grid.add(codFiscaleField, 1, 0);
-        grid.add(new Label("Nome*:"), 0, 1);
-        grid.add(nomeField, 1, 1);
-        grid.add(new Label("Cognome*:"), 0, 2);
-        grid.add(cognomeField, 1, 2);
-        grid.add(new Label("Email*:"), 0, 3);
-        grid.add(emailField, 1, 3);
-        grid.add(new Label("Data Nascita*:"), 0, 4);
-        grid.add(dataNascitaPicker, 1, 4);
-        grid.add(new Label("Username*:"), 0, 5);
-        grid.add(usernameField, 1, 5);
-        grid.add(new Label("Password*:"), 0, 6);
-        grid.add(passwordField, 1, 6);
+        grid.add(new Label("Codice Fiscale*:"), 0, 0); grid.add(codFiscaleField, 1, 0);
+        grid.add(new Label("Nome*:"), 0, 1); grid.add(nomeField, 1, 1);
+        grid.add(new Label("Cognome*:"), 0, 2); grid.add(cognomeField, 1, 2);
+        grid.add(new Label("Email*:"), 0, 3); grid.add(emailField, 1, 3);
+        grid.add(new Label("Data Nascita*:"), 0, 4); grid.add(dataNascitaPicker, 1, 4);
+        grid.add(new Label("Username*:"), 0, 5); grid.add(usernameField, 1, 5);
+        grid.add(new Label("Password*:"), 0, 6); grid.add(passwordField, 1, 6);
         grid.add(disponibilitaBox, 1, 7);
 
         Label messageLabel = new Label();
@@ -58,39 +55,59 @@ public class RegistrazioneChefGUI {
         grid.add(registraButton, 1, 8);
         grid.add(annullaButton, 0, 8);
 
-        // Azione registrazione
+        // --- REGISTRAZIONE CORRETTA ---
         registraButton.setOnAction(e -> {
             try {
-                chefController.registraChef(
-                    codFiscaleField.getText(),
-                    nomeField.getText(),
-                    cognomeField.getText(),
-                    emailField.getText(),
+                // Validazione input vuoti
+                if (codFiscaleField.getText().trim().isEmpty() ||
+                    nomeField.getText().trim().isEmpty() ||
+                    cognomeField.getText().trim().isEmpty() ||
+                    emailField.getText().trim().isEmpty() ||
+                    dataNascitaPicker.getValue() == null ||
+                    usernameField.getText().trim().isEmpty() ||
+                    passwordField.getText().trim().isEmpty()) {
+                    
+                    messageLabel.setText("Tutti i campi con * sono obbligatori");
+                    messageLabel.setStyle("-fx-text-fill: red;");
+                    return;
+                }
+
+                // Tentativo di registrazione
+                Chef chefRegistrato = chefController.registraChef(
+                    codFiscaleField.getText().trim(),
+                    nomeField.getText().trim(),
+                    cognomeField.getText().trim(),
+                    emailField.getText().trim(),
                     dataNascitaPicker.getValue(),
                     disponibilitaBox.isSelected(),
-                    usernameField.getText(),
-                    passwordField.getText()
+                    usernameField.getText().trim(),
+                    passwordField.getText().trim()
                 );
-                messageLabel.setText("Registrazione avvenuta con successo!");
-                messageLabel.setStyle("-fx-text-fill: green;");
+
+                // Conferma registrazione
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Registrazione completata");
+                alert.setHeaderText(null);
+                alert.setContentText("Registrazione completata con successo!\nPuoi ora effettuare il login.");
+                alert.showAndWait();
+
+                // Chiudo la finestra di registrazione e torno al login
+                stage.close();
                 
-                // Chiudo la finestra dopo 2 secondi
-                Thread.sleep(2000);
-                primaryStage.close();
-                
+               
+
             } catch (Exception ex) {
                 messageLabel.setText("Errore: " + ex.getMessage());
                 messageLabel.setStyle("-fx-text-fill: red;");
+                System.err.println("Errore durante registrazione: " + ex.getMessage());
+                ex.printStackTrace(); // Per debug
             }
         });
-        
-        // Azione annulla
-        annullaButton.setOnAction(e -> {
-            primaryStage.close();
-        });
+
+        annullaButton.setOnAction(e -> stage.close());
 
         Scene scene = new Scene(grid, 450, 400);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        stage.setScene(scene);
+        stage.show();
     }
 }

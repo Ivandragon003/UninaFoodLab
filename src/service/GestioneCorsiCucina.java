@@ -46,6 +46,9 @@ public class GestioneCorsiCucina {
 	    );
 	}
 
+	
+
+	
 	// Chef
 	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
 		if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
@@ -63,6 +66,15 @@ public class GestioneCorsiCucina {
 		if (corso.getChef().remove(chef)) {
 			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
 		}
+	}
+	
+	
+	public List<CorsoCucina> getAllCorsi() throws SQLException {
+	    return corsoDAO.getAll();
+	}
+
+	public List<CorsoCucina> getCorsiByChef(Chef chef) throws SQLException {
+	    return tieneDAO.getCorsiByChef(chef.getCodFiscale());
 	}
 
 	// Iscrizioni

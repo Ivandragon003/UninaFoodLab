@@ -32,6 +32,7 @@ public class ChefController {
     }
 
     // REGISTRAZIONE 
+ // REGISTRAZIONE 
     public Chef registraChef(String codFiscale, String nome, String cognome, String email,
                              LocalDate dataNascita, boolean disponibilita, String username, String password)
                              throws SQLException {
@@ -51,10 +52,13 @@ public class ChefController {
         if (password == null || password.length() < 6)
             throw new IllegalArgumentException("Password obbligatoria (min 6 caratteri)");
 
+        // Controlli di unicità
         if (gestioneChef.getChefByUsername(username) != null)
             throw new IllegalArgumentException("Username già esistente");
         if (gestioneChef.existsByCodFiscale(codFiscale))
             throw new IllegalArgumentException("Codice fiscale già presente");
+        if (gestioneChef.existsByEmail(email))    // <--- aggiungi questo
+            throw new IllegalArgumentException("Email già presente");
 
         Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
         chef.setEmail(email);
@@ -64,6 +68,7 @@ public class ChefController {
 
         return chef;
     }
+
 
     //  AGGIORNAMENTO CREDENZIALI 
     public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) throws SQLException {

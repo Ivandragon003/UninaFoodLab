@@ -86,6 +86,19 @@ public class ChefDAO {
 		}
 		return list;
 	}
+	
+	public boolean existsByEmail(String email) throws SQLException {
+	    String sql = "SELECT 1 FROM chef WHERE email = ?";
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setString(1, email);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            return rs.next();
+	        }
+	    }
+	}
+
 
 	public void delete(String cf) throws SQLException {
 		String sql = "DELETE FROM chef WHERE codFiscale = ?";

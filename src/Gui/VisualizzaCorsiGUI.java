@@ -1,147 +1,165 @@
 package Gui;
 
-import controller.CorsiController;
+import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import model.CorsoCucina;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.util.LinkedHashSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class VisualizzaCorsiGUI {
 
-    private CorsiController corsiController;
     private VisualizzaCorsiController visualizzaController;
+    private GestioneCorsoController gestioneCorsoController;
 
-    public void setControllers(CorsiController corsiController, VisualizzaCorsiController visualizzaController) {
-        this.corsiController = corsiController;
+    public void setControllers(VisualizzaCorsiController visualizzaController,
+                               GestioneCorsoController gestioneCorsoController) {
         this.visualizzaController = visualizzaController;
+        this.gestioneCorsoController = gestioneCorsoController;
     }
 
     public void start(Stage stage) {
-        if (corsiController == null || visualizzaController == null) {
+        if (visualizzaController == null || gestioneCorsoController == null) {
             throw new IllegalStateException("Controllers non impostati!");
         }
 
-        stage.setTitle("Gestione Corsi");
+        stage.setTitle("Visualizza Corsi");
 
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setVgap(10);
-        grid.setHgap(10);
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(20));
 
-        Button tuttiBtn = new Button("Mostra tutti i corsi");
-        Button mieiBtn = new Button("Corsi miei");
-        Button cercaBtn = new Button("Cerca corso");
-        TextArea risultatiArea = new TextArea();
-        risultatiArea.setPrefHeight(300);
+        // Campi di ricerca live
+        Label nomeLabel = new Label("Cerca corso per nome:");
+        TextField nomeField = new TextField();
+        nomeField.setPromptText("Digita il nome del corso");
 
-        grid.add(tuttiBtn, 0, 0);
-        grid.add(mieiBtn, 1, 0);
-        grid.add(cercaBtn, 2, 0);
-        grid.add(risultatiArea, 0, 1, 3, 1);
+        Label argomentoLabel = new Label("Cerca per argomento:");
+        TextField argomentoField = new TextField();
+        argomentoField.setPromptText("Digita l'argomento");
 
-        // MOSTRA TUTTI I CORSI
-        tuttiBtn.setOnAction(e -> {
-            try {
-                List<CorsoCucina> corsi = visualizzaController.getTuttiICorsi();
-                risultatiArea.clear();
-                corsi.forEach(c -> risultatiArea.appendText(c.toStringNomeCorso() + " | ID: " + c.getIdCorso() + "\n"));
-            } catch (Exception ex) {
-                risultatiArea.setText("Errore nel caricamento dei corsi: " + ex.getMessage());
-            }
+        ListView<String> corsiList = new ListView<>();
+
+        // Pulsanti
+        Button mostraTuttiBtn = new Button("Mostra tutti i corsi");
+        Button mieiBtn = new Button("I miei corsi");
+        Button tornaIndietroBtn = new Button("Torna indietro");
+
+        root.getChildren().addAll(nomeLabel, nomeField, argomentoLabel, argomentoField,
+                mostraTuttiBtn, mieiBtn, corsiList, tornaIndietroBtn);
+
+        // Listener per ricerca live su nome e argomento
+        nomeField.setOnKeyReleased(e -> {
+            String nome = nomeField.getText().trim();
+            String argomento = argomentoField.getText().trim();
+            caricaCorsi(corsiList, true, false, nome, argomento);
         });
 
-        // MOSTRA CORSI MIEI
+        argomentoField.setOnKeyReleased(e -> {
+            String nome = nomeField.getText().trim();
+            String argomento = argomentoField.getText().trim();
+            caricaCorsi(corsiList, true, false, nome, argomento);
+        });
+
+        // Mostra tutti corsi + quelli dello chef loggato
+        mostraTuttiBtn.setOnAction(e -> {
+            nomeField.clear();
+            argomentoField.clear();
+            caricaCorsi(corsiList, true, true);
+        });
+
+        // Mostra solo corsi dello chef loggato
         mieiBtn.setOnAction(e -> {
-            try {
-                List<CorsoCucina> corsi = visualizzaController.getCorsiChefLoggato();
-                risultatiArea.clear();
-                corsi.forEach(c -> risultatiArea.appendText(c.toStringNomeCorso() + " | ID: " + c.getIdCorso() + "\n"));
-            } catch (Exception ex) {
-                risultatiArea.setText("Errore nel caricamento dei corsi: " + ex.getMessage());
-            }
+            nomeField.clear();
+            argomentoField.clear();
+            caricaCorsi(corsiList, false, true);
         });
 
-        // CERCA CORSO
-        cercaBtn.setOnAction(e -> {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setHeaderText("Cerca corso per nome, chef o categoria");
-            dialog.setContentText("Inserisci il testo da cercare:");
-            dialog.showAndWait().ifPresent(query -> {
+        // Apri dettagli corso
+        corsiList.setOnMouseClicked(event -> {
+            int idx = corsiList.getSelectionModel().getSelectedIndex();
+            if (idx >= 0) {
                 try {
-                    Set<CorsoCucina> risultati = new LinkedHashSet<>();
-                    risultati.addAll(visualizzaController.cercaPerNomeCorso(query));
-                    risultati.addAll(visualizzaController.cercaPerNomeChef(query));
-                    risultati.addAll(visualizzaController.cercaPerCategoria(query));
-
-                    risultatiArea.clear();
-                    if (risultati.isEmpty()) {
-                        risultatiArea.setText("Nessun corso trovato.");
-                    } else {
-                        risultati.forEach(c -> risultatiArea.appendText(c.toStringNomeCorso() + " | ID: " + c.getIdCorso() + "\n"));
-                    }
-                } catch (Exception ex) {
-                    risultatiArea.setText("Errore nella ricerca: " + ex.getMessage());
+                    List<CorsoCucina> corsi = visualizzaController.getTuttiICorsi();
+                    CorsoCucina corsoSelezionato = corsi.get(idx);
+                    DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
+                    dettagliGUI.setController(gestioneCorsoController, corsoSelezionato);
+                    dettagliGUI.start(new Stage());
+                } catch (SQLException ex) {
+                    showAlert("Errore", "Impossibile aprire dettagli: " + ex.getMessage());
                 }
-            });
-        });
-
-        // Selezione corso tramite ID
-        TextField idField = new TextField();
-        Button dettagliBtn = new Button("Mostra dettagli / Modifica / Elimina");
-        grid.add(new Label("ID corso:"), 0, 2);
-        grid.add(idField, 1, 2);
-        grid.add(dettagliBtn, 2, 2);
-
-        dettagliBtn.setOnAction(e -> {
-            try {
-                int id = Integer.parseInt(idField.getText());
-                CorsoCucina corso = corsiController.getCorsoById(id);
-                if (corso == null) {
-                    risultatiArea.setText("Corso non trovato.");
-                    return;
-                }
-
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Dettagli corso");
-                alert.setHeaderText(corso.toStringNomeCorso() + "\nCategoria: " + corso.getCategoria());
-                alert.setContentText("Vuoi modificare o eliminare questo corso?");
-
-                ButtonType modifica = new ButtonType("Modifica");
-                ButtonType elimina = new ButtonType("Elimina");
-                ButtonType cancella = new ButtonType("Annulla");
-                alert.getButtonTypes().setAll(modifica, elimina, cancella);
-
-                alert.showAndWait().ifPresent(response -> {
-                    try {
-                        if (response == modifica) {
-                            corso.setNomeCorso(corso.getNomeCorso() + " (modificato)");
-                            corsiController.modificaCorso(corso);
-                            risultatiArea.setText("Corso modificato con successo!");
-                        } else if (response == elimina) {
-                            corsiController.eliminaCorso(corso.getIdCorso());
-                            risultatiArea.setText("Corso eliminato con successo!");
-                        }
-                    } catch (Exception ex) {
-                        risultatiArea.setText("Errore: " + ex.getMessage());
-                    }
-                });
-
-            } catch (NumberFormatException ex) {
-                risultatiArea.setText("Inserisci un ID valido!");
-            } catch (Exception ex) {
-                risultatiArea.setText("Errore: " + ex.getMessage());
             }
         });
 
-        Scene scene = new Scene(grid, 700, 500);
-        stage.setScene(scene);
+        tornaIndietroBtn.setOnAction(e -> stage.close());
+
+        stage.setScene(new Scene(root, 700, 500));
         stage.show();
+    }
+
+
+    // Versione generica che gestisce ricerca/filtro
+    private void caricaCorsi(ListView<String> listView, boolean tutti, boolean soloChefLoggato) {
+        caricaCorsi(listView, tutti, soloChefLoggato, null, null);
+    }
+
+    private void caricaCorsi(ListView<String> listView, boolean tutti, boolean soloChefLoggato,
+                              String nomeCercato, String argomentoFiltro) {
+        try {
+            List<CorsoCucina> corsi = new ArrayList<>();
+            if (tutti) {
+                corsi.addAll(visualizzaController.getTuttiICorsi());
+            }
+            if (soloChefLoggato) {
+                List<CorsoCucina> miei = visualizzaController.getCorsiChefLoggato();
+                // evitiamo duplicati
+                for (CorsoCucina c : miei) {
+                    if (!corsi.contains(c)) corsi.add(0, c); // mettiamo all'inizio
+                }
+            }
+
+            // Applica ricerca
+            if (nomeCercato != null && !nomeCercato.isEmpty()) {
+                corsi.removeIf(c -> !c.getNomeCorso().toLowerCase().contains(nomeCercato.toLowerCase()));
+            }
+
+            // Applica filtro
+            if (argomentoFiltro != null && !argomentoFiltro.isEmpty()) {
+                corsi.removeIf(c -> !c.getArgomento().toLowerCase().contains(argomentoFiltro.toLowerCase()));
+            }
+
+            // Costruisci stringhe di visualizzazione
+            List<String> items = new ArrayList<>();
+            for (CorsoCucina c : corsi) {
+                String text = String.format(
+                        "%s | Partecipanti: %d | Argomento: %s | Prezzo: %.2f | Sessioni: %d | Ricette: %d",
+                        c.getNomeCorso(),
+                        c.getIscrizioni().size(),
+                        c.getArgomento(),
+                        c.getPrezzo(),
+                        c.getNumeroSessioni(),
+                        visualizzaController.getNumeroRicettePerCorso(c)
+                );
+                items.add(text);
+            }
+
+            listView.getItems().setAll(items);
+
+        } catch (SQLException ex) {
+            showAlert("Errore", "Impossibile caricare i corsi: " + ex.getMessage());
+        }
+    }
+
+    private void showAlert(String titolo, String messaggio) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titolo);
+        alert.setHeaderText(null);
+        alert.setContentText(messaggio);
+        alert.showAndWait();
     }
 }

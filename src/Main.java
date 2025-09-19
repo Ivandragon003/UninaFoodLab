@@ -1,48 +1,40 @@
+import Gui.LoginChefGUI;
 import controller.ChefController;
 import dao.*;
 import service.GestioneChef;
 import service.GestioneCorsiCucina;
 import javafx.application.Application;
-import Gui.LoginChefGUI;
 
 public class Main {
-
     public static void main(String[] args) {
         try {
-            // --- Creo tutti i DAO necessari ---
+            // --- Creazione DAO ---
             ChefDAO chefDAO = new ChefDAO();
-            LavoraDAO lavoraDAO = new LavoraDAO();
             TieneDAO tieneDAO = new TieneDAO();
-            CorsoCucinaDAO corsiDAO = new CorsoCucinaDAO();
+            LavoraDAO lavoraDAO = new LavoraDAO();
+            CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
             IscrizioneDAO iscrizioneDAO = new IscrizioneDAO();
             OnlineDAO onlineDAO = new OnlineDAO();
             InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
 
-            // --- Creo il servizio chef ---
-            GestioneChef gestioneChef = new GestioneChef(chefDAO, tieneDAO, lavoraDAO);
-
-            // --- Creo il servizio corsi con tutti i DAO richiesti ---
-            GestioneCorsiCucina gestioneCorsi = new GestioneCorsiCucina(
-                corsiDAO,      // CorsoCucinaDAO
-                chefDAO,       // ChefDAO  
-                tieneDAO,      // TieneDAO
-                iscrizioneDAO, // IscrizioneDAO
-                onlineDAO,     // OnlineDAO
-                inPresenzaDAO  // InPresenzaDAO
+            // --- Creazione service ---
+            GestioneChef chefService = new GestioneChef(chefDAO, tieneDAO, lavoraDAO);
+            GestioneCorsiCucina corsiService = new GestioneCorsiCucina(
+                    corsoDAO, chefDAO, tieneDAO, iscrizioneDAO, onlineDAO, inPresenzaDAO
             );
 
-            // --- Creo controller per login ---
-            ChefController chefController = new ChefController(gestioneChef);
+            // --- Creazione controller principale ---
+            ChefController chefController = new ChefController(chefService);
 
-            // --- Passo i controller alla GUI ---
-            LoginChefGUI.setController(chefController, gestioneCorsi);
+            // --- Passaggio controller e service statici alla GUI ---
+            LoginChefGUI.setController(chefController, corsiService);
 
-            // --- Lancio GUI login ---
+            // --- Avvio applicazione JavaFX ---
             Application.launch(LoginChefGUI.class, args);
 
         } catch (Exception e) {
-            System.err.println("Errore nel main: " + e.getMessage());
             e.printStackTrace();
+            System.exit(1);
         }
     }
 }
