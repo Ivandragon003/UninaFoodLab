@@ -31,7 +31,6 @@ public class ChefController {
         return chef;
     }
 
-    // REGISTRAZIONE 
  // REGISTRAZIONE 
     public Chef registraChef(String codFiscale, String nome, String cognome, String email,
                              LocalDate dataNascita, boolean disponibilita, String username, String password)
