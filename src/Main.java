@@ -4,10 +4,15 @@ import dao.*;
 import service.GestioneChef;
 import service.GestioneCorsiCucina;
 import javafx.application.Application;
+import util.DBConnection;     // la tua classe DBConnection
+import java.sql.Connection;    // interfaccia JDBC Connection
 
 public class Main {
     public static void main(String[] args) {
         try {
+            // --- DEBUG: apertura connessione di prova ---
+            Connection testConn = DBConnection.getConnection(); // logga chi la apre
+
             // --- Creazione DAO ---
             ChefDAO chefDAO = new ChefDAO();
             TieneDAO tieneDAO = new TieneDAO();
@@ -26,11 +31,14 @@ public class Main {
             // --- Creazione controller principale ---
             ChefController chefController = new ChefController(chefService);
 
-            // --- Passaggio controller e service statici alla GUI ---
+            // --- Passaggio controller e service alla GUI ---
             LoginChefGUI.setController(chefController, corsiService);
 
             // --- Avvio applicazione JavaFX ---
             Application.launch(LoginChefGUI.class, args);
+
+            // --- DEBUG: chiusura connessione di prova ---
+            // DBConnection.close(testConn); // commenta se vuoi lasciarla aperta per test
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -38,3 +46,4 @@ public class Main {
         }
     }
 }
+

@@ -18,6 +18,9 @@ public class VisualizzaCorsiGUI {
     private VisualizzaCorsiController visualizzaController;
     private GestioneCorsoController gestioneCorsoController;
 
+    // Cache dei corsi caricati dal DB
+    private List<CorsoCucina> cacheCorsi = new ArrayList<>();
+
     public void setControllers(VisualizzaCorsiController visualizzaController,
                                GestioneCorsoController gestioneCorsoController) {
         this.visualizzaController = visualizzaController;
@@ -34,7 +37,7 @@ public class VisualizzaCorsiGUI {
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
 
-        // Campi di ricerca live
+        // Campi di ricerca
         Label nomeLabel = new Label("Cerca corso per nome:");
         TextField nomeField = new TextField();
         nomeField.setPromptText("Digita il nome del corso");
@@ -53,106 +56,91 @@ public class VisualizzaCorsiGUI {
         root.getChildren().addAll(nomeLabel, nomeField, argomentoLabel, argomentoField,
                 mostraTuttiBtn, mieiBtn, corsiList, tornaIndietroBtn);
 
-        // Listener per ricerca live su nome e argomento
-        nomeField.setOnKeyReleased(e -> {
-            String nome = nomeField.getText().trim();
-            String argomento = argomentoField.getText().trim();
-            caricaCorsi(corsiList, true, false, nome, argomento);
-        });
+        // --- Caricamento iniziale della cache ---
+        try {
+            cacheCorsi.addAll(visualizzaController.getTuttiICorsi());
+        } catch (SQLException ex) {
+            showAlert("Errore", "Impossibile caricare i corsi: " + ex.getMessage());
+        }
 
-        argomentoField.setOnKeyReleased(e -> {
-            String nome = nomeField.getText().trim();
-            String argomento = argomentoField.getText().trim();
-            caricaCorsi(corsiList, true, false, nome, argomento);
-        });
+        // Listener ricerca live
+        nomeField.setOnKeyReleased(e -> aggiornaLista(corsiList, nomeField.getText(), argomentoField.getText(), false));
+        argomentoField.setOnKeyReleased(e -> aggiornaLista(corsiList, nomeField.getText(), argomentoField.getText(), false));
 
-        // Mostra tutti corsi + quelli dello chef loggato
+        // Mostra tutti corsi
         mostraTuttiBtn.setOnAction(e -> {
             nomeField.clear();
             argomentoField.clear();
-            caricaCorsi(corsiList, true, true);
+            aggiornaLista(corsiList, "", "", false);
         });
 
         // Mostra solo corsi dello chef loggato
         mieiBtn.setOnAction(e -> {
             nomeField.clear();
             argomentoField.clear();
-            caricaCorsi(corsiList, false, true);
+            aggiornaLista(corsiList, "", "", true);
         });
 
         // Apri dettagli corso
         corsiList.setOnMouseClicked(event -> {
             int idx = corsiList.getSelectionModel().getSelectedIndex();
             if (idx >= 0) {
-                try {
-                    List<CorsoCucina> corsi = visualizzaController.getTuttiICorsi();
-                    CorsoCucina corsoSelezionato = corsi.get(idx);
-                    DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
-                    dettagliGUI.setController(gestioneCorsoController, corsoSelezionato);
-                    dettagliGUI.start(new Stage());
-                } catch (SQLException ex) {
-                    showAlert("Errore", "Impossibile aprire dettagli: " + ex.getMessage());
-                }
+                CorsoCucina corsoSelezionato = (CorsoCucina) corsiList.getUserData(); // userData aggiornato nella lista
+                DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
+                dettagliGUI.setController(gestioneCorsoController, corsoSelezionato);
+                dettagliGUI.start(new Stage());
             }
         });
 
         tornaIndietroBtn.setOnAction(e -> stage.close());
 
+        // Popola lista iniziale
+        aggiornaLista(corsiList, "", "", false);
+
         stage.setScene(new Scene(root, 700, 500));
         stage.show();
     }
 
+    private void aggiornaLista(ListView<String> listView, String nomeFiltro, String argomentoFiltro, boolean soloChefLoggato) {
+        List<CorsoCucina> corsiFiltrati = new ArrayList<>(cacheCorsi);
 
-    // Versione generica che gestisce ricerca/filtro
-    private void caricaCorsi(ListView<String> listView, boolean tutti, boolean soloChefLoggato) {
-        caricaCorsi(listView, tutti, soloChefLoggato, null, null);
-    }
-
-    private void caricaCorsi(ListView<String> listView, boolean tutti, boolean soloChefLoggato,
-                              String nomeCercato, String argomentoFiltro) {
-        try {
-            List<CorsoCucina> corsi = new ArrayList<>();
-            if (tutti) {
-                corsi.addAll(visualizzaController.getTuttiICorsi());
-            }
-            if (soloChefLoggato) {
+        // Filtra per chef loggato
+        if (soloChefLoggato) {
+            try {
                 List<CorsoCucina> miei = visualizzaController.getCorsiChefLoggato();
-                // evitiamo duplicati
-                for (CorsoCucina c : miei) {
-                    if (!corsi.contains(c)) corsi.add(0, c); // mettiamo all'inizio
-                }
+                corsiFiltrati.retainAll(miei);
+            } catch (SQLException ex) {
+                showAlert("Errore", "Impossibile filtrare i corsi dello chef: " + ex.getMessage());
             }
-
-            // Applica ricerca
-            if (nomeCercato != null && !nomeCercato.isEmpty()) {
-                corsi.removeIf(c -> !c.getNomeCorso().toLowerCase().contains(nomeCercato.toLowerCase()));
-            }
-
-            // Applica filtro
-            if (argomentoFiltro != null && !argomentoFiltro.isEmpty()) {
-                corsi.removeIf(c -> !c.getArgomento().toLowerCase().contains(argomentoFiltro.toLowerCase()));
-            }
-
-            // Costruisci stringhe di visualizzazione
-            List<String> items = new ArrayList<>();
-            for (CorsoCucina c : corsi) {
-                String text = String.format(
-                        "%s | Partecipanti: %d | Argomento: %s | Prezzo: %.2f | Sessioni: %d | Ricette: %d",
-                        c.getNomeCorso(),
-                        c.getIscrizioni().size(),
-                        c.getArgomento(),
-                        c.getPrezzo(),
-                        c.getNumeroSessioni(),
-                        visualizzaController.getNumeroRicettePerCorso(c)
-                );
-                items.add(text);
-            }
-
-            listView.getItems().setAll(items);
-
-        } catch (SQLException ex) {
-            showAlert("Errore", "Impossibile caricare i corsi: " + ex.getMessage());
         }
+
+        // Filtro per nome
+        if (nomeFiltro != null && !nomeFiltro.isEmpty()) {
+            corsiFiltrati.removeIf(c -> !c.getNomeCorso().toLowerCase().contains(nomeFiltro.toLowerCase()));
+        }
+
+        // Filtro per argomento
+        if (argomentoFiltro != null && !argomentoFiltro.isEmpty()) {
+            corsiFiltrati.removeIf(c -> !c.getArgomento().toLowerCase().contains(argomentoFiltro.toLowerCase()));
+        }
+
+        // Costruisci lista di stringhe
+        List<String> items = new ArrayList<>();
+        for (CorsoCucina c : corsiFiltrati) {
+            String text = String.format(
+                    "%s | Partecipanti: %d | Argomento: %s | Prezzo: %.2f | Sessioni: %d",
+                    c.getNomeCorso(),
+                    c.getIscrizioni().size(),
+                    c.getArgomento(),
+                    c.getPrezzo(),
+                    c.getNumeroSessioni()
+            );
+            items.add(text);
+        }
+
+        listView.getItems().setAll(items);
+        // Salviamo i corsi filtrati come UserData
+        listView.setUserData(corsiFiltrati.isEmpty() ? null : corsiFiltrati.get(0));
     }
 
     private void showAlert(String titolo, String messaggio) {
