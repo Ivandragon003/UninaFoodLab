@@ -3,6 +3,8 @@ package Gui;
 import controller.CorsiController;
 import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
+import controller.VisualizzaRicetteController;
+import dao.RicettaDAO;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -13,6 +15,7 @@ import javafx.stage.Stage;
 import javafx.scene.control.ButtonType;
 
 import model.Chef;
+import service.GestioneRicette;
 
 public class ChefMenuGUI {
 
@@ -66,7 +69,23 @@ public class ChefMenuGUI {
 				ex.printStackTrace();
 			}
 		});
+		
+		Button visualizzaRicetteBtn = new Button("Visualizza Ricette");
+		grid.add(visualizzaRicetteBtn, 0, 2);
 
+		// APRI VISUALIZZA RICETTE
+		visualizzaRicetteBtn.setOnAction(e -> {
+		    try {
+		        VisualizzaRicetteController controller = new VisualizzaRicetteController(new GestioneRicette(new RicettaDAO()));
+		        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
+		        gui.setController(controller);
+		        gui.start(new Stage());
+		    } catch (Exception ex) {
+		        ex.printStackTrace();
+		    }
+		});
+
+		
 		// ELIMINA ACCOUNT
 		eliminaAccountBtn.setOnAction(e -> {
 			Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
