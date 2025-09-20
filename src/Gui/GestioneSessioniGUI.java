@@ -9,6 +9,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
 import java.time.LocalDateTime;
 
@@ -28,8 +29,11 @@ public class GestioneSessioniGUI {
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
 
-        ListView<String> sessioniList = new ListView<>();
+        ListView<Sessione> sessioniList = new ListView<>();
         aggiornaLista(sessioniList);
+
+        // Permette scroll verticale
+        VBox.setVgrow(sessioniList, Priority.ALWAYS);
 
         ComboBox<String> tipoSessioneCombo = new ComboBox<>();
         tipoSessioneCombo.getItems().addAll("Online", "In Presenza");
@@ -45,11 +49,11 @@ public class GestioneSessioniGUI {
         TextField capField = new TextField();
 
         Button aggiungiBtn = new Button("Aggiungi sessione");
-        Button eliminaBtn = new Button("Elimina sessione selezionata");
+        Button salvaBtn = new Button("Salva tutte le modifiche");
         Button chiudiBtn = new Button("Chiudi");
 
         root.getChildren().addAll(
-                sessioniList,
+                new Label("Elenco sessioni:"), sessioniList,
                 new Label("Tipo sessione:"), tipoSessioneCombo,
                 new Label("Data inizio:"), dataInizioPicker,
                 new Label("Data fine:"), dataFinePicker,
@@ -58,10 +62,9 @@ public class GestioneSessioniGUI {
                 new Label("Città (in presenza):"), cittaField,
                 new Label("Posti (in presenza):"), postiField,
                 new Label("CAP (in presenza):"), capField,
-                aggiungiBtn, eliminaBtn, chiudiBtn
+                aggiungiBtn, salvaBtn, chiudiBtn
         );
 
-        // Visibilità campi secondo tipo
         tipoSessioneCombo.setOnAction(e -> {
             boolean isOnline = tipoSessioneCombo.getValue().equals("Online");
             piattaformaField.setDisable(!isOnline);
@@ -72,12 +75,46 @@ public class GestioneSessioniGUI {
         });
         tipoSessioneCombo.fireEvent(new javafx.event.ActionEvent());
 
-        // --- Aggiungi sessione ---
+        // Clic su sessione per modificare i campi
+        sessioniList.setCellFactory(lv -> {
+            ListCell<Sessione> cell = new ListCell<>() {
+                @Override
+                protected void updateItem(Sessione item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        String tipo = item instanceof Online ? "Online" : "In Presenza";
+                        setText(tipo + " - " + item.getDataInizioSessione());
+                    }
+                }
+            };
+            cell.setOnMouseClicked(e -> {
+                if (!cell.isEmpty()) {
+                    Sessione s = cell.getItem();
+                    dataInizioPicker.setValue(s.getDataInizioSessione().toLocalDate());
+                    dataFinePicker.setValue(s.getDataFineSessione().toLocalDate());
+                    if (s instanceof Online) {
+                        tipoSessioneCombo.setValue("Online");
+                        piattaformaField.setText(((Online) s).getPiattaformaStreaming());
+                    } else {
+                        tipoSessioneCombo.setValue("In Presenza");
+                        InPresenza ip = (InPresenza) s;
+                        viaField.setText(ip.getVia());
+                        cittaField.setText(ip.getCitta());
+                        postiField.setText(String.valueOf(ip.getNumeroPosti()));
+                        capField.setText(String.valueOf(ip.getCAP()));
+                    }
+                    sessioniList.getSelectionModel().select(s);
+                }
+            });
+            return cell;
+        });
+
         aggiungiBtn.setOnAction(e -> {
             try {
                 LocalDateTime inizio = dataInizioPicker.getValue().atStartOfDay();
                 LocalDateTime fine = dataFinePicker.getValue().atStartOfDay();
-
                 Sessione nuova;
                 if (tipoSessioneCombo.getValue().equals("Online")) {
                     nuova = new Online(inizio, fine, piattaformaField.getText());
@@ -93,22 +130,40 @@ public class GestioneSessioniGUI {
                 }
                 controller.aggiungiSessione(nuova);
                 aggiornaLista(sessioniList);
-
-                // Aggiorna numero sessioni corso
                 corso.setNumeroSessioni(corso.getSessioni().size());
-
             } catch (Exception ex) {
                 showAlert("Errore", "Inserimento sessione fallito: " + ex.getMessage());
             }
         });
 
-        // --- Elimina sessione ---
-        eliminaBtn.setOnAction(e -> {
-            int idx = sessioniList.getSelectionModel().getSelectedIndex();
-            if (idx >= 0) {
-                controller.eliminaSessione(controller.getSessioni().get(idx));
-                aggiornaLista(sessioniList);
-                corso.setNumeroSessioni(corso.getSessioni().size());
+        salvaBtn.setOnAction(e -> {
+            Sessione selezionata = sessioniList.getSelectionModel().getSelectedItem();
+            if (selezionata != null) {
+                try {
+                    LocalDateTime inizio = dataInizioPicker.getValue().atStartOfDay();
+                    LocalDateTime fine = dataFinePicker.getValue().atStartOfDay();
+                    Sessione aggiornata;
+                    if (tipoSessioneCombo.getValue().equals("Online")) {
+                        aggiornata = new Online(inizio, fine, piattaformaField.getText());
+                    } else {
+                        aggiornata = new InPresenza(
+                                inizio,
+                                fine,
+                                viaField.getText(),
+                                cittaField.getText(),
+                                Integer.parseInt(postiField.getText()),
+                                Integer.parseInt(capField.getText())
+                        );
+                    }
+                    controller.eliminaSessione(selezionata);
+                    controller.aggiungiSessione(aggiornata);
+                    aggiornaLista(sessioniList);
+                    corso.setNumeroSessioni(corso.getSessioni().size());
+                } catch (Exception ex) {
+                    showAlert("Errore", "Salvataggio fallito: " + ex.getMessage());
+                }
+            } else {
+                showAlert("Attenzione", "Seleziona una sessione da modificare prima di salvare.");
             }
         });
 
@@ -118,13 +173,9 @@ public class GestioneSessioniGUI {
         stage.show();
     }
 
-    private void aggiornaLista(ListView<String> list) {
+    private void aggiornaLista(ListView<Sessione> list) {
         list.getItems().clear();
-        int i = 1;
-        for (Sessione s : controller.getSessioni()) {
-            String tipo = s instanceof Online ? "Online" : "In Presenza";
-            list.getItems().add("Sessione " + i++ + " (" + tipo + "): " + s.getDataInizioSessione());
-        }
+        list.getItems().addAll(controller.getSessioni());
     }
 
     private void showAlert(String titolo, String messaggio) {
