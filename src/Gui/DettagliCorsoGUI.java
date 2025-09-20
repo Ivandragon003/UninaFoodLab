@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
+
 
 public class DettagliCorsoGUI {
 
