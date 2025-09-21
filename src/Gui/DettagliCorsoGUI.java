@@ -56,7 +56,7 @@ public class DettagliCorsoGUI {
         dataInizioPicker.setDisable(true);
         dataFinePicker.setDisable(true);
 
-        // --- Pulsanti ---
+        // Pulsanti
         Button modificaBtn = new Button("Modifica corso");
         Button salvaBtn = new Button("Salva modifiche");
         Button visualizzaSessioniBtn = new Button("Visualizza sessioni");
@@ -79,7 +79,7 @@ public class DettagliCorsoGUI {
             pulsantiBox
         );
 
-        // --- Modifica corso ---
+        // Modifica corso
         modificaBtn.setOnAction(e -> {
             nomeField.setEditable(true);
             prezzoField.setEditable(true);
@@ -91,7 +91,7 @@ public class DettagliCorsoGUI {
             salvaBtn.setDisable(false);
         });
 
-        // --- Salva modifiche ---
+        // Salva modifiche
         salvaBtn.setOnAction(e -> {
             try {
                 double prezzo = Double.parseDouble(prezzoField.getText().replace(',', '.'));
@@ -133,12 +133,12 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // --- Visualizza sessioni ---
+        // Visualizza sessioni 
         visualizzaSessioniBtn.setOnAction(e -> {
             VisualizzaSessioniGUI visGui = new VisualizzaSessioniGUI();
             visGui.setCorso(corso);
             visGui.start(new Stage());
-            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
+            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni())); // aggiorna dopo chiusura
         });
 
         chiudiBtn.setOnAction(e -> stage.close());

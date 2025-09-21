@@ -6,7 +6,6 @@ import dao.OnlineDAO;
 import model.*;
 
 import java.sql.SQLException;
-import java.util.Set;
 
 public class GestioneSessioni {
 

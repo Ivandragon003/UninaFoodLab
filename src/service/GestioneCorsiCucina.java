@@ -122,5 +122,10 @@ public class GestioneCorsiCucina {
 	public List<CorsoCucina> getTuttiICorsi() throws SQLException {
 		return corsoDAO.getAll();
 	}
+	
+	public List<Sessione> getSessioniByCorso(CorsoCucina corso) throws SQLException {
+	    return corso.getSessioni();
+	}
+
 
 }

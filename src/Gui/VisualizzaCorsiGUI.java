@@ -56,7 +56,7 @@ public class VisualizzaCorsiGUI {
         root.getChildren().addAll(nomeLabel, nomeField, argomentoLabel, argomentoField,
                 mostraTuttiBtn, mieiBtn, corsiList, tornaIndietroBtn);
 
-        // --- Caricamento iniziale della cache ---
+        //  Caricamento iniziale della cache
         try {
             cacheCorsi.addAll(visualizzaController.getTuttiICorsi());
         } catch (SQLException ex) {
