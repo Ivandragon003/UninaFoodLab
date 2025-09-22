@@ -69,6 +69,7 @@ public class ChefDAO {
 			ps.setString(1, username);
 
 			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
 					return Optional.of(mapResultSetToChef(rs));
 				}
 			}
