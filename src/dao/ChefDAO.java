@@ -63,14 +63,17 @@ public class ChefDAO {
 
 	public Optional<Chef> findByUsername(String username) throws SQLException {
 		String sql = "SELECT * FROM chef WHERE username = ?";
+
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, username);
+
 			try (ResultSet rs = ps.executeQuery()) {
-				if (rs.next())
 					return Optional.of(mapResultSetToChef(rs));
+				}
 			}
 		}
+
 		return Optional.empty();
 	}
 
@@ -86,19 +89,17 @@ public class ChefDAO {
 		}
 		return list;
 	}
-	
+
 	public boolean existsByEmail(String email) throws SQLException {
-	    String sql = "SELECT 1 FROM chef WHERE email = ?";
-	    try (Connection conn = DBConnection.getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
+		String sql = "SELECT 1 FROM chef WHERE email = ?";
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
-	        ps.setString(1, email);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            return rs.next();
-	        }
-	    }
+			ps.setString(1, email);
+			try (ResultSet rs = ps.executeQuery()) {
+				return rs.next();
+			}
+		}
 	}
-
 
 	public void delete(String cf) throws SQLException {
 		String sql = "DELETE FROM chef WHERE codFiscale = ?";

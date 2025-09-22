@@ -123,6 +123,7 @@ public class GestioneCorsiCucina {
 	}
 
 	public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
+
 		CorsoCucina corso = corsoDAO.findById(idCorso).orElseThrow(() -> new SQLException("Corso non trovato"));
 
 		List<Sessione> sessioni = new ArrayList<>();
@@ -134,7 +135,7 @@ public class GestioneCorsiCucina {
 				.filter(i -> i.getCorso().getIdCorso() == idCorso).toList();
 		corso.setIscrizioni(iscrizioni);
 
-		corso.setChef(tieneDAO.getChefByCorso(corso.getIdCorso()));
+		corso.setChef(tieneDAO.getChefByCorso(idCorso));
 
 		return corso;
 	}
