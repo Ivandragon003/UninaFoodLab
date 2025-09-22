@@ -243,8 +243,7 @@ public class CreaCorsoGUI {
                 prezzo,
                 argomentoField.getText().trim(),
                 frequenzaBox.getValue(),
-                Integer.parseInt(postiField.getText().trim()),
-                Integer.parseInt(numSessioniField.getText().trim())
+                Integer.parseInt(postiField.getText().trim())
         );
         if (dataInizioPicker.getValue() != null)
             corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());

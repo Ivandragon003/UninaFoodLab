@@ -30,7 +30,6 @@ public class IscrizioneDAO {
 				ps.setNull(3, Types.INTEGER);
 			}
 			ps.setBoolean(4, iscrizione.isStato());
-
 			ps.executeUpdate();
 		}
 	}
@@ -55,64 +54,21 @@ public class IscrizioneDAO {
 		}
 	}
 
-	public List<Iscrizione> getAll() throws SQLException {
+	public List<Iscrizione> getAllFull() throws SQLException {
 		List<Iscrizione> list = new ArrayList<>();
 		String sql = "SELECT codFiscale, idCorsoCucina, votiAvuti, stato FROM iscritto";
 
-		try (Connection conn = DBConnection.getConnection();
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(sql)) {
-
-			while (rs.next()) {
-				String cf = rs.getString("codFiscale");
-				int idCorso = rs.getInt("idCorsoCucina");
-				Integer voti = rs.getInt("votiAvuti");
-				if (rs.wasNull())
-					voti = null;
-				boolean stato = rs.getBoolean("stato");
-
-				Utente u = new Utente(cf, "placeholderNome", "placeholderCognome");
-				CorsoCucina c = new CorsoCucina("placeholderCorso", 0, "placeholderCat", null, 0, 0);
-
-				Iscrizione i = new Iscrizione(u, c, stato);
-				i.setVotiAvuti(voti);
-
-				list.add(i);
-			}
-		}
-
-		return list;
-	}
-
-	public List<Iscrizione> getAllFull() throws SQLException {
-		List<Iscrizione> list = new ArrayList<>();
-		String sql = "SELECT i.codFiscale, u.nome AS u_nome, u.cognome AS u_cognome, u.email, u.dataNascita, "
-				+ "i.idCorsoCucina, c.nomeCorso, c.prezzo, c.categoria, c.frequenzaCorso, c.numeroPosti, "
-				+ "c.numeroSessioni, i.votiAvuti, i.stato " + "FROM iscritto i "
-				+ "JOIN utente u ON i.codFiscale = u.codFiscale "
-				+ "JOIN corsocucina c ON i.idCorsoCucina = c.idCorsoCucina";
+		// Creo istanze dei DAO una sola volta
+		UtenteDAO utenteDAO = new UtenteDAO();
+		CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
 
 		try (Connection conn = DBConnection.getConnection();
 				Statement stmt = conn.createStatement();
 				ResultSet rs = stmt.executeQuery(sql)) {
 
 			while (rs.next()) {
-				Utente u = new Utente(rs.getString("codFiscale"), rs.getString("u_nome"), rs.getString("u_cognome"));
-				u.setEmail(rs.getString("email"));
-				Date data = rs.getDate("dataNascita");
-				if (data != null)
-					u.setDataNascita(data.toLocalDate());
-
-				CorsoCucina c = new CorsoCucina(rs.getString("nomeCorso"), rs.getDouble("prezzo"),
-						rs.getString("categoria"), null, rs.getInt("numeroPosti"), rs.getInt("numeroSessioni"));
-
-				Iscrizione i = new Iscrizione(u, c, rs.getBoolean("stato"));
-				Integer voti = rs.getInt("votiAvuti");
-				if (rs.wasNull())
-					voti = null;
-				i.setVotiAvuti(voti);
-
-				list.add(i);
+				// Uso il metodo helper per il mapping
+				list.add(mapResultSetToIscrizione(rs, utenteDAO, corsoDAO));
 			}
 		}
 
@@ -135,4 +91,22 @@ public class IscrizioneDAO {
 		return iscrittiAttivi;
 	}
 
+	// Metodo helper per mappare il ResultSet in Iscrizione
+	private Iscrizione mapResultSetToIscrizione(ResultSet rs, UtenteDAO utenteDAO, CorsoCucinaDAO corsoDAO)
+			throws SQLException {
+		String codFiscale = rs.getString("codFiscale");
+		int idCorso = rs.getInt("idCorsoCucina");
+
+		Utente u = utenteDAO.findByCodFiscale(codFiscale)
+				.orElseThrow(() -> new SQLException("Utente non trovato: " + codFiscale));
+		CorsoCucina c = corsoDAO.findById(idCorso).orElseThrow(() -> new SQLException("Corso non trovato: " + idCorso));
+
+		Iscrizione i = new Iscrizione(u, c, rs.getBoolean("stato"));
+		Integer voti = rs.getInt("votiAvuti");
+		if (rs.wasNull())
+			voti = null;
+		i.setVotiAvuti(voti);
+
+		return i;
+	}
 }

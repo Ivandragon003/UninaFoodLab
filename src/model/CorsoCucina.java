@@ -20,14 +20,24 @@ public class CorsoCucina {
 	private List<Iscrizione> iscrizioni = new ArrayList<>();
 	private List<Sessione> sessioni = new ArrayList<>();
 
-	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso, int numeroPosti,
-			int numeroSessioni) {
+	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso, int numeroPosti) {
 		setNomeCorso(nomeCorso);
 		setPrezzo(prezzo);
 		setArgomento(argomento);
 		setFrequenzaCorso(frequenzaCorso);
 		setNumeroPosti(numeroPosti);
-		setNumeroSessioni(numeroSessioni);
+	}
+
+	public void setChef(List<Chef> chef) {
+		this.chef = chef;
+	}
+
+	public void setSessioni(List<Sessione> sessioni) {
+		this.sessioni = sessioni;
+	}
+
+	public void setIscrizioni(List<Iscrizione> iscrizioni) {
+		this.iscrizioni = iscrizioni;
 	}
 
 	public int getIdCorso() {

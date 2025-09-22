@@ -20,8 +20,8 @@ public class GestioneSessioniGUI {
     private VisualizzaSessioniGUI parentGUI;
     private Stage primaryStage;
     
-    private Sessione sessione; // Per modifica
-    private boolean modalitaAggiunta = false; // Per distinguere aggiungi/modifica
+    private Sessione sessione; 
+    private boolean modalitaAggiunta = false; 
     
     // Elementi form
     private ComboBox<String> tipoCombo;

@@ -15,6 +15,10 @@ abstract public class Sessione {
 		this.dataFineSessione = dataFineSessione;
 	}
 
+	public void setIdSessione(int idSessione) {
+		this.idSessione = idSessione;
+	}
+
 	public int getIdSessione() {
 		return idSessione;
 	}

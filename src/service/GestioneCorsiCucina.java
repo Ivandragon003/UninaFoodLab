@@ -1,11 +1,11 @@
 package service;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.sql.SQLException;
 import dao.*;
 import model.*;
-
-import java.sql.SQLException;
-import java.util.Set;
 
 public class GestioneCorsiCucina {
 
@@ -39,16 +39,12 @@ public class GestioneCorsiCucina {
 		tieneDAO.deleteByCorso(idCorso);
 		corsoDAO.delete(idCorso);
 	}
-	
+
 	public CorsoCucina getCorsoById(int idCorso) throws SQLException {
-	    return corsoDAO.findById(idCorso).orElseThrow(
-	        () -> new IllegalArgumentException("Corso con ID " + idCorso + " non trovato")
-	    );
+		return corsoDAO.findById(idCorso)
+				.orElseThrow(() -> new IllegalArgumentException("Corso con ID " + idCorso + " non trovato"));
 	}
 
-	
-
-	
 	// Chef
 	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
 		if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
@@ -67,14 +63,13 @@ public class GestioneCorsiCucina {
 			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
 		}
 	}
-	
-	
+
 	public List<CorsoCucina> getAllCorsi() throws SQLException {
-	    return corsoDAO.getAll();
+		return corsoDAO.getAll();
 	}
 
 	public List<CorsoCucina> getCorsiByChef(Chef chef) throws SQLException {
-	    return tieneDAO.getCorsiByChef(chef.getCodFiscale());
+		return tieneDAO.getCorsiByChef(chef.getCodFiscale());
 	}
 
 	// Iscrizioni
@@ -122,10 +117,44 @@ public class GestioneCorsiCucina {
 	public List<CorsoCucina> getTuttiICorsi() throws SQLException {
 		return corsoDAO.getAll();
 	}
-	
+
 	public List<Sessione> getSessioniByCorso(CorsoCucina corso) throws SQLException {
-	    return corso.getSessioni();
+		return corso.getSessioni();
 	}
 
+	public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
+		CorsoCucina corso = corsoDAO.findById(idCorso).orElseThrow(() -> new SQLException("Corso non trovato"));
 
+		List<Sessione> sessioni = new ArrayList<>();
+		sessioni.addAll(onlineDAO.getByCorso(idCorso));
+		sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
+		corso.setSessioni(sessioni);
+
+		List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
+				.filter(i -> i.getCorso().getIdCorso() == idCorso).toList();
+		corso.setIscrizioni(iscrizioni);
+
+		corso.setChef(tieneDAO.getChefByCorso(corso.getIdCorso()));
+
+		return corso;
+	}
+
+	public List<CorsoCucina> getTuttiICorsiCompleti() throws SQLException {
+		List<CorsoCucina> corsiCompleti = new ArrayList<>();
+		for (CorsoCucina corso : corsoDAO.getAll()) {
+			List<Sessione> sessioni = new ArrayList<>();
+			sessioni.addAll(onlineDAO.getByCorso(corso.getIdCorso()));
+			sessioni.addAll(inPresenzaDAO.getByCorso(corso.getIdCorso()));
+			corso.setSessioni(sessioni);
+
+			List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
+					.filter(i -> i.getCorso().getIdCorso() == corso.getIdCorso()).toList();
+			corso.setIscrizioni(iscrizioni);
+
+			corso.setChef(tieneDAO.getChefByCorso(corso.getIdCorso()));
+
+			corsiCompleti.add(corso);
+		}
+		return corsiCompleti;
+	}
 }
