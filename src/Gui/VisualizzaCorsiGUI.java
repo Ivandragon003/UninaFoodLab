@@ -69,7 +69,7 @@ public class VisualizzaCorsiGUI {
         sessioniCol.setCellValueFactory(c -> new SimpleIntegerProperty(
                 c.getValue().getSessioni() != null ? c.getValue().getSessioni().size() : 0
         ).asObject());
-
+        
         table.getColumns().addAll(idCol, nomeCol, iscrittiCol, argomentoCol, prezzoCol, sessioniCol);
         table.setItems(corsiData);
 
