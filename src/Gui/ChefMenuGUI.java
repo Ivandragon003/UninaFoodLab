@@ -1,7 +1,7 @@
 package Gui;
 
-import controller.GestioneCorsoController;
 import controller.CorsiController;
+import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import controller.VisualizzaRicetteController;
 import dao.RicettaDAO;
@@ -28,6 +28,7 @@ public class ChefMenuGUI {
     private CorsiController corsiController;
     private double xOffset = 0;
     private double yOffset = 0;
+    private StackPane menuRoot; // Riferimento al root del menu per il torna indietro
 
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
@@ -45,58 +46,65 @@ public class ChefMenuGUI {
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle("Menu Chef - " + chefLoggato.getUsername());
 
-        StackPane root = new StackPane();
-        root.setPrefSize(500, 700);
+        menuRoot = new StackPane(); // Salva il riferimento
+        menuRoot.setPrefSize(500, 700);
 
-        createBackground(root);
+        // Sfondo gradiente come LoginGUI
+        createBackground(menuRoot);
 
+        // Card centrale come LoginGUI
         VBox card = new VBox(25);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(40));
         card.setMaxWidth(380);
-        card.setStyle("-fx-background-color: rgba(20,30,50,0.85);"
-                + "-fx-background-radius: 20;"
-                + "-fx-border-color: rgba(255,255,255,0.15);"
-                + "-fx-border-radius: 20;"
-                + "-fx-border-width: 1;");
+        card.setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 20;" +
+                "-fx-border-radius: 20;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 2;");
 
         DropShadow shadow = new DropShadow();
-        shadow.setRadius(15);
-        shadow.setColor(Color.web("#000000", 0.4));
-        shadow.setOffsetY(5);
+        shadow.setRadius(10);
+        shadow.setColor(Color.web("#000000", 0.2));
+        shadow.setOffsetY(3);
         card.setEffect(shadow);
 
+        // Benvenuto
         Label welcomeLabel = new Label("Benvenuto, " + chefLoggato.getUsername());
         welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
-        welcomeLabel.setTextFill(Color.web("#A0CFFF"));
+        welcomeLabel.setTextFill(Color.web("#FF6600"));
 
+        // Pulsanti interni
         VBox buttonContainer = new VBox(15);
         buttonContainer.setAlignment(Pos.CENTER);
 
-        Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#4D79FF", "#5C8DFF");
-        Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#4D79FF", "#5C8DFF");
-        Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF4C4C", "#FF6B6B");
-        Button logoutButton = createStylishButton("Logout", "#50E3C2", "#64F0C8");
+        Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#FF6600", "#FF8533");
+        Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#FF6600", "#FF8533");
+        Button gestisciRicetteBtn = createStylishButton("Gestisci Ricette", "#FF6600", "#FF8533");
+        Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF6600", "#FF8533");
+        Button logoutButton = createStylishButton("Logout", "#FFCC99", "#FFD9B3");
 
-        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, eliminaAccountBtn, logoutButton);
+        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, gestisciRicetteBtn, eliminaAccountBtn, logoutButton);
 
         card.getChildren().addAll(welcomeLabel, buttonContainer);
-        root.getChildren().add(card);
+        menuRoot.getChildren().add(card);
 
-        Button closeButton = createModernCloseButton(stage);
-        root.getChildren().add(closeButton);
-        StackPane.setAlignment(closeButton, Pos.TOP_RIGHT);
-        StackPane.setMargin(closeButton, new Insets(15));
+        // Pulsanti finestra in alto a destra
+        HBox windowButtons = createWindowButtons(stage);
+        menuRoot.getChildren().add(windowButtons);
+        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+        StackPane.setMargin(windowButtons, new Insets(10));
 
-        makeDraggable(root, stage);
+        makeDraggable(menuRoot, stage);
 
-        // Eventi
+        // Eventi pulsanti
         visualizzaCorsiBtn.setOnAction(e -> apriVisualizzaCorsi(stage));
         visualizzaRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
+        gestisciRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
         eliminaAccountBtn.setOnAction(e -> eliminaAccount(stage));
         logoutButton.setOnAction(e -> stage.close());
 
-        Scene scene = new Scene(root);
+        Scene scene = new Scene(menuRoot);
         scene.setFill(Color.TRANSPARENT);
         stage.setScene(scene);
         stage.show();
@@ -104,8 +112,8 @@ public class ChefMenuGUI {
 
     private void createBackground(StackPane root) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#141E30")),
-                new Stop(1, Color.web("#243B55")));
+                new Stop(0, Color.web("#FF9966")),
+                new Stop(1, Color.web("#FFCC99")));
         Region background = new Region();
         background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
         background.setPrefSize(500, 700);
@@ -114,9 +122,9 @@ public class ChefMenuGUI {
 
     private Button createStylishButton(String text, String baseColor, String hoverColor) {
         Button button = new Button(text);
-        button.setPrefSize(130, 45);
+        button.setPrefSize(150, 45);
         button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        button.setTextFill(Color.WHITE);
+        button.setTextFill(Color.web("#4B2E2E"));
         button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
         DropShadow shadow = new DropShadow();
         shadow.setRadius(5);
@@ -128,16 +136,28 @@ public class ChefMenuGUI {
         return button;
     }
 
-    private Button createModernCloseButton(Stage stage) {
+    private HBox createWindowButtons(Stage stage) {
         Button closeButton = new Button("✕");
-        closeButton.setPrefSize(35, 35);
-        closeButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        closeButton.setTextFill(Color.WHITE);
-        closeButton.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 20; -fx-cursor: hand;");
-        closeButton.setOnMouseEntered(e -> closeButton.setStyle("-fx-background-color: red; -fx-background-radius: 20; -fx-cursor: hand;"));
-        closeButton.setOnMouseExited(e -> closeButton.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-background-radius: 20; -fx-cursor: hand;"));
+        Button minimizeButton = new Button("_");
+        Button maximizeButton = new Button("□");
+
+        Button[] buttons = {minimizeButton, maximizeButton, closeButton};
+        for (Button btn : buttons) {
+            btn.setPrefSize(35, 35);
+            btn.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+            btn.setTextFill(Color.WHITE);
+            btn.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20; -fx-cursor: hand;");
+            btn.setFocusTraversable(false);
+        }
+
         closeButton.setOnAction(e -> stage.close());
-        return closeButton;
+        minimizeButton.setOnAction(e -> stage.setIconified(true));
+        maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+
+        HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
+        box.setAlignment(Pos.TOP_RIGHT);
+        box.setPickOnBounds(false);
+        return box;
     }
 
     private void apriVisualizzaCorsi(Stage stage) {
@@ -147,21 +167,30 @@ public class ChefMenuGUI {
             GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
                     corsiController.getGestioneCorsi(), corsiController.getChefService());
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
-            corsiGUI.setControllers(visualizzaController, gestioneCorsoController);
-            corsiGUI.start(new Stage());
-            stage.close();
+            
+            // Passa il riferimento al menu root per il torna indietro
+            corsiGUI.setControllers(visualizzaController, gestioneCorsoController, menuRoot);
+            
+            VBox nuovoRoot = corsiGUI.getRoot();
+            stage.getScene().setRoot(nuovoRoot);
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-
+    
     private void apriVisualizzaRicette(Stage stage) {
         try {
             VisualizzaRicetteController controller = new VisualizzaRicetteController(new GestioneRicette(new RicettaDAO()));
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            gui.setController(controller);
-            gui.start(new Stage());
-            stage.close();
+            
+            // Passa il riferimento al menu root per il torna indietro
+            gui.setController(controller, menuRoot);
+            gui.start(); // Chiama start() per inizializzare la GUI
+           
+            VBox nuovoRoot = gui.getRoot();
+            stage.getScene().setRoot(nuovoRoot);
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
