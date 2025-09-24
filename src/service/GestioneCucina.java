@@ -5,7 +5,6 @@ import model.Ricetta;
 import model.Sessione;
 
 import java.sql.SQLException;
-import java.util.List;
 
 public class GestioneCucina {
 
@@ -34,7 +33,7 @@ public class GestioneCucina {
 		}
 	}
 
-	public List<Ricetta> getRicettePerSessione(int idSessione) throws SQLException {
-		return cucinaDAO.getRicettePerSessione(idSessione);
-	}
+
+	
+	
 }

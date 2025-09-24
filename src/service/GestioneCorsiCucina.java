@@ -158,4 +158,8 @@ public class GestioneCorsiCucina {
 		}
 		return corsiCompleti;
 	}
+	
+	public List<CorsoCucina> getCorsiLeggeri() throws SQLException {
+	    return corsoDAO.getAll();
+	}
 }

@@ -28,7 +28,7 @@ public class ChefMenuGUI {
     private CorsiController corsiController;
     private double xOffset = 0;
     private double yOffset = 0;
-    private StackPane menuRoot; // Riferimento al root del menu per il torna indietro
+    private StackPane menuRoot;
 
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
@@ -36,6 +36,10 @@ public class ChefMenuGUI {
 
     public void setController(CorsiController controller) {
         this.corsiController = controller;
+    }
+    
+    public StackPane getRoot() {
+        return menuRoot;
     }
 
     public void start(Stage stage) {
@@ -49,10 +53,8 @@ public class ChefMenuGUI {
         menuRoot = new StackPane(); // Salva il riferimento
         menuRoot.setPrefSize(500, 700);
 
-        // Sfondo gradiente come LoginGUI
         createBackground(menuRoot);
 
-        // Card centrale come LoginGUI
         VBox card = new VBox(25);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(40));
@@ -69,27 +71,22 @@ public class ChefMenuGUI {
         shadow.setOffsetY(3);
         card.setEffect(shadow);
 
-        // Benvenuto
         Label welcomeLabel = new Label("Benvenuto, " + chefLoggato.getUsername());
         welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
         welcomeLabel.setTextFill(Color.web("#FF6600"));
 
-        // Pulsanti interni
         VBox buttonContainer = new VBox(15);
         buttonContainer.setAlignment(Pos.CENTER);
 
         Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#FF6600", "#FF8533");
         Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#FF6600", "#FF8533");
-        Button gestisciRicetteBtn = createStylishButton("Gestisci Ricette", "#FF6600", "#FF8533");
         Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF6600", "#FF8533");
         Button logoutButton = createStylishButton("Logout", "#FFCC99", "#FFD9B3");
 
-        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, gestisciRicetteBtn, eliminaAccountBtn, logoutButton);
-
+        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, eliminaAccountBtn, logoutButton);
         card.getChildren().addAll(welcomeLabel, buttonContainer);
         menuRoot.getChildren().add(card);
 
-        // Pulsanti finestra in alto a destra
         HBox windowButtons = createWindowButtons(stage);
         menuRoot.getChildren().add(windowButtons);
         StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
@@ -100,7 +97,6 @@ public class ChefMenuGUI {
         // Eventi pulsanti
         visualizzaCorsiBtn.setOnAction(e -> apriVisualizzaCorsi(stage));
         visualizzaRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
-        gestisciRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
         eliminaAccountBtn.setOnAction(e -> eliminaAccount(stage));
         logoutButton.setOnAction(e -> stage.close());
 
@@ -167,28 +163,28 @@ public class ChefMenuGUI {
             GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
                     corsiController.getGestioneCorsi(), corsiController.getChefService());
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
-            
-            // Passa il riferimento al menu root per il torna indietro
+
             corsiGUI.setControllers(visualizzaController, gestioneCorsoController, menuRoot);
-            
-            VBox nuovoRoot = corsiGUI.getRoot();
+
+            // Ora StackPane coerente
+            StackPane nuovoRoot = corsiGUI.getRoot();
             stage.getScene().setRoot(nuovoRoot);
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-    
+
     private void apriVisualizzaRicette(Stage stage) {
         try {
             VisualizzaRicetteController controller = new VisualizzaRicetteController(new GestioneRicette(new RicettaDAO()));
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            
-            // Passa il riferimento al menu root per il torna indietro
+
+            // Passa root menu chef
             gui.setController(controller, menuRoot);
-            gui.start(); // Chiama start() per inizializzare la GUI
-           
-            VBox nuovoRoot = gui.getRoot();
+
+            // StackPane coerente anche qui
+            StackPane nuovoRoot = gui.getRoot();
             stage.getScene().setRoot(nuovoRoot);
 
         } catch (Exception ex) {

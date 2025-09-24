@@ -23,32 +23,33 @@ import java.util.List;
 public class VisualizzaRicetteGUI {
 
     private VisualizzaRicetteController controller;
-    private Pane menuRoot; // Pane del menu principale
+    private StackPane menuRoot; // Pane del menu principale
     private ObservableList<Ricetta> ricetteData = FXCollections.observableArrayList();
-    private VBox root;
+    private StackPane root;
 
-    public void setController(VisualizzaRicetteController controller, Pane menuRoot) {
+    public void setController(VisualizzaRicetteController controller, StackPane menuRoot) {
         this.controller = controller;
         this.menuRoot = menuRoot;
     }
 
-    public VBox getRoot() {
+    public StackPane getRoot() {
         return root;
     }
 
     public void start() {
-        if (controller == null) {
-            throw new IllegalStateException("Controller non impostato!");
-        }
+        if (controller == null) throw new IllegalStateException("Controller non impostato!");
 
-        root = new VBox();
+        root = new StackPane();
         root.setPrefSize(600, 450);
 
         // Sfondo gradiente
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FF9966")),
                 new Stop(1, Color.web("#FFCC99")));
-        root.setBackground(new Background(new BackgroundFill(gradient, null, null)));
+        Region background = new Region();
+        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
+        background.setPrefSize(600, 450);
+        root.getChildren().add(background);
 
         // Card centrale
         VBox card = new VBox(15);
@@ -74,10 +75,13 @@ public class VisualizzaRicetteGUI {
 
         ListView<String> ricetteList = new ListView<>();
 
+        HBox buttons = new HBox(10);
+        buttons.setAlignment(Pos.CENTER);
         Button mostraTutteBtn = createStylishButton("Mostra tutte le ricette", "#FF6600", "#FF8533");
         Button tornaIndietroBtn = createStylishButton("Torna indietro", "#FFCC99", "#FFD9B3");
+        buttons.getChildren().addAll(mostraTutteBtn, tornaIndietroBtn);
 
-        card.getChildren().addAll(title, nomeField, tempoField, mostraTutteBtn, ricetteList, tornaIndietroBtn);
+        card.getChildren().addAll(title, nomeField, tempoField, ricetteList, buttons);
         root.getChildren().add(card);
 
         caricaRicette(ricetteList);
