@@ -145,4 +145,36 @@ public class CorsoCucinaDAO {
 
 		return corso;
 	}
+	
+	public List<CorsoCucina> getCorsiLeggeri() throws SQLException {
+	    List<CorsoCucina> corsi = new ArrayList<>();
+	    String sql = "SELECT idCorsoCucina, nomeCorso, prezzo, argomento, frequenzaCorso, numeroPosti, " +
+	                 "dataInizioCorso, dataFineCorso FROM corsocucina ORDER BY nomeCorso";
+
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+
+	        while (rs.next()) {
+	            CorsoCucina corso = new CorsoCucina(
+	                rs.getString("nomeCorso"),
+	                rs.getDouble("prezzo"),
+	                rs.getString("argomento"),
+	                rs.getString("frequenzaCorso") != null ? Frequenza.valueOf(rs.getString("frequenzaCorso")) : null,
+	                rs.getInt("numeroPosti")
+	            );
+
+	            corso.setIdCorso(rs.getInt("idCorsoCucina"));
+	            
+	            Timestamp tsInizio = rs.getTimestamp("dataInizioCorso");
+	            Timestamp tsFine = rs.getTimestamp("dataFineCorso");
+	            if (tsInizio != null) corso.setDataInizioCorsoFromDB(tsInizio.toLocalDateTime());
+	            if (tsFine != null) corso.setDataFineCorsoFromDB(tsFine.toLocalDateTime());
+
+	            corsi.add(corso);
+	        }
+	    }
+	    return corsi;
+	}
+
 }

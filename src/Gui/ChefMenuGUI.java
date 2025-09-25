@@ -6,117 +6,222 @@ import controller.VisualizzaCorsiController;
 import controller.VisualizzaRicetteController;
 import dao.RicettaDAO;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.GridPane;
+import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.Stop;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.scene.control.ButtonType;
-
+import javafx.stage.StageStyle;
 import model.Chef;
 import service.GestioneRicette;
 
 public class ChefMenuGUI {
 
-	private Chef chefLoggato;
-	private CorsiController corsiController;
+    private Chef chefLoggato;
+    private CorsiController corsiController;
+    private double xOffset = 0;
+    private double yOffset = 0;
+    private StackPane menuRoot;
 
-	public void setChefLoggato(Chef chef) {
-		this.chefLoggato = chef;
-	}
+    public void setChefLoggato(Chef chef) {
+        this.chefLoggato = chef;
+    }
 
-	public void setController(CorsiController controller) {
-		this.corsiController = controller;
-	}
+    public void setController(CorsiController controller) {
+        this.corsiController = controller;
+    }
+    
+    public StackPane getRoot() {
+        return menuRoot;
+    }
 
-	public void start(Stage stage) {
-		if (chefLoggato == null || corsiController == null) {
-			throw new IllegalStateException("Chef e controller devono essere impostati prima di start().");
-		}
+    public void start(Stage stage) {
+        if (chefLoggato == null || corsiController == null) {
+            throw new IllegalStateException("Chef e controller devono essere impostati prima di start().");
+        }
 
-		stage.setTitle("Menu Chef: " + chefLoggato.getUsername());
+        stage.initStyle(StageStyle.UNDECORATED);
+        stage.setTitle("Menu Chef - " + chefLoggato.getUsername());
 
-		GridPane grid = new GridPane();
-		grid.setPadding(new Insets(20));
-		grid.setVgap(10);
-		grid.setHgap(10);
+        menuRoot = new StackPane(); // Salva il riferimento
+        menuRoot.setPrefSize(500, 700);
 
-		Label label = new Label("Benvenuto, " + chefLoggato.getUsername());
-		grid.add(label, 0, 0, 2, 1);
+        createBackground(menuRoot);
 
-		Button visualizzaCorsiBtn = new Button("Visualizza corsi");
-		Button eliminaAccountBtn = new Button("Elimina Account");
-		Button logoutButton = new Button("Logout");
+        VBox card = new VBox(25);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(40));
+        card.setMaxWidth(380);
+        card.setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 20;" +
+                "-fx-border-radius: 20;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 2;");
 
-		grid.add(visualizzaCorsiBtn, 0, 1);
-		grid.add(eliminaAccountBtn, 1, 1);
-		grid.add(logoutButton, 2, 1);
+        DropShadow shadow = new DropShadow();
+        shadow.setRadius(10);
+        shadow.setColor(Color.web("#000000", 0.2));
+        shadow.setOffsetY(3);
+        card.setEffect(shadow);
 
-		// APRI VISUALIZZA CORSI
-		visualizzaCorsiBtn.setOnAction(e -> {
-			try {
-				VisualizzaCorsiController visualizzaController = new VisualizzaCorsiController(
-						corsiController.getGestioneCorsi(), corsiController.getChefLoggato());
+        Label welcomeLabel = new Label("Benvenuto, " + chefLoggato.getUsername());
+        welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
+        welcomeLabel.setTextFill(Color.web("#FF6600"));
 
-				GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
-						corsiController.getGestioneCorsi(), corsiController.getChefService());
+        VBox buttonContainer = new VBox(15);
+        buttonContainer.setAlignment(Pos.CENTER);
 
-				VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
-				corsiGUI.setControllers(visualizzaController, gestioneCorsoController);
-				corsiGUI.start(new Stage()); 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		});
-		
-		Button visualizzaRicetteBtn = new Button("Visualizza Ricette");
-		grid.add(visualizzaRicetteBtn, 0, 2);
+        Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#FF6600", "#FF8533");
+        Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#FF6600", "#FF8533");
+        Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF6600", "#FF8533");
+        Button logoutButton = createStylishButton("Logout", "#FFCC99", "#FFD9B3");
 
-		// APRI VISUALIZZA RICETTE
-		visualizzaRicetteBtn.setOnAction(e -> {
-		    try {
-		        VisualizzaRicetteController controller = new VisualizzaRicetteController(new GestioneRicette(new RicettaDAO()));
-		        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-		        gui.setController(controller);
-		        gui.start(new Stage());
-		    } catch (Exception ex) {
-		        ex.printStackTrace();
-		    }
-		});
+        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, eliminaAccountBtn, logoutButton);
+        card.getChildren().addAll(welcomeLabel, buttonContainer);
+        menuRoot.getChildren().add(card);
 
-		
-		// ELIMINA ACCOUNT
-		eliminaAccountBtn.setOnAction(e -> {
-			Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
-			conferma.setHeaderText("Vuoi eliminare definitivamente il tuo account?");
-			conferma.setContentText("Questa operazione non può essere annullata.");
+        HBox windowButtons = createWindowButtons(stage);
+        menuRoot.getChildren().add(windowButtons);
+        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+        StackPane.setMargin(windowButtons, new Insets(10));
 
-			// Mostro alert e controllo il bottone premuto
-			conferma.showAndWait().ifPresent(response -> {
-				if (response == ButtonType.OK) {
-					try {
-						corsiController.eliminaAccount();
-						Alert info = new Alert(Alert.AlertType.INFORMATION);
-						info.setHeaderText("Account eliminato!");
-						info.showAndWait();
-						stage.close(); // chiude menu chef
-					} catch (Exception ex) {
-						Alert errore = new Alert(Alert.AlertType.ERROR);
-						errore.setHeaderText("Errore nell'eliminazione: " + ex.getMessage());
-						errore.showAndWait();
-					}
-				} else {
-					// Se premi No/Cancel, non fare nulla
-					System.out.println("Eliminazione annullata dall'utente.");
-				}
-			});
-		});
+        makeDraggable(menuRoot, stage);
 
-		logoutButton.setOnAction(e -> stage.close());
+        // Eventi pulsanti
+        visualizzaCorsiBtn.setOnAction(e -> apriVisualizzaCorsi(stage));
+        visualizzaRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
+        eliminaAccountBtn.setOnAction(e -> eliminaAccount(stage));
+        logoutButton.setOnAction(e -> stage.close());
 
-		Scene scene = new Scene(grid, 500, 200);
-		stage.setScene(scene);
-		stage.show();
-	}
+        Scene scene = new Scene(menuRoot);
+        scene.setFill(Color.TRANSPARENT);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void createBackground(StackPane root) {
+        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web("#FF9966")),
+                new Stop(1, Color.web("#FFCC99")));
+        Region background = new Region();
+        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
+        background.setPrefSize(500, 700);
+        root.getChildren().add(background);
+    }
+
+    private Button createStylishButton(String text, String baseColor, String hoverColor) {
+        Button button = new Button(text);
+        button.setPrefSize(150, 45);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        button.setTextFill(Color.web("#4B2E2E"));
+        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
+        DropShadow shadow = new DropShadow();
+        shadow.setRadius(5);
+        shadow.setColor(Color.web("#000000", 0.2));
+        button.setEffect(shadow);
+
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+        return button;
+    }
+
+    private HBox createWindowButtons(Stage stage) {
+        Button closeButton = new Button("✕");
+        Button minimizeButton = new Button("_");
+        Button maximizeButton = new Button("□");
+
+        Button[] buttons = {minimizeButton, maximizeButton, closeButton};
+        for (Button btn : buttons) {
+            btn.setPrefSize(35, 35);
+            btn.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+            btn.setTextFill(Color.WHITE);
+            btn.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20; -fx-cursor: hand;");
+            btn.setFocusTraversable(false);
+        }
+
+        closeButton.setOnAction(e -> stage.close());
+        minimizeButton.setOnAction(e -> stage.setIconified(true));
+        maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+
+        HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
+        box.setAlignment(Pos.TOP_RIGHT);
+        box.setPickOnBounds(false);
+        return box;
+    }
+
+    private void apriVisualizzaCorsi(Stage stage) {
+        try {
+            VisualizzaCorsiController visualizzaController = new VisualizzaCorsiController(
+                    corsiController.getGestioneCorsi(), corsiController.getChefLoggato());
+            GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
+                    corsiController.getGestioneCorsi(), corsiController.getChefService());
+            VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
+
+            corsiGUI.setControllers(visualizzaController, gestioneCorsoController, menuRoot);
+
+            // Ora StackPane coerente
+            StackPane nuovoRoot = corsiGUI.getRoot();
+            stage.getScene().setRoot(nuovoRoot);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void apriVisualizzaRicette(Stage stage) {
+        try {
+            VisualizzaRicetteController controller = new VisualizzaRicetteController(new GestioneRicette(new RicettaDAO()));
+            VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
+
+            // Passa root menu chef
+            gui.setController(controller, menuRoot);
+
+            // StackPane coerente anche qui
+            StackPane nuovoRoot = gui.getRoot();
+            stage.getScene().setRoot(nuovoRoot);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void eliminaAccount(Stage stage) {
+        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
+        conferma.setHeaderText("Vuoi eliminare definitivamente il tuo account?");
+        conferma.setContentText("Questa operazione non può essere annullata.");
+
+        conferma.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                try {
+                    corsiController.eliminaAccount();
+                    Alert info = new Alert(Alert.AlertType.INFORMATION);
+                    info.setHeaderText("Account eliminato!");
+                    info.showAndWait();
+                    stage.close();
+                } catch (Exception ex) {
+                    Alert errore = new Alert(Alert.AlertType.ERROR);
+                    errore.setHeaderText("Errore nell'eliminazione: " + ex.getMessage());
+                    errore.showAndWait();
+                }
+            }
+        });
+    }
+
+    private void makeDraggable(StackPane root, Stage stage) {
+        root.setOnMousePressed(event -> {
+            xOffset = event.getSceneX();
+            yOffset = event.getSceneY();
+        });
+        root.setOnMouseDragged(event -> {
+            stage.setX(event.getScreenX() - xOffset);
+            stage.setY(event.getScreenY() - yOffset);
+        });
+    }
 }

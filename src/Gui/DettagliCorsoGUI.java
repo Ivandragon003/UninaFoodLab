@@ -5,28 +5,28 @@ import model.CorsoCucina;
 import model.Frequenza;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
 
 public class DettagliCorsoGUI {
 
     private GestioneCorsoController gestioneController;
     private CorsoCucina corso;
 
-    public void setController(GestioneCorsoController controller, CorsoCucina corso) {
+    public void setController(GestioneCorsoController controller) {
         this.gestioneController = controller;
+    }
+
+    public void setCorso(CorsoCucina corso) {
         this.corso = corso;
     }
 
-    public void start(Stage stage) {
+    // Restituisce il VBox principale da inserire nel menuRoot
+    public VBox getRoot() {
         if (gestioneController == null || corso == null) {
             throw new IllegalStateException("Controller o corso non impostati!");
         }
-
-        stage.setTitle("Dettagli Corso: " + corso.getNomeCorso());
 
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
@@ -39,7 +39,6 @@ public class DettagliCorsoGUI {
         frequenzaCombo.getItems().setAll(Frequenza.values());
         frequenzaCombo.setValue(corso.getFrequenzaCorso());
         TextField numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
-
         TextField numeroSessioniField = new TextField(String.valueOf(corso.getNumeroSessioni()));
         numeroSessioniField.setEditable(false);
         numeroSessioniField.setStyle("-fx-control-inner-background: #E0E0E0;"); // grigio
@@ -60,11 +59,10 @@ public class DettagliCorsoGUI {
         Button modificaBtn = new Button("Modifica corso");
         Button salvaBtn = new Button("Salva modifiche");
         Button visualizzaSessioniBtn = new Button("Visualizza sessioni");
-        Button chiudiBtn = new Button("Chiudi");
-
+        Button tornaIndietroBtn = new Button("⬅ Torna indietro");
         salvaBtn.setDisable(true); // abilita solo dopo clic Modifica
 
-        HBox pulsantiBox = new HBox(10, modificaBtn, salvaBtn, visualizzaSessioniBtn, chiudiBtn);
+        HBox pulsantiBox = new HBox(10, modificaBtn, salvaBtn, visualizzaSessioniBtn, tornaIndietroBtn);
         pulsantiBox.setAlignment(Pos.CENTER);
 
         root.getChildren().addAll(
@@ -107,7 +105,7 @@ public class DettagliCorsoGUI {
                 corso.setArgomento(argomentoField.getText());
                 corso.setFrequenzaCorso(frequenzaCombo.getValue());
                 corso.setNumeroPosti(posti);
-                corso.setNumeroSessioni(corso.getSessioni().size()); // aggiorna automaticamente
+                corso.setNumeroSessioni(corso.getSessioni().size());
                 corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
                 corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
 
@@ -133,18 +131,21 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // Visualizza sessioni 
+        // Visualizza sessioni
         visualizzaSessioniBtn.setOnAction(e -> {
             VisualizzaSessioniGUI visGui = new VisualizzaSessioniGUI();
             visGui.setCorso(corso);
-            visGui.start(new Stage());
-            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni())); // aggiorna dopo chiusura
+            VBox sessioniRoot = visGui.getRoot(); 
+            root.getChildren().setAll(sessioniRoot.getChildren());
+            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
         });
 
-        chiudiBtn.setOnAction(e -> stage.close());
+        // Torna indietro
+        tornaIndietroBtn.setOnAction(e -> {
+            root.getChildren().clear(); 
+        });
 
-        stage.setScene(new Scene(root, 500, 600));
-        stage.show();
+        return root;
     }
 
     private void showAlert(String titolo, String messaggio) {
