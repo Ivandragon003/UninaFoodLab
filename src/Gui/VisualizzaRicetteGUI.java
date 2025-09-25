@@ -5,6 +5,7 @@ import model.Ricetta;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -15,9 +16,11 @@ import java.util.List;
 public class VisualizzaRicetteGUI {
 
     private VisualizzaRicetteController controller;
+    private Pane menuRoot;
 
-    public void setController(VisualizzaRicetteController controller) {
+    public void setController(VisualizzaRicetteController controller, Pane menuRoot) {
         this.controller = controller;
+        this.menuRoot = menuRoot;
     }
 
     public void show(Stage stage) {
@@ -81,8 +84,13 @@ public class VisualizzaRicetteGUI {
             }
         });
 
-        tornaIndietroBtn.setOnAction(e -> stage.close());
+        // Torna al menu principale
+        tornaIndietroBtn.setOnAction(e -> {
+            Stage currentStage = (Stage) root.getScene().getWindow();
+            currentStage.getScene().setRoot(menuRoot);
+        });
 
+        // ✅ Mostra la scena
         stage.setScene(new Scene(root, 600, 450));
         stage.show();
     }
