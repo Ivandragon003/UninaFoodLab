@@ -5,31 +5,45 @@ import service.GestioneRicette;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class VisualizzaRicetteController {
-    private final GestioneRicette gestioneRicette;
 
-    public VisualizzaRicetteController(GestioneRicette gestioneRicette) {
-        this.gestioneRicette = gestioneRicette;
+    private final GestioneRicette gestioneRicetteService;
+
+    public VisualizzaRicetteController(GestioneRicette gestioneRicetteService) {
+        this.gestioneRicetteService = gestioneRicetteService;
     }
 
-    // Restituisce tutte le ricette
+    /** --- METODI PER RICERCA E FILTRO --- */
+
     public List<Ricetta> getAllRicette() throws SQLException {
-        return gestioneRicette.getAllRicette();
+        return gestioneRicetteService.getAllRicette();
     }
 
-    // Ricerca ricette per nome
     public List<Ricetta> cercaPerNome(String nome) throws SQLException {
-        return gestioneRicette.getAllRicette().stream()
+        return getAllRicette().stream()
                 .filter(r -> r.getNome().toLowerCase().contains(nome.toLowerCase()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    // Filtra ricette per tempo massimo
-    public List<Ricetta> filtraPerTempo(int tempoMax) throws SQLException {
-        return gestioneRicette.getAllRicette().stream()
-                .filter(r -> r.getTempoPreparazione() <= tempoMax)
-                .collect(Collectors.toList());
+    public List<Ricetta> filtraPerTempo(int maxTempo) throws SQLException {
+        return getAllRicette().stream()
+                .filter(r -> r.getTempoPreparazione() <= maxTempo)
+                .toList();
+    }
+
+    /** --- NUOVO METODO PER GESTIONE SELEZIONE RICETTE --- */
+
+    /**
+     * Questo metodo viene chiamato quando l'utente seleziona le ricette nella GUI
+     * e clicca "Seleziona e Associa".
+     *
+     * Viene sovrascritto da GestioneSessioniController al momento dell'apertura
+     * della GUI per associare le ricette alla sessione.
+     *
+     * @param ricetteSelezionate lista di ricette selezionate
+     */
+    public void aggiungiRicetteSelezionate(List<Ricetta> ricetteSelezionate) {
+        // Di default non fa nulla; viene sovrascritto dalla GUI di gestione sessioni
     }
 }

@@ -20,7 +20,7 @@ public class VisualizzaRicetteGUI {
         this.controller = controller;
     }
 
-    public void start(Stage stage) {
+    public void show(Stage stage) {
         if (controller == null) {
             throw new IllegalStateException("Controller non impostato!");
         }
