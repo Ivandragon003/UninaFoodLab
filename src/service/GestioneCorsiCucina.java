@@ -40,9 +40,8 @@ public class GestioneCorsiCucina {
 		corsoDAO.delete(idCorso);
 	}
 
-	public CorsoCucina getCorsoById(int idCorso) throws SQLException {
-		return corsoDAO.findById(idCorso)
-				.orElseThrow(() -> new IllegalArgumentException("Corso con ID " + idCorso + " non trovato"));
+	public List<CorsoCucina> getAllCorsi() throws SQLException {
+		return corsoDAO.getAll();
 	}
 
 	// Chef
@@ -64,12 +63,13 @@ public class GestioneCorsiCucina {
 		}
 	}
 
-	public List<CorsoCucina> getAllCorsi() throws SQLException {
-		return corsoDAO.getAll();
-	}
-
 	public List<CorsoCucina> getCorsiByChef(Chef chef) throws SQLException {
 		return tieneDAO.getCorsiByChef(chef.getCodFiscale());
+		
+	}
+	
+	public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
+	    return corsoDAO.findByNomeOrArgomento(filtro);
 	}
 
 	// Iscrizioni
@@ -114,10 +114,6 @@ public class GestioneCorsiCucina {
 		}
 	}
 
-	public List<CorsoCucina> getTuttiICorsi() throws SQLException {
-		return corsoDAO.getAll();
-	}
-
 	public List<Sessione> getSessioniByCorso(CorsoCucina corso) throws SQLException {
 		return corso.getSessioni();
 	}
@@ -159,7 +155,7 @@ public class GestioneCorsiCucina {
 		return corsiCompleti;
 	}
 	
-	public List<CorsoCucina> getCorsiLeggeri() throws SQLException {
+	public List<CorsoCucina> getCorsi() throws SQLException {
 	    return corsoDAO.getAll();
 	}
 }

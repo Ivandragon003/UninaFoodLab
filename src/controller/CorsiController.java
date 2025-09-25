@@ -32,38 +32,10 @@ public class CorsiController {
 		return chefLoggato;
 	}
 
-	// CORSI
 	public void visualizzaCorsi(List<CorsoCucina> corsi) {
 		corsi.forEach(c -> System.out.println(c.toStringNomeCorso() + " | ID: " + c.getIdCorso()));
 	}
-
-	public void creaCorso(CorsoCucina corso) {
-		try {
-			corsiService.creaCorso(corso);
-			corsiService.aggiungiChefACorso(corso, chefLoggato, chefLoggato.getPassword());
-			System.out.println("Corso creato correttamente!");
-		} catch (SQLException | IllegalArgumentException e) {
-			System.err.println("Errore nella creazione del corso: " + e.getMessage());
-		}
-	}
-
-	public CorsoCucina getCorsoById(int idCorso) throws SQLException {
-		return corsiService.getCorsoById(idCorso);
-	}
 	
-	
-	// --- CHEF ---
-	public void aggiornaCredenziali(String nuovoUsername, String nuovaPassword) {
-		try {
-			chefLoggato.setUsername(nuovoUsername);
-			chefLoggato.setPassword(nuovaPassword);
-			chefService.aggiornaChef(chefLoggato);
-			System.out.println("Credenziali aggiornate correttamente!");
-		} catch (SQLException | IllegalArgumentException e) {
-			System.err.println("Errore nell'aggiornamento delle credenziali: " + e.getMessage());
-		}
-	}
-
 	public void eliminaAccount() {
 		try {
 			chefService.eliminaChef(chefLoggato.getUsername());

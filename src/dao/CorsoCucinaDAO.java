@@ -108,20 +108,22 @@ public class CorsoCucinaDAO {
 		}
 	}
 
-	public List<CorsoCucina> findByNomeEsatto(String nome) throws SQLException {
-		List<CorsoCucina> list = new ArrayList<>();
-		String sql = "SELECT * FROM corsocucina WHERE nomeCorso = ? ORDER BY dataInizioCorso";
-		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-
-			ps.setString(1, nome);
-			try (ResultSet rs = ps.executeQuery()) {
-				while (rs.next()) {
-					list.add(mapResultSetToCorso(rs));
-				}
-			}
-		}
-		return list;
+	public List<CorsoCucina> findByNomeOrArgomento(String filtro) throws SQLException {
+	    List<CorsoCucina> list = new ArrayList<>();
+	    String sql = "SELECT * FROM corsocucina WHERE nomeCorso ILIKE ? OR argomento ILIKE ? ORDER BY dataInizioCorso";
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setString(1, "%" + filtro + "%");
+	        ps.setString(2, "%" + filtro + "%");
+	        try (ResultSet rs = ps.executeQuery()) {
+	            while (rs.next()) {
+	                list.add(mapResultSetToCorso(rs));
+	            }
+	        }
+	    }
+	    return list;
 	}
+
 
 	private CorsoCucina mapResultSetToCorso(ResultSet rs) throws SQLException {
 		String nome = rs.getString("nomeCorso");
@@ -144,37 +146,6 @@ public class CorsoCucinaDAO {
 			corso.setDataFineCorsoFromDB(tsFine.toLocalDateTime());
 
 		return corso;
-	}
-	
-	public List<CorsoCucina> getCorsiLeggeri() throws SQLException {
-	    List<CorsoCucina> corsi = new ArrayList<>();
-	    String sql = "SELECT idCorsoCucina, nomeCorso, prezzo, argomento, frequenzaCorso, numeroPosti, " +
-	                 "dataInizioCorso, dataFineCorso FROM corsocucina ORDER BY nomeCorso";
-
-	    try (Connection conn = DBConnection.getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
-
-	        while (rs.next()) {
-	            CorsoCucina corso = new CorsoCucina(
-	                rs.getString("nomeCorso"),
-	                rs.getDouble("prezzo"),
-	                rs.getString("argomento"),
-	                rs.getString("frequenzaCorso") != null ? Frequenza.valueOf(rs.getString("frequenzaCorso")) : null,
-	                rs.getInt("numeroPosti")
-	            );
-
-	            corso.setIdCorso(rs.getInt("idCorsoCucina"));
-	            
-	            Timestamp tsInizio = rs.getTimestamp("dataInizioCorso");
-	            Timestamp tsFine = rs.getTimestamp("dataFineCorso");
-	            if (tsInizio != null) corso.setDataInizioCorsoFromDB(tsInizio.toLocalDateTime());
-	            if (tsFine != null) corso.setDataFineCorsoFromDB(tsFine.toLocalDateTime());
-
-	            corsi.add(corso);
-	        }
-	    }
-	    return corsi;
 	}
 
 }

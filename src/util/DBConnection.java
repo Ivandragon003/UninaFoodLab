@@ -17,8 +17,8 @@ public class DBConnection {
         config.setPassword("#federicoII");
 
         // Pool settings
-        config.setMaximumPoolSize(25);       
-        config.setIdleTimeout(2 * 60 * 1000);  
+        config.setMaximumPoolSize(10);      
+        config.setIdleTimeout(10 * 60 * 1000); 
         config.setMaxLifetime(30 * 60 * 1000);  
         config.setConnectionTimeout(30 * 1000); 
 
