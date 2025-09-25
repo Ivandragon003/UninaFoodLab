@@ -5,11 +5,10 @@ import model.Ricetta;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class VisualizzaRicetteGUI {
@@ -30,7 +29,6 @@ public class VisualizzaRicetteGUI {
         VBox root = new VBox(10);
         root.setPadding(new Insets(20));
 
-        // Campi ricerca
         Label nomeLabel = new Label("Cerca ricetta per nome:");
         TextField nomeField = new TextField();
         nomeField.setPromptText("Digita il nome della ricetta");
@@ -39,16 +37,18 @@ public class VisualizzaRicetteGUI {
         TextField tempoField = new TextField();
         tempoField.setPromptText("Es: 30");
 
-        ListView<String> ricetteList = new ListView<>();
+        ListView<Ricetta> ricetteList = new ListView<>();
 
-        // Pulsanti
         Button mostraTutteBtn = new Button("Mostra tutte le ricette");
+        Button creaRicettaBtn = new Button("Crea Ricetta");
         Button tornaIndietroBtn = new Button("Torna indietro");
 
-        root.getChildren().addAll(nomeLabel, nomeField, tempoLabel, tempoField,
-                mostraTutteBtn, ricetteList, tornaIndietroBtn);
+        HBox bottomButtons = new HBox(10, creaRicettaBtn, tornaIndietroBtn);
 
-        // Ricerca live per nome
+        root.getChildren().addAll(nomeLabel, nomeField, tempoLabel, tempoField,
+                mostraTutteBtn, ricetteList, bottomButtons);
+
+        // Ricerca live
         nomeField.setOnKeyReleased(e -> {
             try {
                 List<Ricetta> ricette = controller.cercaPerNome(nomeField.getText().trim());
@@ -58,20 +58,18 @@ public class VisualizzaRicetteGUI {
             }
         });
 
-        // Filtro live per tempo
         tempoField.setOnKeyReleased(e -> {
             try {
                 int maxTempo = Integer.parseInt(tempoField.getText().trim());
                 List<Ricetta> ricette = controller.filtraPerTempo(maxTempo);
                 aggiornaLista(ricetteList, ricette);
-            } catch (NumberFormatException ignored) {
-                // Ignora input non numerici
-            } catch (SQLException ex) {
+            } catch (NumberFormatException ignored) { }
+            catch (SQLException ex) {
                 showAlert("Errore", "Impossibile filtrare le ricette: " + ex.getMessage());
             }
         });
 
-        // Mostra tutte le ricette
+        // Mostra tutte
         mostraTutteBtn.setOnAction(e -> {
             try {
                 List<Ricetta> ricette = controller.getAllRicette();
@@ -81,22 +79,42 @@ public class VisualizzaRicetteGUI {
             }
         });
 
+        // Crea ricetta
+        creaRicettaBtn.setOnAction(e -> {
+            if (controller == null) return;
+            controller.mostraFormCreazioneRicetta();
+        });
+
+        // Doppio click per dettagli
+        ricetteList.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Ricetta selezionata = ricetteList.getSelectionModel().getSelectedItem();
+                if (selezionata != null) {
+                    controller.mostraDettagliRicetta(selezionata);
+                }
+            }
+        });
+
         tornaIndietroBtn.setOnAction(e -> stage.close());
 
-        stage.setScene(new Scene(root, 600, 450));
+        stage.setScene(new Scene(root, 650, 450));
         stage.show();
     }
 
-    private void aggiornaLista(ListView<String> listView, List<Ricetta> ricette) {
-        List<String> items = new ArrayList<>();
-        for (Ricetta r : ricette) {
-            String text = String.format("%s | Tempo: %d min | Ingredienti: %d",
-                    r.getNome(),
-                    r.getTempoPreparazione(),
-                    r.getNumeroIngredienti());
-            items.add(text);
-        }
-        listView.getItems().setAll(items);
+    private void aggiornaLista(ListView<Ricetta> listView, List<Ricetta> ricette) {
+        listView.getItems().setAll(ricette);
+        listView.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Ricetta r, boolean empty) {
+                super.updateItem(r, empty);
+                if (empty || r == null) {
+                    setText(null);
+                } else {
+                    setText(r.getNome() + " | Tempo: " + r.getTempoPreparazione() +
+                            " min | Ingredienti: " + r.getNumeroIngredienti());
+                }
+            }
+        });
     }
 
     private void showAlert(String titolo, String messaggio) {
