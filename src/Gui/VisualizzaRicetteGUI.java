@@ -1,20 +1,12 @@
 package Gui;
 
 import controller.VisualizzaRicetteController;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.Stop;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import model.Ricetta;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -23,133 +15,88 @@ import java.util.List;
 public class VisualizzaRicetteGUI {
 
     private VisualizzaRicetteController controller;
-    private StackPane menuRoot; // Pane del menu principale
-    private ObservableList<Ricetta> ricetteData = FXCollections.observableArrayList();
-    private StackPane root;
 
-    public void setController(VisualizzaRicetteController controller, StackPane menuRoot) {
+    public void setController(VisualizzaRicetteController controller) {
         this.controller = controller;
-        this.menuRoot = menuRoot;
     }
 
-    public StackPane getRoot() {
-        return root;
-    }
+    public void show(Stage stage) {
+        if (controller == null) {
+            throw new IllegalStateException("Controller non impostato!");
+        }
 
-    public void start() {
-        if (controller == null) throw new IllegalStateException("Controller non impostato!");
+        stage.setTitle("Visualizza Ricette");
 
-        root = new StackPane();
-        root.setPrefSize(600, 450);
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(20));
 
-        // Sfondo gradiente
-        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")),
-                new Stop(1, Color.web("#FFCC99")));
-        Region background = new Region();
-        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-        background.setPrefSize(600, 450);
-        root.getChildren().add(background);
-
-        // Card centrale
-        VBox card = new VBox(15);
-        card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(30));
-        card.setMaxWidth(500);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-border-color: #FF9966; -fx-border-width: 2;");
-
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(10);
-        shadow.setColor(Color.web("#000000", 0.2));
-        shadow.setOffsetY(3);
-        card.setEffect(shadow);
-
-        Label title = new Label("Visualizza Ricette");
-        title.setFont(Font.font("Roboto", FontWeight.BOLD, 24));
-        title.setTextFill(Color.web("#FF6600"));
-
+        // Campi ricerca
+        Label nomeLabel = new Label("Cerca ricetta per nome:");
         TextField nomeField = new TextField();
-        nomeField.setPromptText("Cerca ricetta per nome");
+        nomeField.setPromptText("Digita il nome della ricetta");
+
+        Label tempoLabel = new Label("Tempo massimo di preparazione (min):");
         TextField tempoField = new TextField();
-        tempoField.setPromptText("Tempo massimo (min)");
+        tempoField.setPromptText("Es: 30");
 
         ListView<String> ricetteList = new ListView<>();
 
-        HBox buttons = new HBox(10);
-        buttons.setAlignment(Pos.CENTER);
-        Button mostraTutteBtn = createStylishButton("Mostra tutte le ricette", "#FF6600", "#FF8533");
-        Button tornaIndietroBtn = createStylishButton("Torna indietro", "#FFCC99", "#FFD9B3");
-        buttons.getChildren().addAll(mostraTutteBtn, tornaIndietroBtn);
+        // Pulsanti
+        Button mostraTutteBtn = new Button("Mostra tutte le ricette");
+        Button tornaIndietroBtn = new Button("Torna indietro");
 
-        card.getChildren().addAll(title, nomeField, tempoField, ricetteList, buttons);
-        root.getChildren().add(card);
+        root.getChildren().addAll(nomeLabel, nomeField, tempoLabel, tempoField,
+                mostraTutteBtn, ricetteList, tornaIndietroBtn);
 
-        caricaRicette(ricetteList);
-
-        // Filtri live
-        nomeField.setOnKeyReleased(e -> filtraRicette(nomeField.getText(), tempoField.getText(), ricetteList));
-        tempoField.setOnKeyReleased(e -> filtraRicette(nomeField.getText(), tempoField.getText(), ricetteList));
-
-        mostraTutteBtn.setOnAction(e -> {
-            nomeField.clear();
-            tempoField.clear();
-            caricaRicette(ricetteList);
+        // Ricerca live per nome
+        nomeField.setOnKeyReleased(e -> {
+            try {
+                List<Ricetta> ricette = controller.cercaPerNome(nomeField.getText().trim());
+                aggiornaLista(ricetteList, ricette);
+            } catch (SQLException ex) {
+                showAlert("Errore", "Impossibile cercare le ricette: " + ex.getMessage());
+            }
         });
 
-        tornaIndietroBtn.setOnAction(e -> root.getScene().setRoot(menuRoot));
-    }
-
-    private void caricaRicette(ListView<String> listView) {
-        try {
-            ricetteData.clear();
-            ricetteData.addAll(controller.getAllRicette());
-            aggiornaLista(listView);
-        } catch (SQLException ex) {
-            showAlert("Errore", "Impossibile caricare le ricette: " + ex.getMessage());
-        }
-    }
-
-    private void filtraRicette(String nomeFiltro, String tempoFiltro, ListView<String> listView) {
-        List<Ricetta> filtered = new ArrayList<>(ricetteData);
-        if (nomeFiltro != null && !nomeFiltro.isEmpty()) {
-            filtered.removeIf(r -> !r.getNome().toLowerCase().contains(nomeFiltro.toLowerCase()));
-        }
-        if (tempoFiltro != null && !tempoFiltro.isEmpty()) {
+        // Filtro live per tempo
+        tempoField.setOnKeyReleased(e -> {
             try {
-                int maxTempo = Integer.parseInt(tempoFiltro);
-                filtered.removeIf(r -> r.getTempoPreparazione() > maxTempo);
-            } catch (NumberFormatException ignored) {}
-        }
-        aggiornaLista(listView, filtered);
-    }
+                int maxTempo = Integer.parseInt(tempoField.getText().trim());
+                List<Ricetta> ricette = controller.filtraPerTempo(maxTempo);
+                aggiornaLista(ricetteList, ricette);
+            } catch (NumberFormatException ignored) {
+                // Ignora input non numerici
+            } catch (SQLException ex) {
+                showAlert("Errore", "Impossibile filtrare le ricette: " + ex.getMessage());
+            }
+        });
 
-    private void aggiornaLista(ListView<String> listView) {
-        aggiornaLista(listView, new ArrayList<>(ricetteData));
+        // Mostra tutte le ricette
+        mostraTutteBtn.setOnAction(e -> {
+            try {
+                List<Ricetta> ricette = controller.getAllRicette();
+                aggiornaLista(ricetteList, ricette);
+            } catch (SQLException ex) {
+                showAlert("Errore", "Impossibile caricare le ricette: " + ex.getMessage());
+            }
+        });
+
+        tornaIndietroBtn.setOnAction(e -> stage.close());
+
+        stage.setScene(new Scene(root, 600, 450));
+        stage.show();
     }
 
     private void aggiornaLista(ListView<String> listView, List<Ricetta> ricette) {
         List<String> items = new ArrayList<>();
         for (Ricetta r : ricette) {
             String text = String.format("%s | Tempo: %d min | Ingredienti: %d",
-                    r.getNome(), r.getTempoPreparazione(), r.getNumeroIngredienti());
+                    r.getNome(),
+                    r.getTempoPreparazione(),
+                    r.getNumeroIngredienti());
             items.add(text);
         }
         listView.getItems().setAll(items);
-    }
-
-    private Button createStylishButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefSize(150, 45);
-        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(5);
-        shadow.setColor(Color.web("#000000", 0.2));
-        button.setEffect(shadow);
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        return button;
     }
 
     private void showAlert(String titolo, String messaggio) {
