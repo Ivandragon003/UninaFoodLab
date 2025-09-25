@@ -18,6 +18,20 @@ public class VisualizzaCorsiController {
         this.chefLoggato = chefLoggato;
     }
 
+	public Chef getChefLoggato() {
+		return chefLoggato;
+	}
+	
+
+	public void visualizzaCorsi(List<CorsoCucina> corsi) {
+		corsi.forEach(c -> System.out.println(c.toStringNomeCorso() + " | ID: " + c.getIdCorso()));
+	}
+	public GestioneCorsiCucina getGestioneCorsi() {
+		return corsiService;
+	}
+
+
+    
     // Corsi leggeri (senza iscritti e sessioni)
     public List<CorsoCucina> getTuttiICorsi() throws SQLException {
         return corsiService.getCorsi();

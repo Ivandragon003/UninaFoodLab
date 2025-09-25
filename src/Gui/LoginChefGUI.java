@@ -1,7 +1,7 @@
 package Gui;
 
 import controller.ChefController;
-import controller.CorsiController;
+import controller.VisualizzaCorsiController;
 import service.GestioneCorsiCucina;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -197,36 +197,41 @@ private Button createStylishButton(String text, String baseColor, String hoverCo
     return button;
 }
 
-    private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
-                                   PasswordField passwordField, Label messageLabel) {
-        loginButton.setOnAction(e -> {
-            try {
-                Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
-                messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
-                messageLabel.setTextFill(Color.web("#FF6600"));
+   private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
+                               PasswordField passwordField, Label messageLabel) {
+    loginButton.setOnAction(e -> {
+        try {
+            // Login con il controller chef
+            Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
+            messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
+            messageLabel.setTextFill(Color.web("#FF6600"));
 
-                CorsiController controller = new CorsiController(corsiService, chefController.getGestioneChef(), chef);
+            // Usa il nuovo VisualizzaCorsiController
+            VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
 
-                ChefMenuGUI menu = new ChefMenuGUI();
-                menu.setChefLoggato(chef);
-                menu.setController(controller);
-                Stage menuStage = new Stage();
-                menu.start(menuStage);
+            // Apri il menu chef e passa il controller
+            ChefMenuGUI menu = new ChefMenuGUI();
+            menu.setChefLoggato(chef);
+            menu.setController(corsiController);  // setter nuovo controller
+            Stage menuStage = new Stage();
+            menu.start(menuStage);
 
-                Stage loginStage = (Stage) loginButton.getScene().getWindow();
-                loginStage.close();
-            } catch (Exception ex) {
-                messageLabel.setText("❌ Errore: " + ex.getMessage());
-                messageLabel.setTextFill(Color.web("#CC3300"));
-                ex.printStackTrace();
-            }
-        });
+            // Chiudi la finestra di login
+            Stage loginStage = (Stage) loginButton.getScene().getWindow();
+            loginStage.close();
 
-        registerButton.setOnAction(e -> {
-            RegistrazioneChefGUI registrazioneGUI = new RegistrazioneChefGUI(chefController);
-            registrazioneGUI.show(new Stage());
-        });
-    }
+        } catch (Exception ex) {
+            messageLabel.setText("❌ Errore: " + ex.getMessage());
+            messageLabel.setTextFill(Color.web("#CC3300"));
+            ex.printStackTrace();
+        }
+    });
+
+    registerButton.setOnAction(e -> {
+        RegistrazioneChefGUI registrazioneGUI = new RegistrazioneChefGUI(chefController);
+        registrazioneGUI.show(new Stage());
+    });
+}
 
     private void makeDraggable(StackPane root, Stage stage) {
         root.setOnMousePressed(event -> {
