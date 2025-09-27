@@ -1,65 +1,53 @@
 package controller;
 
 import model.Ricetta;
-import model.InPresenza;
 import service.GestioneRicette;
-import service.GestioneCucina;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class VisualizzaRicetteController {
 
     private final GestioneRicette gestioneRicetteService;
-    private final InPresenza sessione; // null -> caso 1, non null -> caso 2
-    private final GestioneCucina gestioneCucinaService;
 
-    public VisualizzaRicetteController(GestioneRicette gestioneRicetteService, InPresenza sessione) {
+    // Cache per ricette già caricate (per filtri pesanti)
+    private List<Ricetta> cachedRicette = null;
+
+    public VisualizzaRicetteController(GestioneRicette gestioneRicetteService) {
         this.gestioneRicetteService = gestioneRicetteService;
-        this.sessione = sessione;
-        this.gestioneCucinaService = (sessione != null) ? new GestioneCucina(null) : null; 
     }
 
-    public List<Ricetta> getAllRicette() throws SQLException {
-        return gestioneRicetteService.getAllRicette();
+    public List<Ricetta> getTutteLeRicette() throws SQLException {
+        if (cachedRicette == null) {
+            cachedRicette = gestioneRicetteService.getAllRicette();
+        }
+        return cachedRicette;
     }
 
-    public List<Ricetta> cercaPerNome(String nome) throws SQLException {
-        return getAllRicette().stream()
-                .filter(r -> r.getNome().toLowerCase().contains(nome.toLowerCase()))
-                .toList();
+    public List<Ricetta> cercaPerNome(String filtro) throws SQLException {
+        String f = filtro.toLowerCase().trim();
+        return getTutteLeRicette().stream()
+                .filter(r -> r.getNome().toLowerCase().contains(f))
+                .collect(Collectors.toList());
     }
 
     public List<Ricetta> filtraPerTempo(int maxTempo) throws SQLException {
-        return getAllRicette().stream()
+        return getTutteLeRicette().stream()
                 .filter(r -> r.getTempoPreparazione() <= maxTempo)
-                .toList();
+                .collect(Collectors.toList());
     }
 
-
-    // Caso 1: crea ricetta senza sessione
-    public void mostraFormCreazioneRicetta() {
-        new Gui.CreaRicettaGUI(gestioneRicetteService, null).start(new javafx.stage.Stage());
+    public void mostraDettagliRicetta(Ricetta r) {
+        new Gui.DettagliRicettaGUI(gestioneRicetteService, r).start(new javafx.stage.Stage());
     }
 
-    // Caso 2: crea ricetta legata a sessione
-    public void mostraFormCreazioneRicetta(InPresenza sessione) {
-        new Gui.CreaRicettaGUI(gestioneRicetteService, sessione).start(new javafx.stage.Stage());
+    public GestioneRicette getGestioneRicette() {
+        return gestioneRicetteService;
     }
 
-    public void mostraDettagliRicetta(Ricetta ricetta) {
-        new Gui.DettagliRicettaGUI(gestioneRicetteService, ricetta).start(new javafx.stage.Stage());
-    }
-
-    public void aggiungiRicetteSelezionate(List<Ricetta> ricetteSelezionate) {
-        if (sessione != null && gestioneCucinaService != null) {
-            for (Ricetta r : ricetteSelezionate) {
-                try {
-                    gestioneCucinaService.aggiungiSessioneARicetta(r, sessione);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+    public void aggiungiRicetta(Ricetta r) throws SQLException {
+        gestioneRicetteService.creaRicetta(r);
+        cachedRicette = null; 
     }
 }

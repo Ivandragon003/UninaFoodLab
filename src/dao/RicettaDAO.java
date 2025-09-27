@@ -9,17 +9,23 @@ import java.util.*;
 
 public class RicettaDAO {
 
-    // Inserimento di una nuova ricetta
-    public void save(Ricetta r) throws SQLException {
-        String sql = "INSERT INTO ricetta (nome, tempoPreparazione) VALUES (?, ?)";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+	public void save(Ricetta r) throws SQLException {
+	    String sql = "INSERT INTO ricetta (nome, tempoPreparazione) VALUES (?, ?)";
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            ps.setString(1, r.getNome());
-            ps.setInt(2, r.getTempoPreparazione());
-            ps.executeUpdate();
-        }
-    }
+	        ps.setString(1, r.getNome());
+	        ps.setInt(2, r.getTempoPreparazione());
+	        ps.executeUpdate();
+
+	       
+	        try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+	            if (generatedKeys.next()) {
+	                r.setIdRicetta(generatedKeys.getInt(1));
+	            }
+	        }
+	    }
+	}
 
     // Lettura di una ricetta per ID
     public Optional<Ricetta> findById(int id) throws SQLException {
@@ -121,6 +127,7 @@ public class RicettaDAO {
         int idRicetta = rs.getInt("idRicetta"); 
 
         Ricetta r = new Ricetta(nome, tempo);
+        r.setIdRicetta(idRicetta); 
 
         Map<Ingrediente, Double> ingredienti = getIngredientiPerRicetta(idRicetta);
         r.setIngredienti(ingredienti);
@@ -128,11 +135,11 @@ public class RicettaDAO {
         return r;
     }
 
-
-    // Carica ingredienti di una ricetta dalla tabella Usa
+   
+ // Carica ingredienti di una ricetta dalla tabella Usa
     private Map<Ingrediente, Double> getIngredientiPerRicetta(int idRicetta) throws SQLException {
         Map<Ingrediente, Double> map = new HashMap<>();
-        String sql = "SELECT i.nome, i.tipo, i.tempoPreparazione, u.quantita " +
+        String sql = "SELECT i.nome, i.tipo, u.quantita " +
                      "FROM Usa u " +
                      "JOIN Ingrediente i ON u.idIngrediente = i.idIngrediente " +
                      "WHERE u.idRicetta = ?";

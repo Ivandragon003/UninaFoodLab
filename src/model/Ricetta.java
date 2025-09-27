@@ -22,6 +22,10 @@ public class Ricetta {
 	public Set<Sessione> getSessioni() {
 		return sessioni;
 	}
+	
+	public void setIdRicetta(int idRicetta) {
+		this.idRicetta=idRicetta;
+	}
 
 	public String getNome() {
 		return nome;
@@ -83,5 +87,7 @@ public class Ricetta {
 	public String toStringTempoPreparazione() {
 		return "Tempo Preparazione: " + tempoPreparazione + " minuti";
 	}
+
+	
 
 }

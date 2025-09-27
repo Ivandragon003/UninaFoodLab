@@ -3,6 +3,7 @@ package Gui;
 import controller.ChefController;
 import controller.VisualizzaCorsiController;
 import service.GestioneCorsiCucina;
+import util.DBConnection;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -62,6 +63,13 @@ public class LoginChefGUI extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
+    
+    @Override
+    public void stop() {
+        DBConnection.closeDataSource();
+        System.out.println("Pool DB chiuso al termine dell'applicazione.");
+    }
+
 
     private void createBackground(StackPane root) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
