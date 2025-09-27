@@ -14,10 +14,16 @@ public class VisualizzaRicetteController {
     private final InPresenza sessione; // null -> caso 1, non null -> caso 2
     private final GestioneCucina gestioneCucinaService;
 
+    // Costruttore per caso 1 (nessuna sessione)
+    public VisualizzaRicetteController(GestioneRicette gestioneRicetteService) {
+        this(gestioneRicetteService, null);
+    }
+
+    // Costruttore generale (caso 1 o caso 2)
     public VisualizzaRicetteController(GestioneRicette gestioneRicetteService, InPresenza sessione) {
         this.gestioneRicetteService = gestioneRicetteService;
         this.sessione = sessione;
-        this.gestioneCucinaService = (sessione != null) ? new GestioneCucina(null) : null; 
+        this.gestioneCucinaService = (sessione != null) ? new GestioneCucina(null) : null;
     }
 
     public List<Ricetta> getAllRicette() throws SQLException {
@@ -35,7 +41,6 @@ public class VisualizzaRicetteController {
                 .filter(r -> r.getTempoPreparazione() <= maxTempo)
                 .toList();
     }
-
 
     // Caso 1: crea ricetta senza sessione
     public void mostraFormCreazioneRicetta() {

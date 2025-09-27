@@ -79,11 +79,8 @@ public class VisualizzaRicetteGUI {
             }
         });
 
-        // Crea ricetta
-        creaRicettaBtn.setOnAction(e -> {
-            if (controller == null) return;
-            controller.mostraFormCreazioneRicetta();
-        });
+        // Crea ricetta (chiama la versione corretta in base al caso)
+        creaRicettaBtn.setOnAction(e -> controller.mostraFormCreazioneRicetta());
 
         // Doppio click per dettagli
         ricetteList.setOnMouseClicked(event -> {
