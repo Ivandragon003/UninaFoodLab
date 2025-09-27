@@ -21,11 +21,12 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
+import service.GestioneRicette;
 
 public class ChefMenuGUI {
 
     private Chef chefLoggato;
-    private VisualizzaCorsiController corsiController; 
+    private VisualizzaCorsiController corsiController;
     private double xOffset = 0;
     private double yOffset = 0;
     private StackPane menuRoot;
@@ -34,7 +35,7 @@ public class ChefMenuGUI {
         this.chefLoggato = chef;
     }
 
-    public void setController(VisualizzaCorsiController controller) { 
+    public void setController(VisualizzaCorsiController controller) {
         this.corsiController = controller;
     }
 
@@ -77,7 +78,7 @@ public class ChefMenuGUI {
 
         Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#FF6600", "#FF8533");
         Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#FF6600", "#FF8533");
-        Button gestisciSessioniBtn = createStylishButton("Gestisci Sessioni", "#FF6600", "#FF8533"); // ✅ nuovo pulsante
+        Button gestisciSessioniBtn = createStylishButton("Gestisci Sessioni", "#FF6600", "#FF8533");
         Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF6600", "#FF8533");
         Button logoutButton = createStylishButton("Logout", "#FFCC99", "#FFD9B3");
 
@@ -96,7 +97,7 @@ public class ChefMenuGUI {
         // Eventi pulsanti
         visualizzaCorsiBtn.setOnAction(e -> apriVisualizzaCorsi(stage));
         visualizzaRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
-        gestisciSessioniBtn.setOnAction(e -> apriGestioneSessioni(stage)); // ✅ nuovo evento
+        gestisciSessioniBtn.setOnAction(e -> apriGestioneSessioni(stage));
         eliminaAccountBtn.setOnAction(e -> eliminaAccount(stage));
         logoutButton.setOnAction(e -> stage.close());
 
@@ -176,11 +177,12 @@ public class ChefMenuGUI {
 
     private void apriVisualizzaRicette(Stage stage) {
         try {
-            VisualizzaRicetteController controller = new VisualizzaRicetteController(
-                    new RicettaDAO(), new UsaDAO());
+            GestioneRicette gestioneRicette = new GestioneRicette(new RicettaDAO(), new UsaDAO());
+
+            VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette, null);
 
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            gui.setController(controller, menuRoot);
+            gui.setController(controller); // la tua GUI accetta solo il controller singolo
             gui.show(stage);
 
         } catch (Exception ex) {
@@ -189,16 +191,8 @@ public class ChefMenuGUI {
     }
 
     private void apriGestioneSessioni(Stage stage) {
-        try {
-            GestioneSessioniController sessioniController = new GestioneSessioniController();
-            GestioneSessioniGUI gui = new GestioneSessioniGUI();
-            gui.setController(sessioniController);
 
-            stage.getScene().setRoot(gui.getRoot());
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        apriVisualizzaCorsi(stage);
     }
 
     private void eliminaAccount(Stage stage) {
