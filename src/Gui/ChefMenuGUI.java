@@ -182,7 +182,7 @@ public class ChefMenuGUI {
             VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette, null);
 
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            gui.setController(controller); // la tua GUI accetta solo il controller singolo
+            gui.setController(controller);
             gui.show(stage);
 
         } catch (Exception ex) {
