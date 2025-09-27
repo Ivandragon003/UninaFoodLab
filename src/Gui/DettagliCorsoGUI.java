@@ -43,8 +43,9 @@ public class DettagliCorsoGUI {
         numeroSessioniField.setEditable(false);
         numeroSessioniField.setStyle("-fx-control-inner-background: #E0E0E0;"); // grigio
 
-        DatePicker dataInizioPicker = new DatePicker(corso.getDataInizioCorso().toLocalDate());
-        DatePicker dataFinePicker = new DatePicker(corso.getDataFineCorso().toLocalDate());
+        // Nota: se dataInizioCorso o dataFineCorso sono nulli, attenzione!
+        DatePicker dataInizioPicker = new DatePicker(corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null);
+        DatePicker dataFinePicker = new DatePicker(corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null);
 
         // Blocca inizialmente i campi
         nomeField.setEditable(false);
@@ -95,7 +96,7 @@ public class DettagliCorsoGUI {
                 double prezzo = Double.parseDouble(prezzoField.getText().replace(',', '.'));
                 int posti = Integer.parseInt(numeroPostiField.getText());
 
-                if (dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
+                if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null && dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
                     showAlert("Errore", "La data di inizio deve precedere la data di fine.");
                     return;
                 }
@@ -106,8 +107,8 @@ public class DettagliCorsoGUI {
                 corso.setFrequenzaCorso(frequenzaCombo.getValue());
                 corso.setNumeroPosti(posti);
                 corso.setNumeroSessioni(corso.getSessioni().size());
-                corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
-                corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
+                if (dataInizioPicker.getValue() != null) corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
+                if (dataFinePicker.getValue() != null) corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
 
                 gestioneController.modificaCorso(corso);
                 numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
@@ -131,11 +132,14 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // Visualizza sessioni
+        // Visualizza sessioni -> qui integriamo la GestioneSessioniGUI usando getRoot()
         visualizzaSessioniBtn.setOnAction(e -> {
-            VisualizzaSessioniGUI visGui = new VisualizzaSessioniGUI();
-            visGui.setCorso(corso);
-            VBox sessioniRoot = visGui.getRoot(); 
+            GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
+            sessioniGUI.setCorso(corso);
+            // Se hai un controller per le sessioni, impostalo:
+            // sessioniGUI.setController(new GestioneSessioniController(...));
+            VBox sessioniRoot = sessioniGUI.getRoot();
+            // Sostituisco il contenuto di root con quello di sessioni
             root.getChildren().setAll(sessioniRoot.getChildren());
             numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
         });

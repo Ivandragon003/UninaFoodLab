@@ -111,6 +111,6 @@ public class GestioneSessioniController {
 
         gui.setController(vController);
         Stage stage = new Stage();
-        gui.show(stage); // ✅ usa show() al posto di start()
+        gui.show(stage);
     }
 }
