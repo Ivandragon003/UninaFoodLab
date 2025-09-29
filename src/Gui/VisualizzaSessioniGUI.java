@@ -25,9 +25,13 @@ public class VisualizzaSessioniGUI {
     // Root principale
     private VBox root;
 
+    // Set controller esterno invece di crearne uno nuovo
+    public void setController(GestioneSessioniController controller) {
+        this.controller = controller;
+    }
+
     public void setCorso(CorsoCucina corso) {
         this.corso = corso;
-        this.controller = new GestioneSessioniController(corso);
     }
 
     public VBox getRoot() {
@@ -115,7 +119,7 @@ public class VisualizzaSessioniGUI {
                     String tipo = (s instanceof Online) ? "Online" : "In Presenza";
                     String inizio = s.getDataInizioSessione().toLocalDate() + " " + s.getDataInizioSessione().toLocalTime();
                     String fine = s.getDataFineSessione().toLocalDate() + " " + s.getDataFineSessione().toLocalTime();
-                    int ricette = 0; // Placeholder
+                    int ricette = (s instanceof InPresenza) ? ((InPresenza) s).getRicette().size() : 0;
 
                     setText(String.format("Sessione %d - %s\nInizio: %s\nFine: %s\nRicette: %d", 
                             getIndex() + 1, tipo, inizio, fine, ricette));
@@ -129,10 +133,13 @@ public class VisualizzaSessioniGUI {
             }
         });
 
-        // Doppio clic: da integrare come metodo della GUI principale se necessario
         sessioniList.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2 && sessioniList.getSelectionModel().getSelectedItem() != null) {
-                // Implementa apriDettagli(Sessione s) se vuoi aprire in root principale
+                // Possibile apertura dei dettagli della sessione:
+                Sessione selezionata = sessioniList.getSelectionModel().getSelectedItem();
+                // Se vuoi aprire la GUI di gestione/visualizzazione dettagli sessione, qui potresti
+                // istanziare una GestioneSessioniGUI, impostare sessione e controller e mostrarla.
+                // es: GestioneSessioniGUI g = new GestioneSessioniGUI(); g.setController(controller); g.setSessione(selezionata); ...
             }
         });
     }
@@ -144,11 +151,23 @@ public class VisualizzaSessioniGUI {
 
         Button aggiungiBtn = new Button("Aggiungi Sessione");
         aggiungiBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 180; -fx-pref-height: 40; -fx-font-size: 14;");
-        // aggiungiBtn.setOnAction(...);
+        // Se si vuole aprire un form per aggiungere sessione:
+        aggiungiBtn.setOnAction(e -> {
+            GestioneSessioniGUI aggiungiGUI = new GestioneSessioniGUI();
+            // modalitaAggiunta = true
+            aggiungiGUI.setModalitaAggiunta(true);
+            aggiungiGUI.setController(controller);
+            aggiungiGUI.setCorso(corso);
+            // se embedded: sostituisco la root; altrimenti apri nuovo stage con aggiungiGUI.start(...)
+            if (root.getScene() != null) root.getScene().setRoot(aggiungiGUI.getRoot());
+        });
 
         Button tornaIndietroBtn = new Button("Torna Indietro");
         tornaIndietroBtn.setStyle("-fx-pref-width: 150; -fx-pref-height: 40; -fx-font-size: 14;");
-        // tornaIndietroBtn.setOnAction(...);
+        tornaIndietroBtn.setOnAction(e -> {
+            // comportamento di ritorno: se sei embedded, chiudi / ripristina il parent
+            if (root.getScene() != null) root.getScene().getWindow().hide();
+        });
 
         pulsantiPrincipali.getChildren().addAll(aggiungiBtn, tornaIndietroBtn);
 
@@ -169,7 +188,7 @@ public class VisualizzaSessioniGUI {
             if (!ricetteFiltro.isEmpty()) {
                 try {
                     int minRicette = Integer.parseInt(ricetteFiltro);
-                    int ricetteSessione = 0; // Placeholder
+                    int ricetteSessione = (s instanceof InPresenza) ? ((InPresenza) s).getRicette().size() : 0;
                     passaRicetteFiltro = ricetteSessione >= minRicette;
                 } catch (NumberFormatException e) {
                     passaRicetteFiltro = true;
