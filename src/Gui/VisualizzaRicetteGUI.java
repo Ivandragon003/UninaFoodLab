@@ -24,7 +24,6 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import model.Ricetta;
 import service.GestioneRicette;
@@ -73,7 +72,7 @@ public class VisualizzaRicetteGUI {
         HBox filterSection = createFilterSection();
         mainContainer.getChildren().add(filterSection);
 
-        // ===== Tabella =====
+        //  Tabella 
         createTable();
         StackPane tableContainer = new StackPane(table);
         tableContainer.setStyle("-fx-background-color: rgba(255,255,255,0.95);" +
@@ -233,9 +232,9 @@ public class VisualizzaRicetteGUI {
                     setStyle("");
                 } else {
                     setText(item + " min");
-                    if (item <= 30) setTextFill(Color.web("#2E7D32"));     // verde scuro
-                    else if (item <= 60) setTextFill(Color.web("#E65100")); // arancione scuro
-                    else setTextFill(Color.web("#B71C1C"));                 // rosso scuro
+                    if (item <= 30) setTextFill(Color.web("#2E7D32"));      
+                    else if (item <= 60) setTextFill(Color.web("#E65100")); 
+                    else setTextFill(Color.web("#B71C1C"));                
                     setFont(Font.font("Inter", 13));
                 }
             }
@@ -295,7 +294,7 @@ public class VisualizzaRicetteGUI {
         try {
             return r.getNumeroIngredienti();
         } catch (Throwable t) {
-            // fallback conservativo
+   
             return 0;
         }
     }
@@ -339,10 +338,10 @@ public class VisualizzaRicetteGUI {
         backBtn.setOnAction(e -> {
             Stage stage = getStage(currentRoot);
             if (stage != null && menuRoot != null) {
-                // ripristina il menuRoot come root della scena
+              
                 stage.getScene().setRoot(menuRoot);
             } else if (stage != null) {
-                // fallback: chiudi lo stage
+              
                 stage.close();
             }
         });
@@ -423,9 +422,9 @@ public class VisualizzaRicetteGUI {
         tempoFilter.valueProperty().addListener((obs, old, value) -> updateFilters());
         ingredientiFilter.valueProperty().addListener((obs, old, value) -> updateFilters());
 
-        // aggiorna contatore quando la lista cambia
+       
         ricetteData.addListener((javafx.collections.ListChangeListener<Ricetta>) c -> updateCountLabel());
-        // filteredRicette non è ObservableList diretta, ma il listener su ricetteData + predicate mantiene count aggiornato
+      
         updateCountLabel();
     }
 
@@ -491,7 +490,7 @@ public class VisualizzaRicetteGUI {
             protected void succeeded() {
                 ricetteData.setAll(getValue());
                 progressIndicator.setVisible(false);
-                updateFilters(); // applica i filtri alla nuova lista
+                updateFilters(); 
             }
 
             @Override
@@ -516,7 +515,7 @@ public class VisualizzaRicetteGUI {
         HBox controls = new HBox(6);
         controls.setAlignment(Pos.TOP_RIGHT);
         controls.setPadding(new Insets(8));
-        controls.setPickOnBounds(false); // non bloccare click su altri nodi
+        controls.setPickOnBounds(false); 
 
         Button minimizeBtn = createWindowButton("_", Color.WHITE);
         Button maximizeBtn = createWindowButton("⬜", Color.WHITE);

@@ -25,7 +25,7 @@ public class DettagliCorsoGUI {
         this.corso = corso;
     }
 
-    // ===== getRoot =====
+    //  getRoot
     public StackPane getRoot() {
         if (gestioneController == null || corso == null) {
             throw new IllegalStateException("Controller o corso non impostati!");
@@ -53,12 +53,12 @@ public class DettagliCorsoGUI {
         shadow.setOffsetY(3);
         card.setEffect(shadow);
 
-        // ===== Titolo =====
+        // Titolo 
         Label title = new Label("Dettagli corso");
         title.setFont(Font.font("Roboto", FontWeight.BOLD, 22));
         title.setTextFill(Color.web("#FF6600"));
 
-        // ===== Campi =====
+        //  Campi
         TextField nomeField = new TextField(corso.getNomeCorso());
         TextField prezzoField = new TextField(String.valueOf(corso.getPrezzo()));
         TextField argomentoField = new TextField(corso.getArgomento());
@@ -81,10 +81,9 @@ public class DettagliCorsoGUI {
                 corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
         );
 
-        // Blocca campi inizialmente
         setEditable(false, nomeField, prezzoField, argomentoField, frequenzaCombo, numeroPostiField, dataInizioPicker, dataFinePicker);
 
-        // ===== Pulsanti =====
+        //  Pulsanti
         HBox buttons = new HBox(15);
         buttons.setAlignment(Pos.CENTER);
 
@@ -97,7 +96,7 @@ public class DettagliCorsoGUI {
 
         buttons.getChildren().addAll(modificaBtn, salvaBtn, sessioniBtn, indietroBtn);
 
-        // Montaggio card
+
         card.getChildren().addAll(
                 title,
                 new Label("Nome:"), nomeField,
@@ -161,7 +160,10 @@ public class DettagliCorsoGUI {
         sessioniBtn.setOnAction(e -> {
             GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
             sessioniGUI.setCorso(corso);
-            root.getScene().setRoot(sessioniGUI.getRoot()); // navigazione coerente
+            // se root ha scena, sostituisci la root per mantenere navigazione coerente
+            if (root.getScene() != null) {
+                root.getScene().setRoot(sessioniGUI.getRoot());
+            }
         });
 
         // Torna indietro
@@ -169,6 +171,9 @@ public class DettagliCorsoGUI {
             StackPane parent = (StackPane) root.getParent(); // lo StackPane di VisualizzaCorsiGUI
             if (parent != null) {
                 parent.getChildren().remove(root); // rimuove i dettagli, sotto rimane la lista corsi
+            } else if (root.getScene() != null) {
+                // fallback: se era root della scena, ripristina il menu principale (non sappiamo quale, quindi chiudiamo)
+                root.getScene().getWindow().hide();
             }
         });
         return root;
@@ -215,4 +220,3 @@ public class DettagliCorsoGUI {
         alert.showAndWait();
     }
 }
-//prova prova

@@ -54,6 +54,9 @@ public class VisualizzaCorsiGUI {
 	private Button mostraTuttiBtn;
 	private Button mieiBtn;
 
+	// riferimento alla root principale per tornare indietro
+	private StackPane mainRoot;
+
 	public void setControllers(VisualizzaCorsiController visualizzaController,
 			GestioneCorsoController gestioneCorsoController, StackPane menuRoot) {
 		this.visualizzaController = visualizzaController;
@@ -62,11 +65,11 @@ public class VisualizzaCorsiGUI {
 	}
 
 	public StackPane getRoot() {
-		StackPane root = new StackPane();
-		createOrangeBackground(root);
+		mainRoot = new StackPane();
+		createOrangeBackground(mainRoot);
 
-		VBox mainContainer = createMainContainer(root);
-		root.getChildren().add(mainContainer);
+		VBox mainContainer = createMainContainer(mainRoot);
+		mainRoot.getChildren().add(mainContainer);
 
 		VBox headerSection = createHeader();
 		mainContainer.getChildren().add(headerSection);
@@ -83,16 +86,16 @@ public class VisualizzaCorsiGUI {
 
 		createProgressIndicator(tableContainer);
 
-		HBox actionSection = createActionButtons(root);
+		HBox actionSection = createActionButtons();
 		mainContainer.getChildren().add(actionSection);
 
 		setupFilters();
-		addWindowControls(root);
-		makeDraggable(root, headerSection);
+		addWindowControls(mainRoot);
+		makeDraggable(mainRoot, headerSection);
 
 		Platform.runLater(this::refreshData);
 
-		return root;
+		return mainRoot;
 	}
 
 	private void createOrangeBackground(StackPane root) {
@@ -217,6 +220,7 @@ public class VisualizzaCorsiGUI {
 		table.getColumns().addAll(nomeCol, argomentoCol, prezzoCol, sessioniCol);
 		table.getSortOrder().add(nomeCol);
 
+
 		table.setRowFactory(tv -> {
 			TableRow<CorsoCucina> row = new TableRow<>();
 			row.setOnMouseClicked(event -> {
@@ -227,6 +231,15 @@ public class VisualizzaCorsiGUI {
 			return row;
 		});
 
+
+		table.setOnMouseClicked(event -> {
+			if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+				CorsoCucina selected = table.getSelectionModel().getSelectedItem();
+				if (selected != null) {
+					apriDettagliCorso(selected);
+				}
+			}
+		});
 	}
 
 	private void createProgressIndicator(StackPane parent) {
@@ -237,7 +250,7 @@ public class VisualizzaCorsiGUI {
 		parent.getChildren().add(progressIndicator);
 	}
 
-	private HBox createActionButtons(StackPane currentRoot) {
+	private HBox createActionButtons() {
 		HBox actions = new HBox(12);
 		actions.setAlignment(Pos.CENTER);
 		actions.setPadding(new Insets(18, 0, 8, 0));
@@ -255,18 +268,30 @@ public class VisualizzaCorsiGUI {
 
 		mieiBtn.setOnAction(e -> applicaFiltriLocali(nomeField.getText(), argomentoField.getText(), true));
 
-		backBtn.setOnAction(e -> {
-			if (menuRoot != null)
-				menuRoot.getChildren().clear();
-			else {
-				Stage stage = getStage(currentRoot);
-				if (stage != null)
-					stage.close();
-			}
-		});
+		backBtn.setOnAction(e -> tornaAlMenu());
 
 		actions.getChildren().addAll(backBtn, mostraTuttiBtn, mieiBtn);
 		return actions;
+	}
+
+	private void tornaAlMenu() {
+		if (menuRoot != null) {
+			if (menuRoot.getChildren().contains(mainRoot)) {
+				menuRoot.getChildren().remove(mainRoot);
+				return;
+			}
+			Stage stage = getStage(mainRoot);
+			if (stage != null && stage.getScene() != null) {
+				stage.getScene().setRoot(menuRoot);
+				return;
+			}
+		} else {
+		
+			Stage stage = getStage(mainRoot);
+			if (stage != null) {
+				stage.close();
+			}
+		}
 	}
 
 	private TextField createOrangeTextField(String prompt, double width) {
@@ -306,47 +331,60 @@ public class VisualizzaCorsiGUI {
 		updateCountLabel();
 	}
 
-private void apriDettagliCorso(CorsoCucina selected) {
-    if (selected == null || gestioneCorsoController == null) return;
-    progressIndicator.setVisible(true);
+	private void apriDettagliCorso(CorsoCucina selected) {
+		if (selected == null) return;
+		if (gestioneCorsoController == null) {
+			Platform.runLater(() -> {
+				Alert a = new Alert(Alert.AlertType.ERROR, "Controller gestione corso non impostato.", ButtonType.OK);
+				a.showAndWait();
+			});
+			return;
+		}
+		progressIndicator.setVisible(true);
 
-    Task<CorsoCucina> loadDetailsTask = new Task<>() {
-        @Override
-        protected CorsoCucina call() throws Exception {
-            return gestioneCorsoController.getCorsoCompleto(selected.getIdCorso());
-        }
+		Task<CorsoCucina> loadDetailsTask = new Task<>() {
+			@Override
+			protected CorsoCucina call() throws Exception {
+				return gestioneCorsoController.getCorsoCompleto(selected.getIdCorso());
+			}
 
-        @Override
-        protected void succeeded() {
-            CorsoCucina dettagli = getValue();
-            progressIndicator.setVisible(false);
+			@Override
+			protected void succeeded() {
+				CorsoCucina dettagli = getValue();
+				progressIndicator.setVisible(false);
 
-            DettagliCorsoGUI detGui = new DettagliCorsoGUI();
-            detGui.setController(gestioneCorsoController);
-            detGui.setCorso(dettagli != null ? dettagli : selected);
-            detGui.setParentRoot(menuRoot); // <-- passiamo il root della lista
+				DettagliCorsoGUI detGui = new DettagliCorsoGUI();
+				detGui.setController(gestioneCorsoController);
+				detGui.setCorso(dettagli != null ? dettagli : selected);
 
-            if (menuRoot != null) {
-                menuRoot.getChildren().clear();
-                menuRoot.getChildren().add(detGui.getRoot());
-            } else {
-                Stage stage = getStage(table);
-                if (stage != null) {
-                    stage.getScene().setRoot(detGui.getRoot());
-                }
-            }
-        }
+				StackPane dettagliRoot = detGui.getRoot();
 
-        @Override
-        protected void failed() {
-            progressIndicator.setVisible(false);
-            getException().printStackTrace();
-        }
-    };
+				if (menuRoot != null) {
+					menuRoot.getChildren().add(dettagliRoot);
+				} else {
+					Stage stage = getStage(table);
+					if (stage != null && stage.getScene() != null) {
+						stage.getScene().setRoot(dettagliRoot);
+					}
+				}
+			}
 
-    new Thread(loadDetailsTask).start();
-}
+			@Override
+			protected void failed() {
+				progressIndicator.setVisible(false);
+				Throwable ex = getException();
+				ex.printStackTrace();
+				Platform.runLater(() -> {
+					Alert a = new Alert(Alert.AlertType.ERROR);
+					a.setHeaderText("Errore caricamento dettagli corso");
+					a.setContentText(ex != null ? ex.getMessage() : "Errore sconosciuto");
+					a.showAndWait();
+				});
+			}
+		};
 
+		new Thread(loadDetailsTask).start();
+	}
 
 	private void updateCountLabel() {
 		int count = filteredCorsi == null ? corsiData.size() : filteredCorsi.size();
@@ -378,6 +416,7 @@ private void apriDettagliCorso(CorsoCucina selected) {
 			@Override
 			protected void failed() {
 				progressIndicator.setVisible(false);
+				getException().printStackTrace();
 			}
 		};
 

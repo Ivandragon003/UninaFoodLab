@@ -168,39 +168,34 @@ public class ChefMenuGUI {
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
             corsiGUI.setControllers(corsiController, gestioneCorsoController, menuRoot);
 
-            stage.getScene().setRoot(corsiGUI.getRoot());
+            menuRoot.getChildren().add(corsiGUI.getRoot());
         } catch (Exception ex) {
             ex.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo i corsi: " + ex.getMessage(), ButtonType.OK);
+            alert.showAndWait();
         }
     }
 
-  private void apriVisualizzaRicette(Stage stage) {
-    try {
-        // Crei i DAO (anche vuoti/null se non vuoi passare dati)
-        RicettaDAO ricettaDAO = new RicettaDAO();
-        UsaDAO usaDAO = new UsaDAO();
+    private void apriVisualizzaRicette(Stage stage) {
+        try {
+            RicettaDAO ricettaDAO = new RicettaDAO();
+            UsaDAO usaDAO = new UsaDAO();
 
-        // Crei il servizio con i DAO
-        GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO);
+            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO);
 
-        // Passi solo il servizio al controller (visualizzazione)
-        VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
+            VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
 
-        // Crei la GUI e setti il controller
-        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-        gui.setController(controller, menuRoot);
+            VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
+            gui.setController(controller, menuRoot);
 
-        // Cambi il root dello stage
-        stage.getScene().setRoot(gui.getRoot());
+            stage.getScene().setRoot(gui.getRoot());
 
-    } catch (Exception ex) {
-        ex.printStackTrace();
-        Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo le ricette: " + ex.getMessage(), ButtonType.OK);
-        alert.showAndWait();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo le ricette: " + ex.getMessage(), ButtonType.OK);
+            alert.showAndWait();
+        }
     }
-}
-
-
 
     private void eliminaAccount(Stage stage) {
         Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
