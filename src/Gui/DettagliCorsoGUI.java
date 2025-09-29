@@ -215,3 +215,4 @@ public class DettagliCorsoGUI {
         alert.showAndWait();
     }
 }
+//prova prova
