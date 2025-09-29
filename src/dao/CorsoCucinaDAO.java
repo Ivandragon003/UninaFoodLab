@@ -6,9 +6,8 @@ import util.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 import java.util.Optional;
 import java.math.BigDecimal;
 
@@ -28,14 +27,15 @@ public class CorsoCucinaDAO {
 			ps.setInt(5, corso.getNumeroPosti());
 
 			if (corso.getDataInizioCorso() != null)
-				ps.setTimestamp(6, Timestamp.valueOf(corso.getDataInizioCorso()));
+			    ps.setTimestamp(6, Timestamp.valueOf(corso.getDataInizioCorso()));
 			else
-				ps.setTimestamp(6, null);
+			    ps.setNull(6, Types.TIMESTAMP);
 
 			if (corso.getDataFineCorso() != null)
-				ps.setTimestamp(7, Timestamp.valueOf(corso.getDataFineCorso()));
+			    ps.setTimestamp(7, Timestamp.valueOf(corso.getDataFineCorso()));
 			else
-				ps.setTimestamp(7, null);
+			    ps.setNull(7, Types.TIMESTAMP);
+
 
 			try (ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {

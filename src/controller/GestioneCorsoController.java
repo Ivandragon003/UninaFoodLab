@@ -70,5 +70,9 @@ public class GestioneCorsoController {
 	public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
 		return corsiService.getCorsoCompleto(idCorso);
 	}
+	
+	public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
+	    corsiService.rimuoviChefDaCorso(corso, chef);
+	}
 
 }

@@ -30,6 +30,9 @@ public class ChefMenuGUI {
     private double yOffset = 0;
     private StackPane menuRoot;
 
+    // Area contenuti a destra
+    private StackPane contentPane;
+
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
     }
@@ -51,41 +54,49 @@ public class ChefMenuGUI {
         stage.setTitle("Menu Chef - " + chefLoggato.getUsername());
 
         menuRoot = new StackPane();
-        menuRoot.setPrefSize(500, 700);
         createBackground(menuRoot);
 
-        VBox card = new VBox(25);
-        card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(40));
-        card.setMaxWidth(380);
-        card.setStyle("-fx-background-color: white;" +
-                      "-fx-background-radius: 20;" +
-                      "-fx-border-radius: 20;" +
-                      "-fx-border-color: #FF9966;" +
-                      "-fx-border-width: 2;");
+        // --- Layout principale: HBox (sidebar sx + contenuto dx) ---
+        HBox mainLayout = new HBox();
 
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(10);
-        shadow.setColor(Color.web("#000000", 0.2));
-        shadow.setOffsetY(3);
-        card.setEffect(shadow);
+        // --- Sidebar sinistra ---
+        VBox sidebar = new VBox(20);
+        sidebar.setAlignment(Pos.TOP_CENTER);
+        sidebar.setPadding(new Insets(30, 10, 30, 10));
+        sidebar.setStyle("-fx-background-color: #FF6600;");
+        sidebar.setPrefWidth(200);
 
         Label welcomeLabel = new Label("Benvenuto, " + chefLoggato.getUsername());
-        welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
-        welcomeLabel.setTextFill(Color.web("#FF6600"));
+        welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
+        welcomeLabel.setTextFill(Color.WHITE);
+        welcomeLabel.setWrapText(true);
+        welcomeLabel.setAlignment(Pos.CENTER);
 
-        VBox buttonContainer = new VBox(15);
-        buttonContainer.setAlignment(Pos.CENTER);
+        Button corsiBtn = createSidebarButton("Corsi");
+        corsiBtn.setOnAction(e -> apriVisualizzaCorsi());
 
-        Button visualizzaCorsiBtn = createStylishButton("Visualizza Corsi", "#FF6600", "#FF8533");
-        Button visualizzaRicetteBtn = createStylishButton("Visualizza Ricette", "#FF6600", "#FF8533");
-        Button eliminaAccountBtn = createStylishButton("Elimina Account", "#FF6600", "#FF8533");
-        Button logoutButton = createStylishButton("Logout", "#FFCC99", "#FFD9B3");
+        Button ricetteBtn = createSidebarButton("Ricette");
+        ricetteBtn.setOnAction(e -> apriVisualizzaRicette());
 
-        buttonContainer.getChildren().addAll(visualizzaCorsiBtn, visualizzaRicetteBtn, eliminaAccountBtn, logoutButton);
-        card.getChildren().addAll(welcomeLabel, buttonContainer);
-        menuRoot.getChildren().add(card);
+        Button eliminaBtn = createSidebarButton("Elimina");
+        eliminaBtn.setOnAction(e -> eliminaAccount(stage));
 
+        Button logoutBtn = createSidebarButton("Logout");
+        logoutBtn.setOnAction(e -> stage.close());
+
+        sidebar.getChildren().addAll(welcomeLabel, corsiBtn, ricetteBtn, eliminaBtn, logoutBtn);
+
+        // --- Area contenuti a destra ---
+        contentPane = new StackPane();
+        contentPane.setStyle("-fx-background-color: #FFFFFF;");
+        HBox.setHgrow(contentPane, Priority.ALWAYS);
+
+        // Contenitore principale HBox
+        mainLayout.getChildren().addAll(sidebar, contentPane);
+
+        menuRoot.getChildren().add(mainLayout);
+
+        // Bottone chiusura/minimizza/maximizza
         HBox windowButtons = createWindowButtons(stage);
         menuRoot.getChildren().add(windowButtons);
         StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
@@ -93,13 +104,7 @@ public class ChefMenuGUI {
 
         makeDraggable(menuRoot, stage);
 
-        // Eventi pulsanti
-        visualizzaCorsiBtn.setOnAction(e -> apriVisualizzaCorsi(stage));
-        visualizzaRicetteBtn.setOnAction(e -> apriVisualizzaRicette(stage));
-        eliminaAccountBtn.setOnAction(e -> eliminaAccount(stage));
-        logoutButton.setOnAction(e -> stage.close());
-
-        Scene scene = new Scene(menuRoot);
+        Scene scene = new Scene(menuRoot, 1200, 800); // finestra più grande e adattabile
         scene.setFill(Color.TRANSPARENT);
         stage.setScene(scene);
         stage.show();
@@ -113,26 +118,25 @@ public class ChefMenuGUI {
         );
         Region background = new Region();
         background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-        background.setPrefSize(500, 700);
+        background.setMinSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+        background.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         root.getChildren().add(background);
     }
 
-    private Button createStylishButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefSize(150, 45);
-        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
+    private Button createSidebarButton(String text) {
+        Button btn = new Button(text);
+        btn.setPrefWidth(160);
+        btn.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        btn.setTextFill(Color.WHITE);
+        btn.setStyle("-fx-background-color: #FF8533; -fx-background-radius: 10; -fx-cursor: hand;");
         DropShadow shadow = new DropShadow();
         shadow.setRadius(5);
         shadow.setColor(Color.web("#000000", 0.2));
-        button.setEffect(shadow);
+        btn.setEffect(shadow);
 
-        button.setOnMouseEntered(e -> button.setStyle(
-                "-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        button.setOnMouseExited(e -> button.setStyle(
-                "-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        return button;
+        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #FF6600; -fx-background-radius: 10; -fx-cursor: hand;"));
+        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: #FF8533; -fx-background-radius: 10; -fx-cursor: hand;"));
+        return btn;
     }
 
     private HBox createWindowButtons(Stage stage) {
@@ -159,16 +163,17 @@ public class ChefMenuGUI {
         return box;
     }
 
-    private void apriVisualizzaCorsi(Stage stage) {
+    private void apriVisualizzaCorsi() {
         try {
             GestioneCorsoController gestioneCorsoController =
                     new GestioneCorsoController(corsiController.getGestioneCorsi(), null);
             gestioneCorsoController.setChefLoggato(corsiController.getChefLoggato());
 
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
-            corsiGUI.setControllers(corsiController, gestioneCorsoController, menuRoot);
+            corsiGUI.setControllers(corsiController, gestioneCorsoController, contentPane);
 
-            menuRoot.getChildren().add(corsiGUI.getRoot());
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(corsiGUI.getRoot());
         } catch (Exception ex) {
             ex.printStackTrace();
             Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo i corsi: " + ex.getMessage(), ButtonType.OK);
@@ -176,7 +181,7 @@ public class ChefMenuGUI {
         }
     }
 
-    private void apriVisualizzaRicette(Stage stage) {
+    private void apriVisualizzaRicette() {
         try {
             RicettaDAO ricettaDAO = new RicettaDAO();
             UsaDAO usaDAO = new UsaDAO();
@@ -186,9 +191,10 @@ public class ChefMenuGUI {
             VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
 
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            gui.setController(controller, menuRoot);
+            gui.setController(controller, contentPane);
 
-            stage.getScene().setRoot(gui.getRoot());
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(gui.getRoot());
 
         } catch (Exception ex) {
             ex.printStackTrace();
