@@ -1,16 +1,22 @@
 package Gui;
 
 import controller.GestioneCorsoController;
+import controller.GestioneSessioniController;
 import model.CorsoCucina;
 import model.Frequenza;
+import service.GestioneCucina;
+import service.GestioneRicette;
+import service.GestioneSessioni;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 
 public class DettagliCorsoGUI {
 
@@ -25,18 +31,15 @@ public class DettagliCorsoGUI {
         this.corso = corso;
     }
 
-    //  getRoot
     public StackPane getRoot() {
         if (gestioneController == null || corso == null) {
             throw new IllegalStateException("Controller o corso non impostati!");
         }
 
-        // Root principale con gradiente
         StackPane root = new StackPane();
         root.setPrefSize(500, 700);
         createBackground(root);
 
-        // Card centrale
         VBox card = new VBox(15);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(25));
@@ -53,12 +56,10 @@ public class DettagliCorsoGUI {
         shadow.setOffsetY(3);
         card.setEffect(shadow);
 
-        // Titolo 
         Label title = new Label("Dettagli corso");
         title.setFont(Font.font("Roboto", FontWeight.BOLD, 22));
         title.setTextFill(Color.web("#FF6600"));
 
-        //  Campi
         TextField nomeField = new TextField(corso.getNomeCorso());
         TextField prezzoField = new TextField(String.valueOf(corso.getPrezzo()));
         TextField argomentoField = new TextField(corso.getArgomento());
@@ -83,7 +84,6 @@ public class DettagliCorsoGUI {
 
         setEditable(false, nomeField, prezzoField, argomentoField, frequenzaCombo, numeroPostiField, dataInizioPicker, dataFinePicker);
 
-        //  Pulsanti
         HBox buttons = new HBox(15);
         buttons.setAlignment(Pos.CENTER);
 
@@ -93,9 +93,7 @@ public class DettagliCorsoGUI {
         Button indietroBtn = createStylishButton("⬅ Indietro");
 
         salvaBtn.setDisable(true);
-
         buttons.getChildren().addAll(modificaBtn, salvaBtn, sessioniBtn, indietroBtn);
-
 
         card.getChildren().addAll(
                 title,
@@ -114,13 +112,11 @@ public class DettagliCorsoGUI {
 
         // ===== Eventi =====
 
-        // Modifica
         modificaBtn.setOnAction(e -> {
             setEditable(true, nomeField, prezzoField, argomentoField, frequenzaCombo, numeroPostiField, dataInizioPicker, dataFinePicker);
             salvaBtn.setDisable(false);
         });
 
-        // Salva
         salvaBtn.setOnAction(e -> {
             try {
                 double prezzo = Double.parseDouble(prezzoField.getText().replace(',', '.'));
@@ -156,67 +152,62 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // Visualizza sessioni
+        // ===== PULSANTE SESSIONI =====
         sessioniBtn.setOnAction(e -> {
-            GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
-            sessioniGUI.setCorso(corso);
-            // se root ha scena, sostituisci la root per mantenere navigazione coerente
-            if (root.getScene() != null) {
-                root.getScene().setRoot(sessioniGUI.getRoot());
+            try {
+                // Creo i servizi
+                GestioneSessioni gestioneSessioniService = new GestioneSessioni();
+                GestioneCucina gestioneCucinaService = new GestioneCucina();
+                GestioneRicette gestioneRicetteService = new GestioneRicette();
+
+                // Creo il controller sessioni
+                GestioneSessioniController sessioniController =
+                        new GestioneSessioniController(corso, gestioneSessioniService, gestioneCucinaService, gestioneRicetteService);
+
+                // Creo e configuro la GUI
+                GestioneSessioniGUI gui = new GestioneSessioniGUI();
+                gui.setCorso(corso);
+                gui.setController(sessioniController);
+                gui.setModalitaAggiunta(true); // parte in modalità aggiunta nuova sessione
+
+                // Apro in una nuova finestra
+                Stage stage = new Stage();
+                gui.start(stage);
+
+            } catch (Exception ex) {
+                showAlert("Errore", "Impossibile aprire la gestione sessioni: " + ex.getMessage());
+                ex.printStackTrace();
             }
         });
 
-        // Torna indietro
-        indietroBtn.setOnAction(e -> {
-            StackPane parent = (StackPane) root.getParent(); // lo StackPane di VisualizzaCorsiGUI
-            if (parent != null) {
-                parent.getChildren().remove(root); // rimuove i dettagli, sotto rimane la lista corsi
-            } else if (root.getScene() != null) {
-                // fallback: se era root della scena, ripristina il menu principale (non sappiamo quale, quindi chiudiamo)
-                root.getScene().getWindow().hide();
-            }
-        });
+        // TODO: indietroBtn.setOnAction(...) se serve tornare alla schermata precedente
+
         return root;
     }
 
-    // ===== Utils =====
     private void createBackground(StackPane root) {
-        BackgroundFill gradient = new BackgroundFill(
-                new javafx.scene.paint.LinearGradient(0, 0, 1, 1, true,
-                        javafx.scene.paint.CycleMethod.NO_CYCLE,
-                        new javafx.scene.paint.Stop(0, Color.web("#FF9966")),
-                        new javafx.scene.paint.Stop(1, Color.web("#FF5E62"))),
-                CornerRadii.EMPTY, Insets.EMPTY);
-        root.setBackground(new Background(gradient));
+        root.setStyle("-fx-background-color: linear-gradient(to bottom, #FFE0CC, #FFFFFF);");
+    }
+
+    private void setEditable(boolean editable, Control... controls) {
+        for (Control c : controls) {
+            if (c instanceof TextField tf) tf.setEditable(editable);
+            if (c instanceof ComboBox<?> cb) cb.setDisable(!editable);
+            if (c instanceof DatePicker dp) dp.setDisable(!editable);
+        }
     }
 
     private Button createStylishButton(String text) {
         Button btn = new Button(text);
-        btn.setStyle("-fx-background-color: linear-gradient(to right, #FF9966, #FF5E62);" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 20;" +
-                "-fx-padding: 8 16;");
+        btn.setStyle("-fx-background-color: #FF9966; -fx-text-fill: white; -fx-font-weight: bold;");
         return btn;
     }
 
-    private void setEditable(boolean editable, TextField nome, TextField prezzo, TextField argomento,
-                             ComboBox<Frequenza> freq, TextField posti,
-                             DatePicker inizio, DatePicker fine) {
-        nome.setEditable(editable);
-        prezzo.setEditable(editable);
-        argomento.setEditable(editable);
-        freq.setDisable(!editable);
-        posti.setEditable(editable);
-        inizio.setDisable(!editable);
-        fine.setDisable(!editable);
-    }
-
-    private void showAlert(String titolo, String messaggio) {
+    private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(titolo);
+        alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(messaggio);
+        alert.setContentText(message);
         alert.showAndWait();
     }
 }

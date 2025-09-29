@@ -17,6 +17,7 @@ public class GestioneSessioniController {
     private final GestioneCucina gestioneCucinaService;
     private final GestioneRicette gestioneRicetteService;
 
+    
     public GestioneSessioniController(CorsoCucina corso,
                                       GestioneSessioni gestioneSessioniService,
                                       GestioneCucina gestioneCucinaService,
