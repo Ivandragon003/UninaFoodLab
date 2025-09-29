@@ -18,41 +18,36 @@ public class VisualizzaCorsiController {
         this.chefLoggato = chefLoggato;
     }
 
-	public Chef getChefLoggato() {
-		return chefLoggato;
-	}
-	
+    public Chef getChefLoggato() {
+        return chefLoggato;
+    }
 
-	public void visualizzaCorsi(List<CorsoCucina> corsi) {
-		corsi.forEach(c -> System.out.println(c.toStringNomeCorso() + " | ID: " + c.getIdCorso()));
-	}
-	public GestioneCorsiCucina getGestioneCorsi() {
-		return corsiService;
-	}
+    public GestioneCorsiCucina getGestioneCorsi() {
+        return corsiService;
+    }
 
 
-    
-    // Corsi leggeri (senza iscritti e sessioni)
     public List<CorsoCucina> getTuttiICorsi() throws SQLException {
-        return corsiService.getCorsi();
+        return corsiService.getCorsi(); 
     }
 
-    // Corsi completi (con iscritti e sessioni)
-    public List<CorsoCucina> getTuttiICorsiCompleti() throws SQLException {
-        return corsiService.getTuttiICorsiCompleti();
-    }
-
-    // Corsi del chef loggato (da tutti i corsi completi)
     public List<CorsoCucina> getCorsiChefLoggato() throws SQLException {
-        return getTuttiICorsiCompleti().stream()
+        return getTuttiICorsi().stream()
                 .filter(c -> c.getChef().contains(chefLoggato))
                 .collect(Collectors.toList());
     }
 
-
-    // Ricerca per categoria / argomento del corso
     public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
         return corsiService.cercaPerNomeOCategoria(filtro);
     }
 
+    // Numero di sessioni per un corso specifico
+    public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
+        return corsiService.getNumeroSessioniPerCorso(idCorso);
+    }
+
+    // Metodo di utilità per stampare corsi in console
+    public void visualizzaCorsi(List<CorsoCucina> corsi) {
+        corsi.forEach(c -> System.out.println(c.toStringNomeCorso() + " | ID: " + c.getIdCorso()));
+    }
 }

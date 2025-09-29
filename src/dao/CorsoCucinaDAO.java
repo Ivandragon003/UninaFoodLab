@@ -6,7 +6,9 @@ import util.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.math.BigDecimal;
 
@@ -147,5 +149,20 @@ public class CorsoCucinaDAO {
 
 		return corso;
 	}
+	
+	public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
+	    String sql = "SELECT COUNT(*) AS num_sessioni FROM sessione WHERE idcorsocucina = ?";
+	    try (Connection conn = DBConnection.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setInt(1, idCorso);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt("num_sessioni");
+	            }
+	        }
+	    }
+	    return 0; 
+	}
+
 
 }

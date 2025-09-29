@@ -71,7 +71,4 @@ public class GestioneCorsoController {
 		return corsiService.getCorsoCompleto(idCorso);
 	}
 
-	public List<CorsoCucina> getTuttiICorsiCompleti() throws SQLException {
-		return corsiService.getTuttiICorsiCompleti();
-	}
 }
