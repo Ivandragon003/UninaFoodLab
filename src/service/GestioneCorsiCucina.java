@@ -1,7 +1,9 @@
 package service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Set;
 import java.sql.SQLException;
 import dao.*;
@@ -135,25 +137,12 @@ public class GestioneCorsiCucina {
 
 		return corso;
 	}
-
-	public List<CorsoCucina> getTuttiICorsiCompleti() throws SQLException {
-		List<CorsoCucina> corsiCompleti = new ArrayList<>();
-		for (CorsoCucina corso : corsoDAO.getAll()) {
-			List<Sessione> sessioni = new ArrayList<>();
-			sessioni.addAll(onlineDAO.getByCorso(corso.getIdCorso()));
-			sessioni.addAll(inPresenzaDAO.getByCorso(corso.getIdCorso()));
-			corso.setSessioni(sessioni);
-
-			List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
-					.filter(i -> i.getCorso().getIdCorso() == corso.getIdCorso()).toList();
-			corso.setIscrizioni(iscrizioni);
-
-			corso.setChef(tieneDAO.getChefByCorso(corso.getIdCorso()));
-
-			corsiCompleti.add(corso);
-		}
-		return corsiCompleti;
+	
+	public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
+	    return corsoDAO.getNumeroSessioniPerCorso(idCorso);
 	}
+
+	
 	
 	public List<CorsoCucina> getCorsi() throws SQLException {
 	    return corsoDAO.getAll();
