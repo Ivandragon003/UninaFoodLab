@@ -66,7 +66,22 @@ public class Chef extends Persona {
 		}
 		this.password = password;
 	}
-	
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null || getClass() != obj.getClass())
+			return false;
+		Chef other = (Chef) obj;
+		return this.getUsername().equals(other.getUsername());
+	}
+
+	@Override
+	public int hashCode() {
+		return getUsername().hashCode();
+	}
+
 	public String getPassword() {
 		return password;
 	}

@@ -55,6 +55,15 @@ public class RegistrazioneChefGUI extends VBox {
         TextField usernameField = createTextField("Username");
         PasswordField passwordField = createPasswordField("Password");
 
+        // Spinner per anni di esperienza
+        Spinner<Integer> anniEsperienzaSpinner = new Spinner<>(0, 50, 0);
+        anniEsperienzaSpinner.setPrefWidth(300);
+        anniEsperienzaSpinner.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15;" +
+                "-fx-border-color: #FF9966; -fx-border-width: 1.5;"
+        );
+        anniEsperienzaSpinner.setEditable(true);
+
         CheckBox disponibilitaBox = new CheckBox("Disponibile");
         disponibilitaBox.setSelected(true);
 
@@ -66,6 +75,8 @@ public class RegistrazioneChefGUI extends VBox {
                 dataNascitaPicker,
                 usernameField,
                 passwordField,
+                new Label("Anni di esperienza:"),
+                anniEsperienzaSpinner,
                 disponibilitaBox
         );
         form.setAlignment(Pos.CENTER);
@@ -99,7 +110,6 @@ public class RegistrazioneChefGUI extends VBox {
                     return;
                 }
 
-                // Non serve salvare in una variabile
                 chefController.registraChef(
                         codFiscaleField.getText().trim(),
                         nomeField.getText().trim(),
@@ -109,10 +119,17 @@ public class RegistrazioneChefGUI extends VBox {
                         disponibilitaBox.isSelected(),
                         usernameField.getText().trim(),
                         passwordField.getText().trim()
+                       
                 );
-
-                messageLabel.setText("✅ Registrazione completata! Puoi ora effettuare il login.");
+                anniEsperienzaSpinner.getValue();
+                
+                // Mostra messaggio breve e chiude subito schermata
+                messageLabel.setText("✅ Registrazione completata!");
                 messageLabel.setTextFill(Color.web("#00AA00"));
+
+                // Torna al login
+                onAnnulla.run();
+
             } catch (Exception ex) {
                 messageLabel.setText("❌ Errore: " + ex.getMessage());
                 messageLabel.setTextFill(Color.RED);

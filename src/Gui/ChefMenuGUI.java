@@ -3,8 +3,7 @@ package Gui;
 import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import controller.VisualizzaRicetteController;
-import dao.RicettaDAO;
-import dao.UsaDAO;
+import dao.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -20,25 +19,29 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
-import service.GestioneRicette;
+import service.GestioneCorsiCucina;
+import service.GestioneChef;
 
 public class ChefMenuGUI {
 
     private Chef chefLoggato;
     private VisualizzaCorsiController corsiController;
+    private GestioneCorsoController gestioneCorsoController;
     private double xOffset = 0;
     private double yOffset = 0;
     private StackPane menuRoot;
 
-    // Area contenuti a destra
     private StackPane contentPane;
 
+    // Imposta chef loggato
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
     }
 
-    public void setController(VisualizzaCorsiController controller) {
+    // Imposta controller dei corsi (Visualizza)
+    public void setController(VisualizzaCorsiController controller, GestioneCorsoController gestione) {
         this.corsiController = controller;
+        this.gestioneCorsoController = gestione;
     }
 
     public StackPane getRoot() {
@@ -46,7 +49,7 @@ public class ChefMenuGUI {
     }
 
     public void start(Stage stage) {
-        if (chefLoggato == null || corsiController == null) {
+        if (chefLoggato == null || corsiController == null || gestioneCorsoController == null) {
             throw new IllegalStateException("Chef e controller devono essere impostati prima di start().");
         }
 
@@ -56,7 +59,6 @@ public class ChefMenuGUI {
         menuRoot = new StackPane();
         createBackground(menuRoot);
 
-        // --- Layout principale: HBox (sidebar sx + contenuto dx) ---
         HBox mainLayout = new HBox();
 
         // --- Sidebar sinistra ---
@@ -72,8 +74,12 @@ public class ChefMenuGUI {
         welcomeLabel.setWrapText(true);
         welcomeLabel.setAlignment(Pos.CENTER);
 
-        Button corsiBtn = createSidebarButton("Corsi");
+        // --- Pulsanti sidebar ---
+        Button corsiBtn = createSidebarButton("Visualizza corsi");
         corsiBtn.setOnAction(e -> apriVisualizzaCorsi());
+
+        Button creaCorsoBtn = createSidebarButton("Crea corso");
+        creaCorsoBtn.setOnAction(e -> apriCreaCorso());
 
         Button ricetteBtn = createSidebarButton("Ricette");
         ricetteBtn.setOnAction(e -> apriVisualizzaRicette());
@@ -84,14 +90,13 @@ public class ChefMenuGUI {
         Button logoutBtn = createSidebarButton("Logout");
         logoutBtn.setOnAction(e -> stage.close());
 
-        sidebar.getChildren().addAll(welcomeLabel, corsiBtn, ricetteBtn, eliminaBtn, logoutBtn);
+        sidebar.getChildren().addAll(welcomeLabel, corsiBtn, creaCorsoBtn, ricetteBtn, eliminaBtn, logoutBtn);
 
         // --- Area contenuti a destra ---
         contentPane = new StackPane();
         contentPane.setStyle("-fx-background-color: #FFFFFF;");
         HBox.setHgrow(contentPane, Priority.ALWAYS);
 
-        // Contenitore principale HBox
         mainLayout.getChildren().addAll(sidebar, contentPane);
 
         menuRoot.getChildren().add(mainLayout);
@@ -104,7 +109,7 @@ public class ChefMenuGUI {
 
         makeDraggable(menuRoot, stage);
 
-        Scene scene = new Scene(menuRoot, 1200, 800); // finestra più grande e adattabile
+        Scene scene = new Scene(menuRoot, 1200, 800);
         scene.setFill(Color.TRANSPARENT);
         stage.setScene(scene);
         stage.show();
@@ -165,10 +170,6 @@ public class ChefMenuGUI {
 
     private void apriVisualizzaCorsi() {
         try {
-            GestioneCorsoController gestioneCorsoController =
-                    new GestioneCorsoController(corsiController.getGestioneCorsi(), null);
-            gestioneCorsoController.setChefLoggato(corsiController.getChefLoggato());
-
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
             corsiGUI.setControllers(corsiController, gestioneCorsoController, contentPane);
 
@@ -181,15 +182,28 @@ public class ChefMenuGUI {
         }
     }
 
+    private void apriCreaCorso() {
+        try {
+            CreaCorsoGUI gui = new CreaCorsoGUI();
+            gui.setController(gestioneCorsoController); // Passiamo il controller completo
+
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(gui.getRoot());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo il form Crea Corso: " + ex.getMessage(), ButtonType.OK);
+            alert.showAndWait();
+        }
+    }
+
     private void apriVisualizzaRicette() {
         try {
             RicettaDAO ricettaDAO = new RicettaDAO();
             UsaDAO usaDAO = new UsaDAO();
 
-            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO);
+            service.GestioneRicette gestioneRicette = new service.GestioneRicette(ricettaDAO, usaDAO);
 
             VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
-
             VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
             gui.setController(controller, contentPane);
 

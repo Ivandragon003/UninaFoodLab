@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.ChefController;
+import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import service.GestioneCorsiCucina;
 import util.DBConnection;
@@ -26,7 +27,6 @@ public class LoginChefGUI extends Application {
     private double xOffset = 0;
     private double yOffset = 0;
 
- 
     private StackPane contentPane;
 
     public static void setController(ChefController controller, GestioneCorsiCucina corsiServiceArg) {
@@ -46,16 +46,13 @@ public class LoginChefGUI extends Application {
         StackPane root = new StackPane();
         root.setPrefSize(500, 700);
 
-        // Sfondo
         createBackground(root);
 
-    
         contentPane = new StackPane();
         VBox loginCard = createLoginCard();
         contentPane.getChildren().add(loginCard);
         root.getChildren().add(contentPane);
 
-        // Pulsanti finestra in alto a destra
         HBox windowButtons = createWindowButtons(primaryStage);
         root.getChildren().add(windowButtons);
         StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
@@ -210,11 +207,20 @@ public class LoginChefGUI extends Application {
                 messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
                 messageLabel.setTextFill(Color.web("#FF6600"));
 
+                // IMPORTANTE: Creare il GestioneCorsoController e impostare lo chef loggato PRIMA di passarlo
+                GestioneCorsoController gestioneCorsoController =
+                        new GestioneCorsoController(corsiService, chefController.getGestioneChef());
+                
+                // FIX: Imposta lo chef loggato nel controller PRIMA di usarlo
+                gestioneCorsoController.setChefLoggato(chef);
+
+                // Controller per visualizzare i corsi
                 VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
 
                 ChefMenuGUI menu = new ChefMenuGUI();
                 menu.setChefLoggato(chef);
-                menu.setController(corsiController);
+                menu.setController(corsiController, gestioneCorsoController);
+
                 Stage menuStage = new Stage();
                 menu.start(menuStage);
 

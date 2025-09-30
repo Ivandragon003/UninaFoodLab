@@ -1,150 +1,89 @@
 package service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
+
 import dao.*;
 import model.*;
 
 public class GestioneCorsiCucina {
 
-	private final CorsoCucinaDAO corsoDAO;
-	private final ChefDAO chefDAO;
-	private final TieneDAO tieneDAO;
-	private final IscrizioneDAO iscrizioneDAO;
-	private final OnlineDAO onlineDAO;
-	private final InPresenzaDAO inPresenzaDAO;
+    private final CorsoCucinaDAO corsoDAO;
+    private final ChefDAO chefDAO;
+    private final TieneDAO tieneDAO;
+    private final IscrizioneDAO iscrizioneDAO;
+    private final OnlineDAO onlineDAO;
+    private final InPresenzaDAO inPresenzaDAO;
 
-	public GestioneCorsiCucina(CorsoCucinaDAO corsoDAO, ChefDAO chefDAO, TieneDAO tieneDAO, IscrizioneDAO iscrizioneDAO,
-			OnlineDAO onlineDAO, InPresenzaDAO inPresenzaDAO) {
-		this.corsoDAO = corsoDAO;
-		this.chefDAO = chefDAO;
-		this.tieneDAO = tieneDAO;
-		this.iscrizioneDAO = iscrizioneDAO;
-		this.onlineDAO = onlineDAO;
-		this.inPresenzaDAO = inPresenzaDAO;
-	}
+    public GestioneCorsiCucina(CorsoCucinaDAO corsoDAO, ChefDAO chefDAO, TieneDAO tieneDAO,
+                               IscrizioneDAO iscrizioneDAO, OnlineDAO onlineDAO, InPresenzaDAO inPresenzaDAO) {
+        this.corsoDAO = corsoDAO;
+        this.chefDAO = chefDAO;
+        this.tieneDAO = tieneDAO;
+        this.iscrizioneDAO = iscrizioneDAO;
+        this.onlineDAO = onlineDAO;
+        this.inPresenzaDAO = inPresenzaDAO;
+    }
 
-	// Corsi
-	public void creaCorso(CorsoCucina corso) throws SQLException {
-		corsoDAO.save(corso);
-	}
+    public void creaCorso(CorsoCucina corso) throws SQLException {
+        corsoDAO.save(corso);
+    }
 
-	public void aggiornaCorso(CorsoCucina corso) throws SQLException {
-		corsoDAO.update(corso);
-	}
+    public void aggiornaCorso(CorsoCucina corso) throws SQLException {
+        corsoDAO.update(corso);
+    }
 
-	public void cancellaCorso(int idCorso) throws SQLException {
-		tieneDAO.deleteByCorso(idCorso);
-		corsoDAO.delete(idCorso);
-	}
+    public void cancellaCorso(int idCorso) throws SQLException {
+        tieneDAO.deleteByCorso(idCorso);
+        corsoDAO.delete(idCorso);
+    }
 
-	public List<CorsoCucina> getAllCorsi() throws SQLException {
-		return corsoDAO.getAll();
-	}
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
+        if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
+            chefDAO.save(chef, password);
+        }
+        if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
+            tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
+            corso.getChef().add(chef);
+        } else {
+            throw new SQLException("Chef già assegnato a questo corso");
+        }
+    }
 
-	// Chef
-	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
-		if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
-			chefDAO.save(chef, password);
-		}
-		if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
-			tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
-			corso.getChef().add(chef);
-		} else {
-			throw new IllegalArgumentException("Chef già assegnato a questo corso");
-		}
-	}
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
+        if (corso.getChef().remove(chef)) {
+            tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
+        }
+    }
 
-	public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
-		if (corso.getChef().remove(chef)) {
-			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
-		}
-	}
+    public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
+        CorsoCucina corso = corsoDAO.findById(idCorso)
+                .orElseThrow(() -> new SQLException("Corso non trovato"));
 
-	public List<CorsoCucina> getCorsiByChef(Chef chef) throws SQLException {
-		return tieneDAO.getCorsiByChef(chef.getCodFiscale());
-		
-	}
-	
-	public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
-	    return corsoDAO.findByNomeOrArgomento(filtro);
-	}
+        List<Sessione> sessioni = new ArrayList<>();
+        sessioni.addAll(onlineDAO.getByCorso(idCorso));
+        sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
+        corso.setSessioni(sessioni);
 
-	// Iscrizioni
-	public void aggiungiIscrizione(CorsoCucina corso, Iscrizione iscrizione) throws SQLException {
-		if (!corso.getIscrizioni().contains(iscrizione)) {
-			iscrizioneDAO.save(iscrizione);
-			corso.getIscrizioni().add(iscrizione);
-		}
-	}
+        List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
+                .filter(i -> i.getCorso().getIdCorso() == idCorso).toList();
+        corso.setIscrizioni(iscrizioni);
 
-	public void rimuoviIscrizione(CorsoCucina corso, Iscrizione iscrizione) throws SQLException {
-		if (corso.getIscrizioni().remove(iscrizione)) {
-			iscrizioneDAO.delete(iscrizione.getUtente().getCodFiscale(), corso.getIdCorso());
-		}
-	}
+        corso.setChef(tieneDAO.getChefByCorso(idCorso));
 
-	public Set<Utente> getIscrittiAttivi(CorsoCucina corso) throws SQLException {
-		return iscrizioneDAO.getIscrittiAttivi(corso.getIdCorso());
-	}
+        return corso;
+    }
 
-	// Sessioni
-	public void aggiungiSessione(CorsoCucina corso, Sessione sessione) throws SQLException {
-		if (!corso.getSessioni().contains(sessione)) {
-			if (sessione instanceof Online) {
-				onlineDAO.save((Online) sessione);
-			} else if (sessione instanceof InPresenza) {
-				inPresenzaDAO.save((InPresenza) sessione);
-			} else {
-				throw new IllegalArgumentException("Tipo di sessione non gestito");
-			}
-			corso.getSessioni().add(sessione);
-		}
-	}
+    public List<CorsoCucina> getCorsi() throws SQLException {
+        return corsoDAO.getAll();
+    }
 
-	public void rimuoviSessione(CorsoCucina corso, Sessione sessione) throws SQLException {
-		if (corso.getSessioni().remove(sessione)) {
-			if (sessione instanceof Online) {
-				onlineDAO.delete(sessione.getIdSessione());
-			} else if (sessione instanceof InPresenza) {
-				inPresenzaDAO.delete(sessione.getIdSessione());
-			}
-		}
-	}
+    public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
+        return corsoDAO.findByNomeOrArgomento(filtro);
+    }
 
-	public List<Sessione> getSessioniByCorso(CorsoCucina corso) throws SQLException {
-		return corso.getSessioni();
-	}
-
-	public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
-
-		CorsoCucina corso = corsoDAO.findById(idCorso).orElseThrow(() -> new SQLException("Corso non trovato"));
-
-		List<Sessione> sessioni = new ArrayList<>();
-		sessioni.addAll(onlineDAO.getByCorso(idCorso));
-		sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
-		corso.setSessioni(sessioni);
-
-		List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
-				.filter(i -> i.getCorso().getIdCorso() == idCorso).toList();
-		corso.setIscrizioni(iscrizioni);
-
-		corso.setChef(tieneDAO.getChefByCorso(idCorso));
-
-		return corso;
-	}
-	
-	public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
-	    return corsoDAO.getNumeroSessioniPerCorso(idCorso);
-	}
-
-	
-	
-	public List<CorsoCucina> getCorsi() throws SQLException {
-	    return corsoDAO.getAll();
-	}
+    public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
+        return corsoDAO.getNumeroSessioniPerCorso(idCorso);
+    }
 }

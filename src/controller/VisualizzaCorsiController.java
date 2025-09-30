@@ -26,9 +26,8 @@ public class VisualizzaCorsiController {
         return corsiService;
     }
 
-
     public List<CorsoCucina> getTuttiICorsi() throws SQLException {
-        return corsiService.getCorsi(); 
+        return corsiService.getCorsi();
     }
 
     public List<CorsoCucina> getCorsiChefLoggato() throws SQLException {
@@ -41,12 +40,10 @@ public class VisualizzaCorsiController {
         return corsiService.cercaPerNomeOCategoria(filtro);
     }
 
-    // Numero di sessioni per un corso specifico
     public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
         return corsiService.getNumeroSessioniPerCorso(idCorso);
     }
 
-    // Metodo di utilità per stampare corsi in console
     public void visualizzaCorsi(List<CorsoCucina> corsi) {
         corsi.forEach(c -> System.out.println(c.toStringNomeCorso() + " | ID: " + c.getIdCorso()));
     }
