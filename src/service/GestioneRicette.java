@@ -2,6 +2,7 @@ package service;
 
 import dao.RicettaDAO;
 import dao.UsaDAO;
+import dao.IngredienteDAO;
 import model.Ingrediente;
 import model.Ricetta;
 import model.Usa;
@@ -14,38 +15,43 @@ public class GestioneRicette {
 
     private final RicettaDAO ricettaDAO;
     private final UsaDAO usaDAO;
+    private final IngredienteDAO ingredienteDAO;
 
-    public GestioneRicette(RicettaDAO ricettaDAO, UsaDAO usaDAO) {
+    public GestioneRicette(RicettaDAO ricettaDAO, UsaDAO usaDAO, IngredienteDAO ingredienteDAO) {
         this.ricettaDAO = ricettaDAO;
         this.usaDAO = usaDAO;
+        this.ingredienteDAO = ingredienteDAO;
     }
 
-    // Creazione ricetta con i suoi ingredienti
+    // Creazione ricetta con ingredienti
     public void creaRicetta(Ricetta r) throws SQLException {
         ricettaDAO.save(r);
-        // dopo aver salvato la ricetta, persistiamo anche gli ingredienti
         for (Map.Entry<Ingrediente, Double> entry : r.getIngredienti().entrySet()) {
-            Usa usa = new Usa(r, entry.getKey(), entry.getValue());
+            Ingrediente ingr = entry.getKey();
+            // salvo nel DB solo se non esiste già (per nome)
+            if (!ingredienteDAO.findByNome(ingr.getNome()).isPresent()) {
+                ingredienteDAO.save(ingr);
+            }
+            Usa usa = new Usa(r, ingr, entry.getValue());
             usaDAO.save(usa);
         }
     }
 
-    // Aggiornamento ricetta (solo dati base, NON ingredienti)
     public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
         ricettaDAO.update(id, r);
     }
-
-    // Aggiungi ingrediente a ricetta
     public void aggiungiIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {
         if (r.getIngredienti().containsKey(i)) {
             throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
+        }
+        if (!ingredienteDAO.findByNome(i.getNome()).isPresent()) {
+            ingredienteDAO.save(i);
         }
         r.getIngredienti().put(i, quantita);
         Usa usa = new Usa(r, i, quantita);
         usaDAO.save(usa);
     }
 
-    // Aggiorna la quantità di un ingrediente già presente
     public void aggiornaQuantitaIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {
         if (!r.getIngredienti().containsKey(i)) {
             throw new IllegalArgumentException("Ingrediente non presente nella ricetta");
@@ -65,9 +71,19 @@ public class GestioneRicette {
         }
     }
 
-    // Lettura di tutte le ricette
     public List<Ricetta> getAllRicette() throws SQLException {
         return ricettaDAO.getAll();
+    }
+
+    // Lettura di tutti gli ingredienti disponibili nel DB
+    public List<Ingrediente> getAllIngredienti() throws SQLException {
+        return ingredienteDAO.getAll();
+    }
+
+    // Creazione di un nuovo ingrediente indipendente
+    public Ingrediente creaIngrediente(Ingrediente i) throws SQLException {
+        ingredienteDAO.save(i);
+        return i;
     }
 
     // Cancellazione ricetta (con tutti i suoi ingredienti)
