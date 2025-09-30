@@ -4,6 +4,7 @@ import model.*;
 import service.GestioneSessioni;
 import service.GestioneCucina;
 import service.GestioneRicette;
+import Gui.CreaRicettaGUI;
 import Gui.VisualizzaRicetteGUI;
 import javafx.stage.Stage;
 
@@ -92,26 +93,24 @@ public class GestioneSessioniController {
 
         VisualizzaRicetteController vController = new VisualizzaRicetteController(gestioneRicetteService) {
             @Override
-            public void aggiungiRicetteSelezionate(List<Ricetta> ricetteSelezionate) {
-                try {
-                    for (Ricetta r : ricetteSelezionate) {
-                        if (r.getIdRicetta() == 0) {
-                            gestioneRicetteService.creaRicetta(r);
-                        }
-                        if (!sessione.getRicette().contains(r)) {
-                            sessione.getRicette().add(r);
-                            r.getSessioni().add(sessione);
-                            gestioneCucinaService.aggiungiSessioneARicetta(r, sessione);
-                        }
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
+            public void aggiungiRicetta(Ricetta r) throws SQLException {
+                super.aggiungiRicetta(r);
+                
+                if (!sessione.getRicette().contains(r)) {
+                    sessione.getRicette().add(r);
+                    r.getSessioni().add(sessione);
+                    gestioneCucinaService.aggiungiSessioneARicetta(r, sessione);
                 }
             }
         };
 
-        gui.setController(vController);
+        gui.setController(vController, null);
         Stage stage = new Stage();
         gui.show(stage);
+
+        // bottone per creare nuova ricetta direttamente legata alla sessione
+        Stage creaStage = new Stage();
+        CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicetteService, sessione, gestioneCucinaService);
+        creaGUI.start(creaStage);
     }
 }

@@ -1,9 +1,7 @@
 package Gui;
 
 import controller.VisualizzaRicetteController;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -23,12 +21,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import model.Ingrediente;
 import model.Ricetta;
+import service.GestioneCucina;
+import service.GestioneRicette;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,124 +39,448 @@ public class VisualizzaRicetteGUI {
 
     private final ObservableList<Ricetta> ricetteData = FXCollections.observableArrayList();
     private FilteredList<Ricetta> filteredRicette;
-    private List<Ricetta> cachedRicetteChef = null;
 
     private double xOffset = 0;
     private double yOffset = 0;
-    private ProgressIndicator progressIndicator;
-    private final PauseTransition filterPause = new PauseTransition(javafx.util.Duration.millis(350));
 
-    public void setController(VisualizzaRicetteController visualizzaController, StackPane menuRoot) {
-        this.visualizzaController = visualizzaController;
+    private ProgressIndicator progressIndicator;
+    private TableView<Ricetta> table;
+    private TextField searchField;
+    private ComboBox<String> tempoFilter;
+    private ComboBox<String> ingredientiFilter;
+    private Label countLabel;
+
+    public void setController(VisualizzaRicetteController controller, StackPane menuRoot) {
+        this.visualizzaController = controller;
         this.menuRoot = menuRoot;
     }
 
     public StackPane getRoot() {
         StackPane root = new StackPane();
 
-        // background gradient
-        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")), new Stop(1, Color.web("#FFCC99")));
+       
+        createOrangeBackground(root);
+
+     
+        VBox mainContainer = createMainContainer(root);
+        root.getChildren().add(mainContainer);
+
+
+        VBox headerSection = createHeader();
+        mainContainer.getChildren().add(headerSection);
+
+   
+        HBox filterSection = createFilterSection();
+        mainContainer.getChildren().add(filterSection);
+
+        //  Tabella 
+        createTable();
+        StackPane tableContainer = new StackPane(table);
+        tableContainer.setStyle("-fx-background-color: rgba(255,255,255,0.95);" +
+                               "-fx-background-radius: 20;" +
+                               "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5);");
+        VBox.setVgrow(tableContainer, Priority.ALWAYS);
+        mainContainer.getChildren().add(tableContainer);
+
+        
+        createProgressIndicator(tableContainer);
+
+     
+        HBox actionSection = createActionButtons(root);
+        mainContainer.getChildren().add(actionSection);
+
+  
+        setupFilters();
+
+        addWindowControls(root);
+
+      
+        makeDraggable(root, headerSection);
+
+        // Caricamento inizia
+        Platform.runLater(this::refreshData);
+
+        return root;
+    }
+
+    private void createOrangeBackground(StackPane root) {
+        LinearGradient gradient = new LinearGradient(
+            0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.web("#FF9966")),
+            new Stop(0.5, Color.web("#FFB366")),
+            new Stop(1, Color.web("#FFCC99"))
+        );
         Region background = new Region();
         background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
         background.prefWidthProperty().bind(root.widthProperty());
         background.prefHeightProperty().bind(root.heightProperty());
         root.getChildren().add(background);
 
-        // card principale
-        VBox card = new VBox(16);
-        card.setAlignment(Pos.TOP_CENTER);
-        card.setPadding(new Insets(20));
-        card.prefWidthProperty().bind(root.widthProperty().multiply(0.95));
-        card.prefHeightProperty().bind(root.heightProperty().multiply(0.9));
+        for (int i = 0; i < 4; i++) {
+            Circle decorCircle = new Circle(15 + Math.random() * 30);
+            decorCircle.setFill(Color.web("#FFFFFF", 0.08));      
+            decorCircle.setTranslateX((i - 2) * 120 + Math.random() * 60);
+            decorCircle.setTranslateY((i % 2 == 0 ? -1 : 1) * (80 + Math.random() * 40));
+            root.getChildren().add(decorCircle);
+        }
+    }
 
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(12);
-        shadow.setColor(Color.web("#000000", 0.12));
-        shadow.setOffsetY(4);
-        card.setEffect(shadow);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #FF9966; -fx-border-width: 2;");
-        root.getChildren().add(card);
+    private VBox createMainContainer(StackPane root) {
+        VBox container = new VBox(20);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(28));
+        container.prefWidthProperty().bind(root.widthProperty().multiply(0.92));
+        container.prefHeightProperty().bind(root.heightProperty().multiply(0.9));
+        container.setStyle("-fx-background-color: rgba(255,255,255,0.18);" +
+                          "-fx-background-radius: 20;" +
+                          "-fx-border-radius: 20;" +
+                          "-fx-border-color: rgba(255,255,255,0.35);" +
+                          "-fx-border-width: 1;");
+        DropShadow containerShadow = new DropShadow(18, Color.web("#000000", 0.12));
+        containerShadow.setOffsetY(6);
+        container.setEffect(containerShadow);
+        return container;
+    }
 
-        // header con filtri
-        VBox headerSection = new VBox(10);
-        headerSection.setAlignment(Pos.CENTER);
-        Label title = new Label("🍽 Lista delle Ricette");
-        title.setFont(Font.font("Roboto", FontWeight.BOLD, 24));
-        title.setTextFill(Color.web("#FF6600"));
+    private VBox createHeader() {
+        VBox header = new VBox(10);
+        header.setAlignment(Pos.CENTER);
+        header.setPadding(new Insets(8, 0, 12, 0));
 
-        HBox filters = new HBox(10);
+        Label title = new Label("🍽️ Le Tue Ricette");
+        title.setFont(Font.font("Inter", FontWeight.EXTRA_BOLD, 26));
+        title.setTextFill(Color.WHITE);
+        title.setEffect(new DropShadow(8, Color.web("#FF6600", 0.8)));
+
+        Label subtitle = new Label("Esplora e gestisci le tue creazioni culinarie");
+        subtitle.setFont(Font.font("Inter", FontWeight.NORMAL, 12));
+        subtitle.setTextFill(Color.web("#ffffff", 0.9));
+
+        header.getChildren().addAll(title, subtitle);
+        return header;
+    }
+
+    private HBox createFilterSection() {
+        HBox filters = new HBox(14);
         filters.setAlignment(Pos.CENTER);
-        TextField nomeField = createModernTextField("Cerca per nome...", "🍲");
-        TextField ingredienteField = createModernTextField("Cerca per ingrediente...", "🧂");
-        filters.getChildren().addAll(nomeField, ingredienteField);
+        filters.setPadding(new Insets(0, 12, 6, 12));
 
-        headerSection.getChildren().addAll(title, filters);
-        card.getChildren().add(headerSection);
+        searchField = createOrangeTextField("🔍 Cerca ricette per nome...", 320);
 
-        // tabella
-        TableView<Ricetta> table = createOptimizedTable();
-        table.prefHeightProperty().bind(card.heightProperty().multiply(0.55));
-        table.prefWidthProperty().bind(card.widthProperty().multiply(0.95));
-        VBox.setVgrow(table, Priority.ALWAYS);
+        tempoFilter = createOrangeComboBox();
+        tempoFilter.setPromptText("⏰ Tempo");
+        tempoFilter.getItems().addAll("Tutti", "< 30 min", "30-60 min", "> 60 min");
+        tempoFilter.setValue("Tutti");
 
+        ingredientiFilter = createOrangeComboBox();
+        ingredientiFilter.setPromptText("🥕 Ingredienti");
+        ingredientiFilter.getItems().addAll("Tutti", "< 5", "5-8", "> 8");
+        ingredientiFilter.setValue("Tutti");
+
+        countLabel = new Label("0 ricette");
+        countLabel.setFont(Font.font("Inter", FontWeight.MEDIUM, 12));
+        countLabel.setTextFill(Color.WHITE);
+        countLabel.setStyle("-fx-background-color: rgba(255,102,0,0.75); -fx-background-radius: 15; -fx-padding: 8 14;");
+
+        filters.getChildren().addAll(searchField, tempoFilter, ingredientiFilter, countLabel);
+        return filters;
+    }
+
+    private void createTable() {
+        table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setPlaceholder(new Label("🍽️ Nessuna ricetta trovata"));
+
+
+        table.setFixedCellSize(42); 
+
+      
+        table.setStyle("-fx-background-color: transparent;" +
+                      "-fx-table-cell-border-color: rgba(0,0,0,0.04);" +
+                      "-fx-selection-bar: rgba(255,153,102,0.25);" +
+                      "-fx-selection-bar-non-focused: rgba(255,153,102,0.18);");
+
+   
+        table.widthProperty().addListener((obs, oldVal, newVal) -> {
+            table.lookupAll(".column-header-background").forEach(header -> {
+                ((Region) header).setStyle(
+                    "-fx-background-color: linear-gradient(to bottom, #FFE0CC, #FFCC99);" +
+                    "-fx-border-color: #e68a00;" +
+                    "-fx-border-width: 0 0 1 0;"
+                );
+            });
+            table.lookupAll(".label").forEach(label -> {
+                if (label instanceof Label l) {
+                    l.setFont(Font.font("Inter", FontWeight.BOLD, 13));
+                    l.setTextFill(Color.web("#333333"));
+                }
+            });
+        });
+
+        TableColumn<Ricetta, String> nomeCol = new TableColumn<>("🍽️ Nome Ricetta");
+        nomeCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getNome() != null ? c.getValue().getNome() : ""));
+        nomeCol.setMinWidth(240);
+
+        TableColumn<Ricetta, Integer> tempoCol = new TableColumn<>("⏱️ Tempo (min)");
+        tempoCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getTempoPreparazione()).asObject());
+        tempoCol.setMinWidth(120);
+        tempoCol.setCellFactory(col -> new TableCell<Ricetta, Integer>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item + " min");
+                    if (item <= 30) setTextFill(Color.web("#2E7D32"));      
+                    else if (item <= 60) setTextFill(Color.web("#E65100")); 
+                    else setTextFill(Color.web("#B71C1C"));                
+                    setFont(Font.font("Inter", 13));
+                }
+            }
+        });
+
+        TableColumn<Ricetta, Integer> ingredientiCol = new TableColumn<>("🥕 Ingredienti");
+        ingredientiCol.setCellValueFactory(c -> new SimpleIntegerProperty(
+                safeGetNumeroIngredienti(c.getValue())).asObject());
+        ingredientiCol.setMinWidth(110);
+
+        table.getColumns().addAll(nomeCol, tempoCol, ingredientiCol);
+
+       
+        table.setRowFactory(tv -> {
+            TableRow<Ricetta> row = new TableRow<>() {
+                @Override
+                protected void updateItem(Ricetta item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setStyle("");
+                    } else {
+                        if (getIndex() % 2 == 0) {
+                            setStyle("-fx-background-color: #ffffff;");
+                        } else {
+                            setStyle("-fx-background-color: #fafafa;");
+                        }
+                    }
+                }
+            };
+            row.setOnMouseEntered(e -> {
+                if (!row.isEmpty()) row.setStyle("-fx-background-color: #FFF3E0;");
+            });
+            row.setOnMouseExited(e -> {
+                if (!row.isEmpty()) {
+                    if (row.getIndex() % 2 == 0) row.setStyle("-fx-background-color: #ffffff;");
+                    else row.setStyle("-fx-background-color: #fafafa;");
+                }
+            });
+            row.setOnMouseClicked(event -> {
+                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Ricetta selected = row.getItem();
+                    if (selected != null && visualizzaController != null) {
+                        try {
+                            visualizzaController.mostraDettagliRicetta(selected);
+                        } catch (Exception e) {
+                            showError("Errore aprendo i dettagli: " + e.getMessage());
+                        }
+                    }
+                }
+            });
+            return row;
+        });
+    }
+
+   
+    private int safeGetNumeroIngredienti(Ricetta r) {
+        try {
+            return r.getNumeroIngredienti();
+        } catch (Throwable t) {
+   
+            return 0;
+        }
+    }
+
+    private void createProgressIndicator(StackPane parent) {
         progressIndicator = new ProgressIndicator();
-        progressIndicator.setPrefSize(40, 40);
+        progressIndicator.setPrefSize(50, 50);
         progressIndicator.setStyle("-fx-accent: #FF6600;");
         progressIndicator.setVisible(false);
+        parent.getChildren().add(progressIndicator);
+    }
 
-        StackPane tableContainer = new StackPane(table, progressIndicator);
-        card.getChildren().add(tableContainer);
-        VBox.setVgrow(tableContainer, Priority.ALWAYS);
+    private HBox createActionButtons(StackPane currentRoot) {
+        HBox actions = new HBox(12);
+        actions.setAlignment(Pos.CENTER);
+        actions.setPadding(new Insets(18, 0, 8, 0));
 
-        // buttons
-        VBox buttonSection = new VBox(12);
-        buttonSection.setAlignment(Pos.CENTER);
-        HBox actionButtons = new HBox(12);
-        actionButtons.setAlignment(Pos.CENTER);
-        Button mostraTuttiBtn = createStylishButton("📋 Tutte le Ricette", "#FF6600", "#FF8533");
-        Button mieBtn = createStylishButton("👨‍🍳 Le mie Ricette", "#FF6600", "#FF8533");
-        actionButtons.getChildren().addAll(mostraTuttiBtn, mieBtn);
-        Button backBtn = createStylishButton("⬅ Torna al Menu", "#FFCC99", "#FFD9B3");
-        backBtn.setPrefWidth(180);
-        buttonSection.getChildren().addAll(actionButtons, backBtn);
-        card.getChildren().add(buttonSection);
+        Button addBtn = createOrangeButton("➕ Aggiungi Ricetta", 160);
+        Button refreshBtn = createOrangeButton("🔄 Aggiorna", 140);
+        Button backBtn = createOrangeButton("⬅️ Torna al Menu", 160);
 
-        boolean embedded = (this.menuRoot != null);
-        if (embedded) {
-            backBtn.setVisible(false);
-            backBtn.setManaged(false);
-        }
+        addBtn.setOnAction(e -> {
+            if (visualizzaController == null) {
+                showError("Controller non inizializzato.");
+                return;
+            }
+            try {
+                GestioneRicette gestione = visualizzaController.getGestioneRicetteService();
+                Stage creaStage = new Stage();
+               
+                new CreaRicettaGUI(gestione, null, new GestioneCucina(null)).start(creaStage);
+      
+                creaStage.setOnHidden(ev -> refreshData());
+            } catch (Exception ex) {
+                showError("Errore aprendo il form di creazione: " + ex.getMessage());
+            }
+        });
 
+        refreshBtn.setOnAction(e -> refreshData());
+
+        backBtn.setOnAction(e -> {
+            Stage stage = getStage(currentRoot);
+            if (stage != null && menuRoot != null) {
+              
+                stage.getScene().setRoot(menuRoot);
+            } else if (stage != null) {
+              
+                stage.close();
+            }
+        });
+
+        actions.getChildren().addAll(backBtn, addBtn, refreshBtn);
+        return actions;
+    }
+
+    private TextField createOrangeTextField(String prompt, double width) {
+        TextField field = new TextField();
+        field.setPromptText(prompt);
+        field.setPrefHeight(40);
+        field.setMaxWidth(width);
+        field.setFont(Font.font("Inter", 13));
+        field.setStyle("-fx-background-color: rgba(255,255,255,0.95);" +
+                     "-fx-background-radius: 20;" +
+                     "-fx-border-radius: 20;" +
+                     "-fx-border-color: #FF9966;" +
+                     "-fx-border-width: 1.2;" +
+                     "-fx-text-fill: #333;" +
+                     "-fx-prompt-text-fill: #999;" +
+                     "-fx-padding: 0 14;");
+        field.focusedProperty().addListener((obs, old, focused) -> {
+            if (focused) field.setStyle(field.getStyle().replace("-fx-border-color: #FF9966;", "-fx-border-color: #FF6600;"));
+            else field.setStyle(field.getStyle().replace("-fx-border-color: #FF6600;", "-fx-border-color: #FF9966;"));
+        });
+        return field;
+    }
+
+    private ComboBox<String> createOrangeComboBox() {
+        ComboBox<String> combo = new ComboBox<>();
+        combo.setPrefHeight(40);
+        combo.setMaxWidth(140);
+        combo.setStyle("-fx-background-color: rgba(255,255,255,0.95);" +
+                      "-fx-background-radius: 20;" +
+                      "-fx-border-radius: 20;" +
+                      "-fx-border-color: #FF9966;" +
+                      "-fx-border-width: 1.2;" +
+                      "-fx-text-fill: #333;");
+        return combo;
+    }
+
+    private Button createOrangeButton(String text, double width) {
+        Button btn = new Button(text);
+        btn.setFont(Font.font("Inter", FontWeight.BOLD, 14)); 
+        btn.setTextFill(Color.WHITE);
+        btn.setPrefWidth(width);
+        btn.setPrefHeight(44);
+
+
+        String baseStyle = "-fx-background-color: #FF6600;" + 
+                           "-fx-background-radius: 22;" +
+                           "-fx-cursor: hand;" +
+                           "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0, 0, 3);";
+
+        String hoverStyle = "-fx-background-color: #FF8533;" +  
+                            "-fx-background-radius: 22;" +
+                            "-fx-cursor: hand;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);";
+
+        btn.setStyle(baseStyle);
+        btn.setOnMouseEntered(e -> btn.setStyle(hoverStyle));
+        btn.setOnMouseExited(e -> btn.setStyle(baseStyle));
+        btn.setOnMousePressed(e -> { btn.setScaleX(0.97); btn.setScaleY(0.97); });
+        btn.setOnMouseReleased(e -> { btn.setScaleX(1.0); btn.setScaleY(1.0); });
+
+        return btn;
+    }
+
+
+    private void setupFilters() {
         filteredRicette = new FilteredList<>(ricetteData, p -> true);
         SortedList<Ricetta> sorted = new SortedList<>(filteredRicette);
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
 
-        loadDataAsync();
-        setupFilters(nomeField, ingredienteField, mostraTuttiBtn, mieBtn);
-        setupTableDoubleClick(table, root);
-        setupBackButton(backBtn, root);
+        searchField.textProperty().addListener((obs, old, text) -> updateFilters());
+        tempoFilter.valueProperty().addListener((obs, old, value) -> updateFilters());
+        ingredientiFilter.valueProperty().addListener((obs, old, value) -> updateFilters());
 
-        if (!embedded) {
-            HBox windowButtons = createWindowButtons(root);
-            root.getChildren().add(windowButtons);
-            StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-            StackPane.setMargin(windowButtons, new Insets(8));
-        }
-
-        makeDraggable(root, headerSection);
-
-        return root;
+       
+        ricetteData.addListener((javafx.collections.ListChangeListener<Ricetta>) c -> updateCountLabel());
+      
+        updateCountLabel();
     }
 
-    private void loadDataAsync() {
+    private void updateFilters() {
+        filteredRicette.setPredicate(ricetta -> {
+            if (ricetta == null) return false;
+
+            String searchText = searchField.getText();
+            boolean matchesSearch = searchText == null || searchText.isEmpty() ||
+                    (ricetta.getNome() != null && ricetta.getNome().toLowerCase().contains(searchText.toLowerCase()));
+
+            String tempoValue = tempoFilter.getValue();
+            boolean matchesTempo = true;
+            if (tempoValue != null && !tempoValue.equals("Tutti")) {
+                int tempo = ricetta.getTempoPreparazione();
+                switch (tempoValue) {
+                    case "< 30 min": matchesTempo = tempo < 30; break;
+                    case "30-60 min": matchesTempo = tempo >= 30 && tempo <= 60; break;
+                    case "> 60 min": matchesTempo = tempo > 60; break;
+                    default: matchesTempo = true;
+                }
+            }
+
+            String ingredientiValue = ingredientiFilter.getValue();
+            boolean matchesIngredienti = true;
+            if (ingredientiValue != null && !ingredientiValue.equals("Tutti")) {
+                int numIngredienti = safeGetNumeroIngredienti(ricetta);
+                switch (ingredientiValue) {
+                    case "< 5": matchesIngredienti = numIngredienti < 5; break;
+                    case "5-8": matchesIngredienti = numIngredienti >= 5 && numIngredienti <= 8; break;
+                    case "> 8": matchesIngredienti = numIngredienti > 8; break;
+                    default: matchesIngredienti = true;
+                }
+            }
+
+            return matchesSearch && matchesTempo && matchesIngredienti;
+        });
+        updateCountLabel();
+    }
+
+    private void updateCountLabel() {
+        Platform.runLater(() -> {
+            int count = filteredRicette == null ? ricetteData.size() : filteredRicette.size();
+            String text = count + (count == 1 ? " ricetta" : " ricette");
+            countLabel.setText(text);
+        });
+    }
+
+    private void refreshData() {
         if (visualizzaController == null) {
-            progressIndicator.setVisible(false);
+            if (progressIndicator != null) progressIndicator.setVisible(false);
             return;
         }
 
-        Task<List<Ricetta>> loadTask = new Task<>() {
+        Task<List<Ricetta>> task = new Task<>() {
             @Override
             protected List<Ricetta> call() throws Exception {
                 List<Ricetta> list = visualizzaController.getTutteLeRicette();
@@ -166,200 +489,112 @@ public class VisualizzaRicetteGUI {
 
             @Override
             protected void succeeded() {
-                List<Ricetta> loaded = getValue();
-                Platform.runLater(() -> {
-                    ricetteData.setAll(loaded);
-                    progressIndicator.setVisible(false);
-                });
+                ricetteData.setAll(getValue());
+                progressIndicator.setVisible(false);
+                updateFilters(); 
             }
 
             @Override
             protected void failed() {
-                Platform.runLater(() -> {
-                    progressIndicator.setVisible(false);
-                    new Alert(Alert.AlertType.ERROR,
-                            "Errore caricando ricette: " + getException().getMessage(),
-                            ButtonType.OK).showAndWait();
-                });
+                progressIndicator.setVisible(false);
+                showError("Errore caricando ricette: " + getException().getMessage());
             }
         };
 
         progressIndicator.setVisible(true);
-        Thread t = new Thread(loadTask, "LoadRicetteThread");
+        Thread t = new Thread(task, "RefreshRicetteThread");
         t.setDaemon(true);
         t.start();
     }
-
-    private TextField createModernTextField(String prompt, String icon) {
-        TextField field = new TextField();
-        field.setPromptText(icon + " " + prompt);
-        field.setPrefHeight(35);
-        field.setPrefWidth(190);
-        field.setFont(Font.font("Roboto", 13));
-        field.setStyle("-fx-background-color: #f8f9fa;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-padding: 0 12 0 12;");
-
-        field.setOnMouseEntered(e -> field.setStyle("-fx-background-color: #e9ecef;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #FF9966;"
-                + "-fx-border-width: 2;"
-                + "-fx-padding: 0 12 0 12;"));
-
-        field.setOnMouseExited(e -> field.setStyle("-fx-background-color: #f8f9fa;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-padding: 0 12 0 12;"));
-
-        return field;
-    }
-
-    private TableView<Ricetta> createOptimizedTable() {
-        TableView<Ricetta> table = new TableView<>();
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        table.setPrefHeight(Region.USE_COMPUTED_SIZE);
-        table.setMaxHeight(Double.MAX_VALUE);
-
-        table.setRowFactory(tv -> {
-            TableRow<Ricetta> row = new TableRow<>();
-            row.itemProperty().addListener((obs, oldItem, newItem) -> {
-                if (newItem != null && row.getIndex() % 2 == 0) {
-                    row.setStyle("-fx-background-color: #f8f9fa;");
-                } else {
-                    row.setStyle("-fx-background-color: white;");
-                }
-            });
-            return row;
-        });
-
-        table.setStyle("-fx-background-color: white;"
-                + "-fx-background-radius: 12;"
-                + "-fx-border-radius: 12;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-table-header-border-color: #FF9966;");
-
-        // colonne
-        TableColumn<Ricetta, Integer> idCol = new TableColumn<>("ID");
-        idCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getIdRicetta()).asObject());
-
-        TableColumn<Ricetta, String> nomeCol = new TableColumn<>("🍲 Nome Ricetta");
-        nomeCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getNome() != null ? c.getValue().getNome() : ""));
-
-        TableColumn<Ricetta, Integer> numIngredientiCol = new TableColumn<>("Ingredienti");
-        numIngredientiCol.setCellValueFactory(c -> new SimpleIntegerProperty(
-                c.getValue().getIngredienti() != null ? c.getValue().getIngredienti().size() : 0
-        ).asObject());
-
     
-        table.getColumns().addAll(idCol, nomeCol, numIngredientiCol);
-        table.getSortOrder().add(nomeCol);
+    public void show(Stage stage) {
+        stage.setTitle("Visualizza Ricette");
 
-        return table;
-    }
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(10));
 
-    private Button createStylishButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefSize(150, 40);
-        button.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
-        button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
-                + "-fx-border-color: transparent;" + "-fx-border-width: 0;");
-
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(6);
-        shadow.setColor(Color.web("#000000", 0.15));
-        shadow.setOffsetY(2);
-        button.setEffect(shadow);
-
-        button.setOnMouseEntered(e -> {
-            button.setStyle("-fx-background-color: " + hoverColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;");
-            DropShadow hoverShadow = new DropShadow();
-            hoverShadow.setRadius(8);
-            hoverShadow.setColor(Color.web("#000000", 0.25));
-            hoverShadow.setOffsetY(3);
-            button.setEffect(hoverShadow);
-        });
-
-        button.setOnMouseExited(e -> {
-            button.setStyle("-fx-background-color: " + baseColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;");
-            button.setEffect(shadow);
-        });
-
-        return button;
-    }
-
-    private void setupFilters(TextField nomeField, TextField ingredienteField, Button mostraTuttiBtn, Button mieBtn) {
-        nomeField.textProperty().addListener((obs, o, n) -> {
-            filterPause.setOnFinished(e -> applicaFiltriLocali(nomeField.getText(), ingredienteField.getText(), false));
-            filterPause.playFromStart();
-        });
-        ingredienteField.textProperty().addListener((obs, o, n) -> {
-            filterPause.setOnFinished(e -> applicaFiltriLocali(nomeField.getText(), ingredienteField.getText(), false));
-            filterPause.playFromStart();
-        });
-
-        mostraTuttiBtn.setOnAction(e -> {
-            nomeField.clear();
-            ingredienteField.clear();
-            filteredRicette.setPredicate(p -> true);
-        });
-
-        mieBtn.setOnAction(e -> applicaFiltriLocali(nomeField.getText(), ingredienteField.getText(), true));
-    }
-
-    private void setupTableDoubleClick(TableView<Ricetta> table, StackPane root) {
-        table.setRowFactory(tv -> {
-            TableRow<Ricetta> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2 && !row.isEmpty()) {
-                    Ricetta selected = row.getItem();
-                    // Implementare popup dettagli ricetta
-                }
-            });
-            return row;
-        });
-    }
-
-    private void setupBackButton(Button backBtn, StackPane root) {
-        if (this.menuRoot == null) {
-            backBtn.setOnAction(e -> {
-                Stage stage = getStage(root);
-                if (stage != null && stage.getScene() != null) {
-                    stage.getScene().setRoot(menuRoot);
-                } else {
-                    root.getChildren().setAll(menuRoot);
-                }
-            });
-        }
-    }
-
-    private HBox createWindowButtons(StackPane root) {
-        Button closeButton = new Button("✕");
-        Button minimizeButton = new Button("_");
-        Button maximizeButton = new Button("□");
-
-        Button[] buttons = {minimizeButton, maximizeButton, closeButton};
-        for (Button btn : buttons) {
-            btn.setPrefSize(32, 32);
-            btn.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
-            btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7); -fx-background-radius: 16; -fx-cursor: hand;");
+        ListView<Ricetta> listaRicette = new ListView<>();
+        try {
+            listaRicette.getItems().addAll(visualizzaController.getTutteLeRicette());
+        } catch (Exception e) {
+            showError("Errore caricamento ricette: " + e.getMessage());
         }
 
-        closeButton.setOnAction(e -> { Stage stage = getStage(root); if (stage != null) stage.close(); });
-        minimizeButton.setOnAction(e -> { Stage stage = getStage(root); if (stage != null) stage.setIconified(true); });
-        maximizeButton.setOnAction(e -> { Stage stage = getStage(root); if (stage != null) stage.setMaximized(!stage.isMaximized()); });
+        Button btnAggiungi = new Button("Aggiungi Ricetta");
+        btnAggiungi.setOnAction(e -> {
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(
+                    visualizzaController.getGestioneRicetteService(),
+                    null,
+                    new GestioneCucina(null)
+            );
+            Stage creaStage = new Stage();
+            creaGUI.start(creaStage);
+        });
 
-        HBox box = new HBox(4, minimizeButton, maximizeButton, closeButton);
-        box.setAlignment(Pos.TOP_RIGHT);
-        return box;
+        root.getChildren().addAll(new Label("Ricette disponibili:"), listaRicette, btnAggiungi);
+
+        Scene scene = new Scene(root, 500, 400);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
+        alert.showAndWait();
+    }
+
+    private void addWindowControls(StackPane root) {
+        HBox controls = new HBox(6);
+        controls.setAlignment(Pos.TOP_RIGHT);
+        controls.setPadding(new Insets(8));
+        controls.setPickOnBounds(false); 
+
+        Button minimizeBtn = createWindowButton("_", Color.WHITE);
+        Button maximizeBtn = createWindowButton("⬜", Color.WHITE);
+        Button closeBtn = createWindowButton("✖", Color.web("#FF4444"));
+
+     
+        minimizeBtn.setOnAction(e -> {
+            Stage stage = getStage(root);
+            if (stage != null) stage.setIconified(true);
+        });
+        maximizeBtn.setOnAction(e -> {
+            Stage stage = getStage(root);
+            if (stage != null) stage.setMaximized(!stage.isMaximized());
+        });
+        closeBtn.setOnAction(e -> {
+            Stage stage = getStage(root);
+            if (stage != null) stage.close();
+        });
+
+        controls.getChildren().addAll(minimizeBtn, maximizeBtn, closeBtn);
+        StackPane.setAlignment(controls, Pos.TOP_RIGHT);
+        root.getChildren().add(controls);
+    }
+
+    private Button createWindowButton(String symbol, Color color) {
+        Button btn = new Button(symbol);
+        btn.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        btn.setTextFill(color);
+        btn.setStyle("-fx-background-color: transparent;");
+        btn.setOnMouseEntered(e -> btn.setTextFill(color.brighter()));
+        btn.setOnMouseExited(e -> btn.setTextFill(color));
+        btn.setPrefSize(28, 28);
+        return btn;
+    }
+
+    private void makeDraggable(StackPane root, Node dragNode) {
+        dragNode.setOnMousePressed(e -> {
+            xOffset = e.getSceneX();
+            yOffset = e.getSceneY();
+        });
+        dragNode.setOnMouseDragged(e -> {
+            Stage stage = getStage(root);
+            if (stage != null && !stage.isMaximized()) {
+                stage.setX(e.getScreenX() - xOffset);
+                stage.setY(e.getScreenY() - yOffset);
+            }
+        });
     }
 
     private Stage getStage(Node node) {
@@ -369,47 +604,5 @@ public class VisualizzaRicetteGUI {
         if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
         return null;
     }
-
-    private void makeDraggable(StackPane pane, Node dragHandle) {
-        dragHandle.setOnMousePressed(event -> {
-            Stage stage = getStage(pane);
-            if (stage != null) { xOffset = event.getSceneX(); yOffset = event.getSceneY(); }
-        });
-
-        dragHandle.setOnMouseDragged(event -> {
-            Stage stage = getStage(pane);
-            if (stage != null) { stage.setX(event.getScreenX() - xOffset); stage.setY(event.getScreenY() - yOffset); }
-        });
-    }
-
-    private void applicaFiltriLocali(String nome, String ingrediente, boolean soloChefLoggato) {
-        if (filteredRicette == null) return;
-
-        progressIndicator.setVisible(true);
-
-        Platform.runLater(() -> {
-            String n = nome == null ? "" : nome.toLowerCase().trim();
-            String i = ingrediente == null ? "" : ingrediente.toLowerCase().trim();
-
-            filteredRicette.setPredicate(r -> {
-                if (r == null) return false;
-                boolean matchNome = n.isEmpty() || (r.getNome() != null && r.getNome().toLowerCase().contains(n));
-
-                boolean matchIngrediente = i.isEmpty() || (r.getIngredienti() != null &&
-                        r.getIngredienti().keySet().stream()
-                                .map(Ingrediente::getNome)
-                                .anyMatch(nomeIng -> nomeIng.toLowerCase().contains(i))
-                );
-
-                boolean match = matchNome && matchIngrediente;
-
-                if (soloChefLoggato) {
-                    return match && (cachedRicetteChef != null && cachedRicetteChef.contains(r));
-                }
-                return match;
-            });
-
-            progressIndicator.setVisible(false);
-        });
-    }
+   
 }
