@@ -26,6 +26,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import model.Ricetta;
+import service.GestioneCucina;
 import service.GestioneRicette;
 
 import java.util.Collections;
@@ -322,10 +323,10 @@ public class VisualizzaRicetteGUI {
                 return;
             }
             try {
-                GestioneRicette gestione = visualizzaController.getGestioneRicette();
+                GestioneRicette gestione = visualizzaController.getGestioneRicetteService();
                 Stage creaStage = new Stage();
                
-                new CreaRicettaGUI(gestione, null).start(creaStage);
+                new CreaRicettaGUI(gestione, null, new GestioneCucina(null)).start(creaStage);
       
                 creaStage.setOnHidden(ev -> refreshData());
             } catch (Exception ex) {
@@ -505,6 +506,37 @@ public class VisualizzaRicetteGUI {
         t.setDaemon(true);
         t.start();
     }
+    
+    public void show(Stage stage) {
+        stage.setTitle("Visualizza Ricette");
+
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(10));
+
+        ListView<Ricetta> listaRicette = new ListView<>();
+        try {
+            listaRicette.getItems().addAll(visualizzaController.getTutteLeRicette());
+        } catch (Exception e) {
+            showError("Errore caricamento ricette: " + e.getMessage());
+        }
+
+        Button btnAggiungi = new Button("Aggiungi Ricetta");
+        btnAggiungi.setOnAction(e -> {
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(
+                    visualizzaController.getGestioneRicetteService(),
+                    null,
+                    new GestioneCucina(null)
+            );
+            Stage creaStage = new Stage();
+            creaGUI.start(creaStage);
+        });
+
+        root.getChildren().addAll(new Label("Ricette disponibili:"), listaRicette, btnAggiungi);
+
+        Scene scene = new Scene(root, 500, 400);
+        stage.setScene(scene);
+        stage.show();
+    }
 
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR, message, ButtonType.OK);
@@ -572,4 +604,5 @@ public class VisualizzaRicetteGUI {
         if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
         return null;
     }
+   
 }

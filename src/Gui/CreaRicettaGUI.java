@@ -7,9 +7,9 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import model.Ingrediente;
 import model.Ricetta;
+import model.InPresenza;
 import service.GestioneRicette;
 import service.GestioneCucina;
-import model.InPresenza;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,13 +17,13 @@ import java.util.Map;
 public class CreaRicettaGUI {
 
     private final GestioneRicette gestioneRicette;
-    private final InPresenza sessione; // se null -> caso 1, se non null -> caso 2
+    private final InPresenza sessione; 
     private final GestioneCucina gestioneCucina;
 
-    public CreaRicettaGUI(GestioneRicette gestioneRicette, InPresenza sessione) {
+    public CreaRicettaGUI(GestioneRicette gestioneRicette, InPresenza sessione, GestioneCucina gestioneCucina) {
         this.gestioneRicette = gestioneRicette;
         this.sessione = sessione;
-        this.gestioneCucina = (sessione != null) ? new GestioneCucina(null) : null; // pass DAO reale
+        this.gestioneCucina = gestioneCucina;
     }
 
     public void start(Stage stage) {
@@ -38,7 +38,6 @@ public class CreaRicettaGUI {
         TextField tempoField = new TextField();
         tempoField.setPromptText("Tempo preparazione (minuti)");
 
-        // ingredienti
         Map<Ingrediente, Double> ingredientiMap = new HashMap<>();
         ListView<String> ingredientiList = new ListView<>();
 
@@ -52,7 +51,7 @@ public class CreaRicettaGUI {
             TextField tipoIng = new TextField();
             tipoIng.setPromptText("Tipo ingrediente");
             TextField quantitaIng = new TextField();
-            quantitaIng.setPromptText("Quantità");
+            quantitaIng.setPromptText("Quantità (numero)");
 
             VBox box = new VBox(10, nomeIng, tipoIng, quantitaIng);
             dialog.getDialogPane().setContent(box);
@@ -86,10 +85,13 @@ public class CreaRicettaGUI {
                 Ricetta ricetta = new Ricetta(nome, tempo);
                 ricetta.setIngredienti(ingredientiMap);
 
+                // salvataggio su DB
                 gestioneRicette.creaRicetta(ricetta);
 
+                // se collegata a sessione in presenza → la associo
                 if (sessione != null) {
                     gestioneCucina.aggiungiSessioneARicetta(ricetta, sessione);
+                    sessione.getRicette().add(ricetta);
                 }
 
                 showInfo("Ricetta creata con successo!");
