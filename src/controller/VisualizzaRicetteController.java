@@ -1,6 +1,7 @@
 package controller;
 
 import model.Ricetta;
+import service.GestioneCucina;
 import service.GestioneRicette;
 
 import java.sql.SQLException;
@@ -8,9 +9,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import Gui.CreaRicettaGUI;
-import Gui.GestioneCucina;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -19,11 +20,11 @@ import javafx.stage.Stage;
 
 public class VisualizzaRicetteController {
 
-    private final GestioneRicette gestioneRicetteService;
+    private final GestioneRicette gestioneRicette;
     private List<Ricetta> cachedRicette = null;
 
     public VisualizzaRicetteController(GestioneRicette gestioneRicetteService) {
-        this.gestioneRicetteService = gestioneRicetteService;
+        this.gestioneRicette = gestioneRicetteService;
     }
     
     public void show(Stage stage) {
@@ -34,7 +35,7 @@ public class VisualizzaRicetteController {
 
         ListView<Ricetta> listaRicette = new ListView<>();
         try {
-        	listaRicette.getItems().addAll(getTutteLeRicette());
+            listaRicette.getItems().addAll(getTutteLeRicette());
         } catch (Exception e) {
             showError("Errore caricamento ricette: " + e.getMessage());
         }
@@ -42,9 +43,10 @@ public class VisualizzaRicetteController {
         Button btnAggiungi = new Button("Aggiungi Ricetta");
         btnAggiungi.setOnAction(e -> {
             CreaRicettaGUI creaGUI = new CreaRicettaGUI(
-                    visualizzaController.getGestioneRicetteService(),
+                    gestioneRicette,
                     null,
-                    new GestioneCucina(null));
+                    new GestioneCucina(null)
+                    );
             Stage creaStage = new Stage();
             creaGUI.start(creaStage);
         });
@@ -58,7 +60,7 @@ public class VisualizzaRicetteController {
 
     public List<Ricetta> getTutteLeRicette() throws SQLException {
         if (cachedRicette == null) {
-            cachedRicette = gestioneRicetteService.getAllRicette();
+            cachedRicette = gestioneRicette.getAllRicette();
         }
         return cachedRicette;
     }
@@ -77,15 +79,23 @@ public class VisualizzaRicetteController {
     }
 
     public void mostraDettagliRicetta(Ricetta r) {
-        new Gui.DettagliRicettaGUI(gestioneRicetteService, r).start(new javafx.stage.Stage());
+        new Gui.DettagliRicettaGUI(gestioneRicette, r).start(new javafx.stage.Stage());
     }
 
     public GestioneRicette getGestioneRicetteService() {
-        return gestioneRicetteService;
+        return gestioneRicette;
     }
 
     public void aggiungiRicetta(Ricetta r) throws SQLException {
-        gestioneRicetteService.creaRicetta(r);
+        gestioneRicette.creaRicetta(r);
         cachedRicette = null; 
+    }
+    
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Errore");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
