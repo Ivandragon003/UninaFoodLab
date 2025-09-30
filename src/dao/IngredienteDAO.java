@@ -10,8 +10,8 @@ import java.util.Optional;
 
 public class IngredienteDAO {
 
-    // Inserimento 
-    public int save(Ingrediente i) throws SQLException {
+    // Inserimento con ritorno ID
+	public int save(Ingrediente i) throws SQLException {
         String sql = "INSERT INTO ingrediente (nome, tipo) VALUES (?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -22,15 +22,14 @@ public class IngredienteDAO {
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
-                    return rs.getInt(1); 
+                    return rs.getInt(1); // ritorna solo l'ID generato
                 }
             }
         }
         throw new SQLException("Inserimento ingrediente fallito, nessun id generato.");
     }
 
-    // Lettura singola per ID
-    public Optional<Ingrediente> findById(int id) throws SQLException {
+	public Optional<Ingrediente> findById(int id) throws SQLException {
         String sql = "SELECT * FROM ingrediente WHERE idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -38,7 +37,6 @@ public class IngredienteDAO {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    // Non possiamo impostare l'ID, quindi ritorniamo solo nome e tipo
                     Ingrediente i = new Ingrediente(
                             rs.getString("nome"),
                             rs.getString("tipo")
@@ -50,8 +48,7 @@ public class IngredienteDAO {
         return Optional.empty();
     }
 
-    // Lettura tutte
-    public List<Ingrediente> getAll() throws SQLException {
+	public List<Ingrediente> getAll() throws SQLException {
         List<Ingrediente> list = new ArrayList<>();
         String sql = "SELECT * FROM ingrediente ORDER BY nome";
         try (Connection conn = DBConnection.getConnection();
@@ -69,29 +66,28 @@ public class IngredienteDAO {
         return list;
     }
 
-    // Ricerca per nome esatto
-    public List<Ingrediente> getByNome(String nome) throws SQLException {
-        List<Ingrediente> list = new ArrayList<>();
+    // Ricerca per nome esatto (per controlli su duplicati)
+	public Optional<Ingrediente> findByNome(String nome) throws SQLException {
         String sql = "SELECT * FROM ingrediente WHERE nome = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, nome);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
+                if (rs.next()) {
                     Ingrediente i = new Ingrediente(
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
-                    list.add(i);
+                    return Optional.of(i);
                 }
             }
         }
-        return list;
+        return Optional.empty();
     }
 
-    // Ricerca per tipo
-    public List<Ingrediente> getByTipo(String tipo) throws SQLException {
+    // Ricerca multipla per tipo
+	public List<Ingrediente> getByTipo(String tipo) throws SQLException {
         List<Ingrediente> list = new ArrayList<>();
         String sql = "SELECT * FROM ingrediente WHERE tipo = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -112,7 +108,7 @@ public class IngredienteDAO {
     }
 
     // Aggiornamento tramite ID
-    public void update(int id, Ingrediente i) throws SQLException {
+	public void update(int id, Ingrediente i) throws SQLException {
         String sql = "UPDATE ingrediente SET nome = ?, tipo = ? WHERE idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -134,5 +130,4 @@ public class IngredienteDAO {
             ps.executeUpdate();
         }
     }
-
 }

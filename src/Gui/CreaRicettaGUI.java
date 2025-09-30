@@ -11,6 +11,7 @@ import model.InPresenza;
 import service.GestioneRicette;
 import service.GestioneCucina;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,14 +47,27 @@ public class CreaRicettaGUI {
             Dialog<Void> dialog = new Dialog<>();
             dialog.setTitle("Aggiungi Ingrediente");
 
+            ComboBox<Ingrediente> comboEsistenti = new ComboBox<>();
+            try {
+                comboEsistenti.getItems().addAll(gestioneRicette.getAllIngredienti());
+            } catch (SQLException ex) {
+                showError("Errore caricamento ingredienti: " + ex.getMessage());
+            }
+            comboEsistenti.setPromptText("Seleziona ingrediente esistente");
+
             TextField nomeIng = new TextField();
-            nomeIng.setPromptText("Nome ingrediente");
+            nomeIng.setPromptText("Nome nuovo ingrediente");
             TextField tipoIng = new TextField();
-            tipoIng.setPromptText("Tipo ingrediente");
+            tipoIng.setPromptText("Tipo nuovo ingrediente");
+
             TextField quantitaIng = new TextField();
             quantitaIng.setPromptText("Quantità (numero)");
 
-            VBox box = new VBox(10, nomeIng, tipoIng, quantitaIng);
+            VBox box = new VBox(10,
+                    new Label("Ingrediente esistente:"), comboEsistenti,
+                    new Label("Oppure nuovo ingrediente:"), nomeIng, tipoIng,
+                    new Label("Quantità:"), quantitaIng
+            );
             dialog.getDialogPane().setContent(box);
 
             ButtonType conferma = new ButtonType("Conferma", ButtonBar.ButtonData.OK_DONE);
@@ -63,7 +77,16 @@ public class CreaRicettaGUI {
             dialog.setResultConverter(bt -> {
                 if (bt == conferma) {
                     try {
-                        Ingrediente i = new Ingrediente(nomeIng.getText(), tipoIng.getText());
+                        Ingrediente i;
+                        if (comboEsistenti.getValue() != null) {
+                            i = comboEsistenti.getValue();
+                        } else if (!nomeIng.getText().isEmpty() && !tipoIng.getText().isEmpty()) {
+                            i = new Ingrediente(nomeIng.getText(), tipoIng.getText());
+                            gestioneRicette.creaIngrediente(i); // salva nel DB se nuovo
+                        } else {
+                            throw new IllegalArgumentException("Devi selezionare o inserire un ingrediente");
+                        }
+
                         double q = Double.parseDouble(quantitaIng.getText());
                         ingredientiMap.put(i, q);
                         ingredientiList.getItems().add(i.getNome() + " (" + i.getTipo() + ") - " + q);
@@ -81,14 +104,14 @@ public class CreaRicettaGUI {
         btnConferma.setOnAction(e -> {
             try {
                 String nome = nomeField.getText();
+                if (nome.isEmpty()) throw new IllegalArgumentException("Nome ricetta obbligatorio");
+
                 int tempo = Integer.parseInt(tempoField.getText());
                 Ricetta ricetta = new Ricetta(nome, tempo);
                 ricetta.setIngredienti(ingredientiMap);
 
-                // salvataggio su DB
                 gestioneRicette.creaRicetta(ricetta);
 
-                // se collegata a sessione in presenza → la associo
                 if (sessione != null) {
                     gestioneCucina.aggiungiSessioneARicetta(ricetta, sessione);
                     sessione.getRicette().add(ricetta);
