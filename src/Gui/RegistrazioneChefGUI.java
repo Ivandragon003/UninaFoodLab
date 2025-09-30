@@ -2,63 +2,91 @@ package Gui;
 
 import controller.ChefController;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import model.Chef;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
-public class RegistrazioneChefGUI {
-
+public class RegistrazioneChefGUI extends VBox {
     private final ChefController chefController;
 
-    public RegistrazioneChefGUI(ChefController controller) {
+    public RegistrazioneChefGUI(ChefController controller, Runnable onAnnulla) {
         this.chefController = controller;
-    }
 
-    public void show(Stage ownerStage) {
-        Stage stage = new Stage();
-        stage.setTitle("Registrazione Chef");
-        stage.initOwner(ownerStage);
-        stage.initModality(Modality.APPLICATION_MODAL);
+        setSpacing(20);
+        setAlignment(Pos.CENTER);
+        setPadding(new Insets(30));
+        setMaxWidth(380);
+        setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 20;" +
+                "-fx-border-radius: 20;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 2;");
 
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20));
-        grid.setVgap(10);
-        grid.setHgap(10);
+        // Titolo
+        Label titleLabel = new Label("UninaFoodLab");
+        titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
+        titleLabel.setTextFill(Color.web("#FF6600"));
 
-        TextField codFiscaleField = new TextField();
-        TextField nomeField = new TextField();
-        TextField cognomeField = new TextField();
-        TextField emailField = new TextField();
+        Label subtitleLabel = new Label("Registrati come Chef");
+        subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
+        subtitleLabel.setTextFill(Color.web("#FF8533"));
+
+        VBox header = new VBox(5, titleLabel, subtitleLabel);
+        header.setAlignment(Pos.CENTER);
+
+        // Campi input
+        TextField codFiscaleField = createTextField("Codice Fiscale");
+        TextField nomeField = createTextField("Nome");
+        TextField cognomeField = createTextField("Cognome");
+        TextField emailField = createTextField("Email");
+
         DatePicker dataNascitaPicker = new DatePicker();
-        TextField usernameField = new TextField();
-        PasswordField passwordField = new PasswordField();
+        dataNascitaPicker.setPromptText("Data di nascita");
+        dataNascitaPicker.setPrefWidth(300);
+        dataNascitaPicker.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15;" +
+                "-fx-border-color: #FF9966; -fx-border-width: 1.5;" +
+                "-fx-padding: 0 10 0 10;"
+        );
+
+        TextField usernameField = createTextField("Username");
+        PasswordField passwordField = createPasswordField("Password");
+
         CheckBox disponibilitaBox = new CheckBox("Disponibile");
         disponibilitaBox.setSelected(true);
 
-        grid.add(new Label("Codice Fiscale*:"), 0, 0); grid.add(codFiscaleField, 1, 0);
-        grid.add(new Label("Nome*:"), 0, 1); grid.add(nomeField, 1, 1);
-        grid.add(new Label("Cognome*:"), 0, 2); grid.add(cognomeField, 1, 2);
-        grid.add(new Label("Email*:"), 0, 3); grid.add(emailField, 1, 3);
-        grid.add(new Label("Data Nascita*:"), 0, 4); grid.add(dataNascitaPicker, 1, 4);
-        grid.add(new Label("Username*:"), 0, 5); grid.add(usernameField, 1, 5);
-        grid.add(new Label("Password*:"), 0, 6); grid.add(passwordField, 1, 6);
-        grid.add(disponibilitaBox, 1, 7);
+        VBox form = new VBox(15,
+                codFiscaleField,
+                nomeField,
+                cognomeField,
+                emailField,
+                dataNascitaPicker,
+                usernameField,
+                passwordField,
+                disponibilitaBox
+        );
+        form.setAlignment(Pos.CENTER);
 
+        // Messaggi
         Label messageLabel = new Label();
-        grid.add(messageLabel, 0, 9, 2, 1);
+        messageLabel.setFont(Font.font("Roboto", FontWeight.MEDIUM, 13));
+        messageLabel.setTextFill(Color.web("#FF6600"));
+        messageLabel.setWrapText(true);
+        messageLabel.setAlignment(Pos.CENTER);
 
-        Button registraButton = new Button("Registrati");
-        Button annullaButton = new Button("Annulla");
-        grid.add(registraButton, 1, 8);
-        grid.add(annullaButton, 0, 8);
+        // Pulsanti
+        Button registraButton = createButton("REGISTRATI", "#FF6600", "#FF8533");
+        Button annullaButton = createButton("ANNULLA", "#FFCC99", "#FFD9B3");
 
-        // --- REGISTRAZIONE CORRETTA ---
+        HBox buttons = new HBox(15, annullaButton, registraButton);
+        buttons.setAlignment(Pos.CENTER);
+
+        // Eventi
         registraButton.setOnAction(e -> {
             try {
-                // Validazione input vuoti
                 if (codFiscaleField.getText().trim().isEmpty() ||
                     nomeField.getText().trim().isEmpty() ||
                     cognomeField.getText().trim().isEmpty() ||
@@ -66,48 +94,77 @@ public class RegistrazioneChefGUI {
                     dataNascitaPicker.getValue() == null ||
                     usernameField.getText().trim().isEmpty() ||
                     passwordField.getText().trim().isEmpty()) {
-                    
-                    messageLabel.setText("Tutti i campi con * sono obbligatori");
-                    messageLabel.setStyle("-fx-text-fill: red;");
+                    messageLabel.setText("Tutti i campi sono obbligatori!");
+                    messageLabel.setTextFill(Color.RED);
                     return;
                 }
 
-                // Tentativo di registrazione
-                Chef chefRegistrato = chefController.registraChef(
-                    codFiscaleField.getText().trim(),
-                    nomeField.getText().trim(),
-                    cognomeField.getText().trim(),
-                    emailField.getText().trim(),
-                    dataNascitaPicker.getValue(),
-                    disponibilitaBox.isSelected(),
-                    usernameField.getText().trim(),
-                    passwordField.getText().trim()
+                // Non serve salvare in una variabile
+                chefController.registraChef(
+                        codFiscaleField.getText().trim(),
+                        nomeField.getText().trim(),
+                        cognomeField.getText().trim(),
+                        emailField.getText().trim(),
+                        dataNascitaPicker.getValue(),
+                        disponibilitaBox.isSelected(),
+                        usernameField.getText().trim(),
+                        passwordField.getText().trim()
                 );
 
-                // Conferma registrazione
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Registrazione completata");
-                alert.setHeaderText(null);
-                alert.setContentText("Registrazione completata con successo!\nPuoi ora effettuare il login.");
-                alert.showAndWait();
-
-                // Chiudo la finestra di registrazione e torno al login
-                stage.close();
-                
-               
-
+                messageLabel.setText("✅ Registrazione completata! Puoi ora effettuare il login.");
+                messageLabel.setTextFill(Color.web("#00AA00"));
             } catch (Exception ex) {
-                messageLabel.setText("Errore: " + ex.getMessage());
-                messageLabel.setStyle("-fx-text-fill: red;");
-                System.err.println("Errore durante registrazione: " + ex.getMessage());
-                ex.printStackTrace(); // Per debug
+                messageLabel.setText("❌ Errore: " + ex.getMessage());
+                messageLabel.setTextFill(Color.RED);
+                ex.printStackTrace();
             }
         });
 
-        annullaButton.setOnAction(e -> stage.close());
+        annullaButton.setOnAction(e -> onAnnulla.run());
 
-        Scene scene = new Scene(grid, 450, 400);
-        stage.setScene(scene);
-        stage.show();
+        getChildren().addAll(header, form, buttons, messageLabel);
+    }
+
+    private TextField createTextField(String placeholder) {
+        TextField field = new TextField();
+        field.setPromptText(placeholder);
+        field.setPrefWidth(300);
+        field.setPrefHeight(40);
+        field.setFont(Font.font("Roboto", 13));
+        field.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15;" +
+                "-fx-border-color: #FF9966; -fx-border-width: 1.5;" +
+                "-fx-padding: 0 10 0 10;"
+        );
+        return field;
+    }
+
+    private PasswordField createPasswordField(String placeholder) {
+        PasswordField field = new PasswordField();
+        field.setPromptText(placeholder);
+        field.setPrefWidth(300);
+        field.setPrefHeight(40);
+        field.setFont(Font.font("Roboto", 13));
+        field.setStyle(
+                "-fx-background-radius: 15; -fx-border-radius: 15;" +
+                "-fx-border-color: #FF9966; -fx-border-width: 1.5;" +
+                "-fx-padding: 0 10 0 10;"
+        );
+        return field;
+    }
+
+    private Button createButton(String text, String baseColor, String hoverColor) {
+        Button button = new Button(text);
+        button.setPrefSize(130, 40);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        button.setTextFill(Color.web("#4B2E2E"));
+        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20;");
+        button.setOnMouseEntered(e ->
+                button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20;")
+        );
+        button.setOnMouseExited(e ->
+                button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20;")
+        );
+        return button;
     }
 }
