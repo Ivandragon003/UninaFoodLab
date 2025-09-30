@@ -26,6 +26,9 @@ public class LoginChefGUI extends Application {
     private double xOffset = 0;
     private double yOffset = 0;
 
+ 
+    private StackPane contentPane;
+
     public static void setController(ChefController controller, GestioneCorsiCucina corsiServiceArg) {
         chefController = controller;
         corsiService = corsiServiceArg;
@@ -46,11 +49,13 @@ public class LoginChefGUI extends Application {
         // Sfondo
         createBackground(root);
 
-        // Card login
+    
+        contentPane = new StackPane();
         VBox loginCard = createLoginCard();
-        root.getChildren().add(loginCard);
+        contentPane.getChildren().add(loginCard);
+        root.getChildren().add(contentPane);
 
-        // Pulsanti finestra in alto a destra fuori dal card
+        // Pulsanti finestra in alto a destra
         HBox windowButtons = createWindowButtons(primaryStage);
         root.getChildren().add(windowButtons);
         StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
@@ -63,13 +68,12 @@ public class LoginChefGUI extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-    
+
     @Override
     public void stop() {
         DBConnection.closeDataSource();
         System.out.println("Pool DB chiuso al termine dell'applicazione.");
     }
-
 
     private void createBackground(StackPane root) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
@@ -81,89 +85,85 @@ public class LoginChefGUI extends Application {
         root.getChildren().add(background);
     }
 
+    private VBox createLoginCard() {
+        VBox card = new VBox(20);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(40));
+        card.setMaxWidth(380);
+        card.setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 20;" +
+                "-fx-border-radius: 20;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 2;");
 
-private VBox createLoginCard() {
-    VBox card = new VBox(20);
-    card.setAlignment(Pos.CENTER);
-    card.setPadding(new Insets(40));
-    card.setMaxWidth(380);
-    card.setStyle("-fx-background-color: white;" + 
-            "-fx-background-radius: 20;" +
-            "-fx-border-radius: 20;" +
-            "-fx-border-color: #FF9966;" + // bordo arancione scuro
-            "-fx-border-width: 2;");
+        Label titleLabel = new Label("UninaFoodLab");
+        titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
+        titleLabel.setTextFill(Color.web("#FF6600"));
 
-    Label titleLabel = new Label("UninaFoodLab");
-    titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
-    titleLabel.setTextFill(Color.web("#FF6600"));
+        Label subtitleLabel = new Label("Accedi al tuo account");
+        subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
+        subtitleLabel.setTextFill(Color.web("#FF8533"));
 
-    Label subtitleLabel = new Label("Accedi al tuo account");
-    subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
-    subtitleLabel.setTextFill(Color.web("#FF8533"));
+        VBox formContainer = new VBox(15);
+        formContainer.setAlignment(Pos.CENTER);
 
-    VBox formContainer = new VBox(15);
-    formContainer.setAlignment(Pos.CENTER);
+        VBox usernameContainer = createStylishTextField("Username", false);
+        TextField usernameField = (TextField) ((StackPane) usernameContainer.getChildren().get(0)).getChildren().get(1);
 
-    VBox usernameContainer = createStylishTextField("Username", false);
-    TextField usernameField = (TextField) ((StackPane) usernameContainer.getChildren().get(0)).getChildren().get(1);
+        VBox passwordContainer = createStylishTextField("Password", true);
+        PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
 
-    VBox passwordContainer = createStylishTextField("Password", true);
-    PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
+        Label messageLabel = new Label();
+        messageLabel.setFont(Font.font("Roboto", FontWeight.MEDIUM, 13));
+        messageLabel.setTextFill(Color.web("#FF6600"));
+        messageLabel.setWrapText(true);
+        messageLabel.setAlignment(Pos.CENTER);
 
-    Label messageLabel = new Label();
-    messageLabel.setFont(Font.font("Roboto", FontWeight.MEDIUM, 13));
-    messageLabel.setTextFill(Color.web("#FF6600"));
-    messageLabel.setWrapText(true);
-    messageLabel.setAlignment(Pos.CENTER);
+        Button loginButton = createStylishButton("ACCEDI", "#FF6600", "#FF8533");
+        Button registerButton = createStylishButton("REGISTRATI", "#FFCC99", "#FFD9B3");
 
-    Button loginButton = createStylishButton("ACCEDI", "#FF6600", "#FF8533");
-    Button registerButton = createStylishButton("REGISTRATI", "#FFCC99", "#FFD9B3");
+        setupButtonEvents(loginButton, registerButton, usernameField, passwordField, messageLabel);
 
-    setupButtonEvents(loginButton, registerButton, usernameField, passwordField, messageLabel);
+        formContainer.getChildren().addAll(usernameContainer, passwordContainer);
 
-    formContainer.getChildren().addAll(usernameContainer, passwordContainer);
+        HBox buttonContainer = new HBox(15);
+        buttonContainer.setAlignment(Pos.CENTER);
+        buttonContainer.getChildren().addAll(registerButton, loginButton);
 
-    HBox buttonContainer = new HBox(15);
-    buttonContainer.setAlignment(Pos.CENTER);
-    buttonContainer.getChildren().addAll(registerButton, loginButton);
+        VBox headerContainer = new VBox(10);
+        headerContainer.setAlignment(Pos.CENTER);
+        headerContainer.getChildren().addAll(titleLabel, subtitleLabel);
 
-    VBox headerContainer = new VBox(10);
-    headerContainer.setAlignment(Pos.CENTER);
-    headerContainer.getChildren().addAll(titleLabel, subtitleLabel);
+        card.getChildren().addAll(headerContainer, formContainer, buttonContainer, messageLabel);
 
-    card.getChildren().addAll(headerContainer, formContainer, buttonContainer, messageLabel);
+        return card;
+    }
 
-    return card;
-}
+    private VBox createStylishTextField(String placeholder, boolean isPassword) {
+        VBox container = new VBox(3);
+        StackPane fieldContainer = new StackPane();
+        fieldContainer.setPrefHeight(45);
 
- 
-private VBox createStylishTextField(String placeholder, boolean isPassword) {
-    VBox container = new VBox(3);
-    StackPane fieldContainer = new StackPane();
-    fieldContainer.setPrefHeight(45);
+        Region background = new Region();
+        background.setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 15;" +
+                "-fx-border-radius: 15;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 1.5;");
 
-    
-    Region background = new Region();
-    background.setStyle("-fx-background-color: white;" +
-            "-fx-background-radius: 15;" +
-            "-fx-border-radius: 15;" +
-            "-fx-border-color: #FF9966;" +
-            "-fx-border-width: 1.5;");
+        TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
+        inputField.setPromptText(placeholder);
+        inputField.setStyle("-fx-background-color: transparent;" +
+                "-fx-text-fill: black;" +
+                "-fx-prompt-text-fill: gray;" +
+                "-fx-font-size: 14px;" +
+                "-fx-padding: 0 15 0 15;");
+        inputField.setPrefWidth(300);
 
-    TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
-    inputField.setPromptText(placeholder);
-    inputField.setStyle("-fx-background-color: transparent;" +  
-            "-fx-text-fill: black;" +                            
-            "-fx-prompt-text-fill: gray;" +                      
-            "-fx-font-size: 14px;" +
-            "-fx-padding: 0 15 0 15;");
-    inputField.setPrefWidth(300);
-
-    fieldContainer.getChildren().addAll(background, inputField);
-    container.getChildren().add(fieldContainer);
-    return container;
-}
-
+        fieldContainer.getChildren().addAll(background, inputField);
+        container.getChildren().add(fieldContainer);
+        return container;
+    }
 
     private HBox createWindowButtons(Stage stage) {
         Button closeButton = new Button("✕");
@@ -185,61 +185,58 @@ private VBox createStylishTextField(String placeholder, boolean isPassword) {
 
         HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
         box.setAlignment(Pos.TOP_RIGHT);
-        box.setPickOnBounds(false); 
+        box.setPickOnBounds(false);
         return box;
     }
 
+    private Button createStylishButton(String text, String baseColor, String hoverColor) {
+        Button button = new Button(text);
+        button.setPrefSize(130, 45);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        button.setTextFill(Color.web("#4B2E2E"));
+        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
 
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
 
-private Button createStylishButton(String text, String baseColor, String hoverColor) {
-    Button button = new Button(text);
-    button.setPrefSize(130, 45);
-    button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-    button.setTextFill(Color.web("#4B2E2E"));
-    button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
-    
+        return button;
+    }
 
-    button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-    button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-    
-    return button;
-}
+    private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
+                                   PasswordField passwordField, Label messageLabel) {
+        loginButton.setOnAction(e -> {
+            try {
+                Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
+                messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
+                messageLabel.setTextFill(Color.web("#FF6600"));
 
-   private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
-                               PasswordField passwordField, Label messageLabel) {
-    loginButton.setOnAction(e -> {
-        try {
-            // Login con il controller chef
-            Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
-            messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
-            messageLabel.setTextFill(Color.web("#FF6600"));
+                VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
 
-            // Usa il nuovo VisualizzaCorsiController
-            VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
+                ChefMenuGUI menu = new ChefMenuGUI();
+                menu.setChefLoggato(chef);
+                menu.setController(corsiController);
+                Stage menuStage = new Stage();
+                menu.start(menuStage);
 
-            // Apri il menu chef e passa il controller
-            ChefMenuGUI menu = new ChefMenuGUI();
-            menu.setChefLoggato(chef);
-            menu.setController(corsiController);  // setter nuovo controller
-            Stage menuStage = new Stage();
-            menu.start(menuStage);
+                Stage loginStage = (Stage) loginButton.getScene().getWindow();
+                loginStage.close();
 
-            // Chiudi la finestra di login
-            Stage loginStage = (Stage) loginButton.getScene().getWindow();
-            loginStage.close();
+            } catch (Exception ex) {
+                messageLabel.setText("❌ Errore: " + ex.getMessage());
+                messageLabel.setTextFill(Color.web("#CC3300"));
+                ex.printStackTrace();
+            }
+        });
 
-        } catch (Exception ex) {
-            messageLabel.setText("❌ Errore: " + ex.getMessage());
-            messageLabel.setTextFill(Color.web("#CC3300"));
-            ex.printStackTrace();
-        }
-    });
-
-    registerButton.setOnAction(e -> {
-        RegistrazioneChefGUI registrazioneGUI = new RegistrazioneChefGUI(chefController);
-        registrazioneGUI.show(new Stage());
-    });
-}
+        registerButton.setOnAction(e -> {
+            contentPane.getChildren().clear();
+            RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
+                contentPane.getChildren().clear();
+                contentPane.getChildren().add(createLoginCard());
+            });
+            contentPane.getChildren().add(regPane);
+        });
+    }
 
     private void makeDraggable(StackPane root, Stage stage) {
         root.setOnMousePressed(event -> {
