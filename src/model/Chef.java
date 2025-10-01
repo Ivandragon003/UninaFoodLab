@@ -9,7 +9,7 @@ public class Chef extends Persona {
 	private String username;
 	private String password;
 	private List<CorsoCucina> corsi = new ArrayList<>();
-	private List<Ristorante> ristoranti = new ArrayList<>();
+
 
 	public Chef(String codFiscale, String nome, String cognome, boolean disponibilita, String username,
 			String password) {
@@ -23,9 +23,6 @@ public class Chef extends Persona {
 		return anniEsperienza;
 	}
 
-	public List<Ristorante> getRistoranti() {
-		return ristoranti;
-	}
 
 	public void setAnniEsperienza(int anniEsperienza) {
 		if (anniEsperienza < 0) {

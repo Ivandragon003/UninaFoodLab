@@ -11,15 +11,14 @@ public class Main {
         try {
             // Creazione DAO
             ChefDAO chefDAO = new ChefDAO();
-            TieneDAO tieneDAO = new TieneDAO();
-            LavoraDAO lavoraDAO = new LavoraDAO();
+            TieneDAO tieneDAO = new TieneDAO();         
             CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
             IscrizioneDAO iscrizioneDAO = new IscrizioneDAO();
             OnlineDAO onlineDAO = new OnlineDAO();
             InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
 
             // Creazione servizi
-            GestioneChef chefService = new GestioneChef(chefDAO, tieneDAO, lavoraDAO);
+            GestioneChef chefService = new GestioneChef(chefDAO, tieneDAO);
             GestioneCorsiCucina corsiService = new GestioneCorsiCucina(
                     corsoDAO, chefDAO, tieneDAO, iscrizioneDAO, onlineDAO, inPresenzaDAO);
 

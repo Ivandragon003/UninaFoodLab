@@ -4,21 +4,18 @@ import java.sql.SQLException;
 import java.util.Optional;
 import dao.ChefDAO;
 import dao.TieneDAO;
-import dao.LavoraDAO;
 import model.Chef;
 import model.CorsoCucina;
-import model.Ristorante;
 import java.util.List;
 
 public class GestioneChef {
 	private final TieneDAO tieneDAO;
 	private final ChefDAO chefDAO;
-	private final LavoraDAO lavoraDAO;
 
-	public GestioneChef(ChefDAO chefDAO, TieneDAO tieneDAO, LavoraDAO lavoraDAO) {
+
+	public GestioneChef(ChefDAO chefDAO, TieneDAO tieneDAO) {
 		this.chefDAO = chefDAO;
 		this.tieneDAO = tieneDAO;
-		this.lavoraDAO = lavoraDAO;
 	}
 
 	// Crea
@@ -59,26 +56,6 @@ public class GestioneChef {
 
 	public boolean existsByEmail(String email) throws SQLException {
 		return chefDAO.existsByEmail(email);
-	}
-
-	// Ristoranti
-	public void aggiungiRistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (!chef.getRistoranti().contains(ristorante)) {
-			chef.getRistoranti().add(ristorante);
-			ristorante.getChef().add(chef);
-			lavoraDAO.addChefToRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
-		} else {
-			throw new IllegalArgumentException("Ristorante già associato allo chef");
-		}
-	}
-
-	public void rimuoviRistorante(Chef chef, Ristorante ristorante) throws SQLException {
-		if (chef.getRistoranti().remove(ristorante)) {
-			ristorante.getChef().remove(chef);
-			lavoraDAO.removeChefFromRistorante(chef.getCodFiscale(), ristorante.getIdRistorante());
-		} else {
-			throw new IllegalArgumentException("Ristorante non associato allo chef");
-		}
 	}
 
 	// Corsi di cucina

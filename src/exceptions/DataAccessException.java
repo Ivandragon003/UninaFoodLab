@@ -1,9 +1,8 @@
 package exceptions;
 
-/**
- * Eccezione unchecked per problemi di accesso ai dati (wrapping di SQLException).
- * Opzionale: può essere usata dal service se vuoi convertire SQLException in unchecked.
- */
+//Eccezione unchecked per problemi di accesso ai dati 
+
+
 public class DataAccessException extends RuntimeException {
     public DataAccessException(String message) {
         super(message);
