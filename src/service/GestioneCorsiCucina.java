@@ -8,6 +8,8 @@ import dao.OnlineDAO;
 import dao.InPresenzaDAO;
 
 import exceptions.ValidationException;
+import exceptions.ErrorMessages;
+
 import model.CorsoCucina;
 import model.Chef;
 import model.Sessione;
@@ -38,23 +40,22 @@ public class GestioneCorsiCucina {
         this.inPresenzaDAO = inPresenzaDAO;
     }
 
-
     public void creaCorso(CorsoCucina corso) throws SQLException, ValidationException {
-        if (corso == null) throw new ValidationException("Corso nullo");
+        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         if (corso.getNomeCorso() == null || corso.getNomeCorso().trim().isEmpty())
-            throw new ValidationException("Nome corso mancante");
-        if (corso.getNumeroPosti() <= 0) throw new ValidationException("Numero posti non valido");
-        if (corso.getPrezzo() < 0) throw new ValidationException("Prezzo non valido");
+            throw new ValidationException(ErrorMessages.NOME_CORSO_MANCANTE);
+        if (corso.getNumeroPosti() <= 0) throw new ValidationException(ErrorMessages.NUMERO_POSTI_NON_VALIDO);
+        if (corso.getPrezzo() < 0) throw new ValidationException(ErrorMessages.PREZZO_NON_VALIDO);
         if (corso.getDataInizioCorso() == null || corso.getDataFineCorso() == null)
-            throw new ValidationException("Date del corso mancanti");
+            throw new ValidationException(ErrorMessages.DATE_CORSO_MANCANTI);
         if (corso.getDataInizioCorso().isBefore(java.time.LocalDateTime.now()))
-            throw new ValidationException("Data di inizio nel passato");
+            throw new ValidationException(ErrorMessages.DATA_INIZIO_PASSATA);
         if (corso.getDataFineCorso().isBefore(corso.getDataInizioCorso()))
-            throw new ValidationException("Data fine precedente a inizio");
+            throw new ValidationException(ErrorMessages.DATA_FINE_PRECEDENTE);
 
         corsoDAO.save(corso);
 
-        // salva sessioni 
+        // salva sessioni
         if (corso.getSessioni() != null) {
             for (Sessione s : corso.getSessioni()) {
                 if (s instanceof Online) {
@@ -69,14 +70,12 @@ public class GestioneCorsiCucina {
             }
         }
 
-        // assegna i chef: se non esistono li segnaliamo come errore 
+        // assegna i chef
         if (corso.getChef() != null) {
             for (Chef c : corso.getChef()) {
                 if (!chefDAO.findByCodFiscale(c.getCodFiscale()).isPresent()) {
-             
-                    throw new ValidationException("Chef non presente: " + c.getCodFiscale());
+                    throw new ValidationException(ErrorMessages.CHEF_NON_PRESENTE + c.getCodFiscale());
                 }
-                // salva relazione tiene 
                 if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(c)) {
                     tieneDAO.save(c.getCodFiscale(), corso.getIdCorso());
                 }
@@ -85,7 +84,7 @@ public class GestioneCorsiCucina {
     }
 
     public void aggiornaCorso(CorsoCucina corso) throws SQLException, ValidationException {
-        if (corso == null) throw new ValidationException("Corso nullo");
+        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         corsoDAO.update(corso);
     }
 
@@ -94,17 +93,18 @@ public class GestioneCorsiCucina {
     }
 
     public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException, ValidationException {
-        if (corso == null || chef == null) throw new ValidationException("Corso o chef nulli");
-        if (password == null || password.length() < 6) throw new ValidationException("Password non valida");
+        if (corso == null || chef == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        if (password == null || password.length() < 6) throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
 
         if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
             chefDAO.save(chef, password);
         }
+
         if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
             tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
             corso.getChef().add(chef);
         } else {
-            throw new ValidationException("Chef già assegnato a questo corso");
+            throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
         }
     }
 
