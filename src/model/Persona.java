@@ -102,4 +102,10 @@ abstract public class Persona {
 	public String toStringDataNascita() {
 		return "Data di Nascita: " + dataNascita;
 	}
+	
+	@Override
+	public String toString() {
+	    return getNome() + " " + getCognome();
+	}
+
 }

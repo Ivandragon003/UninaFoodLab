@@ -1,12 +1,17 @@
 package controller;
 
-import service.GestioneCorsiCucina;
-import service.GestioneChef;
+import exceptions.ErrorMessages;
+import exceptions.ValidationException;
 import model.CorsoCucina;
 import model.Chef;
+import service.GestioneCorsiCucina;
+import service.GestioneChef;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
+
+
 
 public class GestioneCorsoController {
 
@@ -26,20 +31,39 @@ public class GestioneCorsoController {
         return chefService.getAll();
     }
 
-    public void creaCorso(CorsoCucina corso) throws SQLException {
-        corsiService.creaCorso(corso);
+      // Se il model lancia IllegalArgumentException (invarianti non rispettate),
+      //lo trasformiamo in ValidationException per mantenere la semantica.
+     
+    public void creaCorso(CorsoCucina corso) throws SQLException, ValidationException {
+        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
+        try {
+            corsiService.creaCorso(corso);
+        } catch (IllegalArgumentException iae) {
+            throw new ValidationException("Errore di validazione del corso: " + iae.getMessage(), iae);
+        }
     }
 
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
-        corsiService.aggiungiChefACorso(corso, chef, password);
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException, ValidationException {
+        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
+        Objects.requireNonNull(chef, ErrorMessages.CHEF_NULLO);
+        try {
+            corsiService.aggiungiChefACorso(corso, chef, password);
+        } catch (IllegalArgumentException iae) {
+            throw new ValidationException("Errore di validazione: " + iae.getMessage(), iae);
+        }
     }
 
     public void eliminaCorso(int idCorso) throws SQLException {
         corsiService.cancellaCorso(idCorso);
     }
 
-    public void modificaCorso(CorsoCucina corsoAggiornato) throws SQLException {
-        corsiService.aggiornaCorso(corsoAggiornato);
+    public void modificaCorso(CorsoCucina corsoAggiornato) throws SQLException, ValidationException {
+        Objects.requireNonNull(corsoAggiornato, ErrorMessages.CORSO_NULLO);
+        try {
+            corsiService.aggiornaCorso(corsoAggiornato);
+        } catch (IllegalArgumentException iae) {
+            throw new ValidationException("Errore di validazione: " + iae.getMessage(), iae);
+        }
     }
 
     public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {

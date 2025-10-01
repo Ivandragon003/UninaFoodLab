@@ -4,6 +4,9 @@ import controller.GestioneCorsoController;
 import model.CorsoCucina;
 import model.Frequenza;
 import model.Chef;
+import model.Sessione;
+import model.Online;
+import model.InPresenza;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,383 +26,532 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+import java.util.*;
+
+import exceptions.ValidationException;
+import exceptions.DataAccessException;
 
 public class CreaCorsoGUI {
 
-    private VBox root;
-    private GestioneCorsoController gestioneController;
+	private VBox root;
+	private GestioneCorsoController gestioneController;
 
-    private ObservableList<Chef> chefSelezionati = FXCollections.observableArrayList();
-    private ListView<Chef> chefListView;
+	private ObservableList<Chef> chefSelezionati = FXCollections.observableArrayList();
+	private ListView<Chef> chefListView;
 
-    public void setController(GestioneCorsoController controller) {
-        this.gestioneController = controller;
-    }
+	private ObservableList<Sessione> corsoSessioni = FXCollections.observableArrayList();
+	private ListView<Sessione> sessioniListView;
 
-    public Pane getRoot() {
-        if (root == null)
-            initUI();
-        return root;
-    }
+	public void setController(GestioneCorsoController controller) {
+		this.gestioneController = controller;
+	}
 
-    private void initUI() {
-        VBox mainContent = new VBox(20);
-        mainContent.setPadding(new Insets(30));
-        mainContent.setAlignment(Pos.TOP_CENTER);
+	public Pane getRoot() {
+		if (root == null)
+			initUI();
+		return root;
+	}
 
-        // Sfondo gradiente arancione
-        LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")), new Stop(0.5, Color.web("#FFB366")),
-                new Stop(1, Color.web("#FFCC99")));
-        mainContent.setBackground(
-                new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(gradient, null, null)));
+	private void initUI() {
+		VBox mainContent = new VBox(20);
+		mainContent.setPadding(new Insets(30));
+		mainContent.setAlignment(Pos.TOP_CENTER);
 
-        // Titolo moderno
-        Label title = new Label("🎓 Crea Nuovo Corso");
-        title.setFont(Font.font("Inter", FontWeight.EXTRA_BOLD, 26));
-        title.setTextFill(Color.WHITE);
-        title.setEffect(new DropShadow(8, Color.web("#FF6600", 0.8)));
+		// Sfondo gradiente arancione
+		LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+				new Stop(0, Color.web("#FF9966")), new Stop(0.5, Color.web("#FFB366")),
+				new Stop(1, Color.web("#FFCC99")));
+		mainContent.setBackground(
+				new javafx.scene.layout.Background(new javafx.scene.layout.BackgroundFill(gradient, null, null)));
 
-        Label subtitle = new Label("Compila i dettagli del corso di cucina");
-        subtitle.setFont(Font.font("Inter", FontWeight.NORMAL, 13));
-        subtitle.setTextFill(Color.web("#FFFFFF", 0.9));
+		// Titolo
+		Label title = new Label("🎓 Crea Nuovo Corso");
+		title.setFont(Font.font("Inter", FontWeight.EXTRA_BOLD, 26));
+		title.setTextFill(Color.WHITE);
+		title.setEffect(new DropShadow(8, Color.web("#FF6600", 0.8)));
 
-        VBox headerBox = new VBox(8, title, subtitle);
-        headerBox.setAlignment(Pos.CENTER);
+		Label subtitle = new Label("Compila i dettagli del corso di cucina");
+		subtitle.setFont(Font.font("Inter", FontWeight.NORMAL, 13));
+		subtitle.setTextFill(Color.web("#FFFFFF", 0.9));
 
-        // Card del form con stile moderno
-        VBox formCard = new VBox(15);
-        formCard.setPadding(new Insets(30));
-        formCard.setAlignment(Pos.TOP_LEFT);
-        formCard.setMaxWidth(Double.MAX_VALUE);
-        formCard.setMinWidth(400);
-        formCard.setStyle("-fx-background-color: rgba(255,255,255,0.95); "
-                + "-fx-background-radius: 20; -fx-border-radius: 20; "
-                + "-fx-border-color: rgba(255,255,255,0.4); -fx-border-width: 1;");
-        formCard.setEffect(new DropShadow(15, Color.web("#000000", 0.15)));
+		VBox headerBox = new VBox(8, title, subtitle);
+		headerBox.setAlignment(Pos.CENTER);
 
-        // Campi form
-        TextField nomeField = createStyledTextField("📝 Nome corso");
-        TextField prezzoField = createStyledTextField("💰 Prezzo (es: 150.00)");
-        TextField argomentoField = createStyledTextField("🍽️ Argomento");
-        TextField postiField = createStyledTextField("👥 Numero posti disponibili");
+		// Card del form
+		VBox formCard = new VBox(15);
+		formCard.setPadding(new Insets(30));
+		formCard.setAlignment(Pos.TOP_LEFT);
+		formCard.setMaxWidth(Double.MAX_VALUE);
+		formCard.setMinWidth(400);
+		formCard.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-border-radius: 20; "
+				+ "-fx-border-color: #E0E0E0; -fx-border-width: 1;");
 
-        ComboBox<Frequenza> frequenzaBox = createStyledComboBox();
-        frequenzaBox.setPromptText("📅 Frequenza");
-        frequenzaBox.getItems().addAll(Frequenza.values());
+		formCard.setEffect(new DropShadow(15, Color.web("#000000", 0.15)));
 
-        DatePicker startDatePicker = createStyledDatePicker("📆 Data inizio");
-        DatePicker endDatePicker = createStyledDatePicker("📆 Data fine");
+		// Campi form
+		TextField nomeField = createStyledTextField("📝 Nome corso");
+		TextField prezzoField = createStyledTextField("💰 Prezzo (es: 150.00)");
+		TextField argomentoField = createStyledTextField("🍽️ Argomento");
+		TextField postiField = createStyledTextField("👥 Numero posti disponibili");
 
-        Spinner<Integer> startHour = createStyledSpinner(0, 23, 9);
-        Spinner<Integer> startMinute = createStyledSpinner(0, 59, 0);
-        Spinner<Integer> endHour = createStyledSpinner(0, 23, 17);
-        Spinner<Integer> endMinute = createStyledSpinner(0, 59, 0);
+		ComboBox<Frequenza> frequenzaBox = createStyledComboBox();
+		frequenzaBox.setPromptText("📅 Frequenza");
+		frequenzaBox.getItems().addAll(Frequenza.values());
 
-        HBox startTimeBox = new HBox(8, new Label("⏰ Ora inizio:"), startHour, new Label(":"), startMinute);
-        styleTimeBox(startTimeBox);
-        HBox endTimeBox = new HBox(8, new Label("⏰ Ora fine:"), endHour, new Label(":"), endMinute);
-        styleTimeBox(endTimeBox);
+		DatePicker startDatePicker = createStyledDatePicker("📆 Data inizio");
+		DatePicker endDatePicker = createStyledDatePicker("📆 Data fine");
 
-        // Sezione chef
-        Label chefLabel = new Label("👨‍🍳 Chef Responsabili");
-        chefLabel.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-        chefLabel.setTextFill(Color.web("#FF6600"));
+		Spinner<Integer> startHour = createStyledSpinner(0, 23, 9);
+		Spinner<Integer> startMinute = createStyledSpinner(0, 59, 0);
+		Spinner<Integer> endHour = createStyledSpinner(0, 23, 17);
+		Spinner<Integer> endMinute = createStyledSpinner(0, 59, 0);
 
-        Button btnAggiungiChef = createModernButton("➕ Seleziona Chef", "#FF6600", "#FF8533");
-        btnAggiungiChef.setPrefWidth(180);
+		HBox startTimeBox = new HBox(8, new Label("⏰ Ora inizio:"), startHour, new Label(":"), startMinute);
+		styleTimeBox(startTimeBox);
+		HBox endTimeBox = new HBox(8, new Label("⏰ Ora fine:"), endHour, new Label(":"), endMinute);
+		styleTimeBox(endTimeBox);
 
-        chefListView = new ListView<>(chefSelezionati);
-        chefListView.setPrefHeight(140);
-        chefListView.setStyle("-fx-background-color: #FAFAFA; -fx-border-color: #FFB366; "
-                + "-fx-border-radius: 10; -fx-background-radius: 10;");
+		//  Chef 
+		Label chefLabel = new Label("👨‍🍳 Chef Responsabili");
+		chefLabel.setFont(Font.font("Inter", FontWeight.BOLD, 14));
+		chefLabel.setTextFill(Color.web("#FF6600"));
 
-        chefListView.setCellFactory(lv -> new ListCell<Chef>() {
-            private HBox content;
-            private Label nomeLabel;
-            private Button removeBtn;
+		Button btnAggiungiChef = createModernButton("➕ Seleziona Chef", "#FF6600", "#FF8533");
+		btnAggiungiChef.setPrefWidth(180);
 
-            {
-                nomeLabel = new Label();
-                nomeLabel.setFont(Font.font("Inter", 13));
-                nomeLabel.setTextFill(Color.web("#333333"));
+		chefListView = new ListView<>(chefSelezionati);
+		chefListView.setPrefHeight(140);
+		chefListView.setStyle("-fx-background-color: #FAFAFA; -fx-border-color: #FFB366; "
+				+ "-fx-border-radius: 10; -fx-background-radius: 10;");
 
-                removeBtn = new Button("✕");
-                removeBtn.setFont(Font.font("Inter", FontWeight.BOLD, 12));
-                removeBtn.setTextFill(Color.RED);
-                removeBtn.setStyle("-fx-background-color: transparent;");
-                removeBtn.setOnAction(e -> {
-                    Chef chef = getItem();
-                    if (chef != null) {
-                        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
-                        conferma.setTitle("Conferma rimozione");
-                        conferma.setHeaderText(null);
-                        conferma.setContentText("Vuoi rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?");
-                        conferma.showAndWait().ifPresent(response -> {
-                            if (response == ButtonType.OK) {
-                                chefSelezionati.remove(chef);
-                            }
-                        });
-                    }
-                });
 
-                content = new HBox(10, nomeLabel, removeBtn);
-                content.setAlignment(Pos.CENTER_LEFT);
-            }
+		chefListView.setCellFactory(lv -> new ListCell<Chef>() {
+			private HBox content;
+			private Label nameLabel;
+			private Button removeBtn;
 
-            @Override
-            protected void updateItem(Chef chef, boolean empty) {
-                super.updateItem(chef, empty);
-                if (empty || chef == null) {
-                    setGraphic(null);
-                } else {
-                    nomeLabel.setText("👨‍🍳 " + chef.getNome() + " " + chef.getCognome());
-                    setGraphic(content);
-                }
-            }
-        });
+			{
+				nameLabel = new Label();
+				nameLabel.setFont(Font.font("Inter", 13));
+				removeBtn = new Button("❌");
+				removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: red; -fx-font-weight: bold; -fx-cursor: hand;");
+				removeBtn.setOnAction(e -> {
+					Chef c = getItem();
+					if (c != null) {
+						chefSelezionati.remove(c);
+					}
+				});
+				content = new HBox(10, nameLabel, removeBtn);
+				content.setAlignment(Pos.CENTER_LEFT);
+			}
 
-        btnAggiungiChef.setOnAction(e -> {
-            try {
-                SelezionaChefDialog dialog = new SelezionaChefDialog((Stage) root.getScene().getWindow(),
-                        gestioneController, chefSelezionati);
-                dialog.showAndWait();
-                List<Chef> scelti = dialog.getSelezionati();
-                if (scelti != null && !scelti.isEmpty()) {
-                    for (Chef c : scelti) {
-                        if (!chefSelezionati.contains(c)) {
-                            chefSelezionati.add(c);
-                        }
-                    }
-                }
-            } catch (SQLException ex) {
-                showAlert("Errore", "Impossibile caricare gli chef: " + ex.getMessage());
-            }
-        });
+			@Override
+			protected void updateItem(Chef c, boolean empty) {
+				super.updateItem(c, empty);
+				if (empty || c == null) {
+					setText(null);
+					setGraphic(null);
+				} else {
+					nameLabel.setText(c.getNome() + " " + c.getCognome());
+					setGraphic(content);
+				}
+			}
+		});
 
-        formCard.getChildren().addAll(
-                createFieldLabel("Nome del Corso"), nomeField,
-                createFieldLabel("Prezzo"), prezzoField,
-                createFieldLabel("Argomento"), argomentoField,
-                createFieldLabel("Numero Posti"), postiField,
-                createFieldLabel("Frequenza"), frequenzaBox,
-                createFieldLabel("Data Inizio"), startDatePicker, startTimeBox,
-                createFieldLabel("Data Fine"), endDatePicker, endTimeBox,
-                chefLabel, btnAggiungiChef, chefListView
-        );
+		btnAggiungiChef.setOnAction(e -> {
+			try {
+				SelezionaChefDialog dialog = new SelezionaChefDialog((Stage) root.getScene().getWindow(),
+						gestioneController, chefSelezionati);
+				dialog.showAndWait();
+				List<Chef> scelti = dialog.getSelezionati();
+				if (scelti != null && !scelti.isEmpty()) {
+					for (Chef c : scelti) {
+						if (!chefSelezionati.contains(c)) {
+							chefSelezionati.add(c);
+						}
+					}
+				}
+			} catch (SQLException ex) {
+				showAlert("Errore", "Impossibile caricare gli chef: " + ex.getMessage());
+			} catch (Exception ex) {
+				showAlert("Errore", "Problema durante l'apertura del dialog degli chef: " + ex.getMessage());
+			}
+		});
 
-        HBox btnBox = new HBox(15);
-        btnBox.setAlignment(Pos.CENTER);
-        btnBox.setPadding(new Insets(10, 0, 0, 0));
+		// Sessioni 
+		Label sessioniLabel = createFieldLabel("📌 Sessioni del Corso");
+		sessioniListView = new ListView<>(corsoSessioni);
+		sessioniListView.setPrefHeight(150);
 
-        Button salvaBtn = createModernButton("✅ Salva Corso", "#FF6600", "#FF8533");
-        Button annullaBtn = createModernButton("❌ Annulla", "#999999", "#BBBBBB");
 
-        salvaBtn.setOnAction(e -> salvaCorso(nomeField, prezzoField, argomentoField, postiField,
-                frequenzaBox, startDatePicker, endDatePicker, startHour, startMinute, endHour, endMinute));
+		sessioniListView.setCellFactory(lv -> new ListCell<Sessione>() {
+			private HBox content;
+			private Label infoLabel;
+			private Button removeBtn;
 
-        annullaBtn.setOnAction(e -> ((Stage) root.getScene().getWindow()).close());
+			{
+				infoLabel = new Label();
+				removeBtn = new Button("❌");
+				removeBtn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+				removeBtn.setOnAction(e -> {
+					Sessione s = getItem();
+					if (s != null) {
+						corsoSessioni.remove(s);
+					}
+				});
+				content = new HBox(10, infoLabel, removeBtn);
+				content.setAlignment(Pos.CENTER_LEFT);
+			}
 
-        btnBox.getChildren().addAll(annullaBtn, salvaBtn);
+			@Override
+			protected void updateItem(Sessione s, boolean empty) {
+				super.updateItem(s, empty);
+				if (empty || s == null) {
+					setText(null);
+					setGraphic(null);
+				} else {
+					if (s instanceof Online) {
+						infoLabel.setText("Online: " + ((Online) s).getPiattaformaStreaming() + " | "
+								+ s.getDataInizioSessione() + " -> " + s.getDataFineSessione());
+					} else if (s instanceof InPresenza) {
+						InPresenza ip = (InPresenza) s;
+						infoLabel.setText("Presenza: " + ip.getVia() + ", " + ip.getCitta() + " | "
+								+ s.getDataInizioSessione() + " -> " + s.getDataFineSessione());
+					}
+					setGraphic(content);
+				}
+			}
+		});
 
-        ScrollPane scrollPane = new ScrollPane(formCard);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPannable(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+		Button btnCreaSessione = createModernButton("➕ Aggiungi Sessione", "#FF6600", "#FF8533");
+		btnCreaSessione.setOnAction(e -> {
+			if (startDatePicker.getValue() == null || endDatePicker.getValue() == null) {
+				showAlert("Errore", "Prima imposta le date del corso.");
+				return;
+			}
 
-        VBox contentBox = new VBox(20, headerBox, scrollPane, btnBox);
-        contentBox.setAlignment(Pos.TOP_CENTER);
-        contentBox.setPadding(new Insets(20, 40, 20, 40));
-        contentBox.setMaxWidth(Double.MAX_VALUE);
+			LocalDate inizioCorso = startDatePicker.getValue();
+			LocalDate fineCorso = endDatePicker.getValue();
 
-        mainContent.getChildren().add(contentBox);
+			Set<LocalDate> rosse = new HashSet<>();
+			Set<LocalDate> arancioni = new HashSet<>();
 
-        root = new VBox(mainContent);
-        root.setAlignment(Pos.CENTER);
-    }
+			LocalDate oggi = LocalDate.now();
+			for (LocalDate d = oggi.minusYears(5); d.isBefore(inizioCorso); d = d.plusDays(1)) {
+				rosse.add(d);
+			}
+			for (LocalDate d = fineCorso.plusDays(1); d.isBefore(fineCorso.plusYears(5)); d = d.plusDays(1)) {
+				rosse.add(d);
+			}
+			for (Sessione s : corsoSessioni) {
+				arancioni.add(s.getDataInizioSessione().toLocalDate());
+			}
 
-    // --- Helper methods ---
-    private TextField createStyledTextField(String prompt) {
-        TextField field = new TextField();
-        field.setPromptText(prompt);
-        field.setPrefHeight(40);
-        field.setFont(Font.font("Inter", 13));
-        field.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
-                + "-fx-border-color: #FFB366; -fx-border-width: 1.5; -fx-padding: 0 12;");
-        return field;
-    }
+			CreaSessioniGUI sessioniDialog = new CreaSessioniGUI(rosse, arancioni);
+			Sessione nuovaSessione = sessioniDialog.showDialog((Stage) root.getScene().getWindow());
 
-    private ComboBox<Frequenza> createStyledComboBox() {
-        ComboBox<Frequenza> combo = new ComboBox<>();
-        combo.setPrefHeight(40);
-        combo.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
-                + "-fx-border-color: #FFB366; -fx-border-width: 1.5;");
-        return combo;
-    }
+			if (nuovaSessione != null) {
+				corsoSessioni.add(nuovaSessione);
+			}
+		});
 
-    private DatePicker createStyledDatePicker(String prompt) {
-        DatePicker picker = new DatePicker();
-        picker.setPromptText(prompt);
-        picker.setPrefHeight(40);
-        picker.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
-                + "-fx-border-color: #FFB366; -fx-border-width: 1.5;");
-        return picker;
-    }
+		//  Layout 
+		formCard.getChildren().addAll(createFieldLabel("Nome del Corso"), nomeField, createFieldLabel("Prezzo"),
+				prezzoField, createFieldLabel("Argomento"), argomentoField, createFieldLabel("Numero Posti"),
+				postiField, createFieldLabel("Frequenza"), frequenzaBox, createFieldLabel("Data Inizio"),
+				startDatePicker, startTimeBox, createFieldLabel("Data Fine"), endDatePicker, endTimeBox, chefLabel,
+				btnAggiungiChef, chefListView, sessioniLabel, sessioniListView, btnCreaSessione);
 
-    private Spinner<Integer> createStyledSpinner(int min, int max, int initial) {
-        Spinner<Integer> spinner = new Spinner<>(min, max, initial);
-        spinner.setPrefWidth(70);
-        spinner.setPrefHeight(40);
-        spinner.setStyle("-fx-background-color: white; -fx-border-color: #FFB366; -fx-border-radius: 8; "
-                + "-fx-background-radius: 8;");
-        return spinner;
-    }
+		// Bottoni finali
+		HBox btnBox = new HBox(15);
+		btnBox.setAlignment(Pos.CENTER);
 
-    private void styleTimeBox(HBox box) {
-        box.setAlignment(Pos.CENTER_LEFT);
-        box.setPadding(new Insets(5, 0, 5, 0));
-        for (javafx.scene.Node node : box.getChildren()) {
-            if (node instanceof Label) {
-                ((Label) node).setFont(Font.font("Inter", FontWeight.MEDIUM, 13));
-                ((Label) node).setTextFill(Color.web("#666666"));
-            }
-        }
-    }
+		Button salvaBtn = createModernButton("✅ Salva Corso", "#FF6600", "#FF8533");
+		Button annullaBtn = createModernButton("❌ Annulla", "#999999", "#BBBBBB");
 
-    private Label createFieldLabel(String text) {
-        Label label = new Label(text);
-        label.setFont(Font.font("Inter", FontWeight.BOLD, 13));
-        label.setTextFill(Color.web("#555555"));
-        return label;
-    }
+		// Passo il riferimento del pulsante per poterlo disabilitare durante il salvataggio
+		salvaBtn.setOnAction(e -> salvaCorso(nomeField, prezzoField, argomentoField, postiField, frequenzaBox,
+				startDatePicker, endDatePicker, startHour, startMinute, endHour, endMinute, salvaBtn));
 
-    private Button createModernButton(String text, String baseColor, String hoverColor) {
-        Button btn = new Button(text);
-        btn.setPrefWidth(160);
-        btn.setPrefHeight(44);
-        btn.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-        btn.setTextFill(Color.WHITE);
+		annullaBtn.setOnAction(e -> ((Stage) root.getScene().getWindow()).close());
 
-        String baseStyle = "-fx-background-color: " + baseColor + "; -fx-background-radius: 22; "
-                + "-fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0, 0, 3);";
-        String hoverStyle = "-fx-background-color: " + hoverColor + "; -fx-background-radius: 22; "
-                + "-fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);";
+		btnBox.getChildren().addAll(annullaBtn, salvaBtn);
 
-        btn.setStyle(baseStyle);
-        btn.setOnMouseEntered(e -> btn.setStyle(hoverStyle));
-        btn.setOnMouseExited(e -> btn.setStyle(baseStyle));
-        btn.setOnMousePressed(e -> { btn.setScaleX(0.97); btn.setScaleY(0.97); });
-        btn.setOnMouseReleased(e -> { btn.setScaleX(1.0); btn.setScaleY(1.0); });
+		ScrollPane scrollPane = new ScrollPane(formCard);
+		scrollPane.setFitToWidth(true);
+		scrollPane.setPannable(true);
+		scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        return btn;
-    }
+		VBox contentBox = new VBox(20, headerBox, scrollPane, btnBox);
+		contentBox.setAlignment(Pos.TOP_CENTER);
+		contentBox.setPadding(new Insets(20, 40, 20, 40));
+		contentBox.setMaxWidth(Double.MAX_VALUE);
 
-    private void salvaCorso(TextField nomeField, TextField prezzoField, TextField argomentoField, TextField postiField,
-                             ComboBox<Frequenza> frequenzaBox, DatePicker startDatePicker, DatePicker endDatePicker,
-                             Spinner<Integer> startHour, Spinner<Integer> startMinute, Spinner<Integer> endHour,
-                             Spinner<Integer> endMinute) {
+		mainContent.getChildren().add(contentBox);
 
-        try {
-            String nome = nomeField.getText().trim();
-            String argomento = argomentoField.getText().trim();
-            Frequenza freq = frequenzaBox.getValue();
-            LocalDate startDate = startDatePicker.getValue();
-            LocalDate endDate = endDatePicker.getValue();
+		root = new VBox(mainContent);
+		root.setAlignment(Pos.CENTER);
+	}
 
-            if (nome.isEmpty() || argomento.isEmpty() || freq == null || startDate == null || endDate == null
-                    || chefSelezionati.isEmpty()) {
-                showAlert("⚠️ Campi Mancanti", "Compila tutti i campi obbligatori e seleziona almeno uno chef.");
-                return;
-            }
+	// Helper methods
+	private TextField createStyledTextField(String prompt) {
+		TextField field = new TextField();
+		field.setPromptText(prompt);
+		field.setPrefHeight(40);
+		field.setFont(Font.font("Inter", 13));
+		field.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
+				+ "-fx-border-color: #FFB366; -fx-border-width: 1.5; -fx-padding: 0 12;");
+		return field;
+	}
 
-            double prezzo = Double.parseDouble(prezzoField.getText().trim().replace(",", "."));
-            int posti = Integer.parseInt(postiField.getText().trim());
+	private ComboBox<Frequenza> createStyledComboBox() {
+		ComboBox<Frequenza> combo = new ComboBox<>();
+		combo.setPrefHeight(40);
+		combo.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
+				+ "-fx-border-color: #FFB366; -fx-border-width: 1.5;");
+		return combo;
+	}
 
-            LocalDateTime dataInizio = LocalDateTime.of(startDate,
-                    LocalTime.of(startHour.getValue(), startMinute.getValue()));
-            LocalDateTime dataFine = LocalDateTime.of(endDate,
-                    LocalTime.of(endHour.getValue(), endMinute.getValue()));
+	private DatePicker createStyledDatePicker(String prompt) {
+		DatePicker picker = new DatePicker();
+		picker.setPromptText(prompt);
+		picker.setPrefHeight(40);
+		picker.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-border-radius: 10; "
+				+ "-fx-border-color: #FFB366; -fx-border-width: 1.5;");
+		return picker;
+	}
 
-            if (dataInizio.isBefore(LocalDateTime.now())) {
-                startDatePicker.setStyle("-fx-border-color: red; -fx-border-width: 2;");
-                showAlert("Errore", "Data di inizio corso non può essere nel passato.");
-                return;
-            } else startDatePicker.setStyle("");
+	private Spinner<Integer> createStyledSpinner(int min, int max, int initial) {
+		Spinner<Integer> spinner = new Spinner<>(min, max, initial);
+		spinner.setPrefWidth(70);
+		spinner.setPrefHeight(40);
+		spinner.setStyle("-fx-background-color: white; -fx-border-color: #FFB366; -fx-border-radius: 8; "
+				+ "-fx-background-radius: 8;");
+		return spinner;
+	}
 
-            if (dataFine.isBefore(dataInizio)) {
-                endDatePicker.setStyle("-fx-border-color: red; -fx-border-width: 2;");
-                showAlert("Errore", "Data di fine deve essere successiva alla data di inizio.");
-                return;
-            } else endDatePicker.setStyle("");
+	private void styleTimeBox(HBox box) {
+		box.setAlignment(Pos.CENTER_LEFT);
+		box.setPadding(new Insets(5, 0, 5, 0));
+		for (javafx.scene.Node node : box.getChildren()) {
+			if (node instanceof Label) {
+				((Label) node).setFont(Font.font("Inter", FontWeight.MEDIUM, 13));
+				((Label) node).setTextFill(Color.web("#666666"));
+			}
+		}
+	}
 
-            CorsoCucina corso = new CorsoCucina(nome, prezzo, argomento, freq, posti);
-            corso.setDataInizioCorso(dataInizio);
-            corso.setDataFineCorso(dataFine);
-            corso.getChef().addAll(chefSelezionati);
+	private Label createFieldLabel(String text) {
+		Label label = new Label(text);
+		label.setFont(Font.font("Inter", FontWeight.BOLD, 13));
+		label.setTextFill(Color.web("#555555"));
+		return label;
+	}
 
-            gestioneController.creaCorso(corso);
+	private Button createModernButton(String text, String baseColor, String hoverColor) {
+		Button btn = new Button(text);
+		btn.setPrefWidth(160);
+		btn.setPrefHeight(44);
+		btn.setFont(Font.font("Inter", FontWeight.BOLD, 14));
+		btn.setTextFill(Color.WHITE);
 
-            showAlert("✅ Successo", "Corso creato con successo!");
+		String baseStyle = "-fx-background-color: " + baseColor + "; -fx-background-radius: 22; "
+				+ "-fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 8, 0, 0, 3);";
+		String hoverStyle = "-fx-background-color: " + hoverColor + "; -fx-background-radius: 22; "
+				+ "-fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);";
 
-            nomeField.clear();
-            prezzoField.clear();
-            argomentoField.clear();
-            postiField.clear();
-            frequenzaBox.getSelectionModel().clearSelection();
-            startDatePicker.setValue(null);
-            endDatePicker.setValue(null);
-            startHour.getValueFactory().setValue(9);
-            startMinute.getValueFactory().setValue(0);
-            endHour.getValueFactory().setValue(17);
-            endMinute.getValueFactory().setValue(0);
-            chefSelezionati.clear();
+		btn.setStyle(baseStyle);
+		btn.setOnMouseEntered(e -> btn.setStyle(hoverStyle));
+		btn.setOnMouseExited(e -> btn.setStyle(baseStyle));
+		btn.setOnMousePressed(e -> {
+			btn.setScaleX(0.97);
+			btn.setScaleY(0.97);
+		});
+		btn.setOnMouseReleased(e -> {
+			btn.setScaleX(1.0);
+			btn.setScaleY(1.0);
+		});
 
-        } catch (NumberFormatException ex) {
-            showAlert("Errore", "Prezzo o numero posti non validi.");
-        } catch (IllegalArgumentException ex) {
-            showAlert("Errore", ex.getMessage());
-        } catch (Exception ex) {
-            showAlert("Errore", ex.getMessage());
-        }
-    }
+		return btn;
+	}
 
-    private void showAlert(String titolo, String messaggio) {
-        VBox overlay = new VBox();
-        overlay.setAlignment(Pos.CENTER);
-        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.3);");
-        overlay.setPrefSize(root.getWidth(), root.getHeight());
+	
+	
+	private void salvaCorso(TextField nomeField, TextField prezzoField, TextField argomentoField, TextField postiField,
+			ComboBox<Frequenza> frequenzaBox, DatePicker startDatePicker, DatePicker endDatePicker,
+			Spinner<Integer> startHour, Spinner<Integer> startMinute, Spinner<Integer> endHour,
+			Spinner<Integer> endMinute, Button salvaBtn) {
+		
+		salvaBtn.setDisable(true);
+		String originalText = salvaBtn.getText();
+		salvaBtn.setText("Salvando...");
 
-        VBox dialogBox = new VBox(15);
-        dialogBox.setAlignment(Pos.CENTER);
-        dialogBox.setPadding(new Insets(25));
-        dialogBox.setStyle("-fx-background-color: white; -fx-background-radius: 15; "
-                + "-fx-border-radius: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 4);");
+		try {
+			List<String> errori = new ArrayList<>();
 
-        Label titleLabel = new Label(titolo);
-        titleLabel.setFont(Font.font("Inter", FontWeight.BOLD, 16));
-        titleLabel.setTextFill(Color.web("#FF6600"));
+			// Lettura campi
+			String nome = nomeField.getText().trim();
+			String argomento = argomentoField.getText().trim();
+			Frequenza freq = frequenzaBox.getValue();
+			LocalDate startDate = startDatePicker.getValue();
+			LocalDate endDate = endDatePicker.getValue();
 
-        Label messageLabel = new Label(messaggio);
-        messageLabel.setFont(Font.font("Inter", 13));
-        messageLabel.setTextFill(Color.web("#333333"));
-        messageLabel.setWrapText(true);
-        messageLabel.setMaxWidth(300);
+			// Controlli obbligatori 
+			if (nome.isEmpty())
+				errori.add("Nome corso mancante");
+			if (argomento.isEmpty())
+				errori.add("Argomento mancante");
+			if (freq == null)
+				errori.add("Frequenza non selezionata");
+			if (startDate == null)
+				errori.add("Data inizio mancante");
+			if (endDate == null)
+				errori.add("Data fine mancante");
+			if (chefSelezionati.isEmpty())
+				errori.add("Seleziona almeno uno chef");
+			if (corsoSessioni.isEmpty())
+				errori.add("Aggiungi almeno una sessione");
 
-        Button okBtn = new Button("OK");
-        okBtn.setFont(Font.font("Inter", FontWeight.BOLD, 13));
-        okBtn.setTextFill(Color.WHITE);
-        okBtn.setStyle("-fx-background-color: #FF6600; -fx-background-radius: 12; -fx-padding: 6 20;");
-        okBtn.setOnAction(e -> root.getChildren().remove(overlay));
+			if (!errori.isEmpty()) {
+				showAlert("Campi mancanti", String.join("\n", errori));
+				return;
+			}
 
-        dialogBox.getChildren().addAll(titleLabel, messageLabel, okBtn);
-        overlay.getChildren().add(dialogBox);
 
-        root.getChildren().add(overlay);
-    }
+			double prezzo;
+			int posti;
+			try {
+				prezzo = Double.parseDouble(prezzoField.getText().trim().replace(",", "."));
+			} catch (NumberFormatException ex) {
+				showAlert("Errore", "Prezzo non valido");
+				return;
+			}
+			try {
+				posti = Integer.parseInt(postiField.getText().trim());
+			} catch (NumberFormatException ex) {
+				showAlert("Errore", "Numero posti non valido");
+				return;
+			}
+
+			//  Date e orari
+			LocalDateTime dataInizio = LocalDateTime.of(startDate,
+					LocalTime.of(startHour.getValue(), startMinute.getValue()));
+			LocalDateTime dataFine = LocalDateTime.of(endDate, LocalTime.of(endHour.getValue(), endMinute.getValue()));
+
+			if (dataInizio.isBefore(LocalDateTime.now())) {
+				showAlert("Errore", "Data di inizio nel passato");
+				return;
+			}
+			if (dataFine.isBefore(dataInizio)) {
+				showAlert("Errore", "Data fine precedente a inizio");
+				return;
+			}
+
+			//  Conferma salvataggio con Alert 
+			boolean confermato = showConfirmationDialog("Conferma Salvataggio",
+					"Sei sicuro di voler salvare questo corso con tutti i dati inseriti?");
+			if (!confermato) {
+				// l'utente ha premuto "No" o ha chiuso il dialog: torna al form per continuare
+				return;
+			}
+
+			// Creazione corso
+			CorsoCucina corso;
+			try {
+				corso = new CorsoCucina(nome, prezzo, argomento, freq, posti);
+				corso.setDataInizioCorso(dataInizio);
+				corso.setDataFineCorso(dataFine);
+			} catch (IllegalArgumentException iae) {
+				showAlert("Errore di validazione", iae.getMessage());
+				return;
+			}
+
+			// aggiungo chef e sessioni
+			corso.getChef().clear();
+			corso.getChef().addAll(chefSelezionati);
+			corso.getSessioni().clear();
+			corso.getSessioni().addAll(corsoSessioni);
+
+			// Salvataggio tramite controller 
+			try {
+				gestioneController.creaCorso(corso);
+				//pulisco form per nuova immissione
+				showAlert("Successo", "Corso creato con successo!");
+				clearForm(nomeField, prezzoField, argomentoField, postiField, frequenzaBox, startDatePicker, endDatePicker,
+						startHour, startMinute, endHour, endMinute);
+			} catch (ValidationException ve) {
+				showAlert("Errore di validazione", ve.getMessage());
+			} catch (DataAccessException dae) {
+				showAlert("Errore DB", dae.getMessage());
+			} catch (SQLException ex) {
+				showAlert("Errore", "Problema con il salvataggio: " + ex.getMessage());
+			} catch (Exception ex) {
+				showAlert("Errore", "Si è verificato un errore: " + ex.getMessage());
+			}
+		} finally {
+			// riabilitiamo il pulsante sempre
+			salvaBtn.setDisable(false);
+			salvaBtn.setText(originalText);
+		}
+	}
+
+	
+	 // Usa Alert nativo (nessun overlay personalizzato) per la conferma.
+	private boolean showConfirmationDialog(String title, String message) {
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.initOwner(root.getScene().getWindow());
+		alert.setTitle(title);
+		alert.setHeaderText(null);
+		alert.setContentText(message);
+
+		Optional<ButtonType> result = alert.showAndWait();
+		return result.isPresent() && result.get() == ButtonType.OK;
+	}
+
+	 // Mostra un Alert (se il titolo contiene "errore" usa ERROR, altrimenti INFORMATION).
+	private void showAlert(String title, String msg) {
+		Alert.AlertType type = title.toLowerCase().contains("errore") ? Alert.AlertType.ERROR : Alert.AlertType.INFORMATION;
+		Alert alert = new Alert(type);
+		alert.initOwner(root.getScene().getWindow());
+		alert.setTitle(title);
+		alert.setHeaderText(null);
+		alert.setContentText(msg);
+		alert.showAndWait();
+	}
+
+	
+	 // Pulisce tutti i campi del form e ripristina i valori di default.
+	 
+	private void clearForm(TextField nomeField, TextField prezzoField, TextField argomentoField, TextField postiField,
+			ComboBox<Frequenza> frequenzaBox, DatePicker startDatePicker, DatePicker endDatePicker,
+			Spinner<Integer> startHour, Spinner<Integer> startMinute, Spinner<Integer> endHour, Spinner<Integer> endMinute) {
+
+		nomeField.clear();
+		prezzoField.clear();
+		argomentoField.clear();
+		postiField.clear();
+		frequenzaBox.setValue(null);
+		startDatePicker.setValue(null);
+		endDatePicker.setValue(null);
+
+	
+		try {
+			startHour.getValueFactory().setValue(9);
+			startMinute.getValueFactory().setValue(0);
+			endHour.getValueFactory().setValue(17);
+			endMinute.getValueFactory().setValue(0);
+		} catch (Exception ignored) {
+		}
+
+		// svuota liste e listview
+		chefSelezionati.clear();
+		corsoSessioni.clear();
+	}
+
 }
