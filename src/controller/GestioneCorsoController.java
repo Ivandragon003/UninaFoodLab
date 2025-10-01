@@ -33,6 +33,10 @@ public class GestioneCorsoController {
     public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException {
         corsiService.aggiungiChefACorso(corso, chef, password);
     }
+    
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
+        corsiService.rimuoviChefDaCorso(corso, chef);
+    }
 
     public void eliminaCorso(int idCorso) throws SQLException {
         corsiService.cancellaCorso(idCorso);

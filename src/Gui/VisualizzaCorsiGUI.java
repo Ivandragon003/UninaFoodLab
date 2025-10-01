@@ -1,4 +1,3 @@
-// (solo la classe completa aggiornata)
 package Gui;
 
 import controller.GestioneCorsoController;
@@ -45,7 +44,6 @@ public class VisualizzaCorsiGUI {
     private final ObservableList<CorsoCucina> corsiData = FXCollections.observableArrayList();
     private FilteredList<CorsoCucina> filteredCorsi;
 
-    // Cache risultati chef loggato per non ripetere query pesanti
     private List<CorsoCucina> cachedCorsiChef = null;
 
     private double xOffset = 0;
@@ -89,7 +87,7 @@ public class VisualizzaCorsiGUI {
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #FF9966; -fx-border-width: 2;");
         root.getChildren().add(card);
 
-        // header (anche drag handle)
+        // header
         VBox headerSection = new VBox(10);
         headerSection.setAlignment(Pos.CENTER);
         Label title = new Label("📚 Lista dei Corsi");
@@ -134,11 +132,10 @@ public class VisualizzaCorsiGUI {
         buttonSection.getChildren().addAll(actionButtons, backBtn);
         card.getChildren().add(buttonSection);
 
-        // Se questa GUI è embeddata dentro un menu (es. ChefMenu contentPane) non mostrare il bottone "Torna al Menu"
         boolean embedded = (this.menuRoot != null);
         if (embedded) {
             backBtn.setVisible(false);
-            backBtn.setManaged(false); // evita spaziatura vuota
+            backBtn.setManaged(false);
         }
 
         // dati e filtri
@@ -161,7 +158,6 @@ public class VisualizzaCorsiGUI {
             StackPane.setMargin(windowButtons, new Insets(8));
         }
 
-        // drag limitato all'header (funzionerà solo se il root è in uno Stage)
         makeDraggable(root, headerSection);
 
         return root;
@@ -242,8 +238,6 @@ public class VisualizzaCorsiGUI {
     private TableView<CorsoCucina> createOptimizedTable() {
         TableView<CorsoCucina> table = new TableView<>();
 
-        // Table virtualization: NON metterlo dentro uno ScrollPane
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPrefHeight(Region.USE_COMPUTED_SIZE);
         table.setMaxHeight(Double.MAX_VALUE);
 
@@ -342,7 +336,6 @@ public class VisualizzaCorsiGUI {
 
         table.getSortOrder().add(nomeCol);
 
-        // listener per responsività
         table.widthProperty().addListener((obs, oldWidth, newWidth) -> {
             double totalWidth = newWidth.doubleValue();
             if (totalWidth > 0) {
@@ -397,7 +390,6 @@ public class VisualizzaCorsiGUI {
     }
 
     private void makeDraggable(StackPane pane, Node dragHandle) {
-        // Drag only when user drags the header (dragHandle). Will work only if the scene/window exists.
         dragHandle.setOnMousePressed(event -> {
             Stage stage = getStage(pane);
             if (stage != null) {
@@ -416,7 +408,6 @@ public class VisualizzaCorsiGUI {
     }
 
     private void setupFilters(TextField nomeField, TextField argomentoField, Button mostraTuttiBtn, Button mieiBtn) {
-        // Debounce: usa filterPause per evitare ricerche ad ogni tasto
         nomeField.textProperty().addListener((obs, o, n) -> {
             filterPause.setOnFinished(e -> applicaFiltriLocali(nomeField.getText(), argomentoField.getText(), false));
             filterPause.playFromStart();
@@ -442,15 +433,14 @@ public class VisualizzaCorsiGUI {
             row.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2 && (!row.isEmpty())) {
                     CorsoCucina selected = row.getItem();
-
-                    // Caricamento dettagli in background (come nella prima versione)
+                    
                     Task<CorsoCucina> loadDetailsTask = new Task<>() {
                         @Override
                         protected CorsoCucina call() throws Exception {
                             if (gestioneCorsoController == null) return selected;
                             return gestioneCorsoController.getCorsoCompleto(selected.getIdCorso());
                         }
-
+                        
                         @Override
                         protected void succeeded() {
                             Platform.runLater(() -> {
@@ -459,59 +449,69 @@ public class VisualizzaCorsiGUI {
                                     DettagliCorsoGUI detGui = new DettagliCorsoGUI();
                                     detGui.setController(gestioneCorsoController);
                                     detGui.setCorso(dettagli != null ? dettagli : selected);
-                                    VBox dettagliRoot = detGui.getRoot();
-
+                                    
+                                    ScrollPane dettagliRoot = detGui.getRoot();
+                                    
                                     Stage detailsStage = new Stage();
                                     detailsStage.initStyle(StageStyle.UNDECORATED);
-
-                                    StackPane detailsPane = new StackPane();
-                                    detailsPane.setPrefSize(650, 700);
-
-                                    // riuso dello sfondo
+                                    detailsStage.setTitle("Dettagli Corso");
+                                    
+                                    // StackPane principale con gradient background
+                                    StackPane mainPane = new StackPane();
+                                    mainPane.setPrefSize(650, 750);
+                                    
                                     LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                                             new Stop(0, Color.web("#FF9966")), new Stop(1, Color.web("#FFCC99")));
                                     Region background = new Region();
                                     background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-                                    background.setPrefSize(900, 800);
-                                    detailsPane.getChildren().add(background);
-
-                                    dettagliRoot.setMaxWidth(600);
-                                    detailsPane.getChildren().add(dettagliRoot);
-
+                                    background.prefWidthProperty().bind(mainPane.widthProperty());
+                                    background.prefHeightProperty().bind(mainPane.heightProperty());
+                                    
+                                    mainPane.getChildren().add(background);
+                                    mainPane.getChildren().add(dettagliRoot);
+                                    
+                                    // Window buttons
                                     HBox winBtn = createWindowButtonsForStage(detailsStage);
-                                    detailsPane.getChildren().add(winBtn);
+                                    mainPane.getChildren().add(winBtn);
                                     StackPane.setAlignment(winBtn, Pos.TOP_RIGHT);
                                     StackPane.setMargin(winBtn, new Insets(10));
-
-                                    Scene scene = new Scene(detailsPane);
+                                    
+                                    Scene scene = new Scene(mainPane);
                                     scene.setFill(Color.TRANSPARENT);
                                     detailsStage.setScene(scene);
-
+                                    
                                     Stage owner = getStage(root);
                                     if (owner != null)
                                         detailsStage.initOwner(owner);
-
-                                    makeDraggable(detailsPane, dettagliRoot); // limita drag alla root dei dettagli
+                                    
+                                    makeDraggableStage(detailsStage, mainPane);
+                                    
                                     detailsStage.show();
+                                    
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
-                                    new Alert(Alert.AlertType.ERROR,
-                                            "Errore aprendo i dettagli: " + ex.getMessage(),
-                                            ButtonType.OK).showAndWait();
+                                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                                    alert.setTitle("Errore");
+                                    alert.setHeaderText("Errore aprendo i dettagli");
+                                    alert.setContentText(ex.getMessage());
+                                    alert.showAndWait();
                                 }
                             });
                         }
-
+                        
                         @Override
                         protected void failed() {
                             Platform.runLater(() -> {
-                                new Alert(Alert.AlertType.ERROR,
-                                        "Errore caricando dettagli: " + getException().getMessage(),
-                                        ButtonType.OK).showAndWait();
+                                getException().printStackTrace();
+                                Alert alert = new Alert(Alert.AlertType.ERROR);
+                                alert.setTitle("Errore");
+                                alert.setHeaderText("Errore caricando dettagli");
+                                alert.setContentText(getException().getMessage());
+                                alert.showAndWait();
                             });
                         }
                     };
-
+                    
                     Thread t = new Thread(loadDetailsTask, "LoadDettagliThread");
                     t.setDaemon(true);
                     t.start();
@@ -522,7 +522,6 @@ public class VisualizzaCorsiGUI {
     }
 
     private void setupBackButton(Button backBtn, StackPane root) {
-        // Se siamo embeddata (menuRoot != null) il bottone è nascosto; altrimenti ripristina la logica originale
         if (this.menuRoot == null) {
             backBtn.setOnAction(e -> {
                 Stage stage = getStage(root);
@@ -534,7 +533,6 @@ public class VisualizzaCorsiGUI {
             });
         } else {
             backBtn.setOnAction(e -> {
-                // no-op quando embedded; bottone è già nascosto comunque
             });
         }
     }
@@ -606,7 +604,6 @@ public class VisualizzaCorsiGUI {
             String n = nome == null ? "" : nome.toLowerCase().trim();
             String a = argomento == null ? "" : argomento.toLowerCase().trim();
 
-            // Se il filtro richiede solo i corsi del chef loggato, carica la lista una volta (cache)
             if (soloChefLoggato && cachedCorsiChef == null && visualizzaController != null) {
                 try {
                     List<CorsoCucina> tmp = visualizzaController.getCorsiChefLoggato();
@@ -638,5 +635,20 @@ public class VisualizzaCorsiGUI {
         if (s == null) return null;
         if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
         return null;
+    }
+    
+    private double stageXOffset = 0;
+    private double stageYOffset = 0;
+
+    private void makeDraggableStage(Stage stage, Node dragArea) {
+        dragArea.setOnMousePressed(event -> {
+            stageXOffset = event.getSceneX();
+            stageYOffset = event.getSceneY();
+        });
+        
+        dragArea.setOnMouseDragged(event -> {
+            stage.setX(event.getScreenX() - stageXOffset);
+            stage.setY(event.getScreenY() - stageYOffset);
+        });
     }
 }
