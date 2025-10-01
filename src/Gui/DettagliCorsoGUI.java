@@ -8,7 +8,6 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
@@ -25,11 +24,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class DettagliCorsoGUI {
-
     private GestioneCorsoController gestioneController;
     private CorsoCucina corso;
-
-    // Componenti riutilizzati
+    private ScrollPane scrollPane;
+    private VBox card;
+    private boolean editable = false;
+    
     private TextField nomeField;
     private TextField prezzoField;
     private TextField argomentoField;
@@ -37,14 +37,10 @@ public class DettagliCorsoGUI {
     private TextField numeroPostiField;
     private DatePicker dataInizioPicker;
     private DatePicker dataFinePicker;
-
     private ListView<Chef> chefListView;
     private ComboBox<Chef> addChefCombo;
     private Button addChefBtn;
     private Label selezionatoLabel;
-
-    private VBox card;
-    private boolean editable = false;
 
     public void setController(GestioneCorsoController controller) {
         this.gestioneController = controller;
@@ -54,21 +50,17 @@ public class DettagliCorsoGUI {
         this.corso = corso;
     }
 
-    /**
-     * Restituisce la card principale (VBox) da inserire nel layout chiamante.
-     * Questo permette a VisualizzaCorsiGUI di riusare lo sfondo/StackPane esterno.
-     */
-    public VBox getRoot() {
+    public ScrollPane getRoot() {
         if (gestioneController == null || corso == null) {
             throw new IllegalStateException("Controller o corso non impostati!");
         }
 
-        // Card centrale (stile originale)
+        // Card principale
         card = new VBox(15);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(25));
-        card.setMaxWidth(420);
-        card.setMinWidth(320);
+        card.setMaxWidth(580);
+        card.setMinWidth(500);
         card.setStyle("-fx-background-color: white;" +
                 "-fx-background-radius: 20;" +
                 "-fx-border-radius: 20;" +
@@ -79,19 +71,14 @@ public class DettagliCorsoGUI {
         shadow.setOffsetY(3);
         card.setEffect(shadow);
 
-        // Header (titolo)
         Label title = new Label("Dettagli corso");
         title.setFont(Font.font("Roboto", FontWeight.BOLD, 22));
         title.setTextFill(Color.web("#FF6600"));
 
-        // Pulsanti finestra (x, _, ☐) - usa Node per trovare lo stage eventualmente
-        HBox windowButtons = createWindowButtons(card);
         HBox headerBox = new HBox();
-        headerBox.setAlignment(Pos.CENTER_LEFT);
+        headerBox.setAlignment(Pos.CENTER);
         HBox.setHgrow(headerBox, Priority.ALWAYS);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        headerBox.getChildren().addAll(title, spacer, windowButtons);
+        headerBox.getChildren().add(title);
 
         // Campi
         nomeField = new TextField(corso.getNomeCorso());
@@ -103,6 +90,7 @@ public class DettagliCorsoGUI {
         frequenzaCombo.setValue(corso.getFrequenzaCorso());
 
         numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
+
         TextField numeroSessioniField = new TextField(
                 corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
         );
@@ -116,7 +104,7 @@ public class DettagliCorsoGUI {
                 corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
         );
 
-        // Lista chef assegnati
+        // Lista chef
         chefListView = new ListView<>();
         chefListView.setPrefHeight(140);
         chefListView.setMinHeight(100);
@@ -132,9 +120,7 @@ public class DettagliCorsoGUI {
                 removeBtn.setStyle("-fx-background-radius: 8; -fx-background-color: #FF6666; -fx-text-fill: white;");
                 removeBtn.setOnAction(e -> {
                     Chef it = getItem();
-                    if (it != null) {
-                        rimuoviChef(it);
-                    }
+                    if (it != null) rimuoviChef(it);
                 });
                 box.setAlignment(Pos.CENTER_LEFT);
             }
@@ -151,7 +137,6 @@ public class DettagliCorsoGUI {
                     box.getChildren().add(nameLabel);
                     if (isChefLoggato(item)) box.getChildren().add(meLabel);
                     if (editable) {
-                        // se siamo in modifica, mostriamo il bottone rimuovi (ma disabilitiamo se è lo chef loggato)
                         removeBtn.setDisable(isChefLoggato(item));
                         box.getChildren().add(removeBtn);
                     }
@@ -160,7 +145,6 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // Label che mostra la selezione corrente
         selezionatoLabel = new Label("Selezionato: nessuno");
         selezionatoLabel.setStyle("-fx-font-weight: bold;");
         chefListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
@@ -168,7 +152,6 @@ public class DettagliCorsoGUI {
             else selezionatoLabel.setText("Selezionato: " + newV.getUsername() + (isChefLoggato(newV) ? " (io)" : ""));
         });
 
-        // Combo + bottone per aggiungere chef
         addChefCombo = new ComboBox<>();
         addChefCombo.setPrefWidth(260);
         addChefBtn = new Button("Aggiungi chef");
@@ -195,11 +178,10 @@ public class DettagliCorsoGUI {
         Button modificaBtn = createStylishButton("✏ Modifica");
         Button salvaBtn = createStylishButton("💾 Salva");
         Button sessioniBtn = createStylishButton("📅 Sessioni");
-        Button indietroBtn = createStylishButton("⬅ Indietro");
+        Button chiudiBtn = createStylishButton("✖ Chiudi");
 
         salvaBtn.setDisable(true);
 
-        // Eventi pulsanti
         modificaBtn.setOnAction(e -> {
             setEditable(true);
             salvaBtn.setDisable(false);
@@ -222,17 +204,20 @@ public class DettagliCorsoGUI {
                 corso.setFrequenzaCorso(frequenzaCombo.getValue());
                 corso.setNumeroPosti(posti);
                 corso.setNumeroSessioni(corso.getSessioni() != null ? corso.getSessioni().size() : 0);
-                if (dataInizioPicker.getValue() != null) corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
-                if (dataFinePicker.getValue() != null) corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
+
+                if (dataInizioPicker.getValue() != null)
+                    corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
+                if (dataFinePicker.getValue() != null)
+                    corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
 
                 gestioneController.modificaCorso(corso);
                 numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
 
                 showAlert("Successo", "Corso modificato correttamente!");
-
                 setEditable(false);
                 salvaBtn.setDisable(true);
                 refreshChefListView();
+
             } catch (NumberFormatException ex) {
                 showAlert("Errore", "Valori numerici non validi per prezzo o posti.");
             } catch (SQLException ex) {
@@ -245,26 +230,28 @@ public class DettagliCorsoGUI {
         sessioniBtn.setOnAction(e -> {
             GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
             sessioniGUI.setCorso(corso);
-            if (card.getScene() != null) {
-                card.getScene().setRoot(sessioniGUI.getRoot());
+            
+            Stage sessioniStage = new Stage();
+            sessioniStage.setTitle("Gestione Sessioni - " + corso.getNomeCorso());
+            Scene scene = new Scene(sessioniGUI.getRoot(), 800, 600);
+            sessioniStage.setScene(scene);
+            
+            Stage currentStage = getStage(card);
+            if (currentStage != null) {
+                sessioniStage.initOwner(currentStage);
             }
+            
+            sessioniStage.show();
         });
 
-        indietroBtn.setOnAction(e -> {
-            // Se la card è mostrata in uno Stage (dettagli in una finestra), chiudiamo lo stage.
+        chiudiBtn.setOnAction(e -> {
             Stage stage = getStage(card);
             if (stage != null) {
                 stage.close();
-                return;
-            }
-            // Altrimenti, se la card è dentro un Pane, la rimuoviamo dal padre.
-            Parent parent = card.getParent();
-            if (parent instanceof Pane) {
-                ((Pane) parent).getChildren().remove(card);
             }
         });
 
-        buttons.getChildren().addAll(modificaBtn, salvaBtn, sessioniBtn, indietroBtn);
+        buttons.getChildren().addAll(modificaBtn, salvaBtn, sessioniBtn, chiudiBtn);
 
         // Montaggio card
         card.getChildren().addAll(
@@ -286,57 +273,19 @@ public class DettagliCorsoGUI {
                 buttons
         );
 
-        // inizializza campi e lista chef
         setEditable(false);
         refreshChefListView();
 
-        return card;
-    }
+        // Wrap in ScrollPane
+        scrollPane = new ScrollPane(card);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPadding(new Insets(20));
 
-    // ===== Helpers =====
-
-    private HBox createWindowButtons(Node rootNode) {
-        HBox controls = new HBox(6);
-        controls.setAlignment(Pos.CENTER_RIGHT);
-
-        Button minimizeBtn = createWindowBtn("_", Color.WHITE);
-        Button maximizeBtn = createWindowBtn("⬜", Color.WHITE);
-        Button closeBtn = createWindowBtn("✖", Color.web("#FF4444"));
-
-        minimizeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.setIconified(true);
-        });
-        maximizeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.setMaximized(!stage.isMaximized());
-        });
-        closeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.close();
-        });
-
-        controls.getChildren().addAll(minimizeBtn, maximizeBtn, closeBtn);
-        return controls;
-    }
-
-    private Button createWindowBtn(String symbol, Color color) {
-        Button btn = new Button(symbol);
-        btn.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        btn.setTextFill(color);
-        btn.setStyle("-fx-background-color: transparent;");
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: rgba(0,0,0,0.06);"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: transparent;"));
-        btn.setPrefSize(30, 26);
-        return btn;
-    }
-
-    private Stage getStage(Node node) {
-        if (node == null) return null;
-        Scene s = node.getScene();
-        if (s == null) return null;
-        if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
-        return null;
+        return scrollPane;
     }
 
     private boolean isChefLoggato(Chef c) {
@@ -346,12 +295,10 @@ public class DettagliCorsoGUI {
 
     private void refreshChefListView() {
         Platform.runLater(() -> {
-            // ordina chef in modo che lo chef loggato (se presente) sia primo
             List<Chef> lista = corso.getChef() != null ? new ArrayList<>(corso.getChef()) : new ArrayList<>();
             lista.sort(Comparator.comparing((Chef ch) -> !isChefLoggato(ch)).thenComparing(Chef::getUsername));
             chefListView.getItems().setAll(lista);
 
-            // combo con chef non ancora assegnati
             try {
                 List<Chef> all = gestioneController.getTuttiGliChef();
                 List<Chef> avail = all.stream()
@@ -371,7 +318,9 @@ public class DettagliCorsoGUI {
             showAlert("Operazione non permessa", "Non puoi rimuovere te stesso dall'elenco.");
             return;
         }
-        Alert conf = new Alert(Alert.AlertType.CONFIRMATION, "Rimuovere " + chef.getUsername() + " dal corso?", ButtonType.OK, ButtonType.CANCEL);
+
+        Alert conf = new Alert(Alert.AlertType.CONFIRMATION,
+                "Rimuovere " + chef.getUsername() + " dal corso?", ButtonType.OK, ButtonType.CANCEL);
         conf.showAndWait().ifPresent(b -> {
             if (b == ButtonType.OK) {
                 try {
@@ -407,7 +356,6 @@ public class DettagliCorsoGUI {
 
     private void setEditable(boolean edit) {
         this.editable = edit;
-
         nomeField.setEditable(edit);
         prezzoField.setEditable(edit);
         argomentoField.setEditable(edit);
@@ -415,11 +363,9 @@ public class DettagliCorsoGUI {
         numeroPostiField.setEditable(edit);
         dataInizioPicker.setDisable(!edit);
         dataFinePicker.setDisable(!edit);
-
         addChefCombo.setDisable(!edit);
         addChefBtn.setDisable(!edit);
 
-        // aspetto "grigio" se non editabile
         if (!edit) {
             card.setOpacity(0.9);
             card.setStyle("-fx-background-color: white;" +
@@ -435,8 +381,6 @@ public class DettagliCorsoGUI {
                     "-fx-border-color: #FF9966;" +
                     "-fx-border-width: 2;");
         }
-
-        // ricarica lista per mostrare/nascondere i pulsanti rimuovi
         refreshChefListView();
     }
 
@@ -456,5 +400,15 @@ public class DettagliCorsoGUI {
         alert.setHeaderText(null);
         alert.setContentText(messaggio);
         alert.showAndWait();
+    }
+
+    private Stage getStage(Node node) {
+        if (node == null) return null;
+        Scene s = node.getScene();
+        if (s == null) return null;
+        if (s.getWindow() instanceof javafx.stage.Window) {
+            return (Stage) s.getWindow();
+        }
+        return null;
     }
 }

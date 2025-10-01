@@ -52,6 +52,10 @@ public class GestioneCorsoController {
             throw new ValidationException("Errore di validazione: " + iae.getMessage(), iae);
         }
     }
+    
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
+        corsiService.rimuoviChefDaCorso(corso, chef);
+    }
 
     public void eliminaCorso(int idCorso) throws SQLException {
         corsiService.cancellaCorso(idCorso);
