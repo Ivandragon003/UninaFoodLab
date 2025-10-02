@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
 
 public class CreaSessioniGUI {
     private Sessione sessioneCreata = null;
@@ -211,8 +212,27 @@ public class CreaSessioniGUI {
         presenzaBox.getChildren().add(gestisciRicetteBtn);
 
         gestisciRicetteBtn.setOnAction(e -> {
-            // Gestione ricette semplificata per ora
-            showAlert("Info", "Gestione ricette disponibile dopo la creazione della sessione");
+            try {
+                // Apri il dialog per selezionare ricette
+                VisualizzaRicetteDialog ricetteDialog = new VisualizzaRicetteDialog(gestioneRicette);
+                List<Ricetta> ricetteScelte = ricetteDialog.showAndReturn();
+                
+                if (!ricetteScelte.isEmpty()) {
+                    // Mostra conferma delle ricette selezionate
+                    StringBuilder sb = new StringBuilder("Ricette selezionate:\n");
+                    for (Ricetta r : ricetteScelte) {
+                        sb.append("• ").append(r.getNome()).append(" (").append(r.getTempoPreparazione()).append(" min)\n");
+                    }
+                    showAlert("Ricette Selezionate", sb.toString());
+                    
+                    // Le ricette verranno associate alla sessione dopo la creazione
+                    // (dovrai implementare l'associazione nel codice che usa sessioneCreata)
+                }
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                showAlert("Errore", "Errore durante la selezione ricette: " + ex.getMessage());
+            }
         });
 
         // Gestione visibilità campi

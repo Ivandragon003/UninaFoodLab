@@ -1,4 +1,3 @@
-
 package Gui;
 
 import javafx.geometry.Insets;
@@ -34,7 +33,7 @@ public class VisualizzaRicetteDialog extends Stage {
         this.ricetteDisponibili = FXCollections.observableArrayList();
         this.ricetteSelezionate = FXCollections.observableArrayList();
         
-        setTitle("📚 Seleziona Ricette per Sessione");
+        setTitle("📚 Seleziona Ricette per Sessione In Presenza");
         initModality(Modality.APPLICATION_MODAL);
         setResizable(true);
         
@@ -50,14 +49,14 @@ public class VisualizzaRicetteDialog extends Stage {
         layout.setStyle("-fx-background-color: #F8F9FA;");
         
         // Header
-        Label titleLabel = new Label("📚 Seleziona Ricette per la Sessione");
+        Label titleLabel = new Label("📚 Seleziona Ricette per la Sessione in Presenza");
         titleLabel.setFont(Font.font("Inter", FontWeight.BOLD, 20));
         titleLabel.setTextFill(Color.web("#2C3E50"));
         
-        Label infoLabel = new Label("⚠️ Devi selezionare almeno una ricetta per salvare la sessione in presenza");
+        Label infoLabel = new Label("⚠️ Le sessioni in presenza possono avere ricette associate");
         infoLabel.setFont(Font.font("Inter", FontWeight.MEDIUM, 12));
         infoLabel.setTextFill(Color.web("#E67E22"));
-        infoLabel.setStyle("-fx-background-color: #FEF5E7; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #F39C12; -fx-border-radius: 8; -fx-border-width: 1;");
+        infoLabel.setStyle("-fx-background-color: #FEF5E7; -fx-padding: 10; -fx-background-radius: 8;");
         
         // Container principale
         HBox mainContainer = createMainContainer();
@@ -83,55 +82,13 @@ public class VisualizzaRicetteDialog extends Stage {
         TextField searchField = new TextField();
         searchField.setPromptText("🔍 Cerca ricette...");
         searchField.setPrefHeight(35);
-        searchField.setStyle("-fx-background-radius: 8; -fx-border-radius: 8;");
         
         listaDisponibili = new ListView<>(ricetteDisponibili);
         listaDisponibili.setPrefHeight(350);
-        listaDisponibili.setStyle("-fx-background-radius: 8; -fx-border-radius: 8;");
         listaDisponibili.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-        // Cell factory
-        listaDisponibili.setCellFactory(lv -> new ListCell<Ricetta>() {
-            @Override
-            protected void updateItem(Ricetta ricetta, boolean empty) {
-                super.updateItem(ricetta, empty);
-                if (empty || ricetta == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    VBox cellContent = new VBox(3);
-                    cellContent.setPadding(new Insets(8));
-                    cellContent.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 5;");
-                    
-                    Label nameLabel = new Label(ricetta.getNome());
-                    nameLabel.setFont(Font.font("Inter", FontWeight.BOLD, 13));
-                    
-                    Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " minuti");
-                    timeLabel.setFont(Font.font("Inter", FontWeight.NORMAL, 11));
-                    timeLabel.setTextFill(Color.web("#666666"));
-                    
-                    cellContent.getChildren().addAll(nameLabel, timeLabel);
-                    setGraphic(cellContent);
-                    setText(null);
-                }
-            }
-        });
-        
-        // Filtro ricerca
-        searchField.textProperty().addListener((obs, old, val) -> {
-            if (val == null || val.trim().isEmpty()) {
-                listaDisponibili.setItems(ricetteDisponibili);
-            } else {
-                ObservableList<Ricetta> filtrate = FXCollections.observableArrayList();
-                String filtro = val.toLowerCase().trim();
-                for (Ricetta r : ricetteDisponibili) {
-                    if (r.getNome().toLowerCase().contains(filtro)) {
-                        filtrate.add(r);
-                    }
-                }
-                listaDisponibili.setItems(filtrate);
-            }
-        });
+        setupCellFactory(listaDisponibili, false);
+        setupSearchFilter(searchField);
         
         disponibiliSection.getChildren().addAll(disponibiliLabel, searchField, listaDisponibili);
         
@@ -161,35 +118,10 @@ public class VisualizzaRicetteDialog extends Stage {
         
         listaSelezionate = new ListView<>(ricetteSelezionate);
         listaSelezionate.setPrefHeight(350);
-        listaSelezionate.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #28A745; -fx-border-width: 2;");
+        listaSelezionate.setStyle("-fx-border-color: #28A745; -fx-border-width: 2; -fx-border-radius: 8;");
         listaSelezionate.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         
-        listaSelezionate.setCellFactory(lv -> new ListCell<Ricetta>() {
-            @Override
-            protected void updateItem(Ricetta ricetta, boolean empty) {
-                super.updateItem(ricetta, empty);
-                if (empty || ricetta == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    VBox cellContent = new VBox(3);
-                    cellContent.setPadding(new Insets(8));
-                    cellContent.setStyle("-fx-background-color: #D4EDDA; -fx-background-radius: 5;");
-                    
-                    Label nameLabel = new Label(ricetta.getNome());
-                    nameLabel.setFont(Font.font("Inter", FontWeight.BOLD, 13));
-                    nameLabel.setTextFill(Color.web("#155724"));
-                    
-                    Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " minuti");
-                    timeLabel.setFont(Font.font("Inter", FontWeight.NORMAL, 11));
-                    timeLabel.setTextFill(Color.web("#28A745"));
-                    
-                    cellContent.getChildren().addAll(nameLabel, timeLabel);
-                    setGraphic(cellContent);
-                    setText(null);
-                }
-            }
-        });
+        setupCellFactory(listaSelezionate, true);
         
         Label countLabel = new Label();
         countLabel.setFont(Font.font("Inter", FontWeight.BOLD, 12));
@@ -218,15 +150,6 @@ public class VisualizzaRicetteDialog extends Stage {
         
         Button confermaBtn = createStyledButton("✅ Conferma Selezione", "#007BFF");
         confermaBtn.setOnAction(e -> {
-            if (ricetteSelezionate.isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Attenzione");
-                alert.setHeaderText("Nessuna ricetta selezionata");
-                alert.setContentText("Devi selezionare almeno una ricetta per la sessione in presenza.");
-                alert.showAndWait();
-                return;
-            }
-            
             risultato.clear();
             risultato.addAll(ricetteSelezionate);
             close();
@@ -234,6 +157,57 @@ public class VisualizzaRicetteDialog extends Stage {
         
         buttonBox.getChildren().addAll(annullaBtn, confermaBtn);
         return buttonBox;
+    }
+    
+    private void setupCellFactory(ListView<Ricetta> listView, boolean isSelected) {
+        listView.setCellFactory(lv -> new ListCell<Ricetta>() {
+            @Override
+            protected void updateItem(Ricetta ricetta, boolean empty) {
+                super.updateItem(ricetta, empty);
+                if (empty || ricetta == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    VBox cellContent = new VBox(3);
+                    cellContent.setPadding(new Insets(8));
+                    
+                    if (isSelected) {
+                        cellContent.setStyle("-fx-background-color: #D4EDDA; -fx-background-radius: 5;");
+                    } else {
+                        cellContent.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 5;");
+                    }
+                    
+                    Label nameLabel = new Label(ricetta.getNome());
+                    nameLabel.setFont(Font.font("Inter", FontWeight.BOLD, 13));
+                    nameLabel.setTextFill(isSelected ? Color.web("#155724") : Color.web("#212529"));
+                    
+                    Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " minuti");
+                    timeLabel.setFont(Font.font("Inter", FontWeight.NORMAL, 11));
+                    timeLabel.setTextFill(isSelected ? Color.web("#28A745") : Color.web("#666666"));
+                    
+                    cellContent.getChildren().addAll(nameLabel, timeLabel);
+                    setGraphic(cellContent);
+                    setText(null);
+                }
+            }
+        });
+    }
+    
+    private void setupSearchFilter(TextField searchField) {
+        searchField.textProperty().addListener((obs, old, val) -> {
+            if (val == null || val.trim().isEmpty()) {
+                listaDisponibili.setItems(ricetteDisponibili);
+            } else {
+                ObservableList<Ricetta> filtrate = FXCollections.observableArrayList();
+                String filtro = val.toLowerCase().trim();
+                for (Ricetta r : ricetteDisponibili) {
+                    if (r.getNome().toLowerCase().contains(filtro)) {
+                        filtrate.add(r);
+                    }
+                }
+                listaDisponibili.setItems(filtrate);
+            }
+        });
     }
     
     private void aggiungiRicetteSelezionate() {

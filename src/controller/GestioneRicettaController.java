@@ -32,4 +32,6 @@ public class GestioneRicettaController {
     public GestioneRicette getGestioneRicette() {
         return gestioneRicette;
     }
+    
+    
 }
