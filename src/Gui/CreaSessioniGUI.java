@@ -1,5 +1,4 @@
 package Gui;
-
 import controller.VisualizzaRicetteController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -24,7 +23,6 @@ import model.InPresenza;
 import model.Ricetta;
 import service.GestioneCucina;
 import service.GestioneRicette;
-
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,18 +30,15 @@ import java.time.LocalTime;
 import java.util.Set;
 
 public class CreaSessioniGUI {
-
     private Sessione sessioneCreata = null;
     private VBox root;
-
     private final Set<LocalDate> dateConflittoRosse;
     private final Set<LocalDate> dateConflittoArancioni;
-
     private final GestioneRicette gestioneRicette;
     private final GestioneCucina gestioneCucina;
 
     public CreaSessioniGUI(Set<LocalDate> rosse, Set<LocalDate> arancioni,
-                            GestioneRicette gestioneRicette, GestioneCucina gestioneCucina) {
+                          GestioneRicette gestioneRicette, GestioneCucina gestioneCucina) {
         this.dateConflittoRosse = rosse;
         this.dateConflittoArancioni = arancioni;
         this.gestioneRicette = gestioneRicette;
@@ -62,6 +57,7 @@ public class CreaSessioniGUI {
         LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FF9966")), new Stop(0.5, Color.web("#FFB366")),
                 new Stop(1, Color.web("#FFCC99")));
+
         Region background = new Region();
         background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
         background.setPrefSize(520, 650);
@@ -96,7 +92,6 @@ public class CreaSessioniGUI {
         Label lblDataFine = new Label("📅 Data Fine");
         lblDataFine.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 14));
         lblDataFine.setTextFill(Color.web("#FF6600"));
-
         DatePicker dataFinePicker = createColoredDatePicker();
         styleModernDatePicker(dataFinePicker);
         dataFinePicker.setEditable(false);
@@ -105,7 +100,6 @@ public class CreaSessioniGUI {
         dataFinePicker.setStyle("-fx-background-color: #f0f0f0;" +
                 "-fx-border-color: #d0d0d0;" + "-fx-border-radius: 12;" + "-fx-background-radius: 12;" +
                 "-fx-border-width: 1.5;" + "-fx-font-size: 14px;" + "-fx-padding: 8;");
-
         Label lockLabel = new Label("🔒 Bloccata alla data inizio");
         lockLabel.setFont(Font.font("Inter", 12));
         lockLabel.setTextFill(Color.GRAY);
@@ -162,12 +156,13 @@ public class CreaSessioniGUI {
         TextField capField = new TextField();
         capField.setPromptText("📮 CAP");
         presenzaBoxSetup(viaField, cittaField, postiField, capField);
+
         VBox presenzaBox = new VBox(10, viaField, cittaField, postiField, capField);
         presenzaBox.setVisible(false);
         presenzaBox.setManaged(false);
 
         // Lista ricette
-        ObservableList<Ricetta> ricetteList = FXCollections.observableArrayList();
+        ObservableList<HBox> ricetteList = FXCollections.observableArrayList();
         ListView<HBox> ricetteListView = new ListView<>();
         ricetteListView.setPrefHeight(150);
         presenzaBox.getChildren().add(ricetteListView);
@@ -184,13 +179,10 @@ public class CreaSessioniGUI {
                 else tempSessione = new InPresenza(LocalDateTime.now(), LocalDateTime.now().plusHours(1),
                         "ViaTemp", "CittaTemp", 1, 0);
 
-                // controller che espone le ricette (layer "visualizza")
-                VisualizzaRicetteController ricetteController = new VisualizzaRicetteController(gestioneRicette);
-
-                // recupero ricette (può sollevare eccezioni dal service/dao/model)
+                // *** CORREZIONE PRINCIPALE: uso diretto di gestioneRicette ***
                 java.util.List<Ricetta> tutteRicette = null;
                 try {
-                    tutteRicette = ricetteController.getTutteLeRicette();
+                    tutteRicette = gestioneRicette.getAllRicette(); // Metodo corretto esistente
                 } catch (Exception exc) {
                     exc.printStackTrace();
                     Throwable sqlCause = findCause(exc, java.sql.SQLException.class);
@@ -209,6 +201,7 @@ public class CreaSessioniGUI {
                             "Errore durante il recupero delle ricette"));
                     return;
                 }
+
                 if (tutteRicette == null) tutteRicette = new java.util.ArrayList<>();
 
                 // Dialog per visualizzare e selezionare le ricette (multi-select)
@@ -245,6 +238,7 @@ public class CreaSessioniGUI {
                 confermaBtn.setOnAction(ev -> {
                     try {
                         java.util.List<Ricetta> selezionate = new java.util.ArrayList<>(allRicetteView.getSelectionModel().getSelectedItems());
+
                         // aggiorna il set della sessione temporanea
                         tempSessione.getRicette().clear();
                         tempSessione.getRicette().addAll(selezionate);
@@ -302,6 +296,7 @@ public class CreaSessioniGUI {
         HBox btnBox = new HBox(15);
         btnBox.setAlignment(Pos.CENTER);
         btnBox.setPadding(new Insets(10, 0, 0, 0));
+
         Button salvaBtn = createModernButton("💾 Salva Sessione", "#FF6600", "#FF8533");
         Button annullaBtn = createModernButton("❌ Annulla", "#e0e0e0", "#d0d0d0");
         annullaBtn.setTextFill(Color.web("#666666"));
@@ -427,7 +422,7 @@ public class CreaSessioniGUI {
 
     private DatePicker createColoredDatePicker() {
         DatePicker picker = new DatePicker();
-        picker.setDayCellFactory(new Callback<>() {
+        picker.setDayCellFactory(new Callback<DatePicker, DateCell>() {
             @Override
             public DateCell call(DatePicker param) {
                 return new DateCell() {
@@ -469,6 +464,7 @@ public class CreaSessioniGUI {
 
         for (int i = 0; i < 24; i++) ore.getItems().add(i);
         for (int i = 0; i < 60; i += 5) minuti.getItems().add(i);
+
         ore.setValue(9);
         minuti.setValue(0);
 
@@ -547,6 +543,7 @@ public class CreaSessioniGUI {
     private String buildSpecificMessage(Exception ex, String prefix) {
         StringBuilder sb = new StringBuilder();
         sb.append(prefix).append("\n\n");
+
         String origin = "Origine: Sconosciuta";
         if (ex instanceof SQLException) origin = "Origine: DB/Service";
         else if (ex instanceof IllegalArgumentException) origin = "Origine: Model (validazione)";
@@ -560,9 +557,11 @@ public class CreaSessioniGUI {
             }
         }
         sb.append(origin).append("\n\n");
+
         String msg = ex.getMessage();
         if (msg == null || msg.isBlank()) msg = ex.toString();
         sb.append("Dettaglio: ").append(msg);
+
         return sb.toString();
     }
 

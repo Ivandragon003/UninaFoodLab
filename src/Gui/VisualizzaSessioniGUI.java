@@ -135,11 +135,14 @@ public class VisualizzaSessioniGUI {
 
         sessioniList.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2 && sessioniList.getSelectionModel().getSelectedItem() != null) {
-                // Possibile apertura dei dettagli della sessione:
                 Sessione selezionata = sessioniList.getSelectionModel().getSelectedItem();
-                // Se vuoi aprire la GUI di gestione/visualizzazione dettagli sessione, qui potresti
-                // istanziare una GestioneSessioniGUI, impostare sessione e controller e mostrarla.
-                // es: GestioneSessioniGUI g = new GestioneSessioniGUI(); g.setController(controller); g.setSessione(selezionata); ...
+                
+                // Apri GUI gestione ricette se è una sessione in presenza
+                if (selezionata instanceof InPresenza inPresenza) {
+                    controller.apriSelezionaRicettaGUI(inPresenza);
+                } else {
+                    showInfo("Info", "Le sessioni online non possono avere ricette associate.");
+                }
             }
         });
     }
@@ -151,35 +154,114 @@ public class VisualizzaSessioniGUI {
 
         Button aggiungiBtn = new Button("Aggiungi Sessione");
         aggiungiBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 180; -fx-pref-height: 40; -fx-font-size: 14;");
-        // Se si vuole aprire un form per aggiungere sessione:
+        
         aggiungiBtn.setOnAction(e -> {
-            GestioneSessioniGUI aggiungiGUI = new GestioneSessioniGUI();
-            // modalitaAggiunta = true
-            aggiungiGUI.setModalitaAggiunta(true);
-            aggiungiGUI.setController(controller);
-            aggiungiGUI.setCorso(corso);
-            // se embedded: sostituisco la root; altrimenti apri nuovo stage con aggiungiGUI.start(...)
-            if (root.getScene() != null) root.getScene().setRoot(aggiungiGUI.getRoot());
+            try {
+                GestioneSessioniGUI aggiungiGUI = new GestioneSessioniGUI();
+                aggiungiGUI.setModalitaAggiunta(true);
+                aggiungiGUI.setController(controller);
+                aggiungiGUI.setCorso(corso);
+                
+                // Crea una nuova finestra per aggiungere la sessione
+                javafx.stage.Stage stage = new javafx.stage.Stage();
+                stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+                stage.setTitle("Aggiungi Nuova Sessione");
+                
+                javafx.scene.Scene scene = new javafx.scene.Scene(aggiungiGUI.getRoot(), 600, 700);
+                stage.setScene(scene);
+                stage.showAndWait();
+                
+                // Aggiorna la lista dopo la chiusura della finestra
+                aggiornaLista();
+                
+            } catch (Exception ex) {
+                showError("Errore", "Errore nell'apertura della finestra di aggiunta sessione: " + ex.getMessage());
+            }
+        });
+
+        Button modificaBtn = new Button("Modifica Sessione");
+        modificaBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-pref-width: 180; -fx-pref-height: 40; -fx-font-size: 14;");
+        
+        modificaBtn.setOnAction(e -> {
+            Sessione selezionata = sessioniList.getSelectionModel().getSelectedItem();
+            if (selezionata != null) {
+                try {
+                    GestioneSessioniGUI modificaGUI = new GestioneSessioniGUI();
+                    modificaGUI.setModalitaAggiunta(false);
+                    modificaGUI.setController(controller);
+                    modificaGUI.setCorso(corso);
+                    modificaGUI.setSessione(selezionata);
+                    
+                    javafx.stage.Stage stage = new javafx.stage.Stage();
+                    stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+                    stage.setTitle("Modifica Sessione");
+                    
+                    javafx.scene.Scene scene = new javafx.scene.Scene(modificaGUI.getRoot(), 600, 700);
+                    stage.setScene(scene);
+                    stage.showAndWait();
+                    
+                    aggiornaLista();
+                    
+                } catch (Exception ex) {
+                    showError("Errore", "Errore nell'apertura della finestra di modifica sessione: " + ex.getMessage());
+                }
+            } else {
+                showInfo("Selezione", "Seleziona una sessione da modificare.");
+            }
+        });
+
+        Button eliminaBtn = new Button("Elimina Sessione");
+        eliminaBtn.setStyle("-fx-background-color: #F44336; -fx-text-fill: white; -fx-pref-width: 180; -fx-pref-height: 40; -fx-font-size: 14;");
+        
+        eliminaBtn.setOnAction(e -> {
+            Sessione selezionata = sessioniList.getSelectionModel().getSelectedItem();
+            if (selezionata != null) {
+                Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
+                conferma.setTitle("Conferma Eliminazione");
+                conferma.setHeaderText("Eliminare la sessione selezionata?");
+                conferma.setContentText("Questa operazione non può essere annullata.");
+                
+                if (conferma.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+                    try {
+                        controller.eliminaSessione(selezionata);
+                        aggiornaLista();
+                        showInfo("Successo", "Sessione eliminata con successo.");
+                    } catch (Exception ex) {
+                        showError("Errore", "Errore durante l'eliminazione: " + ex.getMessage());
+                    }
+                }
+            } else {
+                showInfo("Selezione", "Seleziona una sessione da eliminare.");
+            }
         });
 
         Button tornaIndietroBtn = new Button("Torna Indietro");
         tornaIndietroBtn.setStyle("-fx-pref-width: 150; -fx-pref-height: 40; -fx-font-size: 14;");
         tornaIndietroBtn.setOnAction(e -> {
-            // comportamento di ritorno: se sei embedded, chiudi / ripristina il parent
-            if (root.getScene() != null) root.getScene().getWindow().hide();
+            if (root.getScene() != null) {
+                root.getScene().getWindow().hide();
+            }
         });
 
-        pulsantiPrincipali.getChildren().addAll(aggiungiBtn, tornaIndietroBtn);
+        pulsantiPrincipali.getChildren().addAll(aggiungiBtn, modificaBtn, eliminaBtn, tornaIndietroBtn);
 
         return pulsantiPrincipali;
     }
 
+    // *** CORREZIONE PRINCIPALE: Usa corso.getSessioni() invece di controller.getSessioni() ***
     private void applicaFiltri() {
         ObservableList<Sessione> sessioniFiltrate = FXCollections.observableArrayList();
         String tipoFiltro = filtroTipo.getValue();
         String ricetteFiltro = filtroRicette.getText().trim();
 
-        for (Sessione s : controller.getSessioni()) {
+        // *** CORREZIONE: Usa le sessioni del corso ***
+        if (corso.getSessioni() == null) {
+            sessioniList.setItems(sessioniFiltrate);
+            numeroSessioniLabel.setText("Nessuna sessione disponibile");
+            return;
+        }
+
+        for (Sessione s : corso.getSessioni()) {
             boolean passaTipoFiltro = tipoFiltro.equals("Tutti") ||
                     (tipoFiltro.equals("Online") && s instanceof Online) ||
                     (tipoFiltro.equals("In Presenza") && s instanceof InPresenza);
@@ -203,11 +285,28 @@ public class VisualizzaSessioniGUI {
         sessioniFiltrate.sort(Comparator.comparing(Sessione::getDataInizioSessione));
         sessioniList.setItems(sessioniFiltrate);
         numeroSessioniLabel.setText(String.format("Sessioni visualizzate: %d di %d totali", 
-                sessioniFiltrate.size(), controller.getSessioni().size()));
+                sessioniFiltrate.size(), corso.getSessioni().size()));
         numeroSessioniLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
     }
 
     public void aggiornaLista() {
         applicaFiltri();
+    }
+
+    // *** METODI DI SUPPORTO ***
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

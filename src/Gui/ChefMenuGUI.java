@@ -182,41 +182,48 @@ public class ChefMenuGUI {
         }
     }
 
-    private void apriCreaCorso() {
-        try {
-            CreaCorsoGUI gui = new CreaCorsoGUI();
-            gui.setController(gestioneCorsoController); // Passiamo il controller completo
 
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(gui.getRoot());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo il form Crea Corso: " + ex.getMessage(), ButtonType.OK);
-            alert.showAndWait();
-        }
+private void apriCreaCorso() {
+    try {
+        CreaCorsoGUI gui = new CreaCorsoGUI();
+        gui.setController(gestioneCorsoController);
+
+        contentPane.getChildren().clear();
+        contentPane.getChildren().add(gui.getRoot());
+        
+        System.out.println("✅ Crea Corso GUI caricata con successo");
+        
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo il form Crea Corso: " + ex.getMessage(), ButtonType.OK);
+        alert.showAndWait();
     }
+}
 
-    private void apriVisualizzaRicette() {
-        try {
-            RicettaDAO ricettaDAO = new RicettaDAO();
-            UsaDAO usaDAO = new UsaDAO();
+private void apriVisualizzaRicette() {
+    try {
+        // *** CORREZIONE: Aggiungi IngredienteDAO mancante ***
+        RicettaDAO ricettaDAO = new RicettaDAO();
+        UsaDAO usaDAO = new UsaDAO();
+        IngredienteDAO ingredienteDAO = new IngredienteDAO(); // AGGIUNTO!
 
-            service.GestioneRicette gestioneRicette = new service.GestioneRicette(ricettaDAO, usaDAO);
+        // *** CORREZIONE: Passa tutti e 3 i DAO ***
+        service.GestioneRicette gestioneRicette = new service.GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
 
-            VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
-            VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-            gui.setController(controller, contentPane);
+        VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
+        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
+        gui.setController(controller, contentPane); 
+        contentPane.getChildren().clear();
+        contentPane.getChildren().add(gui.getRoot());
 
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(gui.getRoot());
+        System.out.println("✅ Visualizza Ricette GUI caricata con successo");
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo le ricette: " + ex.getMessage(), ButtonType.OK);
-            alert.showAndWait();
-        }
+    } catch (Exception ex) {
+        ex.printStackTrace();
+        Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo le ricette: " + ex.getMessage(), ButtonType.OK);
+        alert.showAndWait();
     }
-
+}
     private void eliminaAccount(Stage stage) {
         Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
         conferma.setHeaderText("Vuoi eliminare definitivamente il tuo account?");
