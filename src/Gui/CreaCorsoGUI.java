@@ -2,25 +2,32 @@ package Gui;
 
 import controller.GestioneCorsoController;
 import controller.GestioneSessioniController;
+import controller.VisualizzaRicetteController;
 import exceptions.ValidationException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import model.*;
 import service.GestioneRicette;
 import service.GestioneCucina;
+import dao.*;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 public class CreaCorsoGUI {
     
@@ -52,6 +59,8 @@ public class CreaCorsoGUI {
     private ObservableList<Sessione> corsoSessioni = FXCollections.observableArrayList();
     
     private VBox root;
+    private Button aggiungiSessioneBtn; // MODIFICATO: non più "crea" ma "aggiungi"
+    private Button visualizzaSessioniBtn; // NUOVO: per visualizzare sessioni
 
     public CreaCorsoGUI() {
         // Costruttore vuoto per compatibilità
@@ -63,15 +72,21 @@ public class CreaCorsoGUI {
     }
     
     private void initializeServices() {
-        // Inizializza i servizi necessari per le sessioni
         try {
-            // Questi dovrebbero essere passati dal ChefMenuGUI o inizializzati qui
-            // Per ora li lascio null, ma dovrai collegarli ai tuoi DAO reali
+            // Inizializza servizi con DAO esistenti
+            RicettaDAO ricettaDAO = new RicettaDAO();
+            UsaDAO usaDAO = new UsaDAO();
+            IngredienteDAO ingredienteDAO = new IngredienteDAO();
+            
+            this.gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
+            this.gestioneCucina = null;
+            this.sessioniController = null;
+            
+        } catch (Exception e) {
+            System.err.println("Errore inizializzazione servizi: " + e.getMessage());
             this.gestioneRicette = null;
             this.gestioneCucina = null;
             this.sessioniController = null;
-        } catch (Exception e) {
-            System.err.println("Errore inizializzazione servizi: " + e.getMessage());
         }
     }
 
@@ -171,7 +186,7 @@ public class CreaCorsoGUI {
         section.setStyle("-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; " +
                         "-fx-border-color: #e0e0e0; -fx-border-radius: 10;");
 
-        Label sectionTitle = new Label("📅 Date e Orari");
+        Label sectionTitle = new Label("📅 Date e Orari - OBBLIGATORIO per Sessioni");
         sectionTitle.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web("#FF6600"));
 
@@ -179,16 +194,20 @@ public class CreaCorsoGUI {
         grid.setHgap(15);
         grid.setVgap(15);
 
-        // Date picker
+        // Date picker con validazione OBBLIGATORIA
         startDatePicker = new DatePicker();
-        startDatePicker.setPromptText("Data inizio");
+        startDatePicker.setPromptText("Data inizio OBBLIGATORIA");
         startDatePicker.setPrefHeight(35);
         styleDatePicker(startDatePicker);
         
         endDatePicker = new DatePicker();
-        endDatePicker.setPromptText("Data fine");
+        endDatePicker.setPromptText("Data fine OBBLIGATORIA");
         endDatePicker.setPrefHeight(35);
         styleDatePicker(endDatePicker);
+
+        // VALIDAZIONE: Listener per abilitare pulsante sessioni
+        startDatePicker.setOnAction(e -> validateDatesForSessions());
+        endDatePicker.setOnAction(e -> validateDatesForSessions());
 
         // Combo box orari
         startHour = createHourComboBox();
@@ -212,7 +231,12 @@ public class CreaCorsoGUI {
         grid.add(createLabel("Ora Fine:"), 2, 1);
         grid.add(endTimeBox, 3, 1);
 
-        section.getChildren().addAll(sectionTitle, grid);
+        // Avviso importante
+        Label avisoLabel = new Label("⚠️ OBBLIGATORIO: Completa le date per abilitare l'aggiunta di sessioni");
+        avisoLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
+        avisoLabel.setTextFill(Color.web("#e74c3c"));
+
+        section.getChildren().addAll(sectionTitle, grid, avisoLabel);
         return section;
     }
 
@@ -242,10 +266,14 @@ public class CreaCorsoGUI {
         Button aggiungiChefBtn = createButton("➡️ Aggiungi", "#FF6600");
         Button rimuoviChefBtn = createButton("⬅️ Rimuovi", "#e74c3c");
         
+        // MODIFICA: Usa dialog esistente per selezione chef
+        Button selezionaChefDialogBtn = createButton("🔍 Seleziona Chef", "#3498db");
+        
         aggiungiChefBtn.setOnAction(e -> aggiungiChef());
         rimuoviChefBtn.setOnAction(e -> rimuoviChef());
+        selezionaChefDialogBtn.setOnAction(e -> apriDialogSelezionaChef()); // USA DIALOG ESISTENTE
         
-        buttonsBox.getChildren().addAll(aggiungiChefBtn, rimuoviChefBtn);
+        buttonsBox.getChildren().addAll(aggiungiChefBtn, rimuoviChefBtn, selezionaChefDialogBtn);
 
         // Lista chef selezionati
         VBox selezionatiBox = new VBox(10);
@@ -273,7 +301,7 @@ public class CreaCorsoGUI {
 
         // Lista sessioni
         VBox sessioniBox = new VBox(10);
-        Label sessioniLabel = createLabel("Sessioni create:");
+        Label sessioniLabel = createLabel("Sessioni aggiunte:");
         listaSessioni = new ListView<>(corsoSessioni);
         listaSessioni.setPrefHeight(120);
         styleListView(listaSessioni);
@@ -296,43 +324,224 @@ public class CreaCorsoGUI {
         
         sessioniBox.getChildren().addAll(sessioniLabel, listaSessioni);
 
-        // Pulsanti sessioni con collegamento a CreaSessioniGUI
+        // MODIFICA: Pulsanti per sessioni
         VBox sessionButtonsBox = new VBox(10);
         sessionButtonsBox.setAlignment(Pos.CENTER);
         
-        Button creaSessioneBtn = createButton("➕ Crea", "#27ae60");
-        Button eliminaSessioneBtn = createButton("🗑️ Elimina", "#e74c3c");
+        // MODIFICA: Cambiato da "Crea" a "Aggiungi" e richiede date
+        aggiungiSessioneBtn = createButton("➕ Aggiungi Sessione", "#27ae60");
+        Button eliminaSessioneBtn = createButton("🗑️ Rimuovi", "#e74c3c");
+        
+        // NUOVO: Pulsante per visualizzare sessioni (non gestire)
+        visualizzaSessioniBtn = createButton("👁️ Visualizza Sessioni", "#9b59b6");
 
-        // COLLEGAMENTO PRINCIPALE - Quando clicchi "Crea" apre CreaSessioniGUI
-        creaSessioneBtn.setOnAction(e -> creaSessione());
-        eliminaSessioneBtn.setOnAction(e -> eliminaSessione());
+        // Inizialmente disabilitato finché non si inseriscono le date
+        aggiungiSessioneBtn.setDisable(true);
+        visualizzaSessioniBtn.setDisable(true);
 
-        sessionButtonsBox.getChildren().addAll(creaSessioneBtn, eliminaSessioneBtn);
+        aggiungiSessioneBtn.setOnAction(e -> aggiungiSessione());
+        eliminaSessioneBtn.setOnAction(e -> rimuoviSessione());
+        visualizzaSessioniBtn.setOnAction(e -> visualizzaSessioni()); // VISUALIZZA, non gestisce
+
+        // Abilita visualizza quando ci sono sessioni
+        corsoSessioni.addListener((javafx.collections.ListChangeListener<Sessione>) change -> {
+            visualizzaSessioniBtn.setDisable(corsoSessioni.isEmpty());
+        });
+
+        sessionButtonsBox.getChildren().addAll(aggiungiSessioneBtn, eliminaSessioneBtn, visualizzaSessioniBtn);
 
         sessionContainer.getChildren().addAll(sessioniBox, sessionButtonsBox);
         section.getChildren().addAll(sectionTitle, sessionContainer);
         return section;
     }
 
-    // METODO PRINCIPALE PER COLLEGARE CreaSessioniGUI
-    private void creaSessione() {
-        try {
-            // Crea CreaSessioniGUI con i servizi necessari
-            CreaSessioniGUI creaSessioniGUI = new CreaSessioniGUI(gestioneRicette, gestioneCucina);
+    // MODIFICA: Validazione rigorosa delle date prima di abilitare sessioni
+    private void validateDatesForSessions() {
+        boolean dateValid = startDatePicker.getValue() != null && endDatePicker.getValue() != null;
+        
+        if (aggiungiSessioneBtn != null) {
+            aggiungiSessioneBtn.setDisable(!dateValid);
             
-            // Apre il dialog e aspetta il risultato
-            Sessione nuovaSessione = creaSessioniGUI.creaSessioneEmbedded();
-            
-            // Se è stata creata una sessione, aggiungila alla lista
-            if (nuovaSessione != null) {
-                corsoSessioni.add(nuovaSessione);
-                showInfo("Successo", "Sessione creata e aggiunta al corso!");
+            if (dateValid) {
+                aggiungiSessioneBtn.setText("➕ Aggiungi Sessione");
+                aggiungiSessioneBtn.setStyle(aggiungiSessioneBtn.getStyle().replace("#cccccc", "#27ae60"));
+            } else {
+                aggiungiSessioneBtn.setText("❌ Date Corso Richieste");
+                aggiungiSessioneBtn.setStyle(aggiungiSessioneBtn.getStyle().replace("#27ae60", "#cccccc"));
             }
-            
+        }
+    }
+
+    // MODIFICA: Usa dialog esistente per selezione chef
+  private void apriDialogSelezionaChef() {
+    List<Chef> disponibili = gestioneController.getTuttiGliChef();
+    SelezionaChefDialog dialog = new SelezionaChefDialog(disponibili);
+    List<Chef> scelti = dialog.showAndReturn();
+    if (scelti != null) {
+        for (Chef chef : scelti) {
+            if (!chefSelezionati.contains(chef)) {
+                chefSelezionati.add(chef);
+            }
+        }
+    }
+}
+  
+ // Invece del tuo CreaSessioniGUI complesso, usa questo:
+private void aggiungiSessione() {
+    try {
+        // Crea servizi
+        dao.RicettaDAO ricettaDAO = new dao.RicettaDAO();
+        dao.UsaDAO usaDAO = new dao.UsaDAO();
+        dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
+        service.GestioneRicette gestioneRicette = new service.GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
+        
+        // Usa il tuo dialog
+        CreaSessioneDialog dialog = new CreaSessioneDialog(gestioneRicette);
+        Sessione nuovaSessione = dialog.showAndReturn();
+        
+        if (nuovaSessione != null) {
+            // Aggiungi la sessione al corso
+            corso.getSessioni().add(nuovaSessione);
+            showInfo("Successo", "Sessione creata con successo!");
+        }
+        
+    } catch (Exception e) {
+        showError("Errore", "Errore durante la creazione: " + e.getMessage());
+    }
+}
+
+
+
+    // NUOVO: Visualizza sessioni (non gestisce ricette)
+    private void visualizzaSessioni() {
+        try {
+            if (corsoSessioni.isEmpty()) {
+                showInfo("Nessuna Sessione", "Non ci sono sessioni da visualizzare per questo corso.");
+                return;
+            }
+
+            // Crea stage per visualizzazione
+            Stage visualizzaStage = new Stage();
+            visualizzaStage.initModality(Modality.APPLICATION_MODAL);
+            visualizzaStage.setTitle("👁️ Visualizza Sessioni del Corso");
+            visualizzaStage.setResizable(true);
+
+            VBox mainContainer = new VBox(20);
+            mainContainer.setPadding(new Insets(25));
+            mainContainer.setStyle("-fx-background-color: #f8f9fa;");
+
+            // Titolo
+            Label titleLabel = new Label("👁️ Sessioni del Corso");
+            titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 20));
+            titleLabel.setTextFill(Color.web("#FF6600"));
+
+            // Lista dettagliata delle sessioni
+            ListView<Sessione> listaDettagliata = new ListView<>(corsoSessioni);
+            listaDettagliata.setPrefHeight(400);
+            styleListView(listaDettagliata);
+
+            // Cell factory dettagliata
+            listaDettagliata.setCellFactory(listView -> new ListCell<Sessione>() {
+                @Override
+                protected void updateItem(Sessione sessione, boolean empty) {
+                    super.updateItem(sessione, empty);
+                    if (empty || sessione == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        VBox cellBox = new VBox(5);
+                        
+                        String tipo = sessione instanceof Online ? "🌐 ONLINE" : "🏢 IN PRESENZA";
+                        Label tipoLabel = new Label(tipo);
+                        tipoLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+                        tipoLabel.setTextFill(sessione instanceof Online ? Color.web("#3498db") : Color.web("#27ae60"));
+                        
+                        Label dataLabel = new Label("📅 " + 
+                            (sessione.getDataInizioSessione() != null ? 
+                            sessione.getDataInizioSessione().toLocalDate().toString() : "Data non specificata"));
+                        
+                        Label orarioLabel = new Label("⏰ " + 
+                            (sessione.getDataInizioSessione() != null ? 
+                            sessione.getDataInizioSessione().toLocalTime().toString() : "Orario non specificato") +
+                            " - " +
+                            (sessione.getDataFineSessione() != null ? 
+                            sessione.getDataFineSessione().toLocalTime().toString() : "Fine non specificata"));
+                        
+                        cellBox.getChildren().addAll(tipoLabel, dataLabel, orarioLabel);
+                        
+                        // Dettagli specifici per tipo
+                        if (sessione instanceof Online online) {
+                            Label piattaformaLabel = new Label("💻 Piattaforma: " + online.getPiattaformaStreaming());
+                            piattaformaLabel.setTextFill(Color.web("#666"));
+                            cellBox.getChildren().add(piattaformaLabel);
+                        } else if (sessione instanceof InPresenza inPresenza) {
+                            Label indirizzoLabel = new Label("📍 " + inPresenza.getVia() + ", " + inPresenza.getCitta());
+                            Label postiLabel = new Label("👥 Posti: " + inPresenza.getNumeroPosti());
+                            indirizzoLabel.setTextFill(Color.web("#666"));
+                            postiLabel.setTextFill(Color.web("#666"));
+                            cellBox.getChildren().addAll(indirizzoLabel, postiLabel);
+                        }
+                        
+                        setGraphic(cellBox);
+                        setText(null);
+                    }
+                }
+            });
+
+            // Statistiche
+            Label statsLabel = new Label("📊 Totale sessioni: " + corsoSessioni.size());
+            statsLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 12));
+            statsLabel.setTextFill(Color.web("#666"));
+
+            // Pulsante chiudi
+            Button chiudiBtn = createButton("✅ Chiudi", "#95a5a6");
+            chiudiBtn.setOnAction(e -> visualizzaStage.close());
+
+            HBox buttonBox = new HBox();
+            buttonBox.setAlignment(Pos.CENTER);
+            buttonBox.getChildren().add(chiudiBtn);
+
+            mainContainer.getChildren().addAll(titleLabel, listaDettagliata, statsLabel, buttonBox);
+
+            Scene scene = new Scene(mainContainer, 600, 500);
+            visualizzaStage.setScene(scene);
+            visualizzaStage.showAndWait();
+
         } catch (Exception ex) {
             ex.printStackTrace();
-            showError("Errore", "Errore durante la creazione della sessione: " + ex.getMessage());
+            showError("Errore", "Errore nella visualizzazione sessioni: " + ex.getMessage());
         }
+    }
+
+    // Genera date rosse (non disponibili)
+    private Set<LocalDate> generateDateRosse() {
+        Set<LocalDate> dateRosse = new HashSet<>();
+        LocalDate start = startDatePicker.getValue();
+        LocalDate end = endDatePicker.getValue();
+        
+        if (start != null && end != null) {
+            LocalDate current = start;
+            while (!current.isAfter(end)) {
+                // Domeniche non disponibili
+                if (current.getDayOfWeek().getValue() == 7) {
+                    dateRosse.add(current);
+                }
+                current = current.plusDays(1);
+            }
+        }
+        return dateRosse;
+    }
+
+    // Genera date arancioni (già occupate ma disponibili)
+    private Set<LocalDate> generateDateArancioni() {
+        Set<LocalDate> dateArancioni = new HashSet<>();
+        // Aggiungi date delle sessioni esistenti
+        for (Sessione s : corsoSessioni) {
+            if (s.getDataInizioSessione() != null) {
+                dateArancioni.add(s.getDataInizioSessione().toLocalDate());
+            }
+        }
+        return dateArancioni;
     }
 
     private HBox createButtonSection() {
@@ -459,10 +668,11 @@ public class CreaCorsoGUI {
         }
     }
 
-    private void eliminaSessione() {
+    private void rimuoviSessione() {
         Sessione selected = listaSessioni.getSelectionModel().getSelectedItem();
         if (selected != null) {
             corsoSessioni.remove(selected);
+            validateDatesForSessions(); // Aggiorna date arancioni
         }
     }
 
@@ -486,7 +696,6 @@ public class CreaCorsoGUI {
                 } catch (ValidationException ve) {
                     showError("Errore di validazione", ve.getMessage());
                 } catch (Exception ex) {
-                    // Controlla se è un errore del database
                     Throwable cause = ex.getCause();
                     if (cause instanceof SQLException) {
                         showError("Errore Database", "Problema con il database: " + cause.getMessage());
@@ -566,6 +775,13 @@ public class CreaCorsoGUI {
         endDatePicker.setValue(null);
         chefSelezionati.clear();
         corsoSessioni.clear();
+        
+        if (aggiungiSessioneBtn != null) {
+            aggiungiSessioneBtn.setDisable(true);
+        }
+        if (visualizzaSessioniBtn != null) {
+            visualizzaSessioniBtn.setDisable(true);
+        }
     }
 
     // Dialog di sistema

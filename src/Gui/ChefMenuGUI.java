@@ -202,28 +202,31 @@ private void apriCreaCorso() {
 
 private void apriVisualizzaRicette() {
     try {
-        // *** CORREZIONE: Aggiungi IngredienteDAO mancante ***
-        RicettaDAO ricettaDAO = new RicettaDAO();
-        UsaDAO usaDAO = new UsaDAO();
-        IngredienteDAO ingredienteDAO = new IngredienteDAO(); // AGGIUNTO!
-
-        // *** CORREZIONE: Passa tutti e 3 i DAO ***
+        // Crea servizi per ricette
+        dao.RicettaDAO ricettaDAO = new dao.RicettaDAO();
+        dao.UsaDAO usaDAO = new dao.UsaDAO();
+        dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
+        
         service.GestioneRicette gestioneRicette = new service.GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
-
-        VisualizzaRicetteController controller = new VisualizzaRicetteController(gestioneRicette);
-        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
-        gui.setController(controller, contentPane); 
-        contentPane.getChildren().clear();
-        contentPane.getChildren().add(gui.getRoot());
-
-        System.out.println("✅ Visualizza Ricette GUI caricata con successo");
-
+        
+        // USA il costruttore per visualizzazione generale (senza sessione)
+        VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(gestioneRicette);
+        
+        Stage ricetteStage = new Stage();
+        ricetteStage.initOwner((Stage) contentPane.getScene().getWindow());
+        ricetteStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        
+        ricetteGUI.show(ricetteStage);
+        
+        System.out.println("✅ Visualizza Ricette Generale caricata con successo");
+        
     } catch (Exception ex) {
         ex.printStackTrace();
         Alert alert = new Alert(Alert.AlertType.ERROR, "Errore aprendo le ricette: " + ex.getMessage(), ButtonType.OK);
         alert.showAndWait();
     }
 }
+
     private void eliminaAccount(Stage stage) {
         Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
         conferma.setHeaderText("Vuoi eliminare definitivamente il tuo account?");
