@@ -14,6 +14,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import model.*;
 import service.GestioneRicette;
+import service.GestioneCucina;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -26,6 +27,7 @@ public class CreaCorsoGUI {
     private GestioneCorsoController gestioneController;
     private GestioneRicette gestioneRicette;
     private GestioneSessioniController sessioniController;
+    private GestioneCucina gestioneCucina;
     
     // Componenti della form
     private TextField nomeField;
@@ -61,9 +63,16 @@ public class CreaCorsoGUI {
     }
     
     private void initializeServices() {
-        // Inizializzazione servizi aggiuntivi se necessario
-        this.gestioneRicette = null;
-        this.sessioniController = null;
+        // Inizializza i servizi necessari per le sessioni
+        try {
+            // Questi dovrebbero essere passati dal ChefMenuGUI o inizializzati qui
+            // Per ora li lascio null, ma dovrai collegarli ai tuoi DAO reali
+            this.gestioneRicette = null;
+            this.gestioneCucina = null;
+            this.sessioniController = null;
+        } catch (Exception e) {
+            System.err.println("Errore inizializzazione servizi: " + e.getMessage());
+        }
     }
 
     public VBox getRoot() {
@@ -287,14 +296,15 @@ public class CreaCorsoGUI {
         
         sessioniBox.getChildren().addAll(sessioniLabel, listaSessioni);
 
-        // Pulsanti sessioni
+        // Pulsanti sessioni con collegamento a CreaSessioniGUI
         VBox sessionButtonsBox = new VBox(10);
         sessionButtonsBox.setAlignment(Pos.CENTER);
         
         Button creaSessioneBtn = createButton("➕ Crea", "#27ae60");
         Button eliminaSessioneBtn = createButton("🗑️ Elimina", "#e74c3c");
 
-        creaSessioneBtn.setOnAction(e -> showInfo("Info", "Funzionalità sessioni in sviluppo"));
+        // COLLEGAMENTO PRINCIPALE - Quando clicchi "Crea" apre CreaSessioniGUI
+        creaSessioneBtn.setOnAction(e -> creaSessione());
         eliminaSessioneBtn.setOnAction(e -> eliminaSessione());
 
         sessionButtonsBox.getChildren().addAll(creaSessioneBtn, eliminaSessioneBtn);
@@ -302,6 +312,27 @@ public class CreaCorsoGUI {
         sessionContainer.getChildren().addAll(sessioniBox, sessionButtonsBox);
         section.getChildren().addAll(sectionTitle, sessionContainer);
         return section;
+    }
+
+    // METODO PRINCIPALE PER COLLEGARE CreaSessioniGUI
+    private void creaSessione() {
+        try {
+            // Crea CreaSessioniGUI con i servizi necessari
+            CreaSessioniGUI creaSessioniGUI = new CreaSessioniGUI(gestioneRicette, gestioneCucina);
+            
+            // Apre il dialog e aspetta il risultato
+            Sessione nuovaSessione = creaSessioniGUI.creaSessioneEmbedded();
+            
+            // Se è stata creata una sessione, aggiungila alla lista
+            if (nuovaSessione != null) {
+                corsoSessioni.add(nuovaSessione);
+                showInfo("Successo", "Sessione creata e aggiunta al corso!");
+            }
+            
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            showError("Errore", "Errore durante la creazione della sessione: " + ex.getMessage());
+        }
     }
 
     private HBox createButtonSection() {

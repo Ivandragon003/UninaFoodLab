@@ -1,4 +1,5 @@
 package Gui;
+
 import controller.VisualizzaRicetteController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,11 +24,13 @@ import model.InPresenza;
 import model.Ricetta;
 import service.GestioneCucina;
 import service.GestioneRicette;
+
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Set;
+import java.util.HashSet;
 
 public class CreaSessioniGUI {
     private Sessione sessioneCreata = null;
@@ -37,23 +40,33 @@ public class CreaSessioniGUI {
     private final GestioneRicette gestioneRicette;
     private final GestioneCucina gestioneCucina;
 
-    public CreaSessioniGUI(Set<LocalDate> rosse, Set<LocalDate> arancioni,
-                          GestioneRicette gestioneRicette, GestioneCucina gestioneCucina) {
-        this.dateConflittoRosse = rosse;
-        this.dateConflittoArancioni = arancioni;
+    // Costruttore per uso da CreaCorsoGUI
+    public CreaSessioniGUI(GestioneRicette gestioneRicette, GestioneCucina gestioneCucina) {
+        this.dateConflittoRosse = new HashSet<>();
+        this.dateConflittoArancioni = new HashSet<>();
         this.gestioneRicette = gestioneRicette;
         this.gestioneCucina = gestioneCucina;
     }
 
-    public Sessione showDialog(Stage owner) {
+    // Costruttore originale per compatibilità
+    public CreaSessioniGUI(Set<LocalDate> rosse, Set<LocalDate> arancioni,
+                          GestioneRicette gestioneRicette, GestioneCucina gestioneCucina) {
+        this.dateConflittoRosse = rosse != null ? rosse : new HashSet<>();
+        this.dateConflittoArancioni = arancioni != null ? arancioni : new HashSet<>();
+        this.gestioneRicette = gestioneRicette;
+        this.gestioneCucina = gestioneCucina;
+    }
+
+    // Metodo per uso embedded (restituisce la sessione creata)
+    public Sessione creaSessioneEmbedded() {
         Stage dialog = new Stage();
-        dialog.initOwner(owner);
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("✨ Nuova Sessione");
-
+        
         StackPane rootPane = new StackPane();
         rootPane.setPrefSize(520, 650);
 
+        // Sfondo gradient
         LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FF9966")), new Stop(0.5, Color.web("#FFB366")),
                 new Stop(1, Color.web("#FFCC99")));
@@ -67,18 +80,43 @@ public class CreaSessioniGUI {
         root.setPadding(new Insets(30));
         root.setStyle("-fx-background-color: transparent;");
 
+        // Titolo
         Label title = new Label("✨ Crea Nuova Sessione");
         title.setFont(Font.font("Inter", FontWeight.BOLD, 28));
         title.setTextFill(Color.WHITE);
         title.setEffect(new DropShadow(5, Color.web("#000000", 0.25)));
 
+        // Form card
+        VBox formCard = createFormCard();
+
+        ScrollPane scrollPane = new ScrollPane(formCard);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
+        root.getChildren().addAll(title, scrollPane);
+        rootPane.getChildren().addAll(background, root);
+
+        Scene scene = new Scene(rootPane, 520, 650);
+        scene.setFill(Color.TRANSPARENT);
+        dialog.setScene(scene);
+        dialog.showAndWait();
+
+        return sessioneCreata;
+    }
+
+    // Metodo originale showDialog per compatibilità
+    public Sessione showDialog(Stage owner) {
+        return creaSessioneEmbedded();
+    }
+
+    private VBox createFormCard() {
         VBox formCard = new VBox(22);
         formCard.setPadding(new Insets(30));
         formCard.setAlignment(Pos.TOP_CENTER);
         formCard.setStyle("-fx-background-color: white; -fx-background-radius: 25; -fx-border-radius: 25;");
         formCard.setEffect(new DropShadow(15, Color.web("#000000", 0.2)));
 
-        // Date Picker Inizio
+        // Data Inizio
         VBox dataInizioBox = new VBox(8);
         Label lblDataInizio = new Label("📅 Data Inizio");
         lblDataInizio.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 14));
@@ -87,7 +125,7 @@ public class CreaSessioniGUI {
         styleModernDatePicker(dataInizioPicker);
         dataInizioBox.getChildren().addAll(lblDataInizio, dataInizioPicker);
 
-        // Date Picker Fine
+        // Data Fine
         VBox dataFineBox = new VBox(4);
         Label lblDataFine = new Label("📅 Data Fine");
         lblDataFine.setFont(Font.font("Inter", FontWeight.SEMI_BOLD, 14));
@@ -105,6 +143,7 @@ public class CreaSessioniGUI {
         lockLabel.setTextFill(Color.GRAY);
         dataFineBox.getChildren().addAll(lblDataFine, dataFinePicker, lockLabel);
 
+        // Collega le date
         dataInizioPicker.setOnAction(e -> {
             LocalDate selectedDate = dataInizioPicker.getValue();
             if (selectedDate != null) dataFinePicker.setValue(selectedDate);
@@ -161,10 +200,10 @@ public class CreaSessioniGUI {
         presenzaBox.setVisible(false);
         presenzaBox.setManaged(false);
 
-        // Lista ricette
+        // Lista ricette (solo per In Presenza)
         ObservableList<HBox> ricetteList = FXCollections.observableArrayList();
         ListView<HBox> ricetteListView = new ListView<>();
-        ricetteListView.setPrefHeight(150);
+        ricetteListView.setPrefHeight(120);
         presenzaBox.getChildren().add(ricetteListView);
 
         // Pulsante gestione ricette
@@ -172,118 +211,11 @@ public class CreaSessioniGUI {
         presenzaBox.getChildren().add(gestisciRicetteBtn);
 
         gestisciRicetteBtn.setOnAction(e -> {
-            try {
-                // sessione temporanea (se non esiste ancora una InPresenza creata)
-                InPresenza tempSessione;
-                if (sessioneCreata instanceof InPresenza inPresenza) tempSessione = inPresenza;
-                else tempSessione = new InPresenza(LocalDateTime.now(), LocalDateTime.now().plusHours(1),
-                        "ViaTemp", "CittaTemp", 1, 0);
-
-                // *** CORREZIONE PRINCIPALE: uso diretto di gestioneRicette ***
-                java.util.List<Ricetta> tutteRicette = null;
-                try {
-                    tutteRicette = gestioneRicette.getAllRicette(); // Metodo corretto esistente
-                } catch (Exception exc) {
-                    exc.printStackTrace();
-                    Throwable sqlCause = findCause(exc, java.sql.SQLException.class);
-                    if (sqlCause != null) {
-                        showAlert("Errore DB/Service", buildSpecificMessage((Exception) sqlCause,
-                                "Errore durante il recupero delle ricette dal database"));
-                        return;
-                    }
-                    Throwable iaeCause = findCause(exc, IllegalArgumentException.class);
-                    if (iaeCause != null) {
-                        showAlert("Errore Model", buildSpecificMessage((Exception) iaeCause,
-                                "Errore di validazione sulle ricette"));
-                        return;
-                    }
-                    showAlert("Errore Controller/Generico", buildSpecificMessage(exc,
-                            "Errore durante il recupero delle ricette"));
-                    return;
-                }
-
-                if (tutteRicette == null) tutteRicette = new java.util.ArrayList<>();
-
-                // Dialog per visualizzare e selezionare le ricette (multi-select)
-                Stage selectionStage = new Stage();
-                selectionStage.initOwner(dialog);
-                selectionStage.initModality(Modality.APPLICATION_MODAL);
-                selectionStage.setTitle("Seleziona Ricette");
-
-                VBox selectionBox = new VBox(12);
-                selectionBox.setPadding(new Insets(16));
-                selectionBox.setAlignment(Pos.TOP_CENTER);
-
-                Label selTitle = new Label("Seleziona le ricette da associare alla sessione");
-                selTitle.setFont(Font.font("Inter", FontWeight.BOLD, 14));
-
-                ListView<Ricetta> allRicetteView = new ListView<>();
-                allRicetteView.getItems().addAll(tutteRicette);
-                allRicetteView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-                allRicetteView.setPrefHeight(300);
-
-                // pre-seleziona quelle già presenti nella tempSessione
-                if (tempSessione.getRicette() != null && !tempSessione.getRicette().isEmpty()) {
-                    for (Ricetta r : tempSessione.getRicette()) {
-                        // require equals/hashCode correttamente implementati in Ricetta
-                        allRicetteView.getSelectionModel().select(r);
-                    }
-                }
-
-                Button confermaBtn = createModernButton("✓ Conferma", "#4CAF50", "#66BB6A");
-                Button annullaBtn2 = createModernButton("✗ Annulla", "#999999", "#BBBBBB");
-                HBox btns = new HBox(10, annullaBtn2, confermaBtn);
-                btns.setAlignment(Pos.CENTER);
-
-                confermaBtn.setOnAction(ev -> {
-                    try {
-                        java.util.List<Ricetta> selezionate = new java.util.ArrayList<>(allRicetteView.getSelectionModel().getSelectedItems());
-
-                        // aggiorna il set della sessione temporanea
-                        tempSessione.getRicette().clear();
-                        tempSessione.getRicette().addAll(selezionate);
-
-                        // aggiorna la ListView visiva (ricetteListView) con HBox + remove
-                        ricetteListView.getItems().clear();
-                        for (Ricetta r : tempSessione.getRicette()) {
-                            HBox item = new HBox(10);
-                            Label nome = new Label(r.getNome());
-                            Button removeBtn = new Button("❌");
-                            removeBtn.setOnAction(remEv -> {
-                                try {
-                                    tempSessione.getRicette().remove(r);
-                                    ricetteListView.getItems().remove(item);
-                                } catch (Exception exRem) {
-                                    exRem.printStackTrace();
-                                    showAlert("Errore Controller/Model", buildSpecificMessage(exRem,
-                                            "Impossibile rimuovere la ricetta dalla sessione"));
-                                }
-                            });
-                            item.getChildren().addAll(nome, removeBtn);
-                            ricetteListView.getItems().add(item);
-                        }
-
-                        sessioneCreata = tempSessione;
-                        selectionStage.close();
-                    } catch (Exception exSel) {
-                        exSel.printStackTrace();
-                        showAlert("Errore Selezione", buildSpecificMessage(exSel, "Errore durante la selezione delle ricette"));
-                    }
-                });
-
-                annullaBtn2.setOnAction(ev -> selectionStage.close());
-
-                selectionBox.getChildren().addAll(selTitle, allRicetteView, btns);
-                Scene selScene = new Scene(selectionBox, 420, 420);
-                selectionStage.setScene(selScene);
-                selectionStage.showAndWait();
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                showAlert("Errore", buildSpecificMessage(ex, "Errore imprevisto durante la gestione/visualizzazione delle ricette"));
-            }
+            // Gestione ricette semplificata per ora
+            showAlert("Info", "Gestione ricette disponibile dopo la creazione della sessione");
         });
 
+        // Gestione visibilità campi
         tipoCombo.setOnAction(e -> {
             boolean isOnline = tipoCombo.getValue().equals("Online");
             onlineBox.setVisible(isOnline);
@@ -302,6 +234,7 @@ public class CreaSessioniGUI {
         annullaBtn.setTextFill(Color.web("#666666"));
         btnBox.getChildren().addAll(annullaBtn, salvaBtn);
 
+        // Azione salva
         salvaBtn.setOnAction(e -> {
             try {
                 LocalDate dataInizio = dataInizioPicker.getValue();
@@ -344,70 +277,30 @@ public class CreaSessioniGUI {
                         throw new IllegalArgumentException("CAP non valido. Inserisci un intero.");
                     }
 
-                    InPresenza definitiva = new InPresenza(inizio, fine, via, citta, posti, cap);
-                    if (sessioneCreata instanceof InPresenza temp) {
-                        // copia le ricette già selezionate nella temporanea (se ci sono)
-                        if (temp.getRicette() != null) {
-                            definitiva.getRicette().addAll(temp.getRicette());
-                        }
-                    }
-                    sessioneCreata = definitiva;
+                    sessioneCreata = new InPresenza(inizio, fine, via, citta, posti, cap);
                 }
 
-                dialog.close();
+                // Chiudi il dialog
+                ((Stage) salvaBtn.getScene().getWindow()).close();
+
             } catch (Exception ex) {
-                // distinzione precisa della provenienza
                 ex.printStackTrace();
-                if (ex instanceof SQLException) {
-                    showAlert("Errore DB/Service", buildSpecificMessage(ex, "Problema di accesso ai dati o servizio"));
-                } else if (ex instanceof IllegalArgumentException) {
-                    showAlert("Errore Model/Validazione", buildSpecificMessage(ex, "Dati non validi: correggi i campi indicati"));
-                } else {
-                    // se lo stack trace contiene classi del package "controller" proviamo a segnalarlo come Controller
-                    boolean fromController = false;
-                    StackTraceElement[] st = ex.getStackTrace();
-                    if (st != null && st.length > 0) {
-                        for (StackTraceElement ste : st) {
-                            String cn = ste.getClassName().toLowerCase();
-                            if (cn.contains("controller") || cn.contains("service")) {
-                                fromController = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (fromController) {
-                        showAlert("Errore Controller", buildSpecificMessage(ex, "Errore dal layer controller/servizio"));
-                    } else {
-                        showAlert("Errore Generico", buildSpecificMessage(ex, "Errore imprevisto"));
-                    }
-                }
+                showAlert("Errore", ex.getMessage());
             }
         });
 
         annullaBtn.setOnAction(e -> {
             sessioneCreata = null;
-            dialog.close();
+            ((Stage) annullaBtn.getScene().getWindow()).close();
         });
 
         formCard.getChildren().addAll(dataInizioBox, dataFineBox, orarioInizioContainer, orarioFineContainer, sep1,
                 tipoBox, onlineBox, presenzaBox, btnBox);
 
-        ScrollPane scrollPane = new ScrollPane(formCard);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-
-        root.getChildren().addAll(title, scrollPane);
-        rootPane.getChildren().addAll(background, root);
-
-        Scene scene = new Scene(rootPane, 520, 650);
-        scene.setFill(Color.TRANSPARENT);
-        dialog.setScene(scene);
-        dialog.showAndWait();
-
-        return sessioneCreata;
+        return formCard;
     }
 
-    // ---- Metodi di supporto ----
+    // Metodi helper esistenti
     private void presenzaBoxSetup(TextField via, TextField citta, TextField posti, TextField cap) {
         via.setPrefHeight(45);
         citta.setPrefHeight(45);
@@ -537,77 +430,11 @@ public class CreaSessioniGUI {
         return btn;
     }
 
-    /**
-     * Costruisce un messaggio più specifico, indicando tipologia e messaggio originale.
-     */
-    private String buildSpecificMessage(Exception ex, String prefix) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(prefix).append("\n\n");
-
-        String origin = "Origine: Sconosciuta";
-        if (ex instanceof SQLException) origin = "Origine: DB/Service";
-        else if (ex instanceof IllegalArgumentException) origin = "Origine: Model (validazione)";
-        else {
-            // prova a dedurre dall'stacktrace
-            StackTraceElement[] st = ex.getStackTrace();
-            if (st != null && st.length > 0) {
-                String cn = st[0].getClassName().toLowerCase();
-                if (cn.contains("controller") || cn.contains("service")) origin = "Origine: Controller/Service";
-                else if (cn.contains("dao") || cn.contains("repository")) origin = "Origine: DB/DAO";
-            }
-        }
-        sb.append(origin).append("\n\n");
-
-        String msg = ex.getMessage();
-        if (msg == null || msg.isBlank()) msg = ex.toString();
-        sb.append("Dettaglio: ").append(msg);
-
-        return sb.toString();
-    }
-
-    /**
-     * Cerca ricorsivamente nella chain delle cause un'eccezione di tipo `cls`.
-     * Restituisce la Throwable trovata o null se non presente.
-     */
-    private Throwable findCause(Throwable t, Class<? extends Throwable> cls) {
-        Throwable cur = t;
-        while (cur != null) {
-            if (cls.isInstance(cur)) return cur;
-            cur = cur.getCause();
-        }
-        return null;
-    }
-
     private void showAlert(String title, String msg) {
-        // overlay-like alert (come da versione originale)
-        VBox overlay = new VBox();
-        overlay.setAlignment(Pos.CENTER);
-        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
-        overlay.setPrefSize(root.getWidth(), root.getHeight());
-
-        VBox dialogBox = new VBox(20);
-        dialogBox.setAlignment(Pos.CENTER);
-        dialogBox.setPadding(new Insets(30));
-        dialogBox.setMaxWidth(350);
-        dialogBox.setStyle("-fx-background-color: white; -fx-background-radius: 20;");
-        dialogBox.setEffect(new DropShadow(15, Color.web("#000000", 0.3)));
-
-        Label titleLabel = new Label("⚠️ " + title);
-        titleLabel.setFont(Font.font("Inter", FontWeight.BOLD, 20));
-        titleLabel.setTextFill(Color.web("#FF6600"));
-
-        Label messageLabel = new Label(msg);
-        messageLabel.setWrapText(true);
-        messageLabel.setFont(Font.font("Inter", 15));
-        messageLabel.setTextFill(Color.web("#333333"));
-        messageLabel.setAlignment(Pos.CENTER);
-
-        Button okBtn = createModernButton("OK", "#FF6600", "#FF8533");
-        okBtn.setPrefWidth(120);
-        okBtn.setOnAction(e -> root.getChildren().remove(overlay));
-
-        dialogBox.getChildren().addAll(titleLabel, messageLabel, okBtn);
-        overlay.getChildren().add(dialogBox);
-        root.getChildren().add(overlay);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
 }
