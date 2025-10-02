@@ -24,8 +24,14 @@ public class GestioneCorsoController {
         this.chefService = chefService;
     }
 
-    public void setChefLoggato(Chef chef) { this.chefLoggato = chef; }
-    public Chef getChefLoggato() { return chefLoggato; }
+    public void setChefLoggato(Chef chef) { 
+    	this.chefLoggato = chef; 
+    }
+    
+    public Chef getChefLoggato() { 
+    	return chefLoggato; 
+    }
+    
 
     public List<Chef> getTuttiGliChef() throws SQLException {
         return chefService.getAll();
@@ -72,5 +78,10 @@ public class GestioneCorsoController {
 
     public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
         return corsiService.getCorsoCompleto(idCorso);
+    }
+    
+    public CorsoCucina getDettagliCorso(CorsoCucina corso) throws SQLException {
+        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
+        return corsiService.getCorsoCompleto(corso.getIdCorso());
     }
 }

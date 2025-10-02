@@ -9,7 +9,7 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;  
+import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -52,6 +52,9 @@ public class VisualizzaCorsiGUI {
     private ProgressIndicator progressIndicator;
     private final PauseTransition filterPause = new PauseTransition(Duration.millis(350));
 
+    private double stageXOffset = 0;
+    private double stageYOffset = 0;
+
     public void setControllers(VisualizzaCorsiController visualizzaController,
                                GestioneCorsoController gestioneCorsoController, StackPane menuRoot) {
         this.visualizzaController = visualizzaController;
@@ -62,7 +65,6 @@ public class VisualizzaCorsiGUI {
     public StackPane getRoot() {
         StackPane root = new StackPane();
 
-        // background gradient
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#FF9966")), new Stop(1, Color.web("#FFCC99")));
         Region background = new Region();
@@ -71,7 +73,6 @@ public class VisualizzaCorsiGUI {
         background.prefHeightProperty().bind(root.heightProperty());
         root.getChildren().add(background);
 
-        // card principale
         VBox card = new VBox(16);
         card.setAlignment(Pos.TOP_CENTER);
         card.setPadding(new Insets(20));
@@ -84,10 +85,10 @@ public class VisualizzaCorsiGUI {
         shadow.setColor(Color.web("#000000", 0.12));
         shadow.setOffsetY(4);
         card.setEffect(shadow);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-radius: 16; -fx-border-color: #FF9966; -fx-border-width: 2;");
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-radius: 16; " +
+                "-fx-border-color: #FF9966; -fx-border-width: 2;");
         root.getChildren().add(card);
 
-        // header
         VBox headerSection = new VBox(10);
         headerSection.setAlignment(Pos.CENTER);
         Label title = new Label("📚 Lista dei Corsi");
@@ -103,13 +104,11 @@ public class VisualizzaCorsiGUI {
         headerSection.getChildren().addAll(title, filters);
         card.getChildren().add(headerSection);
 
-        // table
         TableView<CorsoCucina> table = createOptimizedTable();
         table.prefHeightProperty().bind(card.heightProperty().multiply(0.55));
         table.prefWidthProperty().bind(card.widthProperty().multiply(0.95));
         VBox.setVgrow(table, Priority.ALWAYS);
 
-        // progress indicator
         progressIndicator = new ProgressIndicator();
         progressIndicator.setPrefSize(40, 40);
         progressIndicator.setStyle("-fx-accent: #FF6600;");
@@ -119,7 +118,6 @@ public class VisualizzaCorsiGUI {
         card.getChildren().add(tableContainer);
         VBox.setVgrow(tableContainer, Priority.ALWAYS);
 
-        // buttons
         VBox buttonSection = new VBox(12);
         buttonSection.setAlignment(Pos.CENTER);
         HBox actionButtons = new HBox(12);
@@ -138,19 +136,16 @@ public class VisualizzaCorsiGUI {
             backBtn.setManaged(false);
         }
 
-        // dati e filtri
         filteredCorsi = new FilteredList<>(corsiData, p -> true);
         SortedList<CorsoCucina> sorted = new SortedList<>(filteredCorsi);
         sorted.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sorted);
 
-        // init behavior
         loadDataAsync();
         setupFilters(nomeField, argomentoField, mostraTuttiBtn, mieiBtn);
         setupTableDoubleClick(table, root);
         setupBackButton(backBtn, root);
 
-        // window buttons: aggiungi solo se NON embedded (se sei dentro il menu, i pulsanti sono già gestiti dal menu)
         if (!embedded) {
             HBox windowButtons = createWindowButtons(root);
             root.getChildren().add(windowButtons);
@@ -175,7 +170,8 @@ public class VisualizzaCorsiGUI {
                 long t0 = System.currentTimeMillis();
                 List<CorsoCucina> list = visualizzaController.getTuttiICorsi();
                 long t1 = System.currentTimeMillis();
-                System.out.println("[VisualizzaCorsi] Caricati corsi in ms: " + (t1 - t0) + " count=" + (list == null ? 0 : list.size()));
+                System.out.println("[VisualizzaCorsi] Caricati " + (list == null ? 0 : list.size()) +
+                        " corsi in " + (t1 - t0) + " ms");
                 return list == null ? Collections.emptyList() : list;
             }
 
@@ -192,9 +188,8 @@ public class VisualizzaCorsiGUI {
             protected void failed() {
                 Platform.runLater(() -> {
                     progressIndicator.setVisible(false);
-                    new Alert(Alert.AlertType.ERROR,
-                            "Errore caricando corsi: " + getException().getMessage(),
-                            ButtonType.OK).showAndWait();
+                    showAlert(Alert.AlertType.ERROR, "Errore",
+                            "Errore caricando corsi: " + getException().getMessage());
                 });
             }
         };
@@ -211,33 +206,33 @@ public class VisualizzaCorsiGUI {
         field.setPrefHeight(35);
         field.setPrefWidth(190);
         field.setFont(Font.font("Roboto", 13));
-        field.setStyle("-fx-background-color: #f8f9fa;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-padding: 0 12 0 12;");
+        field.setStyle("-fx-background-color: #f8f9fa;" +
+                "-fx-background-radius: 18;" +
+                "-fx-border-radius: 18;" +
+                "-fx-border-color: #dee2e6;" +
+                "-fx-border-width: 1;" +
+                "-fx-padding: 0 12 0 12;");
 
-        field.setOnMouseEntered(e -> field.setStyle("-fx-background-color: #e9ecef;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #FF9966;"
-                + "-fx-border-width: 2;"
-                + "-fx-padding: 0 12 0 12;"));
+        field.setOnMouseEntered(e -> field.setStyle("-fx-background-color: #e9ecef;" +
+                "-fx-background-radius: 18;" +
+                "-fx-border-radius: 18;" +
+                "-fx-border-color: #FF9966;" +
+                "-fx-border-width: 2;" +
+                "-fx-padding: 0 12 0 12;"));
 
-        field.setOnMouseExited(e -> field.setStyle("-fx-background-color: #f8f9fa;"
-                + "-fx-background-radius: 18;"
-                + "-fx-border-radius: 18;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-padding: 0 12 0 12;"));
+        field.setOnMouseExited(e -> field.setStyle("-fx-background-color: #f8f9fa;" +
+                "-fx-background-radius: 18;" +
+                "-fx-border-radius: 18;" +
+                "-fx-border-color: #dee2e6;" +
+                "-fx-border-width: 1;" +
+                "-fx-padding: 0 12 0 12;"));
 
         return field;
     }
 
     private TableView<CorsoCucina> createOptimizedTable() {
         TableView<CorsoCucina> table = new TableView<>();
-
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setPrefHeight(Region.USE_COMPUTED_SIZE);
         table.setMaxHeight(Double.MAX_VALUE);
 
@@ -253,33 +248,31 @@ public class VisualizzaCorsiGUI {
             return row;
         });
 
-        table.setStyle("-fx-background-color: white;"
-                + "-fx-background-radius: 12;"
-                + "-fx-border-radius: 12;"
-                + "-fx-border-color: #dee2e6;"
-                + "-fx-border-width: 1;"
-                + "-fx-table-header-border-color: #FF9966;");
+        table.setStyle("-fx-background-color: white;" +
+                "-fx-background-radius: 12;" +
+                "-fx-border-radius: 12;" +
+                "-fx-border-color: #dee2e6;" +
+                "-fx-border-width: 1;" +
+                "-fx-table-header-border-color: #FF9966;");
 
-        // Colonne
         TableColumn<CorsoCucina, Integer> idCol = new TableColumn<>("ID");
         idCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getIdCorso()).asObject());
         idCol.setPrefWidth(60);
         idCol.setMinWidth(50);
         idCol.setMaxWidth(70);
         idCol.setResizable(false);
-        idCol.setSortable(true);
 
         TableColumn<CorsoCucina, String> nomeCol = new TableColumn<>("📚 Nome Corso");
-        nomeCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getNomeCorso() != null ? c.getValue().getNomeCorso() : ""));
+        nomeCol.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getNomeCorso() != null ? c.getValue().getNomeCorso() : ""));
         nomeCol.setPrefWidth(200);
         nomeCol.setMinWidth(150);
-        nomeCol.setSortable(true);
 
         TableColumn<CorsoCucina, String> argomentoCol = new TableColumn<>("📖 Argomento");
-        argomentoCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getArgomento() != null ? c.getValue().getArgomento() : ""));
+        argomentoCol.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getArgomento() != null ? c.getValue().getArgomento() : ""));
         argomentoCol.setPrefWidth(130);
         argomentoCol.setMinWidth(100);
-        argomentoCol.setSortable(true);
 
         TableColumn<CorsoCucina, Double> prezzoCol = new TableColumn<>("💰 Prezzo");
         prezzoCol.setCellValueFactory(c -> new SimpleDoubleProperty(c.getValue().getPrezzo()).asObject());
@@ -287,34 +280,27 @@ public class VisualizzaCorsiGUI {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("€%.0f", item));
-                }
+                setText(empty || item == null ? null : String.format("€%.0f", item));
             }
         });
         prezzoCol.setPrefWidth(90);
         prezzoCol.setMinWidth(80);
-        prezzoCol.setSortable(true);
 
         TableColumn<CorsoCucina, Integer> sessioniCol = new TableColumn<>("⏰ Sessioni");
         sessioniCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getNumeroSessioni()).asObject());
         sessioniCol.setPrefWidth(90);
         sessioniCol.setMinWidth(80);
-        sessioniCol.setSortable(true);
 
         TableColumn<CorsoCucina, String> freqCol = new TableColumn<>("📅 Frequenza");
-        freqCol.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getFrequenzaCorso() != null ? c.getValue().getFrequenzaCorso().toString() : ""));
+        freqCol.setCellValueFactory(c -> new SimpleStringProperty(
+                c.getValue().getFrequenzaCorso() != null ? c.getValue().getFrequenzaCorso().toString() : ""));
         freqCol.setPrefWidth(100);
         freqCol.setMinWidth(90);
-        freqCol.setSortable(true);
 
         TableColumn<CorsoCucina, Integer> postiCol = new TableColumn<>("🪑 Posti");
         postiCol.setCellValueFactory(c -> new SimpleIntegerProperty(c.getValue().getNumeroPosti()).asObject());
         postiCol.setPrefWidth(80);
         postiCol.setMinWidth(70);
-        postiCol.setSortable(true);
 
         TableColumn<CorsoCucina, String> inizioCol = new TableColumn<>("🕑 Inizio");
         inizioCol.setCellValueFactory(c -> new SimpleStringProperty(
@@ -322,7 +308,6 @@ public class VisualizzaCorsiGUI {
                         c.getValue().getDataInizioCorso().toString().substring(0, 10) : ""));
         inizioCol.setPrefWidth(100);
         inizioCol.setMinWidth(90);
-        inizioCol.setSortable(true);
 
         TableColumn<CorsoCucina, String> fineCol = new TableColumn<>("🏁 Fine");
         fineCol.setCellValueFactory(c -> new SimpleStringProperty(
@@ -330,10 +315,8 @@ public class VisualizzaCorsiGUI {
                         c.getValue().getDataFineCorso().toString().substring(0, 10) : ""));
         fineCol.setPrefWidth(100);
         fineCol.setMinWidth(90);
-        fineCol.setSortable(true);
 
         table.getColumns().addAll(idCol, nomeCol, argomentoCol, prezzoCol, sessioniCol, freqCol, postiCol, inizioCol, fineCol);
-
         table.getSortOrder().add(nomeCol);
 
         table.widthProperty().addListener((obs, oldWidth, newWidth) -> {
@@ -361,28 +344,29 @@ public class VisualizzaCorsiGUI {
         button.setPrefSize(150, 40);
         button.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
         button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
-                + "-fx-border-color: transparent;" + "-fx-border-width: 0;");
+        button.setStyle("-fx-background-color: " + baseColor + ";" +
+                "-fx-background-radius: 20;" +
+                "-fx-cursor: hand;" +
+                "-fx-border-color: transparent;" +
+                "-fx-border-width: 0;");
 
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(6);
-        shadow.setColor(Color.web("#000000", 0.15));
+        DropShadow shadow = new DropShadow(6, Color.web("#000000", 0.15));
         shadow.setOffsetY(2);
         button.setEffect(shadow);
 
         button.setOnMouseEntered(e -> {
-            button.setStyle("-fx-background-color: " + hoverColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
-                    + "-fx-border-color: transparent;" + "-fx-border-width: 0;");
-            DropShadow hoverShadow = new DropShadow();
-            hoverShadow.setRadius(8);
-            hoverShadow.setColor(Color.web("#000000", 0.25));
+            button.setStyle("-fx-background-color: " + hoverColor + ";" +
+                    "-fx-background-radius: 20;" +
+                    "-fx-cursor: hand;");
+            DropShadow hoverShadow = new DropShadow(8, Color.web("#000000", 0.25));
             hoverShadow.setOffsetY(3);
             button.setEffect(hoverShadow);
         });
 
         button.setOnMouseExited(e -> {
-            button.setStyle("-fx-background-color: " + baseColor + ";" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
-                    + "-fx-border-color: transparent;" + "-fx-border-width: 0;");
+            button.setStyle("-fx-background-color: " + baseColor + ";" +
+                    "-fx-background-radius: 20;" +
+                    "-fx-cursor: hand;");
             button.setEffect(shadow);
         });
 
@@ -433,85 +417,38 @@ public class VisualizzaCorsiGUI {
             row.setOnMouseClicked(event -> {
                 if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2 && (!row.isEmpty())) {
                     CorsoCucina selected = row.getItem();
-                    
+
                     Task<CorsoCucina> loadDetailsTask = new Task<>() {
                         @Override
                         protected CorsoCucina call() throws Exception {
-                            if (gestioneCorsoController == null) return selected;
-                            return gestioneCorsoController.getCorsoCompleto(selected.getIdCorso());
+                            return gestioneCorsoController != null ?
+                                    gestioneCorsoController.getCorsoCompleto(selected.getIdCorso()) : selected;
                         }
-                        
+
                         @Override
                         protected void succeeded() {
                             Platform.runLater(() -> {
                                 try {
                                     CorsoCucina dettagli = getValue();
-                                    DettagliCorsoGUI detGui = new DettagliCorsoGUI();
-                                    detGui.setController(gestioneCorsoController);
-                                    detGui.setCorso(dettagli != null ? dettagli : selected);
-                                    
-                                    ScrollPane dettagliRoot = detGui.getRoot();
-                                    
-                                    Stage detailsStage = new Stage();
-                                    detailsStage.initStyle(StageStyle.UNDECORATED);
-                                    detailsStage.setTitle("Dettagli Corso");
-                                    
-                                    // StackPane principale con gradient background
-                                    StackPane mainPane = new StackPane();
-                                    mainPane.setPrefSize(650, 750);
-                                    
-                                    LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                                            new Stop(0, Color.web("#FF9966")), new Stop(1, Color.web("#FFCC99")));
-                                    Region background = new Region();
-                                    background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-                                    background.prefWidthProperty().bind(mainPane.widthProperty());
-                                    background.prefHeightProperty().bind(mainPane.heightProperty());
-                                    
-                                    mainPane.getChildren().add(background);
-                                    mainPane.getChildren().add(dettagliRoot);
-                                    
-                                    // Window buttons
-                                    HBox winBtn = createWindowButtonsForStage(detailsStage);
-                                    mainPane.getChildren().add(winBtn);
-                                    StackPane.setAlignment(winBtn, Pos.TOP_RIGHT);
-                                    StackPane.setMargin(winBtn, new Insets(10));
-                                    
-                                    Scene scene = new Scene(mainPane);
-                                    scene.setFill(Color.TRANSPARENT);
-                                    detailsStage.setScene(scene);
-                                    
-                                    Stage owner = getStage(root);
-                                    if (owner != null)
-                                        detailsStage.initOwner(owner);
-                                    
-                                    makeDraggableStage(detailsStage, mainPane);
-                                    
-                                    detailsStage.show();
-                                    
+                                    apriDettagliCorso(dettagli != null ? dettagli : selected, root);
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
-                                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                                    alert.setTitle("Errore");
-                                    alert.setHeaderText("Errore aprendo i dettagli");
-                                    alert.setContentText(ex.getMessage());
-                                    alert.showAndWait();
+                                    showAlert(Alert.AlertType.ERROR, "Errore",
+                                            "Errore aprendo i dettagli: " + ex.getMessage());
                                 }
                             });
                         }
-                        
+
                         @Override
                         protected void failed() {
                             Platform.runLater(() -> {
                                 getException().printStackTrace();
-                                Alert alert = new Alert(Alert.AlertType.ERROR);
-                                alert.setTitle("Errore");
-                                alert.setHeaderText("Errore caricando dettagli");
-                                alert.setContentText(getException().getMessage());
-                                alert.showAndWait();
+                                showAlert(Alert.AlertType.ERROR, "Errore",
+                                        "Errore caricando dettagli: " + getException().getMessage());
                             });
                         }
                     };
-                    
+
                     Thread t = new Thread(loadDetailsTask, "LoadDettagliThread");
                     t.setDaemon(true);
                     t.start();
@@ -521,18 +458,55 @@ public class VisualizzaCorsiGUI {
         });
     }
 
+    private void apriDettagliCorso(CorsoCucina corso, StackPane root) {
+        DettagliCorsoGUI detGui = new DettagliCorsoGUI();
+        detGui.setController(gestioneCorsoController);
+        detGui.setCorso(corso);
+
+        ScrollPane dettagliRoot = detGui.getRoot();
+
+        Stage detailsStage = new Stage();
+        detailsStage.initStyle(StageStyle.UNDECORATED);
+        detailsStage.setTitle("Dettagli Corso - " + (corso.getNomeCorso() != null ? corso.getNomeCorso() : ""));
+
+        StackPane mainPane = new StackPane();
+        mainPane.setPrefSize(900, 750);
+
+        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web("#FF9966")), new Stop(1, Color.web("#FFCC99")));
+        Region background = new Region();
+        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
+        background.prefWidthProperty().bind(mainPane.widthProperty());
+        background.prefHeightProperty().bind(mainPane.heightProperty());
+
+        mainPane.getChildren().add(background);
+        mainPane.getChildren().add(dettagliRoot);
+
+        HBox winBtn = createWindowButtonsForStage(detailsStage);
+        mainPane.getChildren().add(winBtn);
+        StackPane.setAlignment(winBtn, Pos.TOP_RIGHT);
+        StackPane.setMargin(winBtn, new Insets(10));
+
+        Scene scene = new Scene(mainPane);
+        scene.setFill(Color.TRANSPARENT);
+        detailsStage.setScene(scene);
+
+        Stage owner = getStage(root);
+        if (owner != null) {
+            detailsStage.initOwner(owner);
+        }
+
+        makeDraggableStage(detailsStage, mainPane);
+        detailsStage.show();
+    }
+
     private void setupBackButton(Button backBtn, StackPane root) {
         if (this.menuRoot == null) {
             backBtn.setOnAction(e -> {
                 Stage stage = getStage(root);
-                if (stage != null && stage.getScene() != null) {
-                    stage.getScene().setRoot(menuRoot);
-                } else {
-                    root.getChildren().setAll(menuRoot);
+                if (stage != null) {
+                    stage.close();
                 }
-            });
-        } else {
-            backBtn.setOnAction(e -> {
             });
         }
     }
@@ -547,8 +521,9 @@ public class VisualizzaCorsiGUI {
             btn.setPrefSize(32, 32);
             btn.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
             btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7);" + "-fx-background-radius: 16;" + "-fx-cursor: hand;"
-                    + "-fx-border-color: transparent;");
+            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7);" +
+                    "-fx-background-radius: 16;" +
+                    "-fx-cursor: hand;");
             btn.setFocusTraversable(false);
         }
 
@@ -581,8 +556,9 @@ public class VisualizzaCorsiGUI {
             btn.setPrefSize(32, 32);
             btn.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
             btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7);" + "-fx-background-radius: 16;" + "-fx-cursor: hand;"
-                    + "-fx-border-color: transparent;");
+            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7);" +
+                    "-fx-background-radius: 16;" +
+                    "-fx-cursor: hand;");
             btn.setFocusTraversable(false);
         }
 
@@ -633,22 +609,26 @@ public class VisualizzaCorsiGUI {
         if (node == null) return null;
         Scene s = node.getScene();
         if (s == null) return null;
-        if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
-        return null;
+        return (s.getWindow() instanceof Stage) ? (Stage) s.getWindow() : null;
     }
-    
-    private double stageXOffset = 0;
-    private double stageYOffset = 0;
 
     private void makeDraggableStage(Stage stage, Node dragArea) {
         dragArea.setOnMousePressed(event -> {
             stageXOffset = event.getSceneX();
             stageYOffset = event.getSceneY();
         });
-        
+
         dragArea.setOnMouseDragged(event -> {
             stage.setX(event.getScreenX() - stageXOffset);
             stage.setY(event.getScreenY() - stageYOffset);
         });
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

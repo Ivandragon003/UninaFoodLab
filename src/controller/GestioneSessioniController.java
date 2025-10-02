@@ -108,7 +108,6 @@ public class GestioneSessioniController {
         Stage stage = new Stage();
         gui.show(stage);
 
-        // bottone per creare nuova ricetta direttamente legata alla sessione
         Stage creaStage = new Stage();
         CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicetteService, sessione, gestioneCucinaService);
         creaGUI.start(creaStage);
