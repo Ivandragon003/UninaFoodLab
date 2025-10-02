@@ -23,12 +23,10 @@ public class GestioneRicette {
         this.ingredienteDAO = ingredienteDAO;
     }
 
-    // Creazione ricetta con ingredienti
     public void creaRicetta(Ricetta r) throws SQLException {
         ricettaDAO.save(r);
         for (Map.Entry<Ingrediente, Double> entry : r.getIngredienti().entrySet()) {
             Ingrediente ingr = entry.getKey();
-            // salvo nel DB solo se non esiste già (per nome)
             if (!ingredienteDAO.findByNome(ingr.getNome()).isPresent()) {
                 ingredienteDAO.save(ingr);
             }
@@ -40,6 +38,7 @@ public class GestioneRicette {
     public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
         ricettaDAO.update(id, r);
     }
+
     public void aggiungiIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {
         if (r.getIngredienti().containsKey(i)) {
             throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
@@ -61,7 +60,6 @@ public class GestioneRicette {
         usaDAO.updateQuantita(usa);
     }
 
-    // Rimuovi ingrediente da ricetta
     public void rimuoviIngrediente(Ricetta r, Ingrediente i) throws SQLException {
         if (r.getIngredienti().remove(i) != null) {
             Usa usa = new Usa(r, i, 0);
@@ -75,18 +73,15 @@ public class GestioneRicette {
         return ricettaDAO.getAll();
     }
 
-    // Lettura di tutti gli ingredienti disponibili nel DB
     public List<Ingrediente> getAllIngredienti() throws SQLException {
         return ingredienteDAO.getAll();
     }
 
-    // Creazione di un nuovo ingrediente indipendente
     public Ingrediente creaIngrediente(Ingrediente i) throws SQLException {
         ingredienteDAO.save(i);
         return i;
     }
 
-    // Cancellazione ricetta (con tutti i suoi ingredienti)
     public void cancellaRicetta(int id) throws SQLException {
         usaDAO.deleteByRicetta(id);
         ricettaDAO.delete(id);

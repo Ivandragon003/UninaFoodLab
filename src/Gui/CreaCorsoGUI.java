@@ -26,7 +26,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
-
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +39,8 @@ public class CreaCorsoGUI {
 
 	private VBox root;
 	private GestioneCorsoController gestioneController;
+	private service.GestioneRicette gestioneRicette;
+	private service.GestioneCucina gestioneCucina;
 
 	private ObservableList<Chef> chefSelezionati = FXCollections.observableArrayList();
 	private ListView<Chef> chefListView;
@@ -49,6 +50,14 @@ public class CreaCorsoGUI {
 
 	public void setController(GestioneCorsoController controller) {
 		this.gestioneController = controller;
+	}
+
+	public void setGestioneRicette(service.GestioneRicette gestioneRicette) {
+		this.gestioneRicette = gestioneRicette;
+	}
+
+	public void setGestioneCucina(service.GestioneCucina gestioneCucina) {
+		this.gestioneCucina = gestioneCucina;
 	}
 
 	public Pane getRoot() {
@@ -116,7 +125,7 @@ public class CreaCorsoGUI {
 		HBox endTimeBox = new HBox(8, new Label("⏰ Ora fine:"), endHour, new Label(":"), endMinute);
 		styleTimeBox(endTimeBox);
 
-		//  Chef 
+		// Chef 
 		Label chefLabel = new Label("👨‍🍳 Chef Responsabili");
 		chefLabel.setFont(Font.font("Inter", FontWeight.BOLD, 14));
 		chefLabel.setTextFill(Color.web("#FF6600"));
@@ -128,7 +137,6 @@ public class CreaCorsoGUI {
 		chefListView.setPrefHeight(140);
 		chefListView.setStyle("-fx-background-color: #FAFAFA; -fx-border-color: #FFB366; "
 				+ "-fx-border-radius: 10; -fx-background-radius: 10;");
-
 
 		chefListView.setCellFactory(lv -> new ListCell<Chef>() {
 			private HBox content;
@@ -187,7 +195,6 @@ public class CreaCorsoGUI {
 		Label sessioniLabel = createFieldLabel("📌 Sessioni del Corso");
 		sessioniListView = new ListView<>(corsoSessioni);
 		sessioniListView.setPrefHeight(150);
-
 
 		sessioniListView.setCellFactory(lv -> new ListCell<Sessione>() {
 			private HBox content;
@@ -252,7 +259,7 @@ public class CreaCorsoGUI {
 				arancioni.add(s.getDataInizioSessione().toLocalDate());
 			}
 
-			CreaSessioniGUI sessioniDialog = new CreaSessioniGUI(rosse, arancioni);
+			CreaSessioniGUI sessioniDialog = new CreaSessioniGUI(rosse, arancioni, gestioneRicette, gestioneCucina);
 			Sessione nuovaSessione = sessioniDialog.showDialog((Stage) root.getScene().getWindow());
 
 			if (nuovaSessione != null) {
@@ -260,7 +267,7 @@ public class CreaCorsoGUI {
 			}
 		});
 
-		//  Layout 
+		// Layout 
 		formCard.getChildren().addAll(createFieldLabel("Nome del Corso"), nomeField, createFieldLabel("Prezzo"),
 				prezzoField, createFieldLabel("Argomento"), argomentoField, createFieldLabel("Numero Posti"),
 				postiField, createFieldLabel("Frequenza"), frequenzaBox, createFieldLabel("Data Inizio"),
@@ -274,7 +281,6 @@ public class CreaCorsoGUI {
 		Button salvaBtn = createModernButton("✅ Salva Corso", "#FF6600", "#FF8533");
 		Button annullaBtn = createModernButton("❌ Annulla", "#999999", "#BBBBBB");
 
-		// Passo il riferimento del pulsante per poterlo disabilitare durante il salvataggio
 		salvaBtn.setOnAction(e -> salvaCorso(nomeField, prezzoField, argomentoField, postiField, frequenzaBox,
 				startDatePicker, endDatePicker, startHour, startMinute, endHour, endMinute, salvaBtn));
 
@@ -381,8 +387,6 @@ public class CreaCorsoGUI {
 		return btn;
 	}
 
-	
-	
 	private void salvaCorso(TextField nomeField, TextField prezzoField, TextField argomentoField, TextField postiField,
 			ComboBox<Frequenza> frequenzaBox, DatePicker startDatePicker, DatePicker endDatePicker,
 			Spinner<Integer> startHour, Spinner<Integer> startMinute, Spinner<Integer> endHour,
@@ -423,7 +427,6 @@ public class CreaCorsoGUI {
 				return;
 			}
 
-
 			double prezzo;
 			int posti;
 			try {
@@ -439,7 +442,7 @@ public class CreaCorsoGUI {
 				return;
 			}
 
-			//  Date e orari
+			// Date e orari
 			LocalDateTime dataInizio = LocalDateTime.of(startDate,
 					LocalTime.of(startHour.getValue(), startMinute.getValue()));
 			LocalDateTime dataFine = LocalDateTime.of(endDate, LocalTime.of(endHour.getValue(), endMinute.getValue()));
@@ -453,11 +456,10 @@ public class CreaCorsoGUI {
 				return;
 			}
 
-			//  Conferma salvataggio con Alert 
+			// Conferma salvataggio con Alert 
 			boolean confermato = showConfirmationDialog("Conferma Salvataggio",
 					"Sei sicuro di voler salvare questo corso con tutti i dati inseriti?");
 			if (!confermato) {
-				// l'utente ha premuto "No" o ha chiuso il dialog: torna al form per continuare
 				return;
 			}
 
@@ -481,7 +483,6 @@ public class CreaCorsoGUI {
 			// Salvataggio tramite controller 
 			try {
 				gestioneController.creaCorso(corso);
-				//pulisco form per nuova immissione
 				showAlert("Successo", "Corso creato con successo!");
 				clearForm(nomeField, prezzoField, argomentoField, postiField, frequenzaBox, startDatePicker, endDatePicker,
 						startHour, startMinute, endHour, endMinute);
@@ -495,14 +496,11 @@ public class CreaCorsoGUI {
 				showAlert("Errore", "Si è verificato un errore: " + ex.getMessage());
 			}
 		} finally {
-			// riabilitiamo il pulsante sempre
 			salvaBtn.setDisable(false);
 			salvaBtn.setText(originalText);
 		}
 	}
 
-	
-	 // Usa Alert nativo (nessun overlay personalizzato) per la conferma.
 	private boolean showConfirmationDialog(String title, String message) {
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
 		alert.initOwner(root.getScene().getWindow());
@@ -514,7 +512,6 @@ public class CreaCorsoGUI {
 		return result.isPresent() && result.get() == ButtonType.OK;
 	}
 
-	 // Mostra un Alert (se il titolo contiene "errore" usa ERROR, altrimenti INFORMATION).
 	private void showAlert(String title, String msg) {
 		Alert.AlertType type = title.toLowerCase().contains("errore") ? Alert.AlertType.ERROR : Alert.AlertType.INFORMATION;
 		Alert alert = new Alert(type);
@@ -525,9 +522,6 @@ public class CreaCorsoGUI {
 		alert.showAndWait();
 	}
 
-	
-	 // Pulisce tutti i campi del form e ripristina i valori di default.
-	 
 	private void clearForm(TextField nomeField, TextField prezzoField, TextField argomentoField, TextField postiField,
 			ComboBox<Frequenza> frequenzaBox, DatePicker startDatePicker, DatePicker endDatePicker,
 			Spinner<Integer> startHour, Spinner<Integer> startMinute, Spinner<Integer> endHour, Spinner<Integer> endMinute) {
@@ -540,7 +534,6 @@ public class CreaCorsoGUI {
 		startDatePicker.setValue(null);
 		endDatePicker.setValue(null);
 
-	
 		try {
 			startHour.getValueFactory().setValue(9);
 			startMinute.getValueFactory().setValue(0);
@@ -549,9 +542,7 @@ public class CreaCorsoGUI {
 		} catch (Exception ignored) {
 		}
 
-		// svuota liste e listview
 		chefSelezionati.clear();
 		corsoSessioni.clear();
 	}
-
 }

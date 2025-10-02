@@ -13,13 +13,20 @@ public class GestioneRicettaController {
         this.gestioneRicette = gestioneRicette;
     }
 
-
-    public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
-        gestioneRicette.aggiornaRicetta(id, r);
+    public void aggiornaRicetta(int id, Ricetta r) {
+        try {
+            gestioneRicette.aggiornaRicetta(id, r);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void cancellaRicetta(int id) throws SQLException {
-        gestioneRicette.cancellaRicetta(id);
+    public void cancellaRicetta(int id) {
+        try {
+            gestioneRicette.cancellaRicetta(id);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public GestioneRicette getGestioneRicette() {

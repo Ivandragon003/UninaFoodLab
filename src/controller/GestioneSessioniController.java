@@ -4,13 +4,9 @@ import model.*;
 import service.GestioneSessioni;
 import service.GestioneCucina;
 import service.GestioneRicette;
-import Gui.CreaRicettaGUI;
-import Gui.VisualizzaRicetteGUI;
-import javafx.stage.Stage;
 
 import java.sql.SQLException;
 import java.util.List;
-
 public class GestioneSessioniController {
 
     private final CorsoCucina corso;
@@ -18,7 +14,6 @@ public class GestioneSessioniController {
     private final GestioneCucina gestioneCucinaService;
     private final GestioneRicette gestioneRicetteService;
 
-    
     public GestioneSessioniController(CorsoCucina corso,
                                       GestioneSessioni gestioneSessioniService,
                                       GestioneCucina gestioneCucinaService,
@@ -29,43 +24,25 @@ public class GestioneSessioniController {
         this.gestioneRicetteService = gestioneRicetteService;
     }
 
-    public List<Sessione> getSessioni() {
-        return corso.getSessioni();
+    // --- Sessioni ---
+    public void aggiungiSessione(Sessione s) throws SQLException {
+        aggiungiSessione(s, null);
     }
 
-    public void aggiungiSessione(Sessione sessione, List<Ricetta> ricetteDaAssociare) throws SQLException {
-        corso.getSessioni().add(sessione);
-        corso.setNumeroSessioni(corso.getSessioni().size());
+    public void aggiungiSessione(Sessione s, List<Ricetta> ricette) throws SQLException {
+        if (s == null) throw new IllegalArgumentException("Sessione nulla");
+        corso.getSessioni().add(s);
+        gestioneSessioniService.creaSessione(s);
 
-        gestioneSessioniService.creaSessione(sessione);
-
-        if (sessione instanceof InPresenza inPresenza && ricetteDaAssociare != null) {
-            for (Ricetta r : ricetteDaAssociare) {
-                if (r.getIdRicetta() == 0) {
-                    gestioneRicetteService.creaRicetta(r);
-                }
-                if (!inPresenza.getRicette().contains(r)) {
-                    inPresenza.getRicette().add(r);
-                    r.getSessioni().add(inPresenza);
-                    gestioneCucinaService.aggiungiSessioneARicetta(r, inPresenza);
+        if (s instanceof InPresenza ip && ricette != null) {
+            for (Ricetta r : ricette) {
+                if (!ip.getRicette().contains(r)) {
+                    ip.getRicette().add(r);
+                    r.getSessioni().add(ip);
+                    gestioneCucinaService.aggiungiSessioneARicetta(r, ip);
                 }
             }
         }
-    }
-    
-    public void salvaNuovaSessione(Sessione sessione, CorsoCucina corso) {
-        try {
-            // Aggiunge la sessione senza ricette inizialmente
-            aggiungiSessione(sessione, null);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void eliminaSessione(Sessione sessione) throws SQLException {
-        corso.getSessioni().remove(sessione);
-        corso.setNumeroSessioni(corso.getSessioni().size());
-        gestioneSessioniService.rimuoviSessione(sessione);
     }
 
     public void aggiornaSessione(Sessione oldS, Sessione newS) throws SQLException {
@@ -77,39 +54,35 @@ public class GestioneSessioniController {
         }
     }
 
-    public boolean verificaNumeroSessioni() {
-        return corso.getSessioni().size() == corso.getNumeroSessioni();
+    public void eliminaSessione(Sessione s) throws SQLException {
+        corso.getSessioni().remove(s);
+        gestioneSessioniService.rimuoviSessione(s);
     }
 
-    public void rimuoviRicettaDaSessione(InPresenza sessione, Ricetta ricetta) throws SQLException {
-        if (sessione.getRicette().remove(ricetta)) {
-            ricetta.getSessioni().remove(sessione);
-            gestioneCucinaService.rimuoviSessioneDaRicetta(ricetta, sessione);
+    // --- Ricette ---
+    public void aggiungiRicettaAInPresenza(InPresenza ip, Ricetta r) throws SQLException {
+        gestioneRicetteService.creaRicetta(r);
+        if (!ip.getRicette().contains(r)) {
+            ip.getRicette().add(r);
+            r.getSessioni().add(ip);
+            gestioneCucinaService.aggiungiSessioneARicetta(r, ip);
         }
     }
 
-    public void apriSelezionaRicettaGUI(InPresenza sessione) {
-        VisualizzaRicetteGUI gui = new VisualizzaRicetteGUI();
+    public void rimuoviRicettaDaSessione(InPresenza ip, Ricetta r) throws SQLException {
+        if (ip.getRicette().remove(r)) {
+            r.getSessioni().remove(ip);
+            gestioneCucinaService.rimuoviSessioneDaRicetta(r, ip);
+        }
+    }
 
-        VisualizzaRicetteController vController = new VisualizzaRicetteController(gestioneRicetteService) {
-            @Override
-            public void aggiungiRicetta(Ricetta r) throws SQLException {
-                super.aggiungiRicetta(r);
-                
-                if (!sessione.getRicette().contains(r)) {
-                    sessione.getRicette().add(r);
-                    r.getSessioni().add(sessione);
-                    gestioneCucinaService.aggiungiSessioneARicetta(r, sessione);
-                }
-            }
-        };
-
-        gui.setController(vController, null);
-        Stage stage = new Stage();
-        gui.show(stage);
-
-        Stage creaStage = new Stage();
-        CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicetteService, sessione, gestioneCucinaService);
-        creaGUI.start(creaStage);
+    // --- GUI Ricette ---
+    public void apriSelezionaRicettaGUI(InPresenza ip) {
+        if (ip == null) return;
+        try {
+            // logica per aprire GUI di selezione/creazione ricetta
+        } catch (Exception e) {
+            System.err.println("Errore apertura GUI ricette: " + e.getMessage());
+        }
     }
 }
