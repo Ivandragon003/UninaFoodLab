@@ -52,12 +52,15 @@ public class CreaCorsoGUI {
     }
     
     private VBox createMainLayout() {
+        // ROOT con SFONDO ARANCIONE come LOGIN
         VBox container = new VBox(15);
         container.setPadding(new Insets(20));
-        container.setStyle("-fx-background-color: #f8f9fa;");
+        StyleHelper.applyOrangeBackground(container); // SFONDO ARANCIONE CHIARO
         
         Label titleLabel = StyleHelper.createTitleLabel("✨ Crea Nuovo Corso di Cucina");
         titleLabel.setAlignment(Pos.CENTER);
+        titleLabel.setTextFill(Color.WHITE); // BIANCO su sfondo arancione
+        titleLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
         
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
@@ -159,7 +162,7 @@ public class CreaCorsoGUI {
         grid.add(endTimeBox, 3, 1);
         
         Label avisoLabel = new Label("⚠️ OBBLIGATORIO: Completa le date per abilitare l'aggiunta di sessioni");
-        avisoLabel.setTextFill(Color.web("#e74c3c"));
+        avisoLabel.setTextFill(Color.web(StyleHelper.ERROR_RED));
         avisoLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 12));
         
         section.getChildren().addAll(sectionTitle, grid, avisoLabel);
@@ -200,22 +203,30 @@ public class CreaCorsoGUI {
             for (Chef chef : chefSelezionati) {
                 HBox chefBox = new HBox(10);
                 chefBox.setAlignment(Pos.CENTER_LEFT);
-                chefBox.setPadding(new Insets(8));
+                chefBox.setPadding(new Insets(10));
                 chefBox.setStyle("-fx-background-color: #f0f8ff; -fx-border-color: #87ceeb; " +
-                               "-fx-border-radius: 5; -fx-background-radius: 5;");
+                               "-fx-border-radius: 8; -fx-background-radius: 8;");
                 
-                VBox infoBox = new VBox(2);
-                Label nameLabel = new Label("👨‍🍳 " + chef.getUsername());
-                nameLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
+                VBox infoBox = new VBox(3);
                 
-              
+                // MOSTRA NOME E COGNOME - TESTO NERO
+                Label nameLabel = new Label("👨‍🍳 " + chef.getNome() + " " + chef.getCognome());
+                nameLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
+                nameLabel.setTextFill(Color.BLACK); // NERO per visibilità
                 
-                infoBox.getChildren().addAll(nameLabel);
+                
+                
+                // Anni esperienza
+                Label expLabel = new Label("📅 " + chef.getAnniEsperienza() + " anni di esperienza");
+                expLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
+                expLabel.setTextFill(Color.GRAY);
+                
+                infoBox.getChildren().addAll(nameLabel, expLabel);
                 
                 Button removeBtn = new Button("✕");
                 removeBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; " +
-                                 "-fx-background-radius: 15; -fx-min-width: 25; -fx-min-height: 25; " +
-                                 "-fx-max-width: 25; -fx-max-height: 25; -fx-cursor: hand;");
+                                 "-fx-background-radius: 15; -fx-min-width: 30; -fx-min-height: 30; " +
+                                 "-fx-max-width: 30; -fx-max-height: 30; -fx-cursor: hand; -fx-font-weight: bold;");
                 removeBtn.setOnAction(e -> {
                     chefSelezionati.remove(chef);
                     updateChefDisplay();
@@ -274,29 +285,47 @@ public class CreaCorsoGUI {
                 
                 HBox sessioneBox = new HBox(10);
                 sessioneBox.setAlignment(Pos.CENTER_LEFT);
-                sessioneBox.setPadding(new Insets(8));
+                sessioneBox.setPadding(new Insets(10));
                 sessioneBox.setStyle("-fx-background-color: #f0fff0; -fx-border-color: #90ee90; " +
-                                   "-fx-border-radius: 5; -fx-background-radius: 5;");
+                                   "-fx-border-radius: 8; -fx-background-radius: 8;");
                 
-                VBox infoBox = new VBox(2);
+                VBox infoBox = new VBox(3);
                 
                 String tipo = sessione instanceof Online ? "🌐 Online" : "🏢 In Presenza";
                 Label tipoLabel = new Label(tipo);
-                tipoLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
+                tipoLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
+                tipoLabel.setTextFill(Color.BLACK); // NERO
                 
                 String data = sessione.getDataInizioSessione() != null ? 
                     "📅 " + sessione.getDataInizioSessione().toLocalDate().toString() : 
                     "Data non specificata";
                 Label dataLabel = new Label(data);
-                dataLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                dataLabel.setTextFill(Color.GRAY);
+                dataLabel.setFont(javafx.scene.text.Font.font("Roboto", 13));
+                dataLabel.setTextFill(Color.web("#333333"));
+                
+                // Dettagli specifici
+                String dettagli = "";
+                if (sessione instanceof Online) {
+                    Online online = (Online) sessione;
+                    dettagli = "💻 " + online.getPiattaformaStreaming();
+                } else if (sessione instanceof InPresenza) {
+                    InPresenza presenza = (InPresenza) sessione;
+                    dettagli = "📍 " + presenza.getVia() + ", " + presenza.getCitta();
+                }
+                
+                if (!dettagli.isEmpty()) {
+                    Label dettagliLabel = new Label(dettagli);
+                    dettagliLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
+                    dettagliLabel.setTextFill(Color.GRAY);
+                    infoBox.getChildren().add(dettagliLabel);
+                }
                 
                 infoBox.getChildren().addAll(tipoLabel, dataLabel);
                 
                 Button removeBtn = new Button("✕");
                 removeBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; " +
-                                 "-fx-background-radius: 15; -fx-min-width: 25; -fx-min-height: 25; " +
-                                 "-fx-max-width: 25; -fx-max-height: 25; -fx-cursor: hand;");
+                                 "-fx-background-radius: 15; -fx-min-width: 30; -fx-min-height: 30; " +
+                                 "-fx-max-width: 30; -fx-max-height: 30; -fx-cursor: hand; -fx-font-weight: bold;");
                 final int index = i;
                 removeBtn.setOnAction(e -> {
                     corsoSessioni.remove(index);
@@ -320,7 +349,7 @@ public class CreaCorsoGUI {
         Button resetBtn = new Button("🔄 Reset Form");
         resetBtn.setPrefWidth(150);
         resetBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                         "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
+                         "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
         resetBtn.setOnAction(e -> clearForm());
         
         Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva Corso");
@@ -342,7 +371,7 @@ public class CreaCorsoGUI {
         }
         combo.setValue(defaultValue);
         combo.setPrefHeight(35);
-        combo.setStyle("-fx-background-radius: 8; -fx-border-color: #e0e0e0; " +
+        combo.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e0e0e0; " +
                       "-fx-border-radius: 8; -fx-border-width: 1;");
         return combo;
     }
@@ -353,7 +382,6 @@ public class CreaCorsoGUI {
             aggiungiSessioneBtn.setDisable(!dateValid);
             if (dateValid) {
                 aggiungiSessioneBtn.setText("+ Aggiungi Sessione");
-                aggiungiSessioneBtn.setStyle(aggiungiSessioneBtn.getStyle().replace("#cccccc", StyleHelper.SUCCESS_GREEN));
             } else {
                 aggiungiSessioneBtn.setText("❌ Date Corso Richieste");
             }
@@ -369,7 +397,7 @@ public class CreaCorsoGUI {
         try {
             List<Chef> disponibili = gestioneController.getTuttiGliChef();
             
-            // Rimuovi chef già selezionati dalla lista disponibili
+            // Rimuovi chef già selezionati
             disponibili.removeAll(chefSelezionati);
             
             if (disponibili.isEmpty()) {
@@ -400,8 +428,15 @@ public class CreaCorsoGUI {
         }
         
         try {
-            // Simula creazione sessione - sostituisci con la tua logica
-            CreaSessioniGUI sessioneDialog = new CreaSessioniGUI();
+            // Crea il dialog con date corso e sessioni esistenti
+            java.util.Set<LocalDate> dateOccupate = new java.util.HashSet<>();
+            for (Sessione s : corsoSessioni) {
+                if (s.getDataInizioSessione() != null) {
+                    dateOccupate.add(s.getDataInizioSessione().toLocalDate());
+                }
+            }
+            
+            CreaSessioniGUI sessioneDialog = new CreaSessioniGUI(dataInizio, dataFine, dateOccupate);
             Sessione nuovaSessione = sessioneDialog.showDialog();
             
             if (nuovaSessione != null) {
@@ -411,17 +446,8 @@ public class CreaCorsoGUI {
             }
             
         } catch (Exception e) {
-            // Se CreaSessioniGUI non esiste ancora, crea sessione temporanea
-            showInfo("Info", "CreaSessioniGUI non ancora implementata. Creazione sessione simulata.");
-            
-            // Simula sessione per test
-            Online sessioneTest = new Online(
-                LocalDateTime.of(dataInizio, LocalTime.of(10, 0)),
-                LocalDateTime.of(dataInizio, LocalTime.of(12, 0)),
-                "Zoom"
-            );
-            corsoSessioni.add(sessioneTest);
-            updateSessioniDisplay();
+            showError("Errore", "Errore durante la creazione della sessione: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -436,9 +462,28 @@ public class CreaCorsoGUI {
         try {
             if (!validateForm()) return;
             
-            showInfo("Successo", "Corso salvato con successo!\n" +
-                                "Chef selezionati: " + chefSelezionati.size() +
-                                "\nSessioni create: " + corsoSessioni.size());
+            String nome = nomeField.getText().trim();
+            double prezzo = Double.parseDouble(prezzoField.getText());
+            String argomento = argomentoField.getText().trim();
+            String frequenza = frequenzaBox.getValue();
+            int numeroPosti = Integer.parseInt(postiField.getText());
+            
+            LocalDate startDate = startDatePicker.getValue();
+            LocalTime startTime = LocalTime.of(startHour.getValue(), startMinute.getValue());
+            LocalDateTime dataInizio = LocalDateTime.of(startDate, startTime);
+            
+            LocalDate endDate = endDatePicker.getValue();
+            LocalTime endTime = LocalTime.of(endHour.getValue(), endMinute.getValue());
+            LocalDateTime dataFine = LocalDateTime.of(endDate, endTime);
+            
+            StringBuilder chefInfo = new StringBuilder("Chef selezionati:\n");
+            for (Chef chef : chefSelezionati) {
+                chefInfo.append("• ").append(chef.getNome()).append(" ").append(chef.getCognome()).append("\n");
+            }
+            
+            showInfo("Successo", "Corso salvato con successo!\n\n" +
+                                chefInfo.toString() +
+                                "Sessioni create: " + corsoSessioni.size());
             clearForm();
             
         } catch (Exception ex) {
@@ -456,6 +501,13 @@ public class CreaCorsoGUI {
             Double.parseDouble(prezzoField.getText());
         } catch (NumberFormatException e) {
             showError("Validazione", "Inserire un prezzo valido");
+            return false;
+        }
+        
+        try {
+            Integer.parseInt(postiField.getText());
+        } catch (NumberFormatException e) {
+            showError("Validazione", "Inserire un numero di posti valido");
             return false;
         }
         

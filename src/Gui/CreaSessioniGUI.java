@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 public class CreaSessioniGUI extends Stage {
     
@@ -39,15 +41,28 @@ public class CreaSessioniGUI extends Stage {
     private TextField cittaField;
     private TextField postiField;
     private TextField capField;
+    private VBox ricetteContainer;
+    private Button aggiungiRicettaBtn;
     
     private VBox onlineBox;
     private VBox presenzaBox;
+    private List<RicettaSemplice> ricetteSelezionate = new ArrayList<>();
     
-    public CreaSessioniGUI() {
-        this.dataInizioCorso = LocalDate.now();
-        this.dataFineCorso = LocalDate.now().plusDays(30);
-        this.dateOccupate = new HashSet<>();
-        initializeDialog();
+    // Classe semplice per ricetta
+    public static class RicettaSemplice {
+        private String nome;
+        private int tempo;
+        private String difficolta;
+        
+        public RicettaSemplice(String nome, int tempo, String difficolta) {
+            this.nome = nome;
+            this.tempo = tempo;
+            this.difficolta = difficolta;
+        }
+        
+        public String getNome() { return nome; }
+        public int getTempo() { return tempo; }
+        public String getDifficolta() { return difficolta; }
     }
     
     public CreaSessioniGUI(LocalDate dataInizioCorso, LocalDate dataFineCorso, Set<LocalDate> dateOccupate) {
@@ -66,17 +81,27 @@ public class CreaSessioniGUI extends Stage {
     }
     
     private void createLayout() {
-        VBox mainContainer = new VBox(20);
-        mainContainer.setPadding(new Insets(25));
-        mainContainer.setStyle("-fx-background-color: #f8f9fa;");
+        // ROOT con SFONDO ARANCIONE come LOGIN
+        StackPane rootPane = new StackPane();
+        rootPane.setPrefSize(600, 750);
         
-        Label title = StyleHelper.createTitleLabel("🎯 Crea Nuova Sessione");
+        // Sfondo arancione
+        Region background = new Region();
+        StyleHelper.applyBackgroundGradient(background);
+        
+        VBox mainContainer = new VBox(25);
+        mainContainer.setAlignment(Pos.TOP_CENTER);
+        mainContainer.setPadding(new Insets(30));
+        
+        Label title = new Label("🎯 Crea Nuova Sessione");
+        title.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 28));
+        title.setTextFill(Color.WHITE);
         title.setAlignment(Pos.CENTER);
         
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setPrefHeight(500);
+        scrollPane.setPrefHeight(550);
         
         VBox formCard = StyleHelper.createSection();
         formCard.setSpacing(20);
@@ -110,7 +135,10 @@ public class CreaSessioniGUI extends Stage {
         scrollPane.setContent(formCard);
         mainContainer.getChildren().addAll(title, scrollPane);
         
-        Scene scene = new Scene(mainContainer, 550, 650);
+        rootPane.getChildren().addAll(background, mainContainer);
+        
+        Scene scene = new Scene(rootPane, 600, 750);
+        scene.setFill(Color.TRANSPARENT);
         setScene(scene);
     }
     
@@ -125,16 +153,16 @@ public class CreaSessioniGUI extends Stage {
         titleLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
         
         Label rossoLabel = new Label("🔴 Date NON disponibili (fuori periodo corso)");
-        rossoLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-        rossoLabel.setTextFill(Color.web("#e74c3c"));
+        rossoLabel.setFont(javafx.scene.text.Font.font("Roboto", 13));
+        rossoLabel.setTextFill(Color.web(StyleHelper.ERROR_RED));
         
         Label arancioneLabel = new Label("🟠 Date con sessioni esistenti (sovrapponibile)");
-        arancioneLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-        arancioneLabel.setTextFill(Color.web("#f39c12"));
+        arancioneLabel.setFont(javafx.scene.text.Font.font("Roboto", 13));
+        arancioneLabel.setTextFill(Color.web(StyleHelper.WARNING_ORANGE));
         
         Label verdeLabel = new Label("🟢 Date disponibili per nuove sessioni");
-        verdeLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-        verdeLabel.setTextFill(Color.web("#27ae60"));
+        verdeLabel.setFont(javafx.scene.text.Font.font("Roboto", 13));
+        verdeLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
         
         box.getChildren().addAll(titleLabel, rossoLabel, arancioneLabel, verdeLabel);
         return box;
@@ -206,22 +234,129 @@ public class CreaSessioniGUI extends Stage {
         onlineBox.getChildren().addAll(onlineTitle, piattaformaField);
         
         // Campi In Presenza
-        presenzaBox = new VBox(10);
+        presenzaBox = new VBox(15);
         Label presenzaTitle = new Label("🏢 Dettagli In Presenza");
         presenzaTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
         presenzaTitle.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
+        
+        GridPane presenzaGrid = new GridPane();
+        presenzaGrid.setHgap(15);
+        presenzaGrid.setVgap(10);
         
         viaField = StyleHelper.createTextField("Via e numero civico");
         cittaField = StyleHelper.createTextField("Città");
         postiField = StyleHelper.createTextField("Numero posti disponibili");
         capField = StyleHelper.createTextField("CAP");
         
-        presenzaBox.getChildren().addAll(presenzaTitle, viaField, cittaField, postiField, capField);
+        presenzaGrid.add(StyleHelper.createLabel("Via:"), 0, 0);
+        presenzaGrid.add(viaField, 1, 0);
+        presenzaGrid.add(StyleHelper.createLabel("Città:"), 0, 1);
+        presenzaGrid.add(cittaField, 1, 1);
+        presenzaGrid.add(StyleHelper.createLabel("Posti:"), 2, 0);
+        presenzaGrid.add(postiField, 3, 0);
+        presenzaGrid.add(StyleHelper.createLabel("CAP:"), 2, 1);
+        presenzaGrid.add(capField, 3, 1);
+        
+        // RICETTE OBBLIGATORIE per In Presenza
+        VBox ricetteSection = createRicetteSection();
+        
+        presenzaBox.getChildren().addAll(presenzaTitle, presenzaGrid, ricetteSection);
         presenzaBox.setVisible(false);
         presenzaBox.setManaged(false);
         
         section.getChildren().addAll(onlineBox, presenzaBox);
         return section;
+    }
+    
+    private VBox createRicetteSection() {
+        VBox section = new VBox(10);
+        
+        HBox headerBox = new HBox(10);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        
+        Label ricetteTitle = new Label("📖 Ricette del Corso");
+        ricetteTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 15));
+        ricetteTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        
+        Label ricetteObblLabel = new Label("⚠️ OBBLIGATORIE per sessioni in presenza");
+        ricetteObblLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 12));
+        ricetteObblLabel.setTextFill(Color.web(StyleHelper.ERROR_RED));
+        
+        headerBox.getChildren().addAll(ricetteTitle, ricetteObblLabel);
+        
+        aggiungiRicettaBtn = StyleHelper.createSuccessButton("+ Aggiungi Ricetta");
+        aggiungiRicettaBtn.setOnAction(e -> aggiungiRicetta());
+        
+        Label ricetteLabel = StyleHelper.createLabel("Ricette selezionate:");
+        
+        ricetteContainer = new VBox(5);
+        ricetteContainer.setPrefHeight(120);
+        ricetteContainer.setStyle("-fx-background-color: white; -fx-border-color: #e0e0e0; " +
+                                 "-fx-border-radius: 8; -fx-padding: 10;");
+        
+        updateRicetteDisplay();
+        
+        section.getChildren().addAll(headerBox, aggiungiRicettaBtn, ricetteLabel, ricetteContainer);
+        return section;
+    }
+    
+    private void updateRicetteDisplay() {
+        ricetteContainer.getChildren().clear();
+        
+        if (ricetteSelezionate.isEmpty()) {
+            Label emptyLabel = new Label("Nessuna ricetta selezionata");
+            emptyLabel.setTextFill(Color.GRAY);
+            ricetteContainer.getChildren().add(emptyLabel);
+        } else {
+            for (int i = 0; i < ricetteSelezionate.size(); i++) {
+                RicettaSemplice ricetta = ricetteSelezionate.get(i);
+                
+                HBox ricettaBox = new HBox(10);
+                ricettaBox.setAlignment(Pos.CENTER_LEFT);
+                ricettaBox.setPadding(new Insets(8));
+                ricettaBox.setStyle("-fx-background-color: #fff8dc; -fx-border-color: #deb887; " +
+                                   "-fx-border-radius: 5; -fx-background-radius: 5;");
+                
+                VBox infoBox = new VBox(2);
+                
+                Label nameLabel = new Label("📖 " + ricetta.getNome());
+                nameLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
+                nameLabel.setTextFill(Color.BLACK);
+                
+                Label detailsLabel = new Label("⏱️ " + ricetta.getTempo() + " min • " + ricetta.getDifficolta());
+                detailsLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
+                detailsLabel.setTextFill(Color.GRAY);
+                
+                infoBox.getChildren().addAll(nameLabel, detailsLabel);
+                
+                Button removeBtn = new Button("✕");
+                removeBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; " +
+                                 "-fx-background-radius: 15; -fx-min-width: 25; -fx-min-height: 25; " +
+                                 "-fx-max-width: 25; -fx-max-height: 25; -fx-cursor: hand; -fx-font-weight: bold;");
+                final int index = i;
+                removeBtn.setOnAction(e -> {
+                    ricetteSelezionate.remove(index);
+                    updateRicetteDisplay();
+                });
+                
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+                
+                ricettaBox.getChildren().addAll(infoBox, spacer, removeBtn);
+                ricetteContainer.getChildren().add(ricettaBox);
+            }
+        }
+    }
+    
+    private void aggiungiRicetta() {
+        // Dialog semplice per aggiungere ricetta
+        AggiungiRicettaDialog dialog = new AggiungiRicettaDialog();
+        RicettaSemplice ricetta = dialog.showAndReturn();
+        
+        if (ricetta != null) {
+            ricetteSelezionate.add(ricetta);
+            updateRicetteDisplay();
+        }
     }
     
     private HBox createButtonSection() {
@@ -232,7 +367,7 @@ public class CreaSessioniGUI extends Stage {
         Button annullaBtn = new Button("❌ Annulla");
         annullaBtn.setPrefWidth(130);
         annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                           "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
+                           "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
         annullaBtn.setOnAction(e -> {
             sessioneCreata = null;
             close();
@@ -258,14 +393,14 @@ public class CreaSessioniGUI extends Stage {
                         super.updateItem(date, empty);
                         if (empty || date == null) return;
                         
-                        // Date fuori periodo corso - ROSSE (non cliccabili)
+                        // Date fuori periodo corso - ROSSE
                         if (date.isBefore(dataInizioCorso) || date.isAfter(dataFineCorso)) {
                             setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; -fx-font-weight: bold;");
                             setDisable(true);
                             setOpacity(0.7);
                             setTooltip(new Tooltip("❌ Data non disponibile - Fuori periodo corso"));
                         }
-                        // Date con sessioni esistenti - ARANCIONI (cliccabili)
+                        // Date con sessioni esistenti - ARANCIONI
                         else if (dateOccupate.contains(date)) {
                             setStyle("-fx-background-color: #ffd93d; -fx-text-fill: #333; -fx-font-weight: bold;");
                             setTooltip(new Tooltip("⚠️ Data con sessione esistente - Sovrapponibile"));
@@ -299,7 +434,7 @@ public class CreaSessioniGUI extends Stage {
         }
         combo.setValue(defaultValue);
         combo.setPrefHeight(35);
-        combo.setStyle("-fx-background-radius: 8; -fx-border-color: " + StyleHelper.BORDER_LIGHT + "; " +
+        combo.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + StyleHelper.BORDER_LIGHT + "; " +
                       "-fx-border-radius: 8; -fx-border-width: 1;");
         return combo;
     }
@@ -364,6 +499,7 @@ public class CreaSessioniGUI extends Stage {
                 return false;
             }
         } else {
+            // Validazione campi In Presenza
             if (viaField.getText().trim().isEmpty()) {
                 showAlert("Validazione", "Inserire l'indirizzo");
                 return false;
@@ -392,6 +528,14 @@ public class CreaSessioniGUI extends Stage {
                 showAlert("Validazione", "Inserire un CAP valido");
                 return false;
             }
+            
+            // RICETTE OBBLIGATORIE per In Presenza
+            if (ricetteSelezionate.isEmpty()) {
+                showAlert("Ricette Obbligatorie", 
+                         "Le sessioni in presenza devono avere almeno una ricetta associata.\n\n" +
+                         "Clicca su '+ Aggiungi Ricetta' per selezionarne una.");
+                return false;
+            }
         }
         
         return true;
@@ -408,5 +552,111 @@ public class CreaSessioniGUI extends Stage {
     public Sessione showDialog() {
         showAndWait();
         return sessioneCreata;
+    }
+}
+
+// Dialog semplice per aggiungere ricetta
+class AggiungiRicettaDialog extends Stage {
+    private CreaSessioniGUI.RicettaSemplice ricettaCreata = null;
+    
+    public AggiungiRicettaDialog() {
+        setTitle("Aggiungi Ricetta");
+        initModality(Modality.APPLICATION_MODAL);
+        
+        createLayout();
+    }
+    
+    private void createLayout() {
+        StackPane rootPane = new StackPane();
+        rootPane.setPrefSize(450, 400);
+        
+        Region background = new Region();
+        StyleHelper.applyBackgroundGradient(background);
+        
+        VBox container = new VBox(20);
+        container.setAlignment(Pos.TOP_CENTER);
+        container.setPadding(new Insets(30));
+        
+        Label title = new Label("📖 Aggiungi Ricetta alla Sessione");
+        title.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 20));
+        title.setTextFill(Color.WHITE);
+        
+        VBox formCard = StyleHelper.createSection();
+        formCard.setSpacing(15);
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(15);
+        
+        TextField nomeField = StyleHelper.createTextField("Nome ricetta");
+        TextField tempoField = StyleHelper.createTextField("Tempo in minuti");
+        tempoField.setText("30");
+        
+        ComboBox<String> difficoltaBox = StyleHelper.createComboBox();
+        difficoltaBox.getItems().addAll("Facile", "Medio", "Difficile");
+        difficoltaBox.setValue("Facile");
+        
+        grid.add(StyleHelper.createLabel("Nome:"), 0, 0);
+        grid.add(nomeField, 1, 0);
+        grid.add(StyleHelper.createLabel("Tempo (min):"), 0, 1);
+        grid.add(tempoField, 1, 1);
+        grid.add(StyleHelper.createLabel("Difficoltà:"), 0, 2);
+        grid.add(difficoltaBox, 1, 2);
+        
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setPadding(new Insets(15, 0, 0, 0));
+        
+        Button salvaBtn = StyleHelper.createPrimaryButton("📖 Aggiungi");
+        Button annullaBtn = new Button("❌ Annulla");
+        annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
+                           "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
+        
+        salvaBtn.setOnAction(e -> {
+            String nome = nomeField.getText().trim();
+            String tempoText = tempoField.getText().trim();
+            String difficolta = difficoltaBox.getValue();
+            
+            if (nome.isEmpty()) {
+                showAlert("Validazione", "Il nome è obbligatorio");
+                return;
+            }
+            
+            try {
+                int tempo = Integer.parseInt(tempoText);
+                if (tempo <= 0) {
+                    showAlert("Validazione", "Il tempo deve essere maggiore di 0");
+                    return;
+                }
+                
+                ricettaCreata = new CreaSessioniGUI.RicettaSemplice(nome, tempo, difficolta);
+                close();
+            } catch (NumberFormatException ex) {
+                showAlert("Validazione", "Inserire un tempo valido");
+            }
+        });
+        
+        annullaBtn.setOnAction(e -> close());
+        
+        buttonBox.getChildren().addAll(annullaBtn, salvaBtn);
+        
+        formCard.getChildren().addAll(grid, buttonBox);
+        container.getChildren().addAll(title, formCard);
+        rootPane.getChildren().addAll(background, container);
+        
+        setScene(new Scene(rootPane, 450, 400));
+    }
+    
+    private void showAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    
+    public CreaSessioniGUI.RicettaSemplice showAndReturn() {
+        showAndWait();
+        return ricettaCreata;
     }
 }

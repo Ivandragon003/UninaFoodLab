@@ -18,9 +18,15 @@ public class StyleHelper {
     public static final String SUCCESS_GREEN = "#27ae60";
     public static final String ERROR_RED = "#e74c3c";
     public static final String INFO_BLUE = "#3498db";
+    public static final String WARNING_ORANGE = "#f39c12";
     public static final String NEUTRAL_GRAY = "#95a5a6";
     public static final String BG_WHITE = "#FFFFFF";
     public static final String BORDER_LIGHT = "#e0e0e0";
+    public static final String TEXT_BLACK = "#000000";
+    
+    // SFONDO ARANCIONE CHIARO come nel LOGIN
+    public static final String BG_ORANGE_LIGHT = "#FFCC99";
+    public static final String BG_ORANGE_START = "#FF9966";
     
     public static Label createTitleLabel(String text) {
         Label label = new Label(text);
@@ -32,6 +38,7 @@ public class StyleHelper {
     public static Label createLabel(String text) {
         Label label = new Label(text);
         label.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        label.setTextFill(Color.web(TEXT_BLACK)); // NERO per visibilità
         return label;
     }
     
@@ -39,7 +46,7 @@ public class StyleHelper {
         TextField field = new TextField();
         field.setPromptText(promptText);
         field.setPrefHeight(35);
-        field.setStyle("-fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
+        field.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
                      "-fx-border-radius: 8; -fx-border-width: 1;");
         return field;
     }
@@ -68,6 +75,10 @@ public class StyleHelper {
         button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
                        "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
+                                                      "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
+                                                     "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         return button;
     }
     
@@ -77,13 +88,30 @@ public class StyleHelper {
         button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
                        "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
+                                                      "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
+                                                     "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
+        return button;
+    }
+    
+    public static Button createInfoButton(String text) {
+        Button button = new Button(text);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
+        button.setTextFill(Color.WHITE);
+        button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
+                       "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
+                                                      "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
+                                                     "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         return button;
     }
     
     public static ComboBox<String> createComboBox() {
         ComboBox<String> combo = new ComboBox<>();
         combo.setPrefHeight(35);
-        combo.setStyle("-fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
+        combo.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
                       "-fx-border-radius: 8; -fx-border-width: 1;");
         return combo;
     }
@@ -91,14 +119,14 @@ public class StyleHelper {
     public static DatePicker createDatePicker() {
         DatePicker picker = new DatePicker();
         picker.setPrefHeight(35);
-        picker.setStyle("-fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
+        picker.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
                        "-fx-border-radius: 8; -fx-border-width: 1;");
         return picker;
     }
     
     public static ListView<String> createListView() {
         ListView<String> listView = new ListView<>();
-        listView.setStyle("-fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
+        listView.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
                          "-fx-border-radius: 8; -fx-border-width: 1;");
         return listView;
     }
@@ -112,10 +140,26 @@ public class StyleHelper {
         return section;
     }
     
+    // SFONDO ARANCIONE CHIARO per tutte le finestre
     public static void applyBackgroundGradient(Region region) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-            new Stop(0, Color.web("#FF9966")),
-            new Stop(1, Color.web("#FFCC99")));
+            new Stop(0, Color.web(BG_ORANGE_START)),
+            new Stop(1, Color.web(BG_ORANGE_LIGHT)));
         region.setBackground(new Background(new BackgroundFill(gradient, null, null)));
+    }
+    
+    // Metodo per applicare sfondo arancione semplice
+    public static void applyOrangeBackground(Region region) {
+        region.setStyle("-fx-background-color: " + BG_ORANGE_LIGHT + ";");
+    }
+    
+    // Text Area
+    public static TextArea createTextArea(String promptText) {
+        TextArea textArea = new TextArea();
+        textArea.setPromptText(promptText);
+        textArea.setWrapText(true);
+        textArea.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
+                         "-fx-border-radius: 8; -fx-border-width: 1; -fx-font-size: 14px;");
+        return textArea;
     }
 }
