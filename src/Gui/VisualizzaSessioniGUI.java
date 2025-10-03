@@ -248,13 +248,11 @@ public class VisualizzaSessioniGUI {
         return pulsantiPrincipali;
     }
 
-    // *** CORREZIONE PRINCIPALE: Usa corso.getSessioni() invece di controller.getSessioni() ***
     private void applicaFiltri() {
         ObservableList<Sessione> sessioniFiltrate = FXCollections.observableArrayList();
         String tipoFiltro = filtroTipo.getValue();
         String ricetteFiltro = filtroRicette.getText().trim();
 
-        // *** CORREZIONE: Usa le sessioni del corso ***
         if (corso.getSessioni() == null) {
             sessioniList.setItems(sessioniFiltrate);
             numeroSessioniLabel.setText("Nessuna sessione disponibile");
@@ -293,7 +291,6 @@ public class VisualizzaSessioniGUI {
         applicaFiltri();
     }
 
-    // *** METODI DI SUPPORTO ***
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
