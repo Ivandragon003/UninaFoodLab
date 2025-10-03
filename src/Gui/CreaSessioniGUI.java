@@ -10,6 +10,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import model.*;
+import service.GestioneRicette;
 import util.StyleHelper;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public class CreaSessioniGUI extends Stage {
     private LocalDate dataInizioCorso;
     private LocalDate dataFineCorso;
     private Set<LocalDate> dateOccupate;
+    private GestioneRicette gestioneRicette;
     
     private DatePicker dataSessionePicker;
     private ComboBox<Integer> oraInizio;
@@ -42,48 +44,43 @@ public class CreaSessioniGUI extends Stage {
     private TextField postiField;
     private TextField capField;
     private VBox ricetteContainer;
-    private Button aggiungiRicettaBtn;
+    private Button aggiungiRicettaEsistenteBtn;
+    private Button creaRicettaNuovaBtn;
     
     private VBox onlineBox;
     private VBox presenzaBox;
-    private List<RicettaSemplice> ricetteSelezionate = new ArrayList<>();
+    private List<Ricetta> ricetteSelezionate = new ArrayList<>();
     
-    // Classe semplice per ricetta
-    public static class RicettaSemplice {
-        private String nome;
-        private int tempo;
-        private String difficolta;
-        
-        public RicettaSemplice(String nome, int tempo, String difficolta) {
-            this.nome = nome;
-            this.tempo = tempo;
-            this.difficolta = difficolta;
-        }
-        
-        public String getNome() { return nome; }
-        public int getTempo() { return tempo; }
-        public String getDifficolta() { return difficolta; }
+    public CreaSessioniGUI(LocalDate dataInizioCorso, LocalDate dataFineCorso, Set<LocalDate> dateOccupate, 
+                          GestioneRicette gestioneRicette) {
+        this.dataInizioCorso = dataInizioCorso;
+        this.dataFineCorso = dataFineCorso;
+        this.dateOccupate = dateOccupate != null ? dateOccupate : new HashSet<>();
+        this.gestioneRicette = gestioneRicette;
+        initializeDialog();
     }
     
     public CreaSessioniGUI(LocalDate dataInizioCorso, LocalDate dataFineCorso, Set<LocalDate> dateOccupate) {
         this.dataInizioCorso = dataInizioCorso;
         this.dataFineCorso = dataFineCorso;
         this.dateOccupate = dateOccupate != null ? dateOccupate : new HashSet<>();
+        this.gestioneRicette = null;
         initializeDialog();
     }
     
     private void initializeDialog() {
         setTitle("Crea Sessione");
         initModality(Modality.APPLICATION_MODAL);
-        setResizable(false);
+        setResizable(true); // RIDIMENSIONABILE CON MOUSE
         
         createLayout();
     }
     
     private void createLayout() {
-        // ROOT con SFONDO ARANCIONE come LOGIN
+        // ROOT con SFONDO ARANCIONE ridimensionabile
         StackPane rootPane = new StackPane();
-        rootPane.setPrefSize(600, 750);
+        rootPane.setMinSize(600, 500);
+        rootPane.setPrefSize(750, 650);
         
         // Sfondo arancione
         Region background = new Region();
@@ -100,8 +97,8 @@ public class CreaSessioniGUI extends Stage {
         
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setPrefHeight(550);
         
         VBox formCard = StyleHelper.createSection();
         formCard.setSpacing(20);
@@ -137,7 +134,7 @@ public class CreaSessioniGUI extends Stage {
         
         rootPane.getChildren().addAll(background, mainContainer);
         
-        Scene scene = new Scene(rootPane, 600, 750);
+        Scene scene = new Scene(rootPane, 750, 650);
         scene.setFill(Color.TRANSPARENT);
         setScene(scene);
     }
@@ -257,7 +254,7 @@ public class CreaSessioniGUI extends Stage {
         presenzaGrid.add(StyleHelper.createLabel("CAP:"), 2, 1);
         presenzaGrid.add(capField, 3, 1);
         
-        // RICETTE OBBLIGATORIE per In Presenza
+        // RICETTE OBBLIGATORIE per In Presenza - DUE OPZIONI
         VBox ricetteSection = createRicetteSection();
         
         presenzaBox.getChildren().addAll(presenzaTitle, presenzaGrid, ricetteSection);
@@ -284,8 +281,17 @@ public class CreaSessioniGUI extends Stage {
         
         headerBox.getChildren().addAll(ricetteTitle, ricetteObblLabel);
         
-        aggiungiRicettaBtn = StyleHelper.createSuccessButton("+ Aggiungi Ricetta");
-        aggiungiRicettaBtn.setOnAction(e -> aggiungiRicetta());
+        // DUE OPZIONI per l'utente
+        HBox optionsBox = new HBox(10);
+        optionsBox.setAlignment(Pos.CENTER_LEFT);
+        
+        aggiungiRicettaEsistenteBtn = StyleHelper.createSuccessButton("📚 Usa Esistente");
+        aggiungiRicettaEsistenteBtn.setOnAction(e -> usaRicettaEsistente());
+        
+        creaRicettaNuovaBtn = StyleHelper.createInfoButton("✨ Crea Nuova");
+        creaRicettaNuovaBtn.setOnAction(e -> creaNuovaRicetta());
+        
+        optionsBox.getChildren().addAll(aggiungiRicettaEsistenteBtn, creaRicettaNuovaBtn);
         
         Label ricetteLabel = StyleHelper.createLabel("Ricette selezionate:");
         
@@ -296,7 +302,7 @@ public class CreaSessioniGUI extends Stage {
         
         updateRicetteDisplay();
         
-        section.getChildren().addAll(headerBox, aggiungiRicettaBtn, ricetteLabel, ricetteContainer);
+        section.getChildren().addAll(headerBox, optionsBox, ricetteLabel, ricetteContainer);
         return section;
     }
     
@@ -309,7 +315,7 @@ public class CreaSessioniGUI extends Stage {
             ricetteContainer.getChildren().add(emptyLabel);
         } else {
             for (int i = 0; i < ricetteSelezionate.size(); i++) {
-                RicettaSemplice ricetta = ricetteSelezionate.get(i);
+                Ricetta ricetta = ricetteSelezionate.get(i);
                 
                 HBox ricettaBox = new HBox(10);
                 ricettaBox.setAlignment(Pos.CENTER_LEFT);
@@ -323,7 +329,7 @@ public class CreaSessioniGUI extends Stage {
                 nameLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
                 nameLabel.setTextFill(Color.BLACK);
                 
-                Label detailsLabel = new Label("⏱️ " + ricetta.getTempo() + " min • " + ricetta.getDifficolta());
+                Label detailsLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min");
                 detailsLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
                 detailsLabel.setTextFill(Color.GRAY);
                 
@@ -348,14 +354,40 @@ public class CreaSessioniGUI extends Stage {
         }
     }
     
-    private void aggiungiRicetta() {
-        // Dialog semplice per aggiungere ricetta
-        AggiungiRicettaDialog dialog = new AggiungiRicettaDialog();
-        RicettaSemplice ricetta = dialog.showAndReturn();
-        
-        if (ricetta != null) {
-            ricetteSelezionate.add(ricetta);
-            updateRicetteDisplay();
+    // OPZIONE 1: Usa ricetta esistente dal database
+    private void usaRicettaEsistente() {
+        if (gestioneRicette != null) {
+            try {
+                VisualizzaRicetteGUI visualizzaGUI = new VisualizzaRicetteGUI(gestioneRicette);
+                visualizzaGUI.setSelectionMode(true);
+                Ricetta ricettaScelta = visualizzaGUI.showAndReturn();
+                
+                if (ricettaScelta != null && !ricetteSelezionate.contains(ricettaScelta)) {
+                    ricetteSelezionate.add(ricettaScelta);
+                    updateRicetteDisplay();
+                    showAlert("Successo", "Ricetta '" + ricettaScelta.getNome() + "' aggiunta!");
+                }
+            } catch (Exception e) {
+                showAlert("Errore", "Errore nel caricamento ricette: " + e.getMessage());
+            }
+        } else {
+            showAlert("Servizio non disponibile", "Impossibile caricare ricette dal database.");
+        }
+    }
+    
+    // OPZIONE 2: Crea nuova ricetta
+    private void creaNuovaRicetta() {
+        try {
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicette);
+            Ricetta nuovaRicetta = creaGUI.showAndReturn();
+            
+            if (nuovaRicetta != null) {
+                ricetteSelezionate.add(nuovaRicetta);
+                updateRicetteDisplay();
+                showAlert("Successo", "Ricetta '" + nuovaRicetta.getNome() + "' creata e aggiunta!");
+            }
+        } catch (Exception e) {
+            showAlert("Errore", "Errore nella creazione ricetta: " + e.getMessage());
         }
     }
     
@@ -533,7 +565,7 @@ public class CreaSessioniGUI extends Stage {
             if (ricetteSelezionate.isEmpty()) {
                 showAlert("Ricette Obbligatorie", 
                          "Le sessioni in presenza devono avere almeno una ricetta associata.\n\n" +
-                         "Clicca su '+ Aggiungi Ricetta' per selezionarne una.");
+                         "Usa 'Usa Esistente' per scegliere dal database o 'Crea Nuova' per crearne una.");
                 return false;
             }
         }
@@ -542,7 +574,7 @@ public class CreaSessioniGUI extends Stage {
     }
     
     private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
+        Alert alert = new Alert(title.contains("Successo") ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
@@ -552,111 +584,5 @@ public class CreaSessioniGUI extends Stage {
     public Sessione showDialog() {
         showAndWait();
         return sessioneCreata;
-    }
-}
-
-// Dialog semplice per aggiungere ricetta
-class AggiungiRicettaDialog extends Stage {
-    private CreaSessioniGUI.RicettaSemplice ricettaCreata = null;
-    
-    public AggiungiRicettaDialog() {
-        setTitle("Aggiungi Ricetta");
-        initModality(Modality.APPLICATION_MODAL);
-        
-        createLayout();
-    }
-    
-    private void createLayout() {
-        StackPane rootPane = new StackPane();
-        rootPane.setPrefSize(450, 400);
-        
-        Region background = new Region();
-        StyleHelper.applyBackgroundGradient(background);
-        
-        VBox container = new VBox(20);
-        container.setAlignment(Pos.TOP_CENTER);
-        container.setPadding(new Insets(30));
-        
-        Label title = new Label("📖 Aggiungi Ricetta alla Sessione");
-        title.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 20));
-        title.setTextFill(Color.WHITE);
-        
-        VBox formCard = StyleHelper.createSection();
-        formCard.setSpacing(15);
-        
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(15);
-        
-        TextField nomeField = StyleHelper.createTextField("Nome ricetta");
-        TextField tempoField = StyleHelper.createTextField("Tempo in minuti");
-        tempoField.setText("30");
-        
-        ComboBox<String> difficoltaBox = StyleHelper.createComboBox();
-        difficoltaBox.getItems().addAll("Facile", "Medio", "Difficile");
-        difficoltaBox.setValue("Facile");
-        
-        grid.add(StyleHelper.createLabel("Nome:"), 0, 0);
-        grid.add(nomeField, 1, 0);
-        grid.add(StyleHelper.createLabel("Tempo (min):"), 0, 1);
-        grid.add(tempoField, 1, 1);
-        grid.add(StyleHelper.createLabel("Difficoltà:"), 0, 2);
-        grid.add(difficoltaBox, 1, 2);
-        
-        HBox buttonBox = new HBox(15);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(15, 0, 0, 0));
-        
-        Button salvaBtn = StyleHelper.createPrimaryButton("📖 Aggiungi");
-        Button annullaBtn = new Button("❌ Annulla");
-        annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                           "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
-        
-        salvaBtn.setOnAction(e -> {
-            String nome = nomeField.getText().trim();
-            String tempoText = tempoField.getText().trim();
-            String difficolta = difficoltaBox.getValue();
-            
-            if (nome.isEmpty()) {
-                showAlert("Validazione", "Il nome è obbligatorio");
-                return;
-            }
-            
-            try {
-                int tempo = Integer.parseInt(tempoText);
-                if (tempo <= 0) {
-                    showAlert("Validazione", "Il tempo deve essere maggiore di 0");
-                    return;
-                }
-                
-                ricettaCreata = new CreaSessioniGUI.RicettaSemplice(nome, tempo, difficolta);
-                close();
-            } catch (NumberFormatException ex) {
-                showAlert("Validazione", "Inserire un tempo valido");
-            }
-        });
-        
-        annullaBtn.setOnAction(e -> close());
-        
-        buttonBox.getChildren().addAll(annullaBtn, salvaBtn);
-        
-        formCard.getChildren().addAll(grid, buttonBox);
-        container.getChildren().addAll(title, formCard);
-        rootPane.getChildren().addAll(background, container);
-        
-        setScene(new Scene(rootPane, 450, 400));
-    }
-    
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-    
-    public CreaSessioniGUI.RicettaSemplice showAndReturn() {
-        showAndWait();
-        return ricettaCreata;
     }
 }

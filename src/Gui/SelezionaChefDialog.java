@@ -12,6 +12,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Chef;
+import service.GestioneChef;
 import util.StyleHelper;
 import java.util.List;
 
@@ -22,11 +23,26 @@ public class SelezionaChefDialog extends Stage {
     private TextField searchField;
     private ObservableList<Chef> allChefs;
     private FilteredList<Chef> filteredChefs;
+    private GestioneChef gestioneChef;
     
-    public SelezionaChefDialog(List<Chef> chefDisponibili) {
+    public SelezionaChefDialog(List<Chef> chefDisponibili, GestioneChef gestioneChef) {
+        this.gestioneChef = gestioneChef;
         setTitle("Seleziona Chef");
         initModality(Modality.APPLICATION_MODAL);
-        setResizable(false);
+        setResizable(true); // RIDIMENSIONABILE CON MOUSE
+        
+        this.allChefs = FXCollections.observableArrayList(chefDisponibili);
+        this.filteredChefs = new FilteredList<>(allChefs);
+        
+        createLayout();
+    }
+    
+    // Costruttore senza service per backward compatibility
+    public SelezionaChefDialog(List<Chef> chefDisponibili) {
+        this.gestioneChef = null;
+        setTitle("Seleziona Chef");
+        initModality(Modality.APPLICATION_MODAL);
+        setResizable(true); // RIDIMENSIONABILE CON MOUSE
         
         this.allChefs = FXCollections.observableArrayList(chefDisponibili);
         this.filteredChefs = new FilteredList<>(allChefs);
@@ -35,9 +51,10 @@ public class SelezionaChefDialog extends Stage {
     }
     
     private void createLayout() {
-        // ROOT con sfondo arancione come LOGIN
+        // ROOT con sfondo arancione RIDIMENSIONABILE
         StackPane rootPane = new StackPane();
-        rootPane.setPrefSize(500, 600);
+        rootPane.setMinSize(500, 400);
+        rootPane.setPrefSize(700, 650);
         
         // Sfondo arancione
         Region background = new Region();
@@ -54,26 +71,29 @@ public class SelezionaChefDialog extends Stage {
         
         VBox formCard = StyleHelper.createSection();
         formCard.setSpacing(20);
-        formCard.setPrefWidth(420);
+        formCard.setPrefWidth(600);
+        formCard.setMaxWidth(Double.MAX_VALUE);
         
-        // Campo ricerca
+        // Campo ricerca NOME E COGNOME
         VBox searchBox = new VBox(8);
-        Label searchLabel = StyleHelper.createLabel("🔍 Cerca Chef per nome:");
+        Label searchLabel = StyleHelper.createLabel("🔍 Cerca Chef per nome o cognome:");
         searchField = StyleHelper.createTextField("Digita nome o cognome...");
         searchField.textProperty().addListener((observable, oldValue, newValue) -> updateFilter(newValue));
         searchBox.getChildren().addAll(searchLabel, searchField);
         
-        // Lista chef
+        // Lista chef RIDIMENSIONABILE
         VBox listaBox = new VBox(8);
         Label listaLabel = StyleHelper.createLabel("Chef Disponibili:");
         
         listaChef = new ListView<>();
         listaChef.setItems(filteredChefs);
-        listaChef.setPrefHeight(300);
+        listaChef.setPrefHeight(350);
+        listaChef.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(listaChef, Priority.ALWAYS); // Cresce con la finestra
         listaChef.setStyle("-fx-background-radius: 8; -fx-border-color: " + StyleHelper.BORDER_LIGHT + "; " +
                          "-fx-border-radius: 8; -fx-border-width: 1;");
         
-        // Cell factory per mostrare NOME E COGNOME (non username)
+        // Cell factory per mostrare NOME E COGNOME (RISPETTA MODEL CHEF)
         listaChef.setCellFactory(listView -> new ListCell<Chef>() {
             @Override
             protected void updateItem(Chef chef, boolean empty) {
@@ -84,28 +104,39 @@ public class SelezionaChefDialog extends Stage {
                     setStyle("");
                 } else {
                     VBox cellBox = new VBox(5);
-                    cellBox.setPadding(new Insets(10));
+                    cellBox.setPadding(new Insets(12));
                     
-                    // NOME E COGNOME - TESTO NERO
+                    // NOME E COGNOME - TESTO NERO (rispetta model)
                     Label nameLabel = new Label("👨‍🍳 " + chef.getNome() + " " + chef.getCognome());
                     nameLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
                     nameLabel.setTextFill(Color.BLACK); // NERO per visibilità
                     
-           
+                    // Username
+                    Label usernameLabel = new Label("👤 Username: " + chef.getUsername());
+                    usernameLabel.setFont(javafx.scene.text.Font.font("Roboto", 13));
+                    usernameLabel.setTextFill(Color.web("#444444"));
                     
-                    // Anni esperienza
+                    // Anni esperienza (rispetta model)
                     Label expLabel = new Label("📅 Esperienza: " + chef.getAnniEsperienza() + " anni");
                     expLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
                     expLabel.setTextFill(Color.GRAY);
                     
-                    // Disponibilità
+                    // Disponibilità (rispetta model)
                     Label availLabel = new Label(chef.getDisponibilita() ? "✅ Disponibile" : "❌ Non disponibile");
                     availLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
                     availLabel.setTextFill(chef.getDisponibilita() ? 
                                          Color.web(StyleHelper.SUCCESS_GREEN) : 
                                          Color.web(StyleHelper.ERROR_RED));
                     
-                    cellBox.getChildren().addAll(nameLabel, expLabel, availLabel);
+                    // Email se presente (rispetta model)
+                    if (chef.getEmail() != null && !chef.getEmail().isEmpty()) {
+                        Label emailLabel = new Label("📧 " + chef.getEmail());
+                        emailLabel.setFont(javafx.scene.text.Font.font("Roboto", 11));
+                        emailLabel.setTextFill(Color.web("#666666"));
+                        cellBox.getChildren().add(emailLabel);
+                    }
+                    
+                    cellBox.getChildren().addAll(nameLabel, usernameLabel, expLabel, availLabel);
                     setGraphic(cellBox);
                     setText(null);
                     
@@ -121,6 +152,7 @@ public class SelezionaChefDialog extends Stage {
         });
         
         listaBox.getChildren().addAll(listaLabel, listaChef);
+        VBox.setVgrow(listaBox, Priority.ALWAYS);
         
         // Info selezione
         Label infoLabel = new Label("💡 Seleziona un chef dalla lista per aggiungerlo al corso");
@@ -185,11 +217,13 @@ public class SelezionaChefDialog extends Stage {
         confermaBtn.setStyle(confermaBtn.getStyle() + "-fx-opacity: 0.5;");
         
         formCard.getChildren().addAll(searchBox, listaBox, infoLabel, statsLabel, buttonBox);
+        VBox.setVgrow(formCard, Priority.ALWAYS);
         mainContainer.getChildren().addAll(title, formCard);
+        VBox.setVgrow(mainContainer, Priority.ALWAYS);
         
         rootPane.getChildren().addAll(background, mainContainer);
         
-        Scene scene = new Scene(rootPane, 500, 600);
+        Scene scene = new Scene(rootPane, 700, 650);
         scene.setFill(Color.TRANSPARENT);
         setScene(scene);
     }
@@ -200,11 +234,12 @@ public class SelezionaChefDialog extends Stage {
         } else {
             String lowerCaseFilter = searchText.toLowerCase();
             filteredChefs.setPredicate(chef -> {
-                // Ricerca per NOME o COGNOME
+                // Ricerca per NOME, COGNOME o USERNAME (rispetta model)
                 String nomeCompleto = (chef.getNome() + " " + chef.getCognome()).toLowerCase();
                 return nomeCompleto.contains(lowerCaseFilter) ||
                        chef.getNome().toLowerCase().contains(lowerCaseFilter) ||
-                       chef.getCognome().toLowerCase().contains(lowerCaseFilter);
+                       chef.getCognome().toLowerCase().contains(lowerCaseFilter) ||
+                       chef.getUsername().toLowerCase().contains(lowerCaseFilter);
             });
         }
     }
