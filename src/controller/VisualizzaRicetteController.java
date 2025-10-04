@@ -52,8 +52,6 @@ public class VisualizzaRicetteController {
         }
     }
 
-    // *** IMPLEMENTAZIONI ALTERNATIVE CON SOLO METODI ESISTENTI ***
-
     // Crea ricetta - usa solo quello che esiste
     public void creaRicetta(Ricetta ricetta) throws SQLException {
         try {
@@ -147,7 +145,6 @@ public class VisualizzaRicetteController {
             return false;
         }
     }
-
    
 
     // Associa/Disassocia ricette esistenti da sessioni

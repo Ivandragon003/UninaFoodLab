@@ -17,18 +17,19 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import exceptions.ValidationException;
+
 public class DettagliCorsoGUI {
     private GestioneCorsoController gestioneController;
     private CorsoCucina corso;
-    private ScrollPane scrollPane;
     private VBox card;
     private boolean editable = false;
+    private Runnable onChiudiCallback;
 
     private TextField nomeField;
     private TextField prezzoField;
@@ -53,56 +54,63 @@ public class DettagliCorsoGUI {
         this.corso = corso;
     }
 
-    public ScrollPane getRoot() {
+    public void setOnChiudiCallback(Runnable callback) {
+        this.onChiudiCallback = callback;
+    }
+
+    public StackPane getRoot() {
         if (gestioneController == null || corso == null) {
             throw new IllegalStateException("Controller o corso non impostati!");
         }
 
-        // Card principale
-        card = new VBox(15);
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setPadding(new Insets(25));
-        card.setMaxWidth(760);
-        card.setMinWidth(500);
+        StackPane mainContainer = new StackPane();
+        mainContainer.setStyle("-fx-background-color: #F8F9FA;");
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: #F8F9FA;");
+        scrollPane.setPadding(new Insets(30));
+
+        card = new VBox(18);
+        card.setAlignment(Pos.TOP_CENTER);
+        card.setPadding(new Insets(30));
+        card.setMaxWidth(850);
+        card.setMinWidth(700);
         card.setStyle("-fx-background-color: white;" +
-                "-fx-background-radius: 20;" +
-                "-fx-border-radius: 20;" +
+                "-fx-background-radius: 16;" +
+                "-fx-border-radius: 16;" +
                 "-fx-border-color: #FF9966;" +
                 "-fx-border-width: 2;");
 
-        DropShadow shadow = new DropShadow(10, Color.web("#000000", 0.16));
-        shadow.setOffsetY(3);
+        DropShadow shadow = new DropShadow(12, Color.web("#000000", 0.15));
+        shadow.setOffsetY(4);
         card.setEffect(shadow);
 
-        // Header con bottoni finestra
-        Label title = new Label("Dettagli corso");
-        title.setFont(Font.font("Roboto", FontWeight.BOLD, 22));
+        Label title = new Label("📋 Dettagli Corso");
+        title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
         title.setTextFill(Color.web("#FF6600"));
 
-        HBox headerBox = new HBox();
-        headerBox.setAlignment(Pos.CENTER_LEFT);
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        HBox windowButtons = createWindowButtons(card);
-        headerBox.getChildren().addAll(title, spacer, windowButtons);
-
-        // Campi
         nomeField = new TextField(safeString(corso.getNomeCorso()));
+        nomeField.setFont(Font.font("Roboto", 14));
+        
         prezzoField = new TextField(String.valueOf(corso.getPrezzo()));
+        prezzoField.setFont(Font.font("Roboto", 14));
+        
         argomentoField = new TextField(safeString(corso.getArgomento()));
+        argomentoField.setFont(Font.font("Roboto", 14));
 
         frequenzaCombo = new ComboBox<>();
         frequenzaCombo.getItems().setAll(Frequenza.values());
         frequenzaCombo.setValue(corso.getFrequenzaCorso());
 
         numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
+        numeroPostiField.setFont(Font.font("Roboto", 14));
 
         numeroSessioniField = new TextField(
                 corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
         );
         numeroSessioniField.setEditable(false);
-        numeroSessioniField.setStyle("-fx-control-inner-background: #E0E0E0;");
+        numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF; -fx-font-size: 14;");
 
         dataInizioPicker = new DatePicker(
                 corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
@@ -111,11 +119,10 @@ public class DettagliCorsoGUI {
                 corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
         );
 
-        // Lista chef
         chefListView = new ListView<>();
-        chefListView.setPrefHeight(160);
+        chefListView.setPrefHeight(150);
         chefListView.setMinHeight(100);
-        chefListView.setMaxHeight(280);
+        chefListView.setMaxHeight(250);
         chefListView.setCellFactory(lv -> new ListCell<>() {
             private final HBox box = new HBox(8);
             private final Label nameLabel = new Label();
@@ -124,7 +131,7 @@ public class DettagliCorsoGUI {
 
             {
                 meLabel.setStyle("-fx-text-fill: #FF6600; -fx-font-weight: bold;");
-                removeBtn.setStyle("-fx-background-radius: 8; -fx-background-color: #FF6666; -fx-text-fill: white;");
+                removeBtn.setStyle("-fx-background-radius: 8; -fx-background-color: #FF6666; -fx-text-fill: white; -fx-cursor: hand;");
                 removeBtn.setOnAction(e -> {
                     Chef it = getItem();
                     if (it != null) rimuoviChef(it);
@@ -152,18 +159,17 @@ public class DettagliCorsoGUI {
             }
         });
 
-        // Label selezione
         selezionatoLabel = new Label("Selezionato: nessuno");
-        selezionatoLabel.setStyle("-fx-font-weight: bold;");
+        selezionatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
         chefListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
             if (newV == null) selezionatoLabel.setText("Selezionato: nessuno");
             else selezionatoLabel.setText("Selezionato: " + newV.getUsername() + (isChefLoggato(newV) ? " (io)" : ""));
         });
 
-        // Combo + bottone aggiungi chef
         addChefCombo = new ComboBox<>();
-        addChefCombo.setPrefWidth(320);
-        addChefBtn = new Button("Aggiungi chef");
+        addChefCombo.setPrefWidth(300);
+        addChefBtn = new Button("➕ Aggiungi chef");
+        addChefBtn.setStyle("-fx-cursor: hand; -fx-background-color: #28A745; -fx-text-fill: white; -fx-font-weight: bold;");
         addChefBtn.setOnAction(e -> {
             Chef toAdd = addChefCombo.getValue();
             if (toAdd == null) {
@@ -177,17 +183,55 @@ public class DettagliCorsoGUI {
             pwdDlg.showAndWait().ifPresent(pw -> aggiungiChef(toAdd, pw));
         });
 
-        HBox addBox = new HBox(8, addChefCombo, addChefBtn);
+        HBox addBox = new HBox(10, addChefCombo, addChefBtn);
         addBox.setAlignment(Pos.CENTER_LEFT);
 
-        // Pulsanti principali
-        HBox buttons = new HBox(12);
-        buttons.setAlignment(Pos.CENTER);
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(15);
+        grid.setAlignment(Pos.CENTER);
 
-        modificaBtn = createStylishButton("✏ Modifica");
-        salvaBtn = createStylishButton("💾 Salva");
-        Button sessioniBtn = createStylishButton("📅 Sessioni");
-        Button chiudiBtn = createStylishButton("✖ Chiudi");
+        int row = 0;
+        grid.add(createLabel("📚 Nome:"), 0, row);
+        grid.add(nomeField, 1, row++);
+
+        grid.add(createLabel("💰 Prezzo (€):"), 0, row);
+        grid.add(prezzoField, 1, row++);
+
+        grid.add(createLabel("📖 Argomento:"), 0, row);
+        grid.add(argomentoField, 1, row++);
+
+        grid.add(createLabel("📅 Frequenza:"), 0, row);
+        grid.add(frequenzaCombo, 1, row++);
+
+        grid.add(createLabel("🪑 Numero posti:"), 0, row);
+        grid.add(numeroPostiField, 1, row++);
+
+        grid.add(createLabel("⏰ Numero sessioni:"), 0, row);
+        grid.add(numeroSessioniField, 1, row++);
+
+        grid.add(createLabel("🕑 Data inizio:"), 0, row);
+        grid.add(dataInizioPicker, 1, row++);
+
+        grid.add(createLabel("🏁 Data fine:"), 0, row);
+        grid.add(dataFinePicker, 1, row++);
+
+        ColumnConstraints c0 = new ColumnConstraints();
+        c0.setMinWidth(150);
+        c0.setPrefWidth(150);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setHgrow(Priority.ALWAYS);
+        c1.setMinWidth(350);
+        grid.getColumnConstraints().addAll(c0, c1);
+
+        HBox buttons = new HBox(15);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.setPadding(new Insets(20, 0, 0, 0));
+
+        modificaBtn = createStylishButton("✏️ Modifica", "#FFC107");
+        salvaBtn = createStylishButton("💾 Salva", "#28A745");
+        Button creaSessioneBtn = createStylishButton("➕ Crea Sessione", "#007BFF");
+        Button chiudiBtn = createStylishButton("❌ Chiudi", "#6C757D");
 
         salvaBtn.setDisable(true);
 
@@ -197,178 +241,132 @@ public class DettagliCorsoGUI {
             modificaBtn.setDisable(true);
         });
 
-        salvaBtn.setOnAction(e -> {
-            try {
-                double prezzo = Double.parseDouble(prezzoField.getText().replace(',', '.'));
-                int posti = Integer.parseInt(numeroPostiField.getText());
+        salvaBtn.setOnAction(e -> salvaModifiche());
+        creaSessioneBtn.setOnAction(e -> apriGestioneSessioni());
+        chiudiBtn.setOnAction(e -> tornaAllaListaCorsi());
 
-                if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null &&
-                        dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
-                    showAlert("Errore", "La data di inizio deve precedere la data di fine.");
-                    return;
-                }
+        buttons.getChildren().addAll(modificaBtn, salvaBtn, creaSessioneBtn, chiudiBtn);
 
-                corso.setNomeCorso(nomeField.getText());
-                corso.setPrezzo(prezzo);
-                corso.setArgomento(argomentoField.getText());
-                corso.setFrequenzaCorso(frequenzaCombo.getValue());
-                corso.setNumeroPosti(posti);
-
-                if (dataInizioPicker.getValue() != null)
-                    corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
-                if (dataFinePicker.getValue() != null)
-                    corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
-
-                gestioneController.modificaCorso(corso);
-                
-                corso.setNumeroSessioni(corso.getSessioni() != null ? corso.getSessioni().size() : 0);
-                numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
-
-                showAlert("Successo", "Corso modificato correttamente!");
-                setEditable(false);
-                salvaBtn.setDisable(true);
-                modificaBtn.setDisable(false);
-                refreshChefListView();
-
-            } catch (NumberFormatException ex) {
-                showAlert("Errore", "Valori numerici non validi per prezzo o posti.");
-            } catch (SQLException ex) {
-                showAlert("Errore DB", ex.getMessage());
-            } catch (Exception ex) {
-                showAlert("Errore", "Errore nel salvataggio: " + ex.getMessage());
-            }
-        });
-
-        sessioniBtn.setOnAction(e -> {
-            GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
-            sessioniGUI.setCorso(corso);
-
-            Stage sessioniStage = new Stage();
-            sessioniStage.setTitle("Gestione Sessioni - " + safeString(corso.getNomeCorso()));
-            Scene scene = new Scene(sessioniGUI.getRoot(), 800, 600);
-            sessioniStage.setScene(scene);
-
-            Stage currentStage = getStage(card);
-            if (currentStage != null) {
-                sessioniStage.initOwner(currentStage);
-            }
-            
-            sessioniStage.setOnHidden(event -> {
-                if (corso.getSessioni() != null) {
-                    corso.setNumeroSessioni(corso.getSessioni().size());
-                    numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
-                }
-            });
-            
-            sessioniStage.showAndWait();
-        });
-
-        chiudiBtn.setOnAction(e -> {
-            Stage stage = getStage(card);
-            if (stage != null) stage.close();
-        });
-
-        buttons.getChildren().addAll(modificaBtn, salvaBtn, sessioniBtn, chiudiBtn);
-
-        // Montaggio card
-        GridPane grid = new GridPane();
-        grid.setHgap(12);
-        grid.setVgap(10);
-
-        card.getChildren().clear();
-        card.getChildren().add(headerBox);
-
-        grid.add(new Label("Nome:"), 0, 0);
-        grid.add(nomeField, 1, 0);
-
-        grid.add(new Label("Prezzo:"), 0, 1);
-        grid.add(prezzoField, 1, 1);
-
-        grid.add(new Label("Argomento:"), 0, 2);
-        grid.add(argomentoField, 1, 2);
-
-        grid.add(new Label("Frequenza:"), 0, 3);
-        grid.add(frequenzaCombo, 1, 3);
-
-        grid.add(new Label("Numero posti:"), 0, 4);
-        grid.add(numeroPostiField, 1, 4);
-
-        grid.add(new Label("Numero sessioni:"), 0, 5);
-        grid.add(numeroSessioniField, 1, 5);
-
-        grid.add(new Label("Data inizio:"), 0, 6);
-        grid.add(dataInizioPicker, 1, 6);
-
-        grid.add(new Label("Data fine:"), 0, 7);
-        grid.add(dataFinePicker, 1, 7);
-
-        ColumnConstraints c0 = new ColumnConstraints();
-        c0.setMinWidth(140);
-        ColumnConstraints c1 = new ColumnConstraints();
-        c1.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(c0, c1);
-
-        card.getChildren().addAll(grid, new Separator(), new Label("Chef assegnati:"), chefListView,
-                selezionatoLabel, new Label("Aggiungi uno chef dal sistema:"), addBox, buttons);
+        card.getChildren().addAll(
+                title,
+                new Separator(),
+                grid,
+                new Separator(),
+                createLabel("👥 Chef assegnati al corso:"),
+                chefListView,
+                selezionatoLabel,
+                createLabel("➕ Aggiungi uno chef dal sistema:"),
+                addBox,
+                buttons
+        );
 
         setEditable(false);
         refreshChefListView();
 
-        scrollPane = new ScrollPane(card);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setPadding(new Insets(12));
-        return scrollPane;
+        VBox wrapper = new VBox(card);
+        wrapper.setAlignment(Pos.TOP_CENTER);
+        wrapper.setPadding(new Insets(20));
+        scrollPane.setContent(wrapper);
+
+        mainContainer.getChildren().add(scrollPane);
+        return mainContainer;
+    }
+
+    private Label createLabel(String text) {
+        Label label = new Label(text);
+        label.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 15));
+        label.setTextFill(Color.web("#212529"));
+        return label;
+    }
+
+    private Button createStylishButton(String text, String color) {
+        Button b = new Button(text);
+        b.setPrefWidth(160);
+        b.setPrefHeight(42);
+        b.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        b.setTextFill(Color.WHITE);
+        b.setStyle(String.format("-fx-background-radius: 10; -fx-background-color: %s; -fx-cursor: hand;", color));
+        
+        b.setOnMouseEntered(e -> b.setOpacity(0.8));
+        b.setOnMouseExited(e -> b.setOpacity(1.0));
+        
+        return b;
+    }
+
+    private void tornaAllaListaCorsi() {
+        if (onChiudiCallback != null) {
+            onChiudiCallback.run();
+        } else {
+            Stage stage = getStage(card);
+            if (stage != null) stage.close();
+        }
+    }
+
+    private void salvaModifiche() {
+        try {
+            double prezzo = Double.parseDouble(prezzoField.getText().replace(',', '.'));
+            int posti = Integer.parseInt(numeroPostiField.getText());
+
+            if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null &&
+                    dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
+                showAlert("Errore", "La data di inizio deve precedere la data di fine.");
+                return;
+            }
+
+            corso.setNomeCorso(nomeField.getText());
+            corso.setPrezzo(prezzo);
+            corso.setArgomento(argomentoField.getText());
+            corso.setFrequenzaCorso(frequenzaCombo.getValue());
+            corso.setNumeroPosti(posti);
+
+            if (dataInizioPicker.getValue() != null)
+                corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
+            if (dataFinePicker.getValue() != null)
+                corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
+
+            gestioneController.modificaCorso(corso);
+
+            corso.setNumeroSessioni(corso.getSessioni() != null ? corso.getSessioni().size() : 0);
+            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
+
+            showAlert("Successo", "Corso modificato correttamente!");
+            setEditable(false);
+            salvaBtn.setDisable(true);
+            modificaBtn.setDisable(false);
+            refreshChefListView();
+
+        } catch (ValidationException ex) {
+            showAlert("Errore di validazione", ex.getMessage());
+        } catch (NumberFormatException ex) {
+            showAlert("Errore", "Valori numerici non validi per prezzo o posti.");
+        } catch (Exception ex) {
+            showAlert("Errore", "Errore nel salvataggio: " + ex.getMessage());
+        }
+    }
+
+    private void apriGestioneSessioni() {
+        GestioneSessioniGUI sessioniGUI = new GestioneSessioniGUI();
+        sessioniGUI.setCorso(corso);
+        Stage stage = new Stage();
+        stage.setTitle("Gestione Sessioni - " + safeString(corso.getNomeCorso()));
+        stage.setScene(new Scene(sessioniGUI.getRoot(), 800, 600));
+        stage.showAndWait();
+
+        if (corso.getSessioni() != null) {
+            corso.setNumeroSessioni(corso.getSessioni().size());
+            numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
+        }
     }
 
     private String safeString(String s) {
         return s == null ? "" : s;
     }
 
-    private HBox createWindowButtons(Node rootNode) {
-        HBox controls = new HBox(6);
-        controls.setAlignment(Pos.CENTER_RIGHT);
-
-        Button minimizeBtn = createWindowBtn("_", Color.WHITE);
-        Button maximizeBtn = createWindowBtn("⬜", Color.WHITE);
-        Button closeBtn = createWindowBtn("✖", Color.web("#FF4444"));
-
-        minimizeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.setIconified(true);
-        });
-        maximizeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.setMaximized(!stage.isMaximized());
-        });
-        closeBtn.setOnAction(e -> {
-            Stage stage = getStage(rootNode);
-            if (stage != null) stage.close();
-        });
-
-        controls.getChildren().addAll(minimizeBtn, maximizeBtn, closeBtn);
-        return controls;
-    }
-
-    private Button createWindowBtn(String symbol, Color color) {
-        Button btn = new Button(symbol);
-        btn.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        btn.setTextFill(color);
-        btn.setStyle("-fx-background-color: transparent;");
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: rgba(0,0,0,0.06);"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: transparent;"));
-        btn.setPrefSize(30, 26);
-        return btn;
-    }
-
     private Stage getStage(Node node) {
         if (node == null) return null;
         Scene s = node.getScene();
         if (s == null) return null;
-        if (s.getWindow() instanceof Stage) return (Stage) s.getWindow();
-        return null;
+        return (s.getWindow() instanceof Stage) ? (Stage) s.getWindow() : null;
     }
 
     private boolean isChefLoggato(Chef c) {
@@ -390,7 +388,7 @@ public class DettagliCorsoGUI {
                         .collect(Collectors.toList());
                 addChefCombo.getItems().setAll(avail);
                 if (!avail.isEmpty()) addChefCombo.setValue(avail.get(0));
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 addChefCombo.getItems().clear();
             }
         });
@@ -412,8 +410,6 @@ public class DettagliCorsoGUI {
                     corso.getChef().remove(chef);
                     refreshChefListView();
                     showAlert("Rimosso", "Chef rimosso correttamente.");
-                } catch (SQLException ex) {
-                    showAlert("Errore DB", ex.getMessage());
                 } catch (Exception ex) {
                     showAlert("Errore", ex.getMessage());
                 }
@@ -429,9 +425,7 @@ public class DettagliCorsoGUI {
             if (!corso.getChef().contains(chef)) corso.getChef().add(chef);
             refreshChefListView();
             showAlert("Aggiunto", "Chef aggiunto correttamente.");
-        } catch (SQLException ex) {
-            showAlert("Errore DB", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
+        } catch (ValidationException ex) {
             showAlert("Attenzione", ex.getMessage());
         } catch (Exception ex) {
             showAlert("Errore", ex.getMessage());
@@ -450,42 +444,18 @@ public class DettagliCorsoGUI {
         addChefCombo.setDisable(!edit);
         addChefBtn.setDisable(!edit);
 
-        String borderColor = edit ? "#FF9966" : "#DDDDDD";
-        String borderWidth = edit ? "2" : "1";
-
-        card.setOpacity(edit ? 1.0 : 0.95);
-        card.setStyle("-fx-background-color: white;" +
-                "-fx-background-radius: 20;" +
-                "-fx-border-radius: 20;" +
-                "-fx-border-color: " + borderColor + ";" +
-                "-fx-border-width: " + borderWidth + ";");
+        String borderColor = edit ? "#FF9966" : "#CED4DA";
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 16;" +
+                "-fx-border-radius: 16; -fx-border-color: " + borderColor + "; -fx-border-width: 2;");
 
         refreshChefListView();
     }
 
-    private Button createStylishButton(String text) {
-        Button btn = new Button(text);
-        btn.setStyle("-fx-background-color: linear-gradient(to right, #FF9966, #FF5E62);" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 20;" +
-                "-fx-padding: 8 16;");
-        return btn;
-    }
-
-    private void showAlert(String titolo, String messaggio) {
+    private void showAlert(String title, String msg) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(titolo);
+        alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.setContentText(messaggio);
+        alert.setContentText(msg);
         alert.showAndWait();
-    }
-
-    public void start(Stage stage) {
-        ScrollPane root = getRoot();
-        Scene scene = new Scene(root, 900, 700);
-        stage.setTitle("Dettagli Corso - " + safeString(corso.getNomeCorso()));
-        stage.setScene(scene);
-        stage.show();
     }
 }
