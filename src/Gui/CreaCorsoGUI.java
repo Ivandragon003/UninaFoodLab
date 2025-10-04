@@ -46,16 +46,15 @@ public class CreaCorsoGUI {
 
 	public VBox getRoot() {
 		if (root == null) {
-			root = createMainLayout(); //  crea layout principale
+			root = createMainLayout();
 		}
 		return root;
 	}
 
 	private VBox createMainLayout() {
-		// ROOT con sfondo arancione
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
-		StyleHelper.applyOrangeBackground(container); // sfondo arancione chiaro
+		StyleHelper.applyOrangeBackground(container); 
 
 		Label titleLabel = StyleHelper.createTitleLabel("✨ Crea Nuovo Corso di Cucina");
 		titleLabel.setAlignment(Pos.CENTER);
@@ -133,7 +132,7 @@ public class CreaCorsoGUI {
 		endDatePicker = StyleHelper.createDatePicker();
 		endDatePicker.setPromptText("Data fine OBBLIGATORIA");
 
-		startDatePicker.setOnAction(e -> validateDatesForSessions()); // ✅ abilita aggiungi sessione se valide
+		startDatePicker.setOnAction(e -> validateDatesForSessions()); 
 		endDatePicker.setOnAction(e -> validateDatesForSessions());
 
 		startHour = createTimeComboBox(24, 9);
@@ -172,7 +171,7 @@ public class CreaCorsoGUI {
 		sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
 		Button selezionaChefBtn = StyleHelper.createPrimaryButton("+ Seleziona Chef");
-		selezionaChefBtn.setOnAction(e -> apriDialogSelezionaChef()); //  mostra dialog selezione chef
+		selezionaChefBtn.setOnAction(e -> apriDialogSelezionaChef()); 
 
 		Label selezionatiLabel = StyleHelper.createLabel("Chef Selezionati:");
 
@@ -181,7 +180,7 @@ public class CreaCorsoGUI {
 		listaChefContainer.setStyle(
 				"-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;");
 
-		updateChefDisplay(); // aggiorna lista chef visualizzata
+		updateChefDisplay();
 
 		section.getChildren().addAll(sectionTitle, selezionaChefBtn, selezionatiLabel, listaChefContainer);
 		return section;
@@ -242,7 +241,7 @@ public class CreaCorsoGUI {
 		HBox buttonBox = new HBox(10);
 
 		aggiungiSessioneBtn = StyleHelper.createSuccessButton("+ Aggiungi Sessione");
-		aggiungiSessioneBtn.setDisable(true); // inizialmente disabilitato
+		aggiungiSessioneBtn.setDisable(true); 
 		aggiungiSessioneBtn.setOnAction(e -> aggiungiSessione());
 
 		Button eliminaSessioneBtn = StyleHelper.createDangerButton("🗑️ Rimuovi");
@@ -257,13 +256,12 @@ public class CreaCorsoGUI {
 		listaSessioniContainer.setStyle(
 				"-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;");
 
-		updateSessioniDisplay(); // aggiorna lista sessioni visualizzata
+		updateSessioniDisplay(); 
 
 		section.getChildren().addAll(sectionTitle, buttonBox, sessioniLabel, listaSessioniContainer);
 		return section;
 	}
 
-	//  aggiorna lista sessioni
 	private void updateSessioniDisplay() {
 		listaSessioniContainer.getChildren().clear();
 
@@ -305,7 +303,7 @@ public class CreaCorsoGUI {
 				}
 
 				if (!dettagli.isEmpty()) {
-					Label dettagliLabel = new Label(dettagli); // info extra sessione
+					Label dettagliLabel = new Label(dettagli); 
 					dettagliLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
 					dettagliLabel.setTextFill(Color.GRAY);
 					infoBox.getChildren().add(dettagliLabel);
@@ -313,7 +311,7 @@ public class CreaCorsoGUI {
 
 				infoBox.getChildren().addAll(tipoLabel, dataLabel);
 
-				Button removeBtn = new Button("✕"); //  rimuove sessione
+				Button removeBtn = new Button("✕");
 				removeBtn.setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white; "
 						+ "-fx-background-radius: 15; -fx-min-width: 30; -fx-min-height: 30; "
 						+ "-fx-max-width: 30; -fx-max-height: 30; -fx-cursor: hand; -fx-font-weight: bold;");
@@ -341,11 +339,11 @@ public class CreaCorsoGUI {
 		resetBtn.setPrefWidth(150);
 		resetBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; "
 				+ "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
-		resetBtn.setOnAction(e -> clearForm()); // ✅ reset form
+		resetBtn.setOnAction(e -> clearForm()); 
 
 		Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva Corso");
 		salvaBtn.setPrefWidth(150);
-		salvaBtn.setOnAction(e -> salvaCorso()); // ✅ salva corso
+		salvaBtn.setOnAction(e -> salvaCorso()); 
 
 		buttonBox.getChildren().addAll(resetBtn, salvaBtn);
 		return buttonBox;
@@ -355,7 +353,6 @@ public class CreaCorsoGUI {
 		return createTimeComboBox(max, defaultValue, 1);
 	}
 
-	//  crea combo box orario con step
 	private ComboBox<Integer> createTimeComboBox(int max, int defaultValue, int step) {
 		ComboBox<Integer> combo = new ComboBox<>();
 		for (int i = 0; i < max; i += step) {
@@ -368,7 +365,6 @@ public class CreaCorsoGUI {
 		return combo;
 	}
 
-	//  abilita/disabilita bottone aggiungi sessione
 	private void validateDatesForSessions() {
 		boolean dateValid = startDatePicker.getValue() != null && endDatePicker.getValue() != null;
 		if (aggiungiSessioneBtn != null) {

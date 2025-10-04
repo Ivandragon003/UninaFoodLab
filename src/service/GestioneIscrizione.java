@@ -18,7 +18,7 @@ public class GestioneIscrizione {
 
     public void aggiungiIscrizione(Utente utente, CorsoCucina corso) throws SQLException {
         Iscrizione iscrizione = new Iscrizione(utente, corso, true);
-        if (!utente.getIscrizioni().contains(iscrizione)) {  // evita duplicati
+        if (!utente.getIscrizioni().contains(iscrizione)) {
             utente.getIscrizioni().add(iscrizione);
             corso.getIscrizioni().add(iscrizione);
             iscrizioneDAO.save(iscrizione);

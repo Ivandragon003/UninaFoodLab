@@ -23,7 +23,6 @@ public class GestioneUtente {
 		this.inPresenzaDAO = inPresenzaDAO;
 	}
 
-	// Adesioni
 	public void aggiungiAdesione(Utente utente, Adesione adesione) throws SQLException {
 		if (!utente.getAdesioniUtente().contains(adesione)) {
 			utente.getAdesioniUtente().add(adesione);
@@ -42,7 +41,6 @@ public class GestioneUtente {
 	}
 
 
-	// Iscrizioni
 	public void aggiungiIscrizione(Utente utente, Iscrizione iscrizione) throws SQLException {
 		if (!utente.getIscrizioni().contains(iscrizione)) {
 			utente.getIscrizioni().add(iscrizione);
@@ -60,7 +58,6 @@ public class GestioneUtente {
 		}
 	}
 
-	// === Sessioni seguite ===
 	public void aggiungiSessione(Utente utente, Sessione sessione) throws SQLException {
 		if (utente.getSessioniSeguite().add(sessione)) {
 			if (sessione instanceof Online) {

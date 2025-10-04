@@ -13,7 +13,6 @@ import java.util.Set;
 
 public class AdesioneDAO {
 
-    // Inserimento di una adesione
 	public void save(Adesione adesione) throws SQLException {
 	    String sql = "INSERT INTO adesione (idsessione, codfiscale, stato, dataadesione) VALUES (?, ?, ?, ?)";
 	    try (Connection conn = DBConnection.getConnection();
@@ -28,9 +27,6 @@ public class AdesioneDAO {
 	    }
 	}
 
-
-
-    // Eliminazione 
 	public void delete(Adesione adesione) throws SQLException {
 	    String sql = "DELETE FROM adesione WHERE idsessione = ? AND codfiscale = ?";
 	    try (Connection conn = DBConnection.getConnection();
@@ -42,8 +38,6 @@ public class AdesioneDAO {
 	    }
 	}
 
-
-    // Eliminazione di tutte le adesioni di una sessione
     public void deleteBySessione(int idSessione) throws SQLException {
         String sql = "DELETE FROM adesione WHERE idsessione = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -54,7 +48,6 @@ public class AdesioneDAO {
         }
     }
 
-    // Verifica se esiste un'adesione
     public boolean exists(Adesione adesione) throws SQLException {
         String sql = "SELECT 1 FROM adesione WHERE idsessione = ? AND codfiscale = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -69,7 +62,6 @@ public class AdesioneDAO {
         }
     }
 
-    // Recupera tutte le adesion
     public List<Adesione> getAll() throws SQLException {
         List<Adesione> list = new ArrayList<>();
         String sql = "SELECT a.codfiscale, a.idsessione, a.stato, a.dataadesione, " +
@@ -106,7 +98,7 @@ public class AdesioneDAO {
         return list;
     }
 
-    // Recupera tutti i partecipanti in presenza di una sessione
+
     public Set<Utente> getPartecipantiInPresenza(int idSessione) throws SQLException {
         Set<Utente> partecipanti = new HashSet<>();
         String sql = "SELECT codFiscale, nome, cognome " +

@@ -10,8 +10,7 @@ import java.util.Optional;
 
 public class IngredienteDAO {
 
-    // Inserimento con ritorno ID
-	public int save(Ingrediente i) throws SQLException {
+    public int save(Ingrediente i) throws SQLException {
         String sql = "INSERT INTO ingrediente (nome, tipo) VALUES (?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -22,15 +21,17 @@ public class IngredienteDAO {
 
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
-                    return rs.getInt(1); // ritorna solo l'ID generato
+                    int generatedId = rs.getInt(1);
+                    i.setIdIngrediente(generatedId);
+                    return generatedId;
                 }
             }
         }
         throw new SQLException("Inserimento ingrediente fallito, nessun id generato.");
     }
 
-	public Optional<Ingrediente> findById(int id) throws SQLException {
-        String sql = "SELECT * FROM ingrediente WHERE idIngrediente = ?";
+    public Optional<Ingrediente> findById(int id) throws SQLException {
+        String sql = "SELECT idIngrediente, nome, tipo FROM ingrediente WHERE idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -41,6 +42,7 @@ public class IngredienteDAO {
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
+                    i.setIdIngrediente(rs.getInt("idIngrediente"));
                     return Optional.of(i);
                 }
             }
@@ -48,9 +50,9 @@ public class IngredienteDAO {
         return Optional.empty();
     }
 
-	public List<Ingrediente> getAll() throws SQLException {
+    public List<Ingrediente> getAll() throws SQLException {
         List<Ingrediente> list = new ArrayList<>();
-        String sql = "SELECT * FROM ingrediente ORDER BY nome";
+        String sql = "SELECT idIngrediente, nome, tipo FROM ingrediente ORDER BY nome";
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -60,15 +62,15 @@ public class IngredienteDAO {
                         rs.getString("nome"),
                         rs.getString("tipo")
                 );
+                i.setIdIngrediente(rs.getInt("idIngrediente"));
                 list.add(i);
             }
         }
         return list;
     }
 
-    // Ricerca per nome esatto (per controlli su duplicati)
-	public Optional<Ingrediente> findByNome(String nome) throws SQLException {
-        String sql = "SELECT * FROM ingrediente WHERE nome = ?";
+    public Optional<Ingrediente> findByNome(String nome) throws SQLException {
+        String sql = "SELECT idIngrediente, nome, tipo FROM ingrediente WHERE nome = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -79,6 +81,7 @@ public class IngredienteDAO {
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
+                    i.setIdIngrediente(rs.getInt("idIngrediente"));
                     return Optional.of(i);
                 }
             }
@@ -86,10 +89,9 @@ public class IngredienteDAO {
         return Optional.empty();
     }
 
-    // Ricerca multipla per tipo
-	public List<Ingrediente> getByTipo(String tipo) throws SQLException {
+    public List<Ingrediente> getByTipo(String tipo) throws SQLException {
         List<Ingrediente> list = new ArrayList<>();
-        String sql = "SELECT * FROM ingrediente WHERE tipo = ?";
+        String sql = "SELECT idIngrediente, nome, tipo FROM ingrediente WHERE tipo = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -100,6 +102,7 @@ public class IngredienteDAO {
                             rs.getString("nome"),
                             rs.getString("tipo")
                     );
+                    i.setIdIngrediente(rs.getInt("idIngrediente"));
                     list.add(i);
                 }
             }
@@ -107,8 +110,7 @@ public class IngredienteDAO {
         return list;
     }
 
-    // Aggiornamento tramite ID
-	public void update(int id, Ingrediente i) throws SQLException {
+    public void update(int id, Ingrediente i) throws SQLException {
         String sql = "UPDATE ingrediente SET nome = ?, tipo = ? WHERE idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -120,7 +122,6 @@ public class IngredienteDAO {
         }
     }
 
-    // Eliminazione tramite ID
     public void delete(int id) throws SQLException {
         String sql = "DELETE FROM ingrediente WHERE idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();

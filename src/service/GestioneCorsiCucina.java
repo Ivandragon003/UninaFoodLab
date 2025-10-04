@@ -55,7 +55,6 @@ public class GestioneCorsiCucina {
 
         corsoDAO.save(corso);
 
-        // salva sessioni
         if (corso.getSessioni() != null) {
             for (Sessione s : corso.getSessioni()) {
                 if (s instanceof Online) {
@@ -70,7 +69,6 @@ public class GestioneCorsiCucina {
             }
         }
 
-        // assegna i chef
         if (corso.getChef() != null) {
             for (Chef c : corso.getChef()) {
                 if (!chefDAO.findByCodFiscale(c.getCodFiscale()).isPresent()) {

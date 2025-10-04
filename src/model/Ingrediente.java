@@ -9,6 +9,11 @@ public class Ingrediente {
 		 setNome(nome);
 	     setTipo(tipo);
 	}
+	
+	public void setIdIngrediente(int idIngrediente) {
+	    this.idIngrediente = idIngrediente;
+	}
+
 
 	public int getIdIngrediente() {
 		return idIngrediente;

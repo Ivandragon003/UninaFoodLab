@@ -11,20 +11,18 @@ import java.util.List;
 
 public class UsaDAO {
 
-    // Inserimento
     public void save(Usa usa) throws SQLException {
         String sql = "INSERT INTO Usa (idRicetta, idIngrediente, quantita) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, usa.getRicetta().getIdRicetta());  // prendi l'id direttamente dal DB
+            ps.setInt(1, usa.getRicetta().getIdRicetta());  
             ps.setInt(2, usa.getIngrediente().getIdIngrediente());
             ps.setDouble(3, usa.getQuantita());
             ps.executeUpdate();
         }
     }
 
-    // Aggiornamento quantità
     public void updateQuantita(Usa usa) throws SQLException {
         String sql = "UPDATE Usa SET quantita = ? WHERE idRicetta = ? AND idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -37,7 +35,6 @@ public class UsaDAO {
         }
     }
 
-    // Eliminazione per ricetta + ingrediente
     public void delete(Usa usa) throws SQLException {
         String sql = "DELETE FROM Usa WHERE idRicetta = ? AND idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -58,7 +55,6 @@ public class UsaDAO {
         }
     }
     
- // UsaDAO.java
     public void deleteByIngrediente(Ingrediente ingrediente) throws SQLException {
         if (ingrediente == null) {
             throw new IllegalArgumentException("Ingrediente non può essere null");
@@ -72,11 +68,10 @@ public class UsaDAO {
         }
     }
 
-
-    // Lettura tutti
     public List<Usa> getAll() throws SQLException {
         List<Usa> list = new ArrayList<>();
-        String sql = "SELECT r.nome AS nomeRicetta, i.nome AS nomeIngrediente, i.tipo AS tipoIngrediente, u.quantita " +
+        String sql = "SELECT r.idRicetta, r.nome AS nomeRicetta, r.tempoPreparazione, " +
+                     "i.idIngrediente, i.nome AS nomeIngrediente, i.tipo AS tipoIngrediente, u.quantita " +
                      "FROM Usa u " +
                      "JOIN Ricetta r ON u.idRicetta = r.idRicetta " +
                      "JOIN Ingrediente i ON u.idIngrediente = i.idIngrediente";
@@ -86,8 +81,12 @@ public class UsaDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Ricetta r = new Ricetta(rs.getString("nomeRicetta"), 0);  // tempoPreparazione ignoto
+                Ricetta r = new Ricetta(rs.getString("nomeRicetta"), rs.getInt("tempoPreparazione"));
+                r.setIdRicetta(rs.getInt("idRicetta"));
+                
                 Ingrediente i = new Ingrediente(rs.getString("nomeIngrediente"), rs.getString("tipoIngrediente"));
+                i.setIdIngrediente(rs.getInt("idIngrediente"));
+                
                 Usa usa = new Usa(r, i, rs.getDouble("quantita"));
                 list.add(usa);
             }
@@ -95,10 +94,10 @@ public class UsaDAO {
         return list;
     }
 
-    // Lettura per ricetta
     public List<Usa> getByRicetta(String nomeRicetta) throws SQLException {
         List<Usa> list = new ArrayList<>();
-        String sql = "SELECT r.nome AS nomeRicetta, i.nome AS nomeIngrediente, i.tipo AS tipoIngrediente, u.quantita " +
+        String sql = "SELECT r.idRicetta, r.nome AS nomeRicetta, r.tempoPreparazione, " +
+                     "i.idIngrediente, i.nome AS nomeIngrediente, i.tipo AS tipoIngrediente, u.quantita " +
                      "FROM Usa u " +
                      "JOIN Ricetta r ON u.idRicetta = r.idRicetta " +
                      "JOIN Ingrediente i ON u.idIngrediente = i.idIngrediente " +
@@ -110,8 +109,12 @@ public class UsaDAO {
             ps.setString(1, nomeRicetta);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Ricetta r = new Ricetta(rs.getString("nomeRicetta"), 0);
+                    Ricetta r = new Ricetta(rs.getString("nomeRicetta"), rs.getInt("tempoPreparazione"));
+                    r.setIdRicetta(rs.getInt("idRicetta"));
+                    
                     Ingrediente i = new Ingrediente(rs.getString("nomeIngrediente"), rs.getString("tipoIngrediente"));
+                    i.setIdIngrediente(rs.getInt("idIngrediente"));
+                    
                     Usa usa = new Usa(r, i, rs.getDouble("quantita"));
                     list.add(usa);
                 }

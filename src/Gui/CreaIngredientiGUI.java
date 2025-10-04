@@ -13,6 +13,7 @@ import javafx.stage.StageStyle;
 import model.Ingrediente;
 import util.StyleHelper;
 
+import java.util.Optional;
 
 public class CreaIngredientiGUI extends Stage {
 
@@ -23,7 +24,6 @@ public class CreaIngredientiGUI extends Stage {
     private ComboBox<String> tipoCombo;
     private TextField tipoPersonalizzatoField;
 
-    // Drag support
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -127,11 +127,9 @@ public class CreaIngredientiGUI extends Stage {
         grid.setHgap(15);
         grid.setVgap(20);
 
-        // campo nome
         nomeField = StyleHelper.createTextField("Es. Pomodoro San Marzano");
         nomeField.setPrefWidth(300);
 
-        // combo tipi
         tipoCombo = StyleHelper.createComboBox();
         tipoCombo.setPrefWidth(200);
         tipoCombo.getItems().addAll(
@@ -141,7 +139,6 @@ public class CreaIngredientiGUI extends Stage {
         );
         tipoCombo.setPromptText("Seleziona tipo");
 
-        // tipo personalizzato
         tipoPersonalizzatoField = StyleHelper.createTextField("Specifica il tipo...");
         tipoPersonalizzatoField.setPrefWidth(200);
         tipoPersonalizzatoField.setVisible(false);
@@ -185,7 +182,6 @@ public class CreaIngredientiGUI extends Stage {
         return buttonBox;
     }
 
-    // Fix: usa creaIngrediente(nome, tipo)
     private void salvaIngrediente() {
         try {
             if (!validateForm()) return;
@@ -199,11 +195,22 @@ public class CreaIngredientiGUI extends Stage {
             if (ingredienteController != null) {
                 try {
                     int idCreato = ingredienteController.creaIngrediente(nome, tipo);
-                    ingredienteCreato = new Ingrediente(nome, tipo);
-                    showAlert("Successo",
-                        "Ingrediente creato: " + nome + " (" + tipo + ")\nID: " + idCreato);
+                    
+                    Optional<Ingrediente> ingredienteOpt = ingredienteController.trovaIngredientePerId(idCreato);
+                    
+                    if (ingredienteOpt.isPresent()) {
+                        ingredienteCreato = ingredienteOpt.get();
+                        System.out.println("✅ DEBUG: Ingrediente creato con ID: " + ingredienteCreato.getIdIngrediente());
+                        showAlert("Successo",
+                            "Ingrediente creato: " + nome + " (" + tipo + ")\nID: " + idCreato);
+                    } else {
+                        showAlert("Errore", "Ingrediente salvato ma non recuperato dal DB");
+                        return;
+                    }
+                        
                 } catch (Exception e) {
                     showAlert("Errore DB", e.getMessage());
+                    e.printStackTrace();
                     return;
                 }
             } else {
@@ -215,6 +222,7 @@ public class CreaIngredientiGUI extends Stage {
             close();
         } catch (Exception e) {
             showAlert("Errore", e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -238,7 +246,6 @@ public class CreaIngredientiGUI extends Stage {
         return true;
     }
 
-    // mostra alert base
     private void showAlert(String title, String message) {
         Alert alert = new Alert(title.equals("Successo")
             ? Alert.AlertType.INFORMATION

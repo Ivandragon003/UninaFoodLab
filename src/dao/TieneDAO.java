@@ -13,7 +13,6 @@ public class TieneDAO {
     private ChefDAO chefDAO = new ChefDAO();
     private CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
 
-    // Inserimento associazione chef-corso
     public void save(String codFiscale, int idCorso) throws SQLException {
         String sql = "INSERT INTO tiene (codfiscale, idcorsocucina) VALUES (?, ?)";
         try (Connection conn = DBConnection.getConnection();

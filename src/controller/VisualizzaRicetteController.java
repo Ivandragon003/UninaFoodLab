@@ -35,8 +35,6 @@ public class VisualizzaRicetteController {
 
     public void aggiungiRicettaASessione(InPresenza sessione, Ricetta r) {
         try {
-            // Solo se il metodo creaRicetta esiste nel tuo GestioneRicette
-            // Altrimenti rimuovi questa riga
             if (hasCreateMethod()) {
                 gestioneRicette.creaRicetta(r);
             }

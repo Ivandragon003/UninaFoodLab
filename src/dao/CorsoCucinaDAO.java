@@ -94,7 +94,6 @@ public class CorsoCucinaDAO {
 
             while (rs.next()) {
                 CorsoCucina corso = mapResultSetToCorso(rs);
-                // Aggiorna numeroSessioni
                 corso.setNumeroSessioni(getNumeroSessioniPerCorso(corso.getIdCorso()));
                 list.add(corso);
             }
@@ -151,7 +150,6 @@ public class CorsoCucinaDAO {
         return corso;
     }
 
-    // Ottiene solo il numero di sessioni per un corso
     public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
         String sql = "SELECT COUNT(*) AS num_sessioni FROM sessione WHERE idCorsoCucina = ?";
         try (Connection conn = DBConnection.getConnection();

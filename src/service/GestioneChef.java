@@ -18,7 +18,6 @@ public class GestioneChef {
 		this.tieneDAO = tieneDAO;
 	}
 
-	// Crea
 	public void creaChef(Chef chef) throws SQLException {
 		if (chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
 			throw new IllegalArgumentException("Chef con questo codice fiscale già esistente");
@@ -48,17 +47,15 @@ public class GestioneChef {
 		return chefDAO.getAll();
 	}
 
-	// LOGIN
 	public Chef getChefByUsername(String username) throws SQLException {
 		Optional<Chef> chef = chefDAO.findByUsername(username);
-		return chef.orElse(null); // Ritorna null se non trovato
+		return chef.orElse(null);
 	}
 
 	public boolean existsByEmail(String email) throws SQLException {
 		return chefDAO.existsByEmail(email);
 	}
 
-	// Corsi di cucina
 	public void aggiungiCorso(Chef chef, CorsoCucina corso) throws SQLException {
 		if (!chef.getCorsi().contains(corso)) {
 			chef.getCorsi().add(corso);

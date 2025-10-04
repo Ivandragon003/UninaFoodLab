@@ -10,6 +10,7 @@ import model.Usa;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class GestioneRicette {
 
@@ -25,14 +26,29 @@ public class GestioneRicette {
 
     public void creaRicetta(Ricetta r) throws SQLException {
         ricettaDAO.save(r);
+        
         for (Map.Entry<Ingrediente, Double> entry : r.getIngredienti().entrySet()) {
             Ingrediente ingr = entry.getKey();
-            if (!ingredienteDAO.findByNome(ingr.getNome()).isPresent()) {
+            
+            Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
+            
+            if (!ingrDaDB.isPresent()) {
+                System.out.println("🔍 DEBUG: Ingrediente '" + ingr.getNome() + "' non trovato, lo salvo...");
                 ingredienteDAO.save(ingr);
+                ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
             }
-            Usa usa = new Usa(r, ingr, entry.getValue());
-            usaDAO.save(usa);
+            
+            if (ingrDaDB.isPresent()) {
+                Ingrediente ingredienteConID = ingrDaDB.get();
+                System.out.println("✅ DEBUG: Uso ingrediente ID=" + ingredienteConID.getIdIngrediente() + ", Nome=" + ingredienteConID.getNome());
+                Usa usa = new Usa(r, ingredienteConID, entry.getValue());
+                usaDAO.save(usa);
+            } else {
+                throw new SQLException("Impossibile recuperare ingrediente '" + ingr.getNome() + "' dal database");
+            }
         }
+        
+        System.out.println("✅ Ricetta '" + r.getNome() + "' salvata con successo!");
     }
 
     public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
@@ -43,12 +59,20 @@ public class GestioneRicette {
         if (r.getIngredienti().containsKey(i)) {
             throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
         }
-        if (!ingredienteDAO.findByNome(i.getNome()).isPresent()) {
+        
+        Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(i.getNome());
+        
+        if (!ingrDaDB.isPresent()) {
             ingredienteDAO.save(i);
+            ingrDaDB = ingredienteDAO.findByNome(i.getNome());
         }
-        r.getIngredienti().put(i, quantita);
-        Usa usa = new Usa(r, i, quantita);
-        usaDAO.save(usa);
+        
+        if (ingrDaDB.isPresent()) {
+            Ingrediente ingredienteConID = ingrDaDB.get();
+            r.getIngredienti().put(ingredienteConID, quantita);
+            Usa usa = new Usa(r, ingredienteConID, quantita);
+            usaDAO.save(usa);
+        }
     }
 
     public void aggiornaQuantitaIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {

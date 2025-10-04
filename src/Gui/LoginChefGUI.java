@@ -207,14 +207,11 @@ public class LoginChefGUI extends Application {
                 messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
                 messageLabel.setTextFill(Color.web("#FF6600"));
 
-                // IMPORTANTE: Creare il GestioneCorsoController e impostare lo chef loggato PRIMA di passarlo
                 GestioneCorsoController gestioneCorsoController =
                         new GestioneCorsoController(corsiService, chefController.getGestioneChef());
                 
-                // FIX: Imposta lo chef loggato nel controller PRIMA di usarlo
                 gestioneCorsoController.setChefLoggato(chef);
 
-                // Controller per visualizzare i corsi
                 VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
 
                 ChefMenuGUI menu = new ChefMenuGUI();

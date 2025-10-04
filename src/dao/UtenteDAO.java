@@ -10,7 +10,6 @@ import java.util.Optional;
 
 public class UtenteDAO {
 
-    // Inserimento
     public void save(Utente u) throws SQLException {
         String sql = "INSERT INTO utente (codFiscale, nome, cognome, email, dataNascita) " +
                      "VALUES (?, ?, ?, ?, ?)";
@@ -27,7 +26,6 @@ public class UtenteDAO {
         }
     }
 
-    // Lettura singola per CF
     public Optional<Utente> findByCodFiscale(String cf) throws SQLException {
         String sql = "SELECT * FROM utente WHERE codFiscale = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -44,7 +42,6 @@ public class UtenteDAO {
         return Optional.empty();
     }
 
-    // Lettura tutti
     public List<Utente> getAll() throws SQLException {
         List<Utente> list = new ArrayList<>();
         String sql = "SELECT * FROM utente ORDER BY nome";
@@ -59,7 +56,6 @@ public class UtenteDAO {
         return list;
     }
 
-    // Ricerca per nome esatto
     public List<Utente> getByNome(String nome) throws SQLException {
         List<Utente> list = new ArrayList<>();
         String sql = "SELECT * FROM utente WHERE nome = ?";
@@ -76,7 +72,6 @@ public class UtenteDAO {
         return list;
     }
 
-    // Ricerca per nome parziale
     public List<Utente> searchByNome(String partialNome) throws SQLException {
         List<Utente> list = new ArrayList<>();
         String sql = "SELECT * FROM utente WHERE nome ILIKE ?";
@@ -93,7 +88,6 @@ public class UtenteDAO {
         return list;
     }
 
-    // Aggiornamento
     public void update(Utente u) throws SQLException {
         String sql = "UPDATE utente SET nome = ?, cognome = ?, email = ?, dataNascita = ? WHERE codFiscale = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -109,7 +103,6 @@ public class UtenteDAO {
         }
     }
 
-    // Eliminazione
     public void delete(String cf) throws SQLException {
         String sql = "DELETE FROM utente WHERE codFiscale = ?";
         try (Connection conn = DBConnection.getConnection();

@@ -16,7 +16,6 @@ public class GestioneUsa {
         this.usaDAO = usaDAO;
     }
 
-    // Aggiungi ingrediente a ricetta
     public void aggiungiIngredienteARicetta(Ricetta r, Ingrediente i, double quantita) throws SQLException {
         if (!r.getIngredienti().containsKey(i)) {
             r.getIngredienti().put(i, quantita);
@@ -25,8 +24,8 @@ public class GestioneUsa {
             throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
         }
     }
-
-    // Rimuovi ingrediente da ricetta
+    
+    
     public void rimuoviIngredienteDaRicetta(Ricetta r, Ingrediente i) throws SQLException {
         if (r.getIngredienti().containsKey(i)) {
             r.getIngredienti().remove(i);

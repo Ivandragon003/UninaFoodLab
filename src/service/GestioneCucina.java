@@ -15,7 +15,6 @@ public class GestioneCucina {
         this.cucinaDAO = cucinaDAO;
     }
 
-    // Aggiungi sessione a ricetta (solo se è in presenza)
     public void aggiungiSessioneARicetta(Ricetta r, Sessione s) throws SQLException {
         if (!(s instanceof InPresenza)) {
             throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");
@@ -28,7 +27,6 @@ public class GestioneCucina {
         }
     }
 
-    // Rimuovi sessione da ricetta (solo se è in presenza)
     public void rimuoviSessioneDaRicetta(Ricetta r, Sessione s) throws SQLException {
         if (!(s instanceof InPresenza)) {
             throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");

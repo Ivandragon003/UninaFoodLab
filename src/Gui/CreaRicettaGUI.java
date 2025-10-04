@@ -76,7 +76,6 @@ public class CreaRicettaGUI extends Stage {
         createLayout();
     }
 
-    //  Inizializza controller ingredienti 
     private void initializeIngredienteController() {
         try {
             IngredienteDAO ingredienteDAO = new IngredienteDAO();
@@ -208,7 +207,6 @@ public class CreaRicettaGUI extends Stage {
         return section;
     }
 
-    //  Sezione ingredienti con aggiunta e rimozione 
     private VBox createIngredientiSection() {
         VBox section = new VBox(20);
 
@@ -263,14 +261,17 @@ public class CreaRicettaGUI extends Stage {
             VisualizzaIngredientiGUI visualizzaGUI = new VisualizzaIngredientiGUI(ingredienteController);
             visualizzaGUI.setModalitaSelezione(true);
             Ingrediente ingredienteSelezionato = visualizzaGUI.showAndReturn();
+            
             if (ingredienteSelezionato != null) {
                 boolean giaEsiste = ingredientiSelezionati.stream()
                     .anyMatch(item -> item.getIngrediente().getNome().equals(ingredienteSelezionato.getNome()));
+                
                 if (giaEsiste) {
                     showAlert("Ingrediente già presente", 
                         "L'ingrediente '" + ingredienteSelezionato.getNome() + "' è già stato aggiunto.");
                     return;
                 }
+                
                 Double quantita = chiediQuantitaUserFriendly(ingredienteSelezionato);
                 if (quantita != null && quantita > 0) {
                     ingredientiSelezionati.add(new IngredienteConPeso(ingredienteSelezionato, quantita));
@@ -281,6 +282,7 @@ public class CreaRicettaGUI extends Stage {
             }
         } catch (Exception e) {
             showAlert("Errore", "Errore aggiunta ingrediente: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -306,7 +308,6 @@ public class CreaRicettaGUI extends Stage {
         }
     }
 
-    // Dialog per inserimento quantità 
     private Double chiediQuantitaUserFriendly(Ingrediente ingrediente) {
         TextInputDialog dialog = new TextInputDialog("100");
         dialog.setTitle("Quantità Ingrediente");
@@ -422,7 +423,6 @@ public class CreaRicettaGUI extends Stage {
         return buttonBox;
     }
 
-    // ** Salva ricetta su model/db **
     private void salvaRicetta() {
         try {
             if (!validateForm()) return;
@@ -453,7 +453,6 @@ public class CreaRicettaGUI extends Stage {
         }
     }
 
-    // Validazione form 
     private boolean validateForm() {
         if (nomeField.getText().trim().isEmpty()) {
             showAlert("Campo obbligatorio", "Nome ricetta mancante");

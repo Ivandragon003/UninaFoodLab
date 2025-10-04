@@ -9,25 +9,23 @@ import java.util.*;
 
 public class RicettaDAO {
 
-	public void save(Ricetta r) throws SQLException {
-	    String sql = "INSERT INTO ricetta (nome, tempoPreparazione) VALUES (?, ?)";
-	    try (Connection conn = DBConnection.getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+    public void save(Ricetta r) throws SQLException {
+        String sql = "INSERT INTO ricetta (nome, tempoPreparazione) VALUES (?, ?)";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-	        ps.setString(1, r.getNome());
-	        ps.setInt(2, r.getTempoPreparazione());
-	        ps.executeUpdate();
+            ps.setString(1, r.getNome());
+            ps.setInt(2, r.getTempoPreparazione());
+            ps.executeUpdate();
 
-	       
-	        try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
-	            if (generatedKeys.next()) {
-	                r.setIdRicetta(generatedKeys.getInt(1));
-	            }
-	        }
-	    }
-	}
+            try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    r.setIdRicetta(generatedKeys.getInt(1));
+                }
+            }
+        }
+    }
 
-    // Lettura di una ricetta per ID
     public Optional<Ricetta> findById(int id) throws SQLException {
         String sql = "SELECT * FROM ricetta WHERE idRicetta = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -44,7 +42,6 @@ public class RicettaDAO {
         return Optional.empty();
     }
 
-    // Lettura di tutte le ricette
     public List<Ricetta> getAll() throws SQLException {
         List<Ricetta> list = new ArrayList<>();
         String sql = "SELECT * FROM ricetta ORDER BY nome";
@@ -60,7 +57,6 @@ public class RicettaDAO {
         return list;
     }
 
-    // Ricerca per nome esatto
     public List<Ricetta> getByNome(String nome) throws SQLException {
         List<Ricetta> list = new ArrayList<>();
         String sql = "SELECT * FROM ricetta WHERE nome = ?";
@@ -78,7 +74,6 @@ public class RicettaDAO {
         return list;
     }
 
-    // Ricerca per nome parziale 
     public List<Ricetta> searchByNome(String partialNome) throws SQLException {
         List<Ricetta> list = new ArrayList<>();
         String sql = "SELECT * FROM ricetta WHERE nome ILIKE ?";
@@ -96,7 +91,6 @@ public class RicettaDAO {
         return list;
     }
 
-    // Aggiornamento 
     public void update(int id, Ricetta r) throws SQLException {
         String sql = "UPDATE ricetta SET nome = ?, tempoPreparazione = ? WHERE idRicetta = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -109,7 +103,6 @@ public class RicettaDAO {
         }
     }
 
-    // Eliminazione 
     public void delete(int id) throws SQLException {
         String sql = "DELETE FROM ricetta WHERE idRicetta = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -120,7 +113,6 @@ public class RicettaDAO {
         }
     }
 
-    // Mappa un ResultSet in un oggetto Ricetta
     private Ricetta mapResultSetToRicetta(ResultSet rs) throws SQLException {
         String nome = rs.getString("nome");
         int tempo = rs.getInt("tempoPreparazione");
@@ -135,11 +127,9 @@ public class RicettaDAO {
         return r;
     }
 
-   
- // Carica ingredienti di una ricetta dalla tabella Usa
     private Map<Ingrediente, Double> getIngredientiPerRicetta(int idRicetta) throws SQLException {
         Map<Ingrediente, Double> map = new HashMap<>();
-        String sql = "SELECT i.nome, i.tipo, u.quantita " +
+        String sql = "SELECT i.idIngrediente, i.nome, i.tipo, u.quantita " +
                      "FROM Usa u " +
                      "JOIN Ingrediente i ON u.idIngrediente = i.idIngrediente " +
                      "WHERE u.idRicetta = ?";
@@ -152,7 +142,11 @@ public class RicettaDAO {
                 while (rs.next()) {
                     String nomeIngrediente = rs.getString("nome");
                     String tipoIngrediente = rs.getString("tipo");
+                    int idIngrediente = rs.getInt("idIngrediente");
+                    
                     Ingrediente ing = new Ingrediente(nomeIngrediente, tipoIngrediente);
+                    ing.setIdIngrediente(idIngrediente);
+                    
                     double quantita = rs.getDouble("quantita");
                     map.put(ing, quantita);
                 }
@@ -160,5 +154,4 @@ public class RicettaDAO {
         }
         return map;
     }
-
 }

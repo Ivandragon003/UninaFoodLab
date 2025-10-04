@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
@@ -16,7 +17,6 @@ import model.Ingrediente;
 import util.StyleHelper;
 
 import java.util.List;
-
 
 public class VisualizzaIngredientiGUI extends Stage {
 
@@ -28,11 +28,9 @@ public class VisualizzaIngredientiGUI extends Stage {
     private TextField filtroTipoField;
     private Button creaIngredientiBtn;
 
-    // Per modalità selezione
     private boolean modalitaSelezione = false;
     private Ingrediente ingredienteSelezionato = null;
 
-    // Drag support
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -192,14 +190,14 @@ public class VisualizzaIngredientiGUI extends Stage {
         Label sectionTitle = new Label("📋 Lista Ingredienti");
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-        Label istruzioniLabel = new Label("💡 Doppio click o pulsante per selezionare ingrediente");
-        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-        istruzioniLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
+        
+        Label istruzioniLabel = new Label("💡 Doppio click per selezionare ingrediente");
+        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.SEMI_BOLD, 13));
+        istruzioniLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
 
         VBox titleBox = new VBox(5);
         titleBox.getChildren().addAll(sectionTitle, istruzioniLabel);
 
-        // Pulsanti azione
         HBox actionButtons = new HBox(10);
         actionButtons.setAlignment(Pos.CENTER_RIGHT);
 
@@ -216,7 +214,6 @@ public class VisualizzaIngredientiGUI extends Stage {
         headerBox.getChildren().addAll(titleBox, new Region(), actionButtons);
         HBox.setHgrow(headerBox.getChildren().get(1), Priority.ALWAYS);
 
-        // ListView ingredienti
         ingredientiListView = new ListView<>();
         ingredientiListView.setPrefHeight(300);
         ingredientiListView.setItems(ingredientiData);
@@ -229,16 +226,17 @@ public class VisualizzaIngredientiGUI extends Stage {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
+                    setOnMouseClicked(null);
                 } else {
                     HBox cellBox = new HBox(15);
                     cellBox.setAlignment(Pos.CENTER_LEFT);
-                    cellBox.setPadding(new Insets(8));
+                    cellBox.setPadding(new Insets(10));
 
-                    VBox infoBox = new VBox(3);
+                    VBox infoBox = new VBox(4);
 
                     Label nomeLabel = new Label("🥕 " + item.getNome());
-                    nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
-                    nomeLabel.setTextFill(Color.BLACK); // NERO per visibilità
+                    nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 15));
+                    nomeLabel.setTextFill(Color.BLACK);
 
                     Label tipoLabel = new Label("📂 Tipo: " + item.getTipo());
                     tipoLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
@@ -251,25 +249,33 @@ public class VisualizzaIngredientiGUI extends Stage {
 
                     cellBox.getChildren().addAll(infoBox, spacer);
 
-                    // Evidenzia se selezionabile
                     if (modalitaSelezione) {
-                        cellBox.setStyle("-fx-background-color: #f0f8ff; -fx-border-color: " + StyleHelper.INFO_BLUE + "; " +
-                            "-fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;");
+                        cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                            "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;");
+                        
+                        cellBox.setOnMouseEntered(e -> 
+                            cellBox.setStyle("-fx-background-color: #C8E6C9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 3; -fx-cursor: hand;"));
+                        
+                        cellBox.setOnMouseExited(e -> 
+                            cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;"));
                     }
 
                     setGraphic(cellBox);
                     setText(null);
+
+                    if (modalitaSelezione) {
+                        setOnMouseClicked(event -> {
+                            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                                ingredientiListView.getSelectionModel().select(item);
+                                selezionaIngrediente();
+                            }
+                        });
+                    }
                 }
             }
         });
-
-        if (modalitaSelezione) {
-            ingredientiListView.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2) {
-                    selezionaIngrediente();
-                }
-            });
-        }
 
         section.getChildren().addAll(headerBox, ingredientiListView);
         return section;
@@ -294,6 +300,7 @@ public class VisualizzaIngredientiGUI extends Stage {
         if (modalitaSelezione) {
             Button annullaBtn = new Button("❌ Annulla");
             annullaBtn.setPrefWidth(130);
+            annullaBtn.setPrefHeight(40);
             annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
                 "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
             annullaBtn.setOnAction(e -> {
@@ -318,11 +325,19 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void caricaIngredienti() {
         try {
             List<Ingrediente> ingredienti = ingredienteController.getAllIngredienti();
+            
+            System.out.println("🔍 DEBUG: Caricati " + ingredienti.size() + " ingredienti");
+            for (Ingrediente ing : ingredienti) {
+                System.out.println("  - ID: " + ing.getIdIngrediente() + ", Nome: " + ing.getNome());
+            }
+            
             ingredientiData.setAll(ingredienti);
         } catch (Exception e) {
             showAlert("Errore", "Errore nel caricamento ingredienti: " + e.getMessage());
+            e.printStackTrace();
         }
     }
+
 
     private void applicaFiltri() {
         try {
@@ -333,18 +348,14 @@ public class VisualizzaIngredientiGUI extends Stage {
 
             if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) && 
                 (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
-                // Nessun filtro - mostra tutti
                 ingredientiFiltrati = ingredienteController.getAllIngredienti();
             } else if (nomeRicerca != null && !nomeRicerca.trim().isEmpty() && 
                        (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
-                // Solo filtro nome
                 ingredientiFiltrati = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
             } else if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) && 
                        tipoRicerca != null && !tipoRicerca.trim().isEmpty()) {
-                // Solo filtro tipo
                 ingredientiFiltrati = ingredienteController.cercaIngredientiPerTipo(tipoRicerca.trim());
             } else {
-                // Entrambi i filtri - combina risultati
                 List<Ingrediente> perNome = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
                 ingredientiFiltrati = perNome.stream()
                     .filter(ing -> ing.getTipo().toLowerCase().contains(tipoRicerca.toLowerCase().trim()))
@@ -370,7 +381,7 @@ public class VisualizzaIngredientiGUI extends Stage {
             Ingrediente nuovoIngrediente = creaGUI.showAndReturn();
 
             if (nuovoIngrediente != null) {
-                caricaIngredienti(); // Ricarica la lista
+                caricaIngredienti();
                 showAlert("Successo", "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
             }
 

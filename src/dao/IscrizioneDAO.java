@@ -58,7 +58,6 @@ public class IscrizioneDAO {
 		List<Iscrizione> list = new ArrayList<>();
 		String sql = "SELECT codFiscale, idCorsoCucina, votiAvuti, stato FROM iscritto";
 
-		// Creo istanze dei DAO una sola volta
 		UtenteDAO utenteDAO = new UtenteDAO();
 		CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
 
@@ -67,7 +66,6 @@ public class IscrizioneDAO {
 				ResultSet rs = stmt.executeQuery(sql)) {
 
 			while (rs.next()) {
-				// Uso il metodo helper per il mapping
 				list.add(mapResultSetToIscrizione(rs, utenteDAO, corsoDAO));
 			}
 		}
@@ -91,7 +89,6 @@ public class IscrizioneDAO {
 		return iscrittiAttivi;
 	}
 
-	// Metodo helper per mappare il ResultSet in Iscrizione
 	private Iscrizione mapResultSetToIscrizione(ResultSet rs, UtenteDAO utenteDAO, CorsoCucinaDAO corsoDAO)
 			throws SQLException {
 		String codFiscale = rs.getString("codFiscale");
