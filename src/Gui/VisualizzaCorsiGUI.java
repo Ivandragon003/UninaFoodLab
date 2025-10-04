@@ -50,6 +50,7 @@ public class VisualizzaCorsiGUI {
     private PauseTransition filterPause = new PauseTransition(Duration.millis(350));
     private double stageXOffset = 0;
     private double stageYOffset = 0;
+    
 
     public void setControllers(VisualizzaCorsiController visualizzaController,
                                GestioneCorsoController gestioneCorsoController, StackPane contentRoot) {

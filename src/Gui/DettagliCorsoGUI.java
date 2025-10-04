@@ -431,7 +431,10 @@ public class DettagliCorsoGUI {
             showAlert("Errore", ex.getMessage());
         }
     }
-
+    
+    
+    
+    
     private void setEditable(boolean edit) {
         this.editable = edit;
         nomeField.setEditable(edit);
