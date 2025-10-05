@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import exceptions.ValidationException;
+import controller.GestioneSessioniController;
 
 public class DettagliCorsoGUI {
     private GestioneCorsoController gestioneController;
@@ -376,8 +377,11 @@ public class DettagliCorsoGUI {
                 corso.setSessioni(corsoCompleto.getSessioni());
             }
             
+            GestioneSessioniController sessioniController = creaSessioniController();
+            
             VisualizzaSessioniGUI sessioniGUI = new VisualizzaSessioniGUI();
             sessioniGUI.setCorso(corso);
+            sessioniGUI.setController(sessioniController);
             
             Stage stage = new Stage();
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
@@ -397,7 +401,51 @@ public class DettagliCorsoGUI {
             ex.printStackTrace();
         }
     }
+    
+    private GestioneSessioniController creaSessioniController() {
+        try {
+            dao.OnlineDAO onlineDAO = new dao.OnlineDAO();
+            dao.InPresenzaDAO inPresenzaDAO = new dao.InPresenzaDAO();
+            dao.RicettaDAO ricettaDAO = new dao.RicettaDAO();
+            dao.CucinaDAO cucinaDAO = new dao.CucinaDAO();
+            dao.AdesioneDAO adesioneDAO = new dao.AdesioneDAO();
+            dao.UsaDAO usaDAO = new dao.UsaDAO();
+            dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
+            
+            service.GestioneSessioni gestioneSessioni = new service.GestioneSessioni(
+                inPresenzaDAO,
+                onlineDAO,
+                adesioneDAO,
+                cucinaDAO
+            );
+            
+            service.GestioneCucina gestioneCucina = new service.GestioneCucina(
+                cucinaDAO
+            );
+            
+            service.GestioneRicette gestioneRicette = new service.GestioneRicette(
+                ricettaDAO,
+                usaDAO,
+                ingredienteDAO
+            );
+            
+            return new controller.GestioneSessioniController(
+                corso,              
+                gestioneSessioni,   
+                gestioneCucina,     
+                gestioneRicette     
+            );
+            
+        } catch (Exception e) {
+            showAlert("Errore", "Impossibile creare il controller sessioni: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
 
+
+    
+    
     private String safeString(String s) {
         return s == null ? "" : s;
     }

@@ -24,6 +24,8 @@ public class GestioneSessioniGUI {
     private Sessione sessione;
     private boolean modalitaAggiunta = false;
 
+    private InPresenza sessioneTemporanea;
+
     private ComboBox<String> tipoCombo;
     private DatePicker dataInizioPicker, dataFinePicker;
     private TextField oraInizioField, oraFineField;
@@ -179,7 +181,6 @@ public class GestioneSessioniGUI {
     }
 
     private void aggiornaPulsanti() {
-        // Ricostruisci i pulsanti quando cambia il tipo
         if (pulsantiBox != null && root != null) {
             root.getChildren().remove(pulsantiBox);
             pulsantiBox = createPulsantiConRicette();
@@ -206,7 +207,6 @@ public class GestioneSessioniGUI {
 
         pulsantiBox.getChildren().addAll(annullaBtn, salvaBtn);
 
-        // ✅ AGGIUNGI BOTTONI RICETTE SE È IN PRESENZA
         if (tipoCombo != null && "In Presenza".equals(tipoCombo.getValue())) {
             Button aggiungiRicettaEsistenteBtn = new Button("📚 Ricetta Esistente");
             aggiungiRicettaEsistenteBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-pref-width: 160; -fx-pref-height: 40; -fx-cursor: hand;");
@@ -282,7 +282,6 @@ public class GestioneSessioniGUI {
                 if (modalitaAggiunta) {
                     if (controller != null) {
                         try {
-                            // ✅ FIX: Passa lista ricette vuota per sessioni online
                             controller.aggiungiSessione(online, new ArrayList<>());
                             this.sessione = online;
                             this.modalitaAggiunta = false;
@@ -311,25 +310,46 @@ public class GestioneSessioniGUI {
             } else { 
                 int posti = Integer.parseInt(postiField.getText().trim());
                 int cap = Integer.parseInt(capField.getText().trim());
-                InPresenza ip = modalitaAggiunta ? new InPresenza(inizio, fine, viaField.getText(), cittaField.getText(), posti, cap)
-                        : (InPresenza) sessione;
-                ip.setDataInizioSessione(inizio); 
-                ip.setDataFineSessione(fine);
-                ip.setVia(viaField.getText()); 
-                ip.setCitta(cittaField.getText());
-                ip.setNumeroPosti(posti); 
-                ip.setCAP(cap);
+                
+                InPresenza ip;
+                if (modalitaAggiunta) {
+                    // ✅ FIX: Crea sessione se non esiste
+                    if (sessioneTemporanea == null) {
+                        sessioneTemporanea = new InPresenza(inizio, fine, viaField.getText(), cittaField.getText(), posti, cap);
+                    } else {
+                        sessioneTemporanea.setDataInizioSessione(inizio);
+                        sessioneTemporanea.setDataFineSessione(fine);
+                        sessioneTemporanea.setVia(viaField.getText());
+                        sessioneTemporanea.setCitta(cittaField.getText());
+                        sessioneTemporanea.setNumeroPosti(posti);
+                        sessioneTemporanea.setCAP(cap);
+                    }
+                    ip = sessioneTemporanea;
+                } else {
+                    ip = (InPresenza) sessione;
+                    ip.setDataInizioSessione(inizio);
+                    ip.setDataFineSessione(fine);
+                    ip.setVia(viaField.getText());
+                    ip.setCitta(cittaField.getText());
+                    ip.setNumeroPosti(posti);
+                    ip.setCAP(cap);
+                }
+                
                 ip.setCorsoCucina(corso);
+
+                if (modalitaAggiunta && (ip.getRicette() == null || ip.getRicette().isEmpty())) {
+                    showError("Errore", "Una sessione in presenza deve avere almeno una ricetta associata.\n\nUsa il pulsante 'Ricetta Esistente' o 'Nuova Ricetta' per aggiungerne una.");
+                    return;
+                }
 
                 if (modalitaAggiunta) {
                     if (controller != null) {
                         try {
-                            // ✅ FIX: Passa lista ricette vuota per sessioni in presenza (aggiungi ricette dopo)
-                            controller.aggiungiSessione(ip, new ArrayList<>());
+                            controller.aggiungiSessione(ip, new ArrayList<>(ip.getRicette()));
                             this.sessione = ip;
                             this.modalitaAggiunta = false;
-                            showInfo("✅ Sessione in presenza salvata. Ora puoi aggiungere le ricette.");
-                            aggiornaPulsanti(); // Mostra i bottoni ricette dopo il salvataggio
+                            showInfo("✅ Sessione in presenza salvata correttamente con " + ip.getRicette().size() + " ricette.");
+                            aggiornaPulsanti();
                         } catch (SQLException ex) {
                             showError("Errore DB", ex.getMessage());
                             return;
@@ -359,25 +379,48 @@ public class GestioneSessioniGUI {
     }
 
     private void aggiungiRicettaEsistente() {
-        if (sessione == null || !(sessione instanceof InPresenza)) {
-            showError("Errore", "Prima salva la sessione in presenza.");
+        InPresenza ipTarget = getOrCreateSessioneTemporanea();
+        
+        if (ipTarget == null) {
+            showError("Errore", "Errore interno: sessione non disponibile.");
             return;
         }
         
         if (controller != null) {
-            controller.apriSelezionaRicettaGUI((InPresenza) sessione);
+            controller.apriSelezionaRicettaGUI(ipTarget);
         } else {
             showError("Controller non disponibile", "Impossibile gestire le ricette senza controller.");
         }
     }
 
     private void creaNuovaRicetta() {
-        if (sessione == null || !(sessione instanceof InPresenza)) {
-            showError("Errore", "Prima salva la sessione in presenza.");
+        InPresenza ipTarget = getOrCreateSessioneTemporanea();
+        
+        if (ipTarget == null) {
+            showError("Errore", "Errore interno: sessione non disponibile.");
             return;
         }
         
-        showInfo("Funzionalità da implementare: Crea Nuova Ricetta");
+        if (controller != null) {
+            controller.apriSelezionaRicettaGUI(ipTarget);
+        } else {
+            showError("Controller non disponibile", "Impossibile gestire le ricette senza controller.");
+        }
+    }
+
+    private InPresenza getOrCreateSessioneTemporanea() {
+        if (modalitaAggiunta) {
+            if (sessioneTemporanea == null) {
+                sessioneTemporanea = new InPresenza(
+                    LocalDateTime.now(), 
+                    LocalDateTime.now().plusHours(2), 
+                    "TEMP", "TEMP", 1, 12345
+                );
+            }
+            return sessioneTemporanea;
+        } else {
+            return (InPresenza) sessione;
+        }
     }
 
     private void showError(String titolo, String messaggio) {
@@ -388,7 +431,6 @@ public class GestioneSessioniGUI {
         alert.showAndWait();
     }
 
-    // ✅ FIX: Metodo con un solo parametro
     private void showInfo(String messaggio) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Info");

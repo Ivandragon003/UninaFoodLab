@@ -2,6 +2,8 @@ package model;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.HashSet;
+
 
 public class InPresenza extends Sessione {
     private String via;
@@ -12,6 +14,7 @@ public class InPresenza extends Sessione {
     private List<Adesione> adesioniSessione;
     private Set<Ricetta> ricette = new HashSet<>();
 
+
     public InPresenza(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione,
                       String via, String citta, int numeroPosti, int CAP) {
         super(dataInizioSessione, dataFineSessione);
@@ -20,7 +23,9 @@ public class InPresenza extends Sessione {
         setNumeroPosti(numeroPosti);
         setCAP(CAP);
         this.adesioniSessione = new ArrayList<>();
+        this.ricette = new HashSet<Ricetta>();
     }
+
 
     public Set<Ricetta> getRicette() {
         return ricette;

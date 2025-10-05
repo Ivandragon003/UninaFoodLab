@@ -75,6 +75,11 @@ public class Ricetta {
 	public int hashCode() {
 		return Objects.hash(idRicetta);
 	}
+	
+	@Override
+	public String toString() {
+	    return nome + " (" + tempoPreparazione + " min)";
+	}
 
 	public String toStringIdRicetta() {
 		return "ID Ricetta: " + idRicetta;
