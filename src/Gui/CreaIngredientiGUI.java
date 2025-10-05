@@ -12,18 +12,14 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ingrediente;
 import util.StyleHelper;
-
 import java.util.Optional;
 
 public class CreaIngredientiGUI extends Stage {
-
     private IngredienteController ingredienteController;
     private Ingrediente ingredienteCreato = null;
-
     private TextField nomeField;
     private ComboBox<String> tipoCombo;
     private TextField tipoPersonalizzatoField;
-
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -33,7 +29,6 @@ public class CreaIngredientiGUI extends Stage {
         initModality(Modality.APPLICATION_MODAL);
         initStyle(StageStyle.UNDECORATED);
         setResizable(false);
-
         createLayout();
     }
 
@@ -61,7 +56,6 @@ public class CreaIngredientiGUI extends Stage {
         HBox buttonSection = createButtonSection();
 
         formCard.getChildren().addAll(formSection, new Separator(), buttonSection);
-
         mainContainer.getChildren().addAll(title, formCard);
         rootPane.getChildren().addAll(background, mainContainer);
 
@@ -133,9 +127,9 @@ public class CreaIngredientiGUI extends Stage {
         tipoCombo = StyleHelper.createComboBox();
         tipoCombo.setPrefWidth(200);
         tipoCombo.getItems().addAll(
-            "Verdura","Frutta","Carne","Pesce","Latticini","Cereali",
-            "Legumi","Spezie","Condimenti","Dolcificanti","Bevande",
-            "Altro","Personalizzato"
+                "Verdura", "Frutta", "Carne", "Pesce", "Latticini", "Cereali",
+                "Legumi", "Spezie", "Condimenti", "Dolcificanti", "Bevande",
+                "Altro", "Personalizzato"
         );
         tipoCombo.setPromptText("Seleziona tipo");
 
@@ -152,8 +146,10 @@ public class CreaIngredientiGUI extends Stage {
 
         grid.add(StyleHelper.createLabel("Nome Ingrediente:"), 0, 0);
         grid.add(nomeField, 1, 0);
+
         grid.add(StyleHelper.createLabel("Tipo:"), 0, 1);
         grid.add(tipoCombo, 1, 1);
+
         grid.add(StyleHelper.createLabel("Tipo Personalizzato:"), 0, 2);
         grid.add(tipoPersonalizzatoField, 1, 2);
 
@@ -188,6 +184,7 @@ public class CreaIngredientiGUI extends Stage {
 
             String nome = nomeField.getText().trim();
             String tipo = tipoCombo.getValue();
+
             if ("Personalizzato".equals(tipo)) {
                 tipo = tipoPersonalizzatoField.getText().trim();
             }
@@ -195,65 +192,59 @@ public class CreaIngredientiGUI extends Stage {
             if (ingredienteController != null) {
                 try {
                     int idCreato = ingredienteController.creaIngrediente(nome, tipo);
-                    
+
                     Optional<Ingrediente> ingredienteOpt = ingredienteController.trovaIngredientePerId(idCreato);
-                    
+
                     if (ingredienteOpt.isPresent()) {
                         ingredienteCreato = ingredienteOpt.get();
                         System.out.println("✅ DEBUG: Ingrediente creato con ID: " + ingredienteCreato.getIdIngrediente());
-                        showAlert("Successo",
-                            "Ingrediente creato: " + nome + " (" + tipo + ")\nID: " + idCreato);
+                        StyleHelper.showSuccessDialog("Successo",
+                                "Ingrediente creato: " + nome + " (" + tipo + ")\nID: " + idCreato);
                     } else {
-                        showAlert("Errore", "Ingrediente salvato ma non recuperato dal DB");
+                        StyleHelper.showErrorDialog("Errore", "Ingrediente salvato ma non recuperato dal DB");
                         return;
                     }
-                        
+
                 } catch (Exception e) {
-                    showAlert("Errore DB", e.getMessage());
+                    StyleHelper.showErrorDialog("Errore DB", e.getMessage());
                     e.printStackTrace();
                     return;
                 }
             } else {
                 ingredienteCreato = new Ingrediente(nome, tipo);
-                showAlert("Successo",
-                    "Ingrediente creato: " + nome + " (" + tipo + ")");
+                StyleHelper.showSuccessDialog("Successo",
+                        "Ingrediente creato: " + nome + " (" + tipo + ")");
             }
 
             close();
+
         } catch (Exception e) {
-            showAlert("Errore", e.getMessage());
+            StyleHelper.showErrorDialog("Errore", e.getMessage());
             e.printStackTrace();
         }
     }
 
     private boolean validateForm() {
         if (nomeField.getText().trim().isEmpty()) {
-            showAlert("Campo obbligatorio", "Nome mancante");
+            StyleHelper.showValidationDialog("Campo obbligatorio", "Nome mancante");
             nomeField.requestFocus();
             return false;
         }
+
         if (tipoCombo.getValue() == null) {
-            showAlert("Campo obbligatorio", "Tipo non selezionato");
+            StyleHelper.showValidationDialog("Campo obbligatorio", "Tipo non selezionato");
             tipoCombo.requestFocus();
             return false;
         }
+
         if ("Personalizzato".equals(tipoCombo.getValue())
-            && tipoPersonalizzatoField.getText().trim().isEmpty()) {
-            showAlert("Campo obbligatorio", "Tipo personalizzato mancante");
+                && tipoPersonalizzatoField.getText().trim().isEmpty()) {
+            StyleHelper.showValidationDialog("Campo obbligatorio", "Tipo personalizzato mancante");
             tipoPersonalizzatoField.requestFocus();
             return false;
         }
-        return true;
-    }
 
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(title.equals("Successo")
-            ? Alert.AlertType.INFORMATION
-            : Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        return true;
     }
 
     public Ingrediente showAndReturn() {

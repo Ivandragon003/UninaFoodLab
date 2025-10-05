@@ -15,22 +15,17 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ingrediente;
 import util.StyleHelper;
-
 import java.util.List;
 
 public class VisualizzaIngredientiGUI extends Stage {
-
     private IngredienteController ingredienteController;
     private ObservableList<Ingrediente> ingredientiData;
     private ListView<Ingrediente> ingredientiListView;
-
     private TextField filtroNomeField;
     private TextField filtroTipoField;
     private Button creaIngredientiBtn;
-
     private boolean modalitaSelezione = false;
     private Ingrediente ingredienteSelezionato = null;
-
     private double xOffset = 0;
     private double yOffset = 0;
 
@@ -53,7 +48,6 @@ public class VisualizzaIngredientiGUI extends Stage {
         initModality(Modality.APPLICATION_MODAL);
         initStyle(StageStyle.UNDECORATED);
         setResizable(true);
-
         createLayout();
     }
 
@@ -87,16 +81,15 @@ public class VisualizzaIngredientiGUI extends Stage {
         HBox buttonsSection = createButtonsSection();
 
         contentCard.getChildren().addAll(
-            filtriSection,
-            new Separator(),
-            listaSection,
-            new Separator(),
-            buttonsSection
+                filtriSection,
+                new Separator(),
+                listaSection,
+                new Separator(),
+                buttonsSection
         );
 
         scrollPane.setContent(contentCard);
         mainContainer.getChildren().addAll(title, scrollPane);
-
         rootPane.getChildren().addAll(background, mainContainer);
 
         HBox windowButtons = createWindowButtons();
@@ -172,9 +165,9 @@ public class VisualizzaIngredientiGUI extends Stage {
         resetFiltriBtn.setOnAction(e -> resetFiltri());
 
         filtriBox.getChildren().addAll(
-            StyleHelper.createLabel("Nome:"), filtroNomeField,
-            StyleHelper.createLabel("Tipo:"), filtroTipoField,
-            resetFiltriBtn
+                StyleHelper.createLabel("Nome:"), filtroNomeField,
+                StyleHelper.createLabel("Tipo:"), filtroTipoField,
+                resetFiltriBtn
         );
 
         section.getChildren().addAll(sectionTitle, filtriBox);
@@ -190,7 +183,7 @@ public class VisualizzaIngredientiGUI extends Stage {
         Label sectionTitle = new Label("📋 Lista Ingredienti");
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-        
+
         Label istruzioniLabel = new Label("💡 Doppio click per selezionare ingrediente");
         istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.SEMI_BOLD, 13));
         istruzioniLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
@@ -251,15 +244,15 @@ public class VisualizzaIngredientiGUI extends Stage {
 
                     if (modalitaSelezione) {
                         cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                            "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;");
-                        
-                        cellBox.setOnMouseEntered(e -> 
-                            cellBox.setStyle("-fx-background-color: #C8E6C9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 3; -fx-cursor: hand;"));
-                        
-                        cellBox.setOnMouseExited(e -> 
-                            cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;"));
+                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;");
+
+                        cellBox.setOnMouseEntered(e ->
+                                cellBox.setStyle("-fx-background-color: #C8E6C9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                                        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 3; -fx-cursor: hand;"));
+
+                        cellBox.setOnMouseExited(e ->
+                                cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                                        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;"));
                     }
 
                     setGraphic(cellBox);
@@ -284,10 +277,9 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void selezionaIngrediente() {
         Ingrediente selezionato = ingredientiListView.getSelectionModel().getSelectedItem();
         if (selezionato == null) {
-            showAlert("Selezione", "Seleziona un ingrediente dalla lista");
+            StyleHelper.showValidationDialog("Selezione", "Seleziona un ingrediente dalla lista");
             return;
         }
-
         ingredienteSelezionato = selezionato;
         close();
     }
@@ -302,7 +294,7 @@ public class VisualizzaIngredientiGUI extends Stage {
             annullaBtn.setPrefWidth(130);
             annullaBtn.setPrefHeight(40);
             annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
+                    "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
             annullaBtn.setOnAction(e -> {
                 ingredienteSelezionato = null;
                 close();
@@ -325,19 +317,18 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void caricaIngredienti() {
         try {
             List<Ingrediente> ingredienti = ingredienteController.getAllIngredienti();
-            
+
             System.out.println("🔍 DEBUG: Caricati " + ingredienti.size() + " ingredienti");
             for (Ingrediente ing : ingredienti) {
-                System.out.println("  - ID: " + ing.getIdIngrediente() + ", Nome: " + ing.getNome());
+                System.out.println(" - ID: " + ing.getIdIngrediente() + ", Nome: " + ing.getNome());
             }
-            
+
             ingredientiData.setAll(ingredienti);
         } catch (Exception e) {
-            showAlert("Errore", "Errore nel caricamento ingredienti: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nel caricamento ingredienti: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
 
     private void applicaFiltri() {
         try {
@@ -346,26 +337,25 @@ public class VisualizzaIngredientiGUI extends Stage {
 
             List<Ingrediente> ingredientiFiltrati;
 
-            if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) && 
-                (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
+            if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) &&
+                    (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
                 ingredientiFiltrati = ingredienteController.getAllIngredienti();
-            } else if (nomeRicerca != null && !nomeRicerca.trim().isEmpty() && 
-                       (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
+            } else if (nomeRicerca != null && !nomeRicerca.trim().isEmpty() &&
+                    (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
                 ingredientiFiltrati = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
-            } else if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) && 
-                       tipoRicerca != null && !tipoRicerca.trim().isEmpty()) {
+            } else if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) &&
+                    tipoRicerca != null && !tipoRicerca.trim().isEmpty()) {
                 ingredientiFiltrati = ingredienteController.cercaIngredientiPerTipo(tipoRicerca.trim());
             } else {
                 List<Ingrediente> perNome = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
                 ingredientiFiltrati = perNome.stream()
-                    .filter(ing -> ing.getTipo().toLowerCase().contains(tipoRicerca.toLowerCase().trim()))
-                    .toList();
+                        .filter(ing -> ing.getTipo().toLowerCase().contains(tipoRicerca.toLowerCase().trim()))
+                        .toList();
             }
 
             ingredientiData.setAll(ingredientiFiltrati);
-
         } catch (Exception e) {
-            showAlert("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
         }
     }
 
@@ -379,23 +369,13 @@ public class VisualizzaIngredientiGUI extends Stage {
         try {
             CreaIngredientiGUI creaGUI = new CreaIngredientiGUI(ingredienteController);
             Ingrediente nuovoIngrediente = creaGUI.showAndReturn();
-
             if (nuovoIngrediente != null) {
                 caricaIngredienti();
-                showAlert("Successo", "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
+                StyleHelper.showSuccessDialog("Successo", "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
             }
-
         } catch (Exception e) {
-            showAlert("Errore", "Errore nell'apertura creazione ingrediente: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ingrediente: " + e.getMessage());
         }
-    }
-
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(title.equals("Successo") ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 
     public Ingrediente showAndReturn() {

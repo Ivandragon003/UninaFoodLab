@@ -2,6 +2,8 @@ package controller;
 
 import model.Chef;
 import service.GestioneChef;
+import exceptions.ValidationException;
+import exceptions.ErrorMessages;
 
 import java.time.LocalDate;
 import java.sql.SQLException;
@@ -15,79 +17,89 @@ public class ChefController {
     }
 
     // LOGIN
-    public Chef login(String username, String password) throws SQLException {
+    public Chef login(String username, String password) throws ValidationException {
         if (username == null || username.isEmpty())
-            throw new IllegalArgumentException("Username non può essere vuoto");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
         if (password == null || password.isEmpty())
-            throw new IllegalArgumentException("Password non può essere vuota");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Password"));
 
-        Chef chef = gestioneChef.getChefByUsername(username);
-        if (chef == null)
-            throw new IllegalArgumentException("Chef non trovato");
+        try {
+            Chef chef = gestioneChef.getChefByUsername(username);
+            if (chef == null)
+                throw new ValidationException(ErrorMessages.CREDENZIALI_ERRATE);
+            if (!chef.getPassword().equals(password))
+                throw new ValidationException(ErrorMessages.CREDENZIALI_ERRATE);
 
-        if (!chef.getPassword().equals(password))
-            throw new IllegalArgumentException("Password errata");
+            return chef;
 
-        return chef;
+        } catch (SQLException e) {
+            throw new ValidationException(ErrorMessages.ERRORE_DATABASE, e);
+        }
     }
 
- // REGISTRAZIONE 
+    // REGISTRAZIONE
     public Chef registraChef(String codFiscale, String nome, String cognome, String email,
                              LocalDate dataNascita, boolean disponibilita, String username, String password)
-                             throws SQLException {
+                             throws ValidationException {
 
         if (codFiscale == null || codFiscale.isEmpty())
-            throw new IllegalArgumentException("Codice fiscale obbligatorio");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Codice fiscale"));
         if (nome == null || nome.isEmpty())
-            throw new IllegalArgumentException("Nome obbligatorio");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Nome"));
         if (cognome == null || cognome.isEmpty())
-            throw new IllegalArgumentException("Cognome obbligatorio");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Cognome"));
         if (email == null || email.isEmpty())
-            throw new IllegalArgumentException("Email obbligatoria");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Email"));
         if (dataNascita == null)
-            throw new IllegalArgumentException("Data di nascita obbligatoria");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Data di nascita"));
         if (username == null || username.isEmpty())
-            throw new IllegalArgumentException("Username obbligatorio");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
         if (password == null || password.length() < 6)
-            throw new IllegalArgumentException("Password obbligatoria (min 6 caratteri)");
+            throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
 
-        // Controlli di unicità
-        if (gestioneChef.getChefByUsername(username) != null)
-            throw new IllegalArgumentException("Username già esistente");
-        if (gestioneChef.existsByCodFiscale(codFiscale))
-            throw new IllegalArgumentException("Codice fiscale già presente");
-        if (gestioneChef.existsByEmail(email))    // <--- aggiungi questo
-            throw new IllegalArgumentException("Email già presente");
+        try {
+            if (gestioneChef.getChefByUsername(username) != null)
+                throw new ValidationException("⚠️ Username già esistente");
+            if (gestioneChef.existsByCodFiscale(codFiscale))
+                throw new ValidationException("⚠️ Codice fiscale già presente");
+            if (gestioneChef.existsByEmail(email))
+                throw new ValidationException("⚠️ Email già presente");
 
-        Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
-        chef.setEmail(email);
-        chef.setDataNascita(dataNascita);
+            Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
+            chef.setEmail(email);
+            chef.setDataNascita(dataNascita);
 
-        gestioneChef.creaChef(chef);
+            gestioneChef.creaChef(chef);
+            return chef;
 
-        return chef;
+        } catch (SQLException e) {
+            throw new ValidationException(ErrorMessages.ERRORE_DATABASE, e);
+        }
     }
 
-
-    //  AGGIORNAMENTO CREDENZIALI 
-    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) throws SQLException {
+    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) throws ValidationException {
         if (nuovoUsername == null || nuovoUsername.isEmpty())
-            throw new IllegalArgumentException("Username obbligatorio");
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
         if (nuovaPassword == null || nuovaPassword.length() < 6)
-            throw new IllegalArgumentException("Password obbligatoria (min 6 caratteri)");
+            throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
 
-        chef.setUsername(nuovoUsername);
-        chef.setPassword(nuovaPassword);
-
-        gestioneChef.aggiornaChef(chef);
+        try {
+            chef.setUsername(nuovoUsername);
+            chef.setPassword(nuovaPassword);
+            gestioneChef.aggiornaChef(chef);
+        } catch (SQLException e) {
+            throw new ValidationException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
+        }
     }
 
-    // --- ELIMINAZIONE ACCOUNT ---
-    public void eliminaAccount(Chef chef) throws SQLException {
-        gestioneChef.eliminaChef(chef.getUsername());
+    public void eliminaAccount(Chef chef) throws ValidationException {
+        try {
+            gestioneChef.eliminaChef(chef.getUsername());
+        } catch (SQLException e) {
+            throw new ValidationException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
+        }
     }
 
-    // --- Getter per GUI ---
     public GestioneChef getGestioneChef() {
         return gestioneChef;
     }

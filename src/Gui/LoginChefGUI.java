@@ -20,6 +20,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
+import exceptions.*;
 
 public class LoginChefGUI extends Application {
     private static ChefController chefController;
@@ -44,7 +45,7 @@ public class LoginChefGUI extends Application {
         primaryStage.setTitle("Chef Login - UninaFoodLab");
 
         StackPane root = new StackPane();
-        root.setPrefSize(500, 700);
+        root.setPrefSize(600, 600);
 
         createBackground(root);
 
@@ -78,7 +79,7 @@ public class LoginChefGUI extends Application {
                 new Stop(1, Color.web("#FFCC99")));
         Region background = new Region();
         background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-        background.setPrefSize(500, 700);
+        background.setPrefSize(600, 600);
         root.getChildren().add(background);
     }
 
@@ -86,12 +87,16 @@ public class LoginChefGUI extends Application {
         VBox card = new VBox(20);
         card.setAlignment(Pos.CENTER);
         card.setPadding(new Insets(40));
-        card.setMaxWidth(380);
-        card.setStyle("-fx-background-color: white;" +
-                "-fx-background-radius: 20;" +
-                "-fx-border-radius: 20;" +
-                "-fx-border-color: #FF9966;" +
-                "-fx-border-width: 2;");
+        card.setPrefSize(380, 380);
+        card.setMaxSize(380, 380);
+        card.setStyle("""
+            -fx-background-color: white;
+            -fx-background-radius: 25;
+            -fx-border-radius: 25;
+            -fx-border-color: #FF9966;
+            -fx-border-width: 2;
+            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
+        """);
 
         Label titleLabel = new Label("UninaFoodLab");
         titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
@@ -142,19 +147,23 @@ public class LoginChefGUI extends Application {
         fieldContainer.setPrefHeight(45);
 
         Region background = new Region();
-        background.setStyle("-fx-background-color: white;" +
-                "-fx-background-radius: 15;" +
-                "-fx-border-radius: 15;" +
-                "-fx-border-color: #FF9966;" +
-                "-fx-border-width: 1.5;");
+        background.setStyle("""
+            -fx-background-color: white;
+            -fx-background-radius: 15;
+            -fx-border-radius: 15;
+            -fx-border-color: #FF9966;
+            -fx-border-width: 1.5;
+        """);
 
         TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
         inputField.setPromptText(placeholder);
-        inputField.setStyle("-fx-background-color: transparent;" +
-                "-fx-text-fill: black;" +
-                "-fx-prompt-text-fill: gray;" +
-                "-fx-font-size: 14px;" +
-                "-fx-padding: 0 15 0 15;");
+        inputField.setStyle("""
+            -fx-background-color: transparent;
+            -fx-text-fill: black;
+            -fx-prompt-text-fill: gray;
+            -fx-font-size: 14px;
+            -fx-padding: 0 15 0 15;
+        """);
         inputField.setPrefWidth(300);
 
         fieldContainer.getChildren().addAll(background, inputField);
@@ -201,15 +210,14 @@ public class LoginChefGUI extends Application {
 
     private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
                                    PasswordField passwordField, Label messageLabel) {
+
         loginButton.setOnAction(e -> {
             try {
                 Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
-                messageLabel.setText("✅ Login effettuato: " + chef.getUsername());
-                messageLabel.setTextFill(Color.web("#FF6600"));
+                mostraMessaggio(messageLabel, "✅ Login effettuato: " + chef.getUsername(), true);
 
                 GestioneCorsoController gestioneCorsoController =
                         new GestioneCorsoController(corsiService, chefController.getGestioneChef());
-                
                 gestioneCorsoController.setChefLoggato(chef);
 
                 VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
@@ -221,12 +229,14 @@ public class LoginChefGUI extends Application {
                 Stage menuStage = new Stage();
                 menu.start(menuStage);
 
-                Stage loginStage = (Stage) loginButton.getScene().getWindow();
-                loginStage.close();
+                ((Stage) loginButton.getScene().getWindow()).close();
 
+            } catch (ValidationException ex) {
+                mostraMessaggio(messageLabel, ex.getMessage(), false);
+            } catch (DataAccessException ex) {
+                mostraMessaggio(messageLabel, ErrorMessages.ERRORE_DATABASE, false);
             } catch (Exception ex) {
-                messageLabel.setText("❌ Errore: " + ex.getMessage());
-                messageLabel.setTextFill(Color.web("#CC3300"));
+                mostraMessaggio(messageLabel, "❌ Errore inatteso: " + ex.getMessage(), false);
                 ex.printStackTrace();
             }
         });
@@ -239,6 +249,11 @@ public class LoginChefGUI extends Application {
             });
             contentPane.getChildren().add(regPane);
         });
+    }
+
+    private void mostraMessaggio(Label label, String testo, boolean success) {
+        label.setText(testo);
+        label.setTextFill(success ? Color.web("#FF6600") : Color.web("#CC3300"));
     }
 
     private void makeDraggable(StackPane root, Stage stage) {
