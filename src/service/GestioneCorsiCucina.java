@@ -90,16 +90,27 @@ public class GestioneCorsiCucina {
         corsoDAO.delete(idCorso);
     }
 
+    
     public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException, ValidationException {
-        if (corso == null || chef == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        if (password == null || password.length() < 6) throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
+        if (corso == null || chef == null) {
+            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        }
 
-        if (!chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent()) {
+        boolean chefEsiste = chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent();
+        
+        if (!chefEsiste) {
+            if (password == null || password.length() < 6) {
+                throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
+            }
             chefDAO.save(chef, password);
         }
 
         if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
             tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
+            
+            if (corso.getChef() == null) {
+                corso.setChef(new ArrayList<>());
+            }
             corso.getChef().add(chef);
         } else {
             throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
@@ -107,7 +118,7 @@ public class GestioneCorsiCucina {
     }
 
     public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
-        if (corso.getChef().remove(chef)) {
+        if (corso.getChef() != null && corso.getChef().remove(chef)) {
             tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
         }
     }

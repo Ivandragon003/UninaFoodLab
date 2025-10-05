@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class GestioneSessioniGUI {
 
@@ -28,6 +29,7 @@ public class GestioneSessioniGUI {
     private TextField oraInizioField, oraFineField;
     private TextField piattaformaField, viaField, cittaField, postiField, capField;
     private VBox campiOnlineBox, campiPresenzaBox;
+    private HBox pulsantiBox;
 
     private VBox root;
 
@@ -45,7 +47,6 @@ public class GestioneSessioniGUI {
         this.sessione = null;
     }
 
-    
     public VBox getRoot() {
         if (root == null) {
             root = buildRoot();
@@ -63,22 +64,22 @@ public class GestioneSessioniGUI {
 
     public void start(Stage stage) {
         this.primaryStage = stage;
-        Scene scene = new Scene(getRoot(), 600, 700);
+        Scene scene = new Scene(getRoot(), 650, 750);
         stage.setScene(scene);
         stage.setTitle("Gestione Sessione");
         stage.show();
     }
 
-
     private VBox buildRoot() {
         VBox formContainer = new VBox(20);
         formContainer.setPadding(new Insets(25));
+        formContainer.setStyle("-fx-background-color: #FAFAFA;");
 
-        Label titolo = new Label(modalitaAggiunta ? "Aggiungi Nuova Sessione" : "Modifica Sessione");
-        titolo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        Label titolo = new Label(modalitaAggiunta ? "➕ Aggiungi Nuova Sessione" : "✏️ Modifica Sessione");
+        titolo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FF6600;");
 
         VBox formBox = createFormBox();
-        HBox pulsantiBox = createPulsanti();
+        pulsantiBox = createPulsanti();
 
         formContainer.getChildren().addAll(titolo, formBox, pulsantiBox);
         return formContainer;
@@ -87,7 +88,7 @@ public class GestioneSessioniGUI {
     private VBox createFormBox() {
         VBox formBox = new VBox(15);
         formBox.setPadding(new Insets(20));
-        formBox.setStyle("-fx-background-color: #FAFAFA; -fx-border-color: #E0E0E0; " +
+        formBox.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; " +
                 "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
 
         HBox tipoBox = new HBox(10);
@@ -96,13 +97,23 @@ public class GestioneSessioniGUI {
         tipoLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 120;");
         tipoCombo = new ComboBox<>();
         tipoCombo.getItems().addAll("Online", "In Presenza");
-        tipoCombo.setOnAction(e -> aggiornaVisibilitaCampi());
+        tipoCombo.setOnAction(e -> {
+            aggiornaVisibilitaCampi();
+            aggiornaPulsanti();
+        });
         tipoBox.getChildren().addAll(tipoLabel, tipoCombo);
 
         GridPane dateGrid = new GridPane();
-        dateGrid.setHgap(15); dateGrid.setVgap(10);
-        dataInizioPicker = new DatePicker(); oraInizioField = new TextField(); oraInizioField.setPromptText("HH:MM");
-        dataFinePicker = new DatePicker(); oraFineField = new TextField(); oraFineField.setPromptText("HH:MM");
+        dateGrid.setHgap(15); 
+        dateGrid.setVgap(10);
+        
+        dataInizioPicker = new DatePicker(); 
+        oraInizioField = new TextField(); 
+        oraInizioField.setPromptText("HH:MM");
+        
+        dataFinePicker = new DatePicker(); 
+        oraFineField = new TextField(); 
+        oraFineField.setPromptText("HH:MM");
 
         dateGrid.add(new Label("Data Inizio:"), 0, 0);
         dateGrid.add(dataInizioPicker, 1, 0);
@@ -114,19 +125,31 @@ public class GestioneSessioniGUI {
         dateGrid.add(oraFineField, 3, 1);
 
         campiOnlineBox = new VBox(10);
-        piattaformaField = new TextField(); piattaformaField.setPromptText("Zoom, Teams, Meet...");
-        HBox piattaformaBox = new HBox(10); piattaformaBox.setAlignment(Pos.CENTER_LEFT);
+        piattaformaField = new TextField(); 
+        piattaformaField.setPromptText("Zoom, Teams, Meet...");
+        HBox piattaformaBox = new HBox(10); 
+        piattaformaBox.setAlignment(Pos.CENTER_LEFT);
         piattaformaBox.getChildren().addAll(new Label("Piattaforma:"), piattaformaField);
         campiOnlineBox.getChildren().add(piattaformaBox);
 
         campiPresenzaBox = new VBox(10);
         GridPane presenzaGrid = new GridPane();
-        presenzaGrid.setHgap(15); presenzaGrid.setVgap(10);
-        viaField = new TextField(); cittaField = new TextField(); postiField = new TextField(); capField = new TextField();
-        presenzaGrid.add(new Label("Via:"), 0, 0); presenzaGrid.add(viaField, 1, 0);
-        presenzaGrid.add(new Label("Città:"), 2, 0); presenzaGrid.add(cittaField, 3, 0);
-        presenzaGrid.add(new Label("Posti:"), 0, 1); presenzaGrid.add(postiField, 1, 1);
-        presenzaGrid.add(new Label("CAP:"), 2, 1); presenzaGrid.add(capField, 3, 1);
+        presenzaGrid.setHgap(15); 
+        presenzaGrid.setVgap(10);
+        viaField = new TextField(); 
+        cittaField = new TextField(); 
+        postiField = new TextField(); 
+        capField = new TextField();
+        
+        presenzaGrid.add(new Label("Via:"), 0, 0); 
+        presenzaGrid.add(viaField, 1, 0);
+        presenzaGrid.add(new Label("Città:"), 2, 0); 
+        presenzaGrid.add(cittaField, 3, 0);
+        presenzaGrid.add(new Label("Posti:"), 0, 1); 
+        presenzaGrid.add(postiField, 1, 1);
+        presenzaGrid.add(new Label("CAP:"), 2, 1); 
+        presenzaGrid.add(capField, 3, 1);
+        
         campiPresenzaBox.getChildren().add(presenzaGrid);
 
         formBox.getChildren().addAll(tipoBox, new Separator(), dateGrid, new Separator(), campiOnlineBox, campiPresenzaBox);
@@ -135,35 +158,65 @@ public class GestioneSessioniGUI {
 
     private HBox createPulsanti() {
         HBox pulsantiBox = new HBox(15);
-        pulsantiBox.setAlignment(Pos.CENTER_RIGHT);
+        pulsantiBox.setAlignment(Pos.CENTER);
         pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
 
-        Button annullaBtn = new Button("Annulla");
+        Button annullaBtn = new Button("❌ Annulla");
+        annullaBtn.setStyle("-fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
         annullaBtn.setOnAction(e -> {
-            if (primaryStage != null) primaryStage.close();
-            else {
+            if (root != null && root.getScene() != null && root.getScene().getWindow() != null) {
+                root.getScene().getWindow().hide();
             }
         });
 
-        Button salvaBtn = new Button(modalitaAggiunta ? "Salva" : "Aggiorna");
-        salvaBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        Button salvaBtn = new Button(modalitaAggiunta ? "💾 Salva" : "💾 Aggiorna");
+        salvaBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
         salvaBtn.setOnAction(e -> salvaSessione());
 
         pulsantiBox.getChildren().addAll(annullaBtn, salvaBtn);
 
- 
-        if (!modalitaAggiunta && sessione instanceof InPresenza || modalitaAggiunta && (tipoCombo != null && "In Presenza".equals(tipoCombo.getValue()))) {
-            Button aggiungiRicettaBtn = new Button("Aggiungi Ricetta");
-            aggiungiRicettaBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
-            aggiungiRicettaBtn.setOnAction(e -> {
-                if (controller != null && sessione instanceof InPresenza ip) {
-                    controller.apriSelezionaRicettaGUI(ip);
-                } else 
-                {
-                    showError("Prima salva la sessione", "Per associare ricette devi prima salvare la sessione.");
-                }
-            });
-            pulsantiBox.getChildren().add(aggiungiRicettaBtn);
+        return pulsantiBox;
+    }
+
+    private void aggiornaPulsanti() {
+        // Ricostruisci i pulsanti quando cambia il tipo
+        if (pulsantiBox != null && root != null) {
+            root.getChildren().remove(pulsantiBox);
+            pulsantiBox = createPulsantiConRicette();
+            root.getChildren().add(pulsantiBox);
+        }
+    }
+
+    private HBox createPulsantiConRicette() {
+        HBox pulsantiBox = new HBox(15);
+        pulsantiBox.setAlignment(Pos.CENTER);
+        pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
+
+        Button annullaBtn = new Button("❌ Annulla");
+        annullaBtn.setStyle("-fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
+        annullaBtn.setOnAction(e -> {
+            if (root != null && root.getScene() != null && root.getScene().getWindow() != null) {
+                root.getScene().getWindow().hide();
+            }
+        });
+
+        Button salvaBtn = new Button(modalitaAggiunta ? "💾 Salva" : "💾 Aggiorna");
+        salvaBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
+        salvaBtn.setOnAction(e -> salvaSessione());
+
+        pulsantiBox.getChildren().addAll(annullaBtn, salvaBtn);
+
+        // ✅ AGGIUNGI BOTTONI RICETTE SE È IN PRESENZA
+        if (tipoCombo != null && "In Presenza".equals(tipoCombo.getValue())) {
+            Button aggiungiRicettaEsistenteBtn = new Button("📚 Ricetta Esistente");
+            aggiungiRicettaEsistenteBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-pref-width: 160; -fx-pref-height: 40; -fx-cursor: hand;");
+            aggiungiRicettaEsistenteBtn.setOnAction(e -> aggiungiRicettaEsistente());
+
+            Button creaNuovaRicettaBtn = new Button("➕ Nuova Ricetta");
+            creaNuovaRicettaBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-pref-width: 150; -fx-pref-height: 40; -fx-cursor: hand;");
+            creaNuovaRicettaBtn.setOnAction(e -> creaNuovaRicetta());
+
+            pulsantiBox.getChildren().addAll(aggiungiRicettaEsistenteBtn, creaNuovaRicettaBtn);
         }
 
         return pulsantiBox;
@@ -191,13 +244,16 @@ public class GestioneSessioniGUI {
         }
 
         aggiornaVisibilitaCampi();
+        aggiornaPulsanti();
     }
 
     private void aggiornaVisibilitaCampi() {
         boolean isOnline = tipoCombo != null && "Online".equals(tipoCombo.getValue());
         if (campiOnlineBox != null && campiPresenzaBox != null) {
-            campiOnlineBox.setVisible(isOnline); campiOnlineBox.setManaged(isOnline);
-            campiPresenzaBox.setVisible(!isOnline); campiPresenzaBox.setManaged(!isOnline);
+            campiOnlineBox.setVisible(isOnline); 
+            campiOnlineBox.setManaged(isOnline);
+            campiPresenzaBox.setVisible(!isOnline); 
+            campiPresenzaBox.setManaged(!isOnline);
         }
     }
 
@@ -221,28 +277,33 @@ public class GestioneSessioniGUI {
                 online.setDataInizioSessione(inizio);
                 online.setDataFineSessione(fine);
                 online.setPiattaformaStreaming(piattaformaField.getText().trim());
+                online.setCorsoCucina(corso);
 
                 if (modalitaAggiunta) {
                     if (controller != null) {
                         try {
-                            controller.aggiungiSessione(online, null); 
+                            // ✅ FIX: Passa lista ricette vuota per sessioni online
+                            controller.aggiungiSessione(online, new ArrayList<>());
                             this.sessione = online;
                             this.modalitaAggiunta = false;
-                            showInfo("Sessione online salvata.");
+                            showInfo("✅ Sessione online salvata correttamente.");
                         } catch (SQLException ex) {
                             showError("Errore DB", ex.getMessage());
+                            return;
                         }
                     } else {
-                        showInfo("Sessione creata in memoria (controller non impostato).");
+                        showError("Errore", "Controller non impostato. Impossibile salvare.");
+                        return;
                     }
                 } else {
                     if (controller != null) {
                         try {
                             controller.aggiornaSessione(sessione, online);
                             this.sessione = online;
-                            showInfo("Sessione aggiornata.");
+                            showInfo("✅ Sessione aggiornata.");
                         } catch (SQLException ex) {
                             showError("Errore DB", ex.getMessage());
+                            return;
                         }
                     }
                 }
@@ -252,41 +313,71 @@ public class GestioneSessioniGUI {
                 int cap = Integer.parseInt(capField.getText().trim());
                 InPresenza ip = modalitaAggiunta ? new InPresenza(inizio, fine, viaField.getText(), cittaField.getText(), posti, cap)
                         : (InPresenza) sessione;
-                ip.setDataInizioSessione(inizio); ip.setDataFineSessione(fine);
-                ip.setVia(viaField.getText()); ip.setCitta(cittaField.getText());
-                ip.setNumeroPosti(posti); ip.setCAP(cap);
+                ip.setDataInizioSessione(inizio); 
+                ip.setDataFineSessione(fine);
+                ip.setVia(viaField.getText()); 
+                ip.setCitta(cittaField.getText());
+                ip.setNumeroPosti(posti); 
+                ip.setCAP(cap);
+                ip.setCorsoCucina(corso);
 
                 if (modalitaAggiunta) {
                     if (controller != null) {
                         try {
-                            controller.aggiungiSessione(ip, null); 
+                            // ✅ FIX: Passa lista ricette vuota per sessioni in presenza (aggiungi ricette dopo)
+                            controller.aggiungiSessione(ip, new ArrayList<>());
                             this.sessione = ip;
                             this.modalitaAggiunta = false;
-                            showInfo("Sessione in presenza salvata.");
+                            showInfo("✅ Sessione in presenza salvata. Ora puoi aggiungere le ricette.");
+                            aggiornaPulsanti(); // Mostra i bottoni ricette dopo il salvataggio
                         } catch (SQLException ex) {
                             showError("Errore DB", ex.getMessage());
+                            return;
                         }
                     } else {
-                        showInfo("Sessione creata in memoria (controller non impostato).");
+                        showError("Errore", "Controller non impostato. Impossibile salvare.");
+                        return;
                     }
                 } else {
                     if (controller != null) {
                         try {
                             controller.aggiornaSessione(sessione, ip);
                             this.sessione = ip;
-                            showInfo("Sessione aggiornata.");
+                            showInfo("✅ Sessione aggiornata.");
                         } catch (SQLException ex) {
                             showError("Errore DB", ex.getMessage());
+                            return;
                         }
                     }
                 }
             }
 
-            if (primaryStage != null) primaryStage.close();
-
         } catch (Exception ex) {
             showError("Errore", "Errore durante il salvataggio: " + ex.getMessage());
+            ex.printStackTrace();
         }
+    }
+
+    private void aggiungiRicettaEsistente() {
+        if (sessione == null || !(sessione instanceof InPresenza)) {
+            showError("Errore", "Prima salva la sessione in presenza.");
+            return;
+        }
+        
+        if (controller != null) {
+            controller.apriSelezionaRicettaGUI((InPresenza) sessione);
+        } else {
+            showError("Controller non disponibile", "Impossibile gestire le ricette senza controller.");
+        }
+    }
+
+    private void creaNuovaRicetta() {
+        if (sessione == null || !(sessione instanceof InPresenza)) {
+            showError("Errore", "Prima salva la sessione in presenza.");
+            return;
+        }
+        
+        showInfo("Funzionalità da implementare: Crea Nuova Ricetta");
     }
 
     private void showError(String titolo, String messaggio) {
@@ -297,6 +388,7 @@ public class GestioneSessioniGUI {
         alert.showAndWait();
     }
 
+    // ✅ FIX: Metodo con un solo parametro
     private void showInfo(String messaggio) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Info");

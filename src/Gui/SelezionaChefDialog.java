@@ -36,12 +36,10 @@ public class SelezionaChefDialog extends Stage {
     }
 
     private void createLayout() {
-        // ROOT con SFONDO ARANCIONE usando StyleHelper
         StackPane rootPane = new StackPane();
         rootPane.setMinSize(700, 600);
         rootPane.setPrefSize(800, 700);
 
-        // Sfondo arancione usando StyleHelper
         Region background = new Region();
         StyleHelper.applyBackgroundGradient(background);
 
@@ -144,7 +142,6 @@ public class SelezionaChefDialog extends Stage {
 
                     cellBox.getChildren().addAll(infoBox, spacer);
 
-                    // Colore sfondo in base alla disponibilità
                     if (chef.getDisponibilita()) {
                         cellBox.setStyle("-fx-background-color: #f0fff0; -fx-border-color: #90ee90; " +
                             "-fx-border-radius: 5; -fx-background-radius: 5;");
@@ -159,7 +156,6 @@ public class SelezionaChefDialog extends Stage {
             }
         });
 
-        // Double click per selezione
         chefListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 selezionaChef();
@@ -209,7 +205,6 @@ public class SelezionaChefDialog extends Stage {
             return;
         }
 
-        // Conferma selezione
         Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
         conferma.setTitle("Conferma Selezione");
         conferma.setHeaderText("Conferma selezione chef");
@@ -238,9 +233,6 @@ public class SelezionaChefDialog extends Stage {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
-    
-     // Mostra il dialog e restituisce il chef selezionato
      
     public Chef showAndReturn() {
         showAndWait();
