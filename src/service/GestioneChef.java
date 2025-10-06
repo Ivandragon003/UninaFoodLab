@@ -14,10 +14,6 @@ import java.util.Optional;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-/**
- * Service per gestione Chef - contiene TUTTA la logica business
- * Lancia solo ValidationException e DataAccessException (unchecked)
- */
 public class GestioneChef {
     private final ChefDAO chefDAO;
     private final TieneDAO tieneDAO;
@@ -27,14 +23,9 @@ public class GestioneChef {
         this.tieneDAO = tieneDAO;
     }
 
-    // ===== AUTENTICAZIONE =====
+    // ==================== AUTENTICAZIONE ====================
     
-    /**
-     * Login con validazione completa
-     * @throws ValidationException se credenziali non valide
-     * @throws DataAccessException se errore database
-     */
-    public Chef login(String username, String password) throws ValidationException {
+    public Chef login(String username, String password) throws ValidationException, DataAccessException {
         ValidationUtils.validateNotEmpty(username, "Username");
         ValidationUtils.validateNotEmpty(password, "Password");
         
@@ -57,25 +48,18 @@ public class GestioneChef {
         }
     }
 
-    // ===== REGISTRAZIONE =====
+    // ==================== REGISTRAZIONE ====================
     
-    /**
-     * Crea nuovo Chef con validazione completa
-     * @throws ValidationException se validazione fallisce
-     * @throws DataAccessException se errore database
-     */
     public Chef creaChef(String codFiscale, String nome, String cognome, String email,
                          LocalDate dataNascita, boolean disponibilita, 
-                         String username, String password) throws ValidationException {
+                         String username, String password) 
+            throws ValidationException, DataAccessException {
         
-        // Validazione input
         validateChefInput(codFiscale, nome, cognome, email, dataNascita, username, password);
         
         try {
-            // Controllo unicità
             checkUniqueConstraints(codFiscale, email, username);
             
-            // Creazione Chef
             Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
             chef.setEmail(email);
             chef.setDataNascita(dataNascita);
@@ -88,12 +72,9 @@ public class GestioneChef {
         }
     }
 
-    // ===== AGGIORNAMENTO =====
+    // ==================== AGGIORNAMENTO ====================
     
-    /**
-     * Aggiorna Chef esistente
-     */
-    public void aggiornaChef(Chef chef) throws ValidationException {
+    public void aggiornaChef(Chef chef) throws ValidationException, DataAccessException {
         if (chef == null) {
             throw new ValidationException(ErrorMessages.CHEF_NULLO);
         }
@@ -109,22 +90,19 @@ public class GestioneChef {
             throw new DataAccessException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
         }
     }
-    
-    /**
-     * Aggiorna credenziali con validazione
-     */
+
     public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) 
-            throws ValidationException {
+            throws ValidationException, DataAccessException {
         
         if (chef == null) {
             throw new ValidationException(ErrorMessages.CHEF_NULLO);
         }
         
         ValidationUtils.validateNotEmpty(nuovoUsername, "Username");
+        ValidationUtils.validateTextLength(nuovoUsername, "Username", 3, 30);
         ValidationUtils.validateTextLength(nuovaPassword, "Password", 6, 50);
         
         try {
-            // Verifica che il nuovo username non sia già usato
             if (!nuovoUsername.equals(chef.getUsername())) {
                 if (chefDAO.findByUsername(nuovoUsername).isPresent()) {
                     throw new ValidationException("Username già esistente");
@@ -140,9 +118,9 @@ public class GestioneChef {
         }
     }
 
-    // ===== ELIMINAZIONE =====
+    // ==================== ELIMINAZIONE ====================
     
-    public void eliminaChef(String username) throws ValidationException {
+    public void eliminaChef(String username) throws ValidationException, DataAccessException {
         ValidationUtils.validateNotEmpty(username, "Username");
         
         try {
@@ -158,9 +136,9 @@ public class GestioneChef {
         }
     }
 
-    // ===== QUERY =====
+    // ==================== QUERY ====================
     
-    public List<Chef> getAll() {
+    public List<Chef> getAll() throws DataAccessException {
         try {
             return chefDAO.getAll();
         } catch (SQLException e) {
@@ -168,7 +146,7 @@ public class GestioneChef {
         }
     }
     
-    public Chef getChefByUsername(String username) {
+    public Chef getChefByUsername(String username) throws DataAccessException {
         try {
             return chefDAO.findByUsername(username).orElse(null);
         } catch (SQLException e) {
@@ -176,7 +154,7 @@ public class GestioneChef {
         }
     }
     
-    public boolean existsByCodFiscale(String codFiscale) {
+    public boolean existsByCodFiscale(String codFiscale) throws DataAccessException {
         try {
             return chefDAO.existsByCodFiscale(codFiscale);
         } catch (SQLException e) {
@@ -184,7 +162,7 @@ public class GestioneChef {
         }
     }
     
-    public boolean existsByEmail(String email) {
+    public boolean existsByEmail(String email) throws DataAccessException {
         try {
             return chefDAO.existsByEmail(email);
         } catch (SQLException e) {
@@ -192,9 +170,10 @@ public class GestioneChef {
         }
     }
 
-    // ===== GESTIONE CORSI =====
+    // ==================== GESTIONE CORSI ====================
     
-    public void aggiungiCorso(Chef chef, CorsoCucina corso) throws ValidationException {
+    public void aggiungiCorso(Chef chef, CorsoCucina corso) 
+            throws ValidationException, DataAccessException {
         if (chef == null) {
             throw new ValidationException(ErrorMessages.CHEF_NULLO);
         }
@@ -212,14 +191,15 @@ public class GestioneChef {
             tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
             
         } catch (SQLException e) {
-            // Rollback in-memory
+            // Rollback in-memory su fallimento
             chef.getCorsi().remove(corso);
             corso.getChef().remove(chef);
             throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
         }
     }
     
-    public void rimuoviCorso(Chef chef, CorsoCucina corso) throws ValidationException {
+    public void rimuoviCorso(Chef chef, CorsoCucina corso) 
+            throws ValidationException, DataAccessException {
         if (chef == null) {
             throw new ValidationException(ErrorMessages.CHEF_NULLO);
         }
@@ -237,14 +217,14 @@ public class GestioneChef {
             tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
             
         } catch (SQLException e) {
-            // Rollback in-memory
+            // Rollback in-memory su fallimento
             chef.getCorsi().add(corso);
             corso.getChef().add(chef);
             throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
         }
     }
 
-    // ===== METODI PRIVATI DI VALIDAZIONE =====
+    // ==================== METODI PRIVATI DI VALIDAZIONE ====================
     
     private void validateChefInput(String codFiscale, String nome, String cognome, 
                                    String email, LocalDate dataNascita,

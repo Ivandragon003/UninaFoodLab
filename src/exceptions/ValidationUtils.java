@@ -2,8 +2,51 @@ package exceptions;
 
 import model.Ingrediente;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class ValidationUtils {
+
+    // ==================== VALIDAZIONI GENERICHE ====================
+    
+    public static void validateNotEmpty(String value, String fieldName) throws ValidationException {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ValidationException(ErrorMessages.campoObbligatorio(fieldName));
+        }
+    }
+    
+    public static void validateTextLength(String value, String fieldName, int minLength, int maxLength) 
+            throws ValidationException {
+        if (value == null) {
+            throw new ValidationException(ErrorMessages.campoObbligatorio(fieldName));
+        }
+        
+        int length = value.trim().length();
+        
+        if (length < minLength) {
+            throw new ValidationException(
+                fieldName + " deve contenere almeno " + minLength + " caratteri"
+            );
+        }
+        
+        if (length > maxLength) {
+            throw new ValidationException(
+                fieldName + " non può superare " + maxLength + " caratteri"
+            );
+        }
+    }
+    
+    public static void validateEmail(String email) throws ValidationException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new ValidationException(ErrorMessages.campoObbligatorio("Email"));
+        }
+        
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+        Pattern pattern = Pattern.compile(emailRegex);
+        
+        if (!pattern.matcher(email.trim()).matches()) {
+            throw new ValidationException("Formato email non valido");
+        }
+    }
 
     // ==================== VALIDAZIONI RICETTE ====================
     
@@ -67,5 +110,16 @@ public class ValidationUtils {
 
     public static boolean isValidInteger(String text) {
         return parseIntegerSafe(text) != null || text == null || text.trim().isEmpty();
+    }
+    
+    public static Double parseDoubleSafe(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(text.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

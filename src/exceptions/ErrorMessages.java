@@ -2,7 +2,7 @@ package exceptions;
 
 public class ErrorMessages {
     
-    //ERRORI CORSI
+    // ==================== CORSI ====================
     public static final String CORSO_NULLO = "Il corso non può essere nullo";
     public static final String NOME_CORSO_MANCANTE = "Inserisci un nome valido per il corso";
     public static final String NUMERO_POSTI_NON_VALIDO = "Il numero di posti deve essere maggiore di zero";
@@ -11,14 +11,16 @@ public class ErrorMessages {
     public static final String DATA_INIZIO_PASSATA = "La data di inizio non può essere nel passato";
     public static final String DATA_FINE_PRECEDENTE = "La data di fine deve essere successiva alla data di inizio";
     public static final String CORSO_NON_TROVATO = "Corso non trovato nel sistema";
+    public static final String CORSO_PIENO = "Il corso ha raggiunto il numero massimo di iscritti";
     
-    // ERRORI CHEF
+    // ==================== CHEF ====================
     public static final String CHEF_NULLO = "Lo chef non può essere nullo";
     public static final String CHEF_NON_PRESENTE = "Chef non trovato nel sistema: ";
     public static final String CHEF_GIA_ASSEGNATO = "Questo chef è già assegnato al corso";
     public static final String PASSWORD_NON_VALIDA = "La password deve contenere almeno 6 caratteri";
+    public static final String CREDENZIALI_ERRATE = "Email o password non corretti";
     
-    // ERRORI SESSIONE 
+    // ==================== SESSIONI ====================
     public static final String SESSIONE_NULLA = "La sessione non può essere nulla";
     public static final String DATE_SESSIONE_MANCANTI = "Specifica sia data/ora di inizio che di fine della sessione";
     public static final String DATA_INIZIO_SESSIONE_PASSATA = "La sessione non può iniziare nel passato";
@@ -30,7 +32,7 @@ public class ErrorMessages {
     public static final String CAP_NON_VALIDO = "Inserisci un CAP valido (5 cifre)";
     public static final String POSTI_NON_VALIDI = "Il numero di posti deve essere almeno 1";
     
-    // ERRORI RICETTA 
+    // ==================== RICETTE ====================
     public static final String NOME_RICETTA_MANCANTE = "Il nome della ricetta è obbligatorio";
     public static final String NOME_RICETTA_TROPPO_CORTO = "Il nome deve contenere almeno 3 caratteri";
     public static final String NOME_RICETTA_TROPPO_LUNGO = "Il nome non può superare 100 caratteri";
@@ -38,38 +40,35 @@ public class ErrorMessages {
     public static final String TEMPO_TROPPO_LUNGO = "Il tempo non può superare 24 ore (1440 minuti)";
     public static final String RICETTA_NON_TROVATA = "Ricetta non trovata";
     
-    
-    //  ERRORI INGREDIENTE 
+    // ==================== INGREDIENTI ====================
     public static final String INGREDIENTI_MANCANTI = "Aggiungi almeno un ingrediente";
     public static final String QUANTITA_NON_VALIDA = "La quantità deve essere maggiore di zero";
     
-    //  ERRORI ISCRIZIONE 
+    // ==================== ISCRIZIONI ====================
     public static final String PARTECIPANTE_NULLO = "Il partecipante non può essere nullo";
-    public static final String CORSO_PIENO = "Il corso ha raggiunto il numero massimo di iscritti";
     public static final String GIA_ISCRITTO = "Questo partecipante è già iscritto al corso";
     public static final String EMAIL_NON_VALIDA = "Inserisci un indirizzo email valido";
     public static final String TELEFONO_NON_VALIDO = "Inserisci un numero di telefono valido";
     
-    // ERRORI DATABASE 
+    // ==================== DATABASE ====================
     public static final String ERRORE_DATABASE = "Errore di connessione al database";
     public static final String ERRORE_SALVATAGGIO = "Impossibile salvare i dati";
     public static final String ERRORE_AGGIORNAMENTO = "Impossibile aggiornare i dati";
     public static final String ERRORE_ELIMINAZIONE = "Impossibile eliminare i dati";
     public static final String ERRORE_LETTURA = "Impossibile leggere i dati";
     
-    //  ERRORI AUTENTICAZIONE 
-    public static final String CREDENZIALI_ERRATE = "Email o password non corretti";
+    // ==================== AUTENTICAZIONE ====================
     public static final String ACCESSO_NEGATO = "Non hai i permessi per eseguire questa operazione";
     public static final String SESSIONE_SCADUTA = "La tua sessione è scaduta, effettua nuovamente l'accesso";
     
-    // ERRORI VALIDAZIONE GENERICI
+    // ==================== VALIDAZIONE GENERICA ====================
     public static final String CAMPO_OBBLIGATORIO = "Questo campo è obbligatorio";
     public static final String FORMATO_NON_VALIDO = "Formato non valido";
     public static final String VALORE_TROPPO_LUNGO = "Il valore inserito è troppo lungo";
     public static final String VALORE_TROPPO_CORTO = "Il valore inserito è troppo corto";
     public static final String PARAMETRI_NULL = "Parametri non possono essere null";
     
-    // MESSAGGI DI SUCCESSO 
+    // ==================== MESSAGGI SUCCESSO ====================
     public static final String CORSO_CREATO = "Corso creato con successo!";
     public static final String CORSO_AGGIORNATO = "Corso aggiornato con successo!";
     public static final String CORSO_ELIMINATO = "Corso eliminato con successo!";
@@ -80,21 +79,38 @@ public class ErrorMessages {
     public static final String INGREDIENTE_AGGIUNTO = "Ingrediente aggiunto alla ricetta!";
     public static final String ISCRIZIONE_COMPLETATA = "Iscrizione completata con successo!";
     
-    // HELPER METHODS 
+    // ==================== HELPER METHODS ====================
     
+    /**
+     * Genera messaggio di campo obbligatorio dinamico
+     */
     public static String campoObbligatorio(String nomeCampo) {
         return "Il campo '" + nomeCampo + "' è obbligatorio";
     }
     
+    /**
+     * Genera messaggio per valore fuori range
+     */
     public static String valoreNonInRange(String nomeCampo, int min, int max) {
         return "Il campo '" + nomeCampo + "' deve essere compreso tra " + min + " e " + max;
     }
     
+    /**
+     * Genera messaggio per lunghezza non valida
+     */
     public static String lunghezzaNonValida(String nomeCampo, int minLen, int maxLen) {
         return "Il campo '" + nomeCampo + "' deve contenere tra " + minLen + " e " + maxLen + " caratteri";
     }
     
+    /**
+     * Genera messaggio di conferma eliminazione
+     */
     public static String confermaEliminazione(String oggetto) {
         return "Sei sicuro di voler eliminare " + oggetto + "? Questa operazione non può essere annullata.";
+    }
+    
+    // Costruttore privato per prevenire istanziazione
+    private ErrorMessages() {
+        throw new AssertionError("Utility class non istanziabile");
     }
 }
