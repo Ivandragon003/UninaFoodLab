@@ -19,6 +19,7 @@ public class GestioneCucina {
         if (!(s instanceof InPresenza)) {
             throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");
         }
+
         if (!r.getSessioni().contains(s)) {
             r.getSessioni().add(s);
             cucinaDAO.save(r.getIdRicetta(), s.getIdSessione());
@@ -31,6 +32,7 @@ public class GestioneCucina {
         if (!(s instanceof InPresenza)) {
             throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");
         }
+
         if (r.getSessioni().remove(s)) {
             cucinaDAO.delete(r.getIdRicetta(), s.getIdSessione());
         } else {

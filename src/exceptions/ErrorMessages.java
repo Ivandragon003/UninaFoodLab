@@ -31,18 +31,17 @@ public class ErrorMessages {
     public static final String POSTI_NON_VALIDI = "Il numero di posti deve essere almeno 1";
     
     // ERRORI RICETTA 
-    public static final String RICETTA_NULLA = "La ricetta non può essere nulla";
-    public static final String NOME_RICETTA_MANCANTE = "Inserisci un nome per la ricetta";
+    public static final String NOME_RICETTA_MANCANTE = "Il nome della ricetta è obbligatorio";
+    public static final String NOME_RICETTA_TROPPO_CORTO = "Il nome deve contenere almeno 3 caratteri";
+    public static final String NOME_RICETTA_TROPPO_LUNGO = "Il nome non può superare 100 caratteri";
+    public static final String TEMPO_NON_VALIDO = "Il tempo di preparazione deve essere maggiore di zero";
+    public static final String TEMPO_TROPPO_LUNGO = "Il tempo non può superare 24 ore (1440 minuti)";
     public static final String RICETTA_NON_TROVATA = "Ricetta non trovata";
-    public static final String RICETTE_MINIME_NON_RISPETTATE = "Devi selezionare almeno una ricetta per la sessione in presenza";
-    public static final String INGREDIENTE_GIA_PRESENTE = "Questo ingrediente è già stato aggiunto alla ricetta";
-    public static final String INGREDIENTE_NON_PRESENTE = "Ingrediente non trovato nella ricetta";
-    public static final String QUANTITA_NON_VALIDA = "La quantità deve essere maggiore di zero";
+    
     
     //  ERRORI INGREDIENTE 
-    public static final String INGREDIENTE_NULLO = "L'ingrediente non può essere nullo";
-    public static final String NOME_INGREDIENTE_MANCANTE = "Inserisci un nome per l'ingrediente";
-    public static final String CATEGORIA_MANCANTE = "Specifica la categoria dell'ingrediente";
+    public static final String INGREDIENTI_MANCANTI = "Aggiungi almeno un ingrediente";
+    public static final String QUANTITA_NON_VALIDA = "La quantità deve essere maggiore di zero";
     
     //  ERRORI ISCRIZIONE 
     public static final String PARTECIPANTE_NULLO = "Il partecipante non può essere nullo";
@@ -68,6 +67,7 @@ public class ErrorMessages {
     public static final String FORMATO_NON_VALIDO = "Formato non valido";
     public static final String VALORE_TROPPO_LUNGO = "Il valore inserito è troppo lungo";
     public static final String VALORE_TROPPO_CORTO = "Il valore inserito è troppo corto";
+    public static final String PARAMETRI_NULL = "Parametri non possono essere null";
     
     // MESSAGGI DI SUCCESSO 
     public static final String CORSO_CREATO = "Corso creato con successo!";

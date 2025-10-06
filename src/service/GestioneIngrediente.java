@@ -1,7 +1,9 @@
+
 package service;
 
 import dao.IngredienteDAO;
 import model.Ingrediente;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +29,6 @@ public class GestioneIngrediente {
         if (ingredienteEsiste(ingrediente.getNome())) {
             throw new IllegalArgumentException("Esiste già un ingrediente con questo nome: " + ingrediente.getNome());
         }
-
         return ingredienteDAO.save(ingrediente);
     }
 
@@ -45,12 +46,11 @@ public class GestioneIngrediente {
         if (nome == null || nome.trim().isEmpty()) {
             return getAllIngredienti();
         }
-
         // Implemento una ricerca che cerca per nome parziale
         List<Ingrediente> tuttiIngredienti = getAllIngredienti();
         return tuttiIngredienti.stream()
-            .filter(ing -> ing.getNome().toLowerCase().contains(nome.toLowerCase().trim()))
-            .toList();
+                .filter(ing -> ing.getNome().toLowerCase().contains(nome.toLowerCase().trim()))
+                .toList();
     }
 
     /**
@@ -101,7 +101,6 @@ public class GestioneIngrediente {
         if (ingrediente.isEmpty()) {
             throw new IllegalArgumentException("Ingrediente con ID " + id + " non trovato");
         }
-
         ingredienteDAO.delete(id);
     }
 
@@ -117,9 +116,9 @@ public class GestioneIngrediente {
      */
     public List<String> getTipiIngredienti() throws SQLException {
         return getAllIngredienti().stream()
-            .map(Ingrediente::getTipo)
-            .distinct()
-            .sorted()
-            .toList();
+                .map(Ingrediente::getTipo)
+                .distinct()
+                .sorted()
+                .toList();
     }
 }

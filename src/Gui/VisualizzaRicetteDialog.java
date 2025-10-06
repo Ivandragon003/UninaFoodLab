@@ -1,3 +1,4 @@
+
 package Gui;
 
 import javafx.geometry.Insets;
@@ -12,14 +13,15 @@ import javafx.stage.Stage;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import model.*;
-import service.GestioneRicette;
-import java.sql.SQLException;
+import controller.RicettaController;
+import exceptions.ValidationException;
 import java.util.List;
 import java.util.ArrayList;
 
 public class VisualizzaRicetteDialog extends Stage {
     
-    private final GestioneRicette gestioneRicette;
+    // ✅ CORRETTO: Solo dipendenza dal controller
+    private final RicettaController ricettaController;
     private final ObservableList<Ricetta> ricetteDisponibili;
     private final ObservableList<Ricetta> ricetteSelezionate;
     
@@ -28,8 +30,8 @@ public class VisualizzaRicetteDialog extends Stage {
     
     private List<Ricetta> risultato = new ArrayList<>();
 
-    public VisualizzaRicetteDialog(GestioneRicette gestioneRicette) {
-        this.gestioneRicette = gestioneRicette;
+    public VisualizzaRicetteDialog(RicettaController ricettaController) {
+        this.ricettaController = ricettaController;
         this.ricetteDisponibili = FXCollections.observableArrayList();
         this.ricetteSelezionate = FXCollections.observableArrayList();
         
@@ -127,7 +129,7 @@ public class VisualizzaRicetteDialog extends Stage {
         countLabel.setFont(Font.font("Inter", FontWeight.BOLD, 12));
         countLabel.setTextFill(Color.web("#28A745"));
         
-        ricetteSelezionate.addListener((javafx.collections.ListChangeListener<Ricetta>) c -> {
+        ricetteSelezionate.addListener((javafx.collections.ListChangeListener) c -> {
             countLabel.setText("📊 Selezionate: " + ricetteSelezionate.size() + " ricette");
         });
         
@@ -198,14 +200,14 @@ public class VisualizzaRicetteDialog extends Stage {
             if (val == null || val.trim().isEmpty()) {
                 listaDisponibili.setItems(ricetteDisponibili);
             } else {
-                ObservableList<Ricetta> filtrate = FXCollections.observableArrayList();
-                String filtro = val.toLowerCase().trim();
-                for (Ricetta r : ricetteDisponibili) {
-                    if (r.getNome().toLowerCase().contains(filtro)) {
-                        filtrate.add(r);
-                    }
+                // ✅ CORRETTO: Delega la ricerca al controller
+                try {
+                    List<Ricetta> filtrate = ricettaController.cercaPerNome(val);
+                    ObservableList<Ricetta> filtrateObservable = FXCollections.observableArrayList(filtrate);
+                    listaDisponibili.setItems(filtrateObservable);
+                } catch (Exception e) {
+                    showAlert("Errore", "Errore nella ricerca: " + e.getMessage());
                 }
-                listaDisponibili.setItems(filtrate);
             }
         });
     }
@@ -226,60 +228,57 @@ public class VisualizzaRicetteDialog extends Stage {
         listaSelezionate.getSelectionModel().clearSelection();
     }
     
+    // ✅ CORRETTO: Delega la creazione al controller
     private void creaRicettaDialog() {
         Dialog<Ricetta> dialog = new Dialog<>();
         dialog.setTitle("Crea Nuova Ricetta");
         dialog.setHeaderText("Inserisci i dati della nuova ricetta");
-
         ButtonType createButtonType = new ButtonType("Crea", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
-
+        
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(20));
-
+        
         TextField nomeField = new TextField();
         nomeField.setPromptText("Nome ricetta");
         TextField tempoField = new TextField();
         tempoField.setPromptText("Tempo preparazione (minuti)");
-
+        
         grid.add(new Label("Nome:"), 0, 0);
         grid.add(nomeField, 1, 0);
         grid.add(new Label("Tempo (min):"), 0, 1);
         grid.add(tempoField, 1, 1);
-
+        
         dialog.getDialogPane().setContent(grid);
-
+        
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == createButtonType) {
                 try {
                     String nome = nomeField.getText().trim();
                     String tempoText = tempoField.getText().trim();
                     
-                    if (nome.isEmpty()) {
-                        showAlert("Errore", "Inserisci il nome della ricetta.");
-                        return null;
-                    }
-                    
+                    // ✅ CORRETTO: Parsing semplice, validazioni delegate al controller
                     int tempo = Integer.parseInt(tempoText);
-                    if (tempo <= 0) throw new NumberFormatException();
                     
-                    Ricetta nuova = new Ricetta(nome, tempo);
-                    gestioneRicette.creaRicetta(nuova);
-                    return nuova;
+                    // ✅ CORRETTO: Delega TUTTO al controller (incluse validazioni)
+                    return ricettaController.creaRicetta(nome, tempo, new java.util.HashMap<>());
                     
                 } catch (NumberFormatException e) {
-                    showAlert("Errore", "Tempo non valido.");
+                    showAlert("Errore", "Tempo non valido - inserire un numero.");
                     return null;
-                } catch (SQLException e) {
-                    showAlert("Errore DB", "Errore salvataggio: " + e.getMessage());
+                } catch (ValidationException e) {
+                    showAlert("Errore Validazione", e.getMessage());
+                    return null;
+                } catch (Exception e) {
+                    showAlert("Errore", "Errore nella creazione: " + e.getMessage());
                     return null;
                 }
             }
             return null;
         });
-
+        
         dialog.showAndWait().ifPresent(nuovaRicetta -> {
             ricetteDisponibili.add(nuovaRicetta);
             ricetteSelezionate.add(nuovaRicetta);
@@ -287,12 +286,13 @@ public class VisualizzaRicetteDialog extends Stage {
         });
     }
     
+    // ✅ CORRETTO: Caricamento delegato al controller
     private void caricaRicette() {
         try {
-            List<Ricetta> ricette = gestioneRicette.getAllRicette();
+            List<Ricetta> ricette = ricettaController.getAllRicette();
             ricetteDisponibili.clear();
             ricetteDisponibili.addAll(ricette);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             showAlert("Errore", "Errore caricamento ricette: " + e.getMessage());
         }
     }

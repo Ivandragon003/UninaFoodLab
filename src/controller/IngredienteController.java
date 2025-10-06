@@ -1,3 +1,4 @@
+
 package controller;
 
 import dao.IngredienteDAO;
@@ -27,11 +28,9 @@ public class IngredienteController {
         return gestioneIngrediente.salvaIngrediente(ingrediente);
     }
 
-
     public List<Ingrediente> getAllIngredienti() throws SQLException {
         return gestioneIngrediente.getAllIngredienti();
     }
-
 
     public List<Ingrediente> cercaIngredientiPerNome(String nome) throws SQLException {
         return gestioneIngrediente.cercaPerNome(nome);
@@ -45,7 +44,6 @@ public class IngredienteController {
         return gestioneIngrediente.trovaIngredientePerId(id);
     }
 
-
     public void aggiornaIngrediente(int id, String nome, String tipo) throws SQLException {
         if (nome == null || nome.trim().isEmpty()) {
             throw new IllegalArgumentException("Il nome dell'ingrediente è obbligatorio");
@@ -57,13 +55,11 @@ public class IngredienteController {
         Ingrediente ingrediente = new Ingrediente(nome.trim(), tipo.trim());
         gestioneIngrediente.aggiornaIngrediente(id, ingrediente);
     }
-
-   
+    
     public void eliminaIngrediente(int id) throws SQLException {
         gestioneIngrediente.eliminaIngrediente(id);
     }
-
-   
+    
     public boolean ingredienteEsiste(String nome) throws SQLException {
         return gestioneIngrediente.ingredienteEsiste(nome);
     }
