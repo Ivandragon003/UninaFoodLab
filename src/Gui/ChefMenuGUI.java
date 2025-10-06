@@ -2,7 +2,7 @@ package Gui;
 
 import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
-import dao.*;
+import controller.RicettaController;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -21,22 +21,19 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import model.Chef;
 import model.Ricetta;
-import service.GestioneRicette;
 import util.StyleHelper;
 
 public class ChefMenuGUI {
     private Chef chefLoggato;
     private VisualizzaCorsiController corsiController;
     private GestioneCorsoController gestioneCorsoController;
+    private RicettaController ricettaController;
+    
     private double xOffset = 0;
     private double yOffset = 0;
     private StackPane menuRoot;
     private StackPane contentPane;
     
-    // Servizi
-    private GestioneRicette gestioneRicette;
-    
-    // Menu hamburger per dashboard laterale
     private VBox sidebar;
     private Button hamburgerBtn;
     private boolean sidebarVisible = true;
@@ -45,21 +42,12 @@ public class ChefMenuGUI {
         this.chefLoggato = chef;
     }
 
-    public void setController(VisualizzaCorsiController controller, GestioneCorsoController gestione) {
-        this.corsiController = controller;
-        this.gestioneCorsoController = gestione;
-        initializeServices();
-    }
-
-    private void initializeServices() {
-        try {
-            RicettaDAO ricettaDAO = new RicettaDAO();
-            UsaDAO usaDAO = new UsaDAO();
-            IngredienteDAO ingredienteDAO = new IngredienteDAO();
-            this.gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
-        } catch (Exception e) {
-            System.err.println("Errore nell'inizializzazione servizi: " + e.getMessage());
-        }
+    public void setControllers(VisualizzaCorsiController corsiController, 
+                              GestioneCorsoController gestioneCorsoController,
+                              RicettaController ricettaController) {
+        this.corsiController = corsiController;
+        this.gestioneCorsoController = gestioneCorsoController;
+        this.ricettaController = ricettaController;
     }
 
     public StackPane getRoot() {
@@ -67,8 +55,9 @@ public class ChefMenuGUI {
     }
 
     public void start(Stage stage) {
-        if (chefLoggato == null || corsiController == null || gestioneCorsoController == null) {
-            throw new IllegalStateException("Chef e controller devono essere impostati prima di start().");
+        if (chefLoggato == null || corsiController == null || 
+            gestioneCorsoController == null || ricettaController == null) {
+            throw new IllegalStateException("Chef e controller devono essere impostati prima di start()");
         }
 
         stage.initStyle(StageStyle.UNDECORATED);
@@ -94,7 +83,6 @@ public class ChefMenuGUI {
         welcomeLabel.setWrapText(true);
         welcomeLabel.setAlignment(Pos.CENTER);
 
-        // Pulsanti sidebar
         Button corsiBtn = createSidebarButton("📚 Visualizza Corsi");
         corsiBtn.setOnAction(e -> apriVisualizzaCorsi());
 
@@ -114,13 +102,13 @@ public class ChefMenuGUI {
         logoutBtn.setOnAction(e -> stage.close());
 
         sidebar.getChildren().addAll(
-                welcomeLabel,
-                corsiBtn,
-                creaCorsoBtn,
-                ricetteBtn,
-                creaRicettaBtn,
-                eliminaBtn,
-                logoutBtn
+            welcomeLabel,
+            corsiBtn,
+            creaCorsoBtn,
+            ricetteBtn,
+            creaRicettaBtn,
+            eliminaBtn,
+            logoutBtn
         );
 
         contentPane = new StackPane();
@@ -149,7 +137,6 @@ public class ChefMenuGUI {
         StackPane.setAlignment(hamburgerBtn, Pos.TOP_LEFT);
         StackPane.setMargin(hamburgerBtn, new Insets(12));
 
-        // Bottoni finestra
         HBox windowButtons = createWindowButtons(stage);
         menuRoot.getChildren().add(windowButtons);
         StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
@@ -204,7 +191,7 @@ public class ChefMenuGUI {
         istruzioni2Label.setTextFill(Color.web(StyleHelper.INFO_BLUE));
 
         benvenutoBox.getChildren().addAll(
-                titoloLabel, sottotitoloLabel, benvenutoLabel, istruzioniLabel, istruzioni2Label);
+            titoloLabel, sottotitoloLabel, benvenutoLabel, istruzioniLabel, istruzioni2Label);
 
         contentPane.getChildren().clear();
         contentPane.getChildren().add(benvenutoBox);
@@ -212,9 +199,9 @@ public class ChefMenuGUI {
 
     private void createBackground(StackPane root) {
         LinearGradient gradient = new LinearGradient(
-                0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")),
-                new Stop(1, Color.web("#FFCC99"))
+            0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+            new Stop(0, Color.web("#FF9966")),
+            new Stop(1, Color.web("#FFCC99"))
         );
 
         Region background = new Region();
@@ -274,8 +261,7 @@ public class ChefMenuGUI {
             contentPane.getChildren().clear();
             contentPane.getChildren().add(corsiGUI.getRoot());
         } catch (Exception ex) {
-            ex.printStackTrace();
-            StyleHelper.showErrorDialog("Errore", "Errore aprendo i corsi: " + ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura corsi: " + ex.getMessage());
         }
     }
 
@@ -286,50 +272,46 @@ public class ChefMenuGUI {
             contentPane.getChildren().clear();
             contentPane.getChildren().add(gui.getRoot());
         } catch (Exception ex) {
-            ex.printStackTrace();
-            StyleHelper.showErrorDialog("Errore", "Errore aprendo il form Crea Corso: " + ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione corso: " + ex.getMessage());
         }
     }
 
     private void apriVisualizzaRicette() {
         try {
-            VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(gestioneRicette);
+            VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(ricettaController);
             contentPane.getChildren().clear();
             contentPane.getChildren().add(ricetteGUI.getRoot());
         } catch (Exception ex) {
-            ex.printStackTrace();
-            StyleHelper.showErrorDialog("Errore", "Errore aprendo le ricette: " + ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura ricette: " + ex.getMessage());
         }
     }
 
     private void apriCreaRicettaDiretta() {
         try {
-            CreaRicettaGUI creaRicettaGUI = new CreaRicettaGUI(gestioneRicette);
+            CreaRicettaGUI creaRicettaGUI = new CreaRicettaGUI(ricettaController);
             Ricetta nuovaRicetta = creaRicettaGUI.showAndReturn();
             if (nuovaRicetta != null) {
-                StyleHelper.showSuccessDialog("Ricetta creata!", 
-                        "La ricetta '" + nuovaRicetta.getNome() + "' è stata creata con successo.");
+                StyleHelper.showSuccessDialog("Successo", 
+                    "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo");
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
             StyleHelper.showErrorDialog("Errore", "Errore nella creazione ricetta: " + ex.getMessage());
         }
     }
 
     private void eliminaAccount(Stage stage) {
-        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
-        conferma.setHeaderText("Vuoi eliminare definitivamente il tuo account?");
-        conferma.setContentText("Questa operazione non può essere annullata.");
-        conferma.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
+        StyleHelper.showConfirmationDialog(
+            "Conferma Eliminazione",
+            "Eliminare definitivamente l'account? Questa operazione non può essere annullata.",
+            () -> {
                 try {
-                    StyleHelper.showSuccessDialog("Account eliminato!", "Il tuo account è stato eliminato con successo.");
+                    StyleHelper.showSuccessDialog("Account eliminato", "Account eliminato con successo");
                     stage.close();
                 } catch (Exception ex) {
                     StyleHelper.showErrorDialog("Errore", "Errore nell'eliminazione: " + ex.getMessage());
                 }
             }
-        });
+        );
     }
 
     private void makeDraggable(StackPane root, Stage stage) {

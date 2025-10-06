@@ -2,9 +2,15 @@ package Gui;
 
 import controller.ChefController;
 import controller.GestioneCorsoController;
+import controller.RicettaController;
 import controller.VisualizzaCorsiController;
+import dao.IngredienteDAO;
+import dao.RicettaDAO;
+import dao.UsaDAO;
 import service.GestioneCorsiCucina;
+import service.GestioneRicette;
 import util.DBConnection;
+import util.StyleHelper;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,9 +18,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.paint.CycleMethod;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
@@ -27,7 +30,6 @@ public class LoginChefGUI extends Application {
     private static GestioneCorsiCucina corsiService;
     private double xOffset = 0;
     private double yOffset = 0;
-
     private StackPane contentPane;
 
     public static void setController(ChefController controller, GestioneCorsiCucina corsiServiceArg) {
@@ -47,7 +49,10 @@ public class LoginChefGUI extends Application {
         StackPane root = new StackPane();
         root.setPrefSize(600, 600);
 
-        createBackground(root);
+        Region background = new Region();
+        StyleHelper.applyBackgroundGradient(background);
+        background.setPrefSize(600, 600);
+        root.getChildren().add(background);
 
         contentPane = new StackPane();
         VBox loginCard = createLoginCard();
@@ -70,17 +75,6 @@ public class LoginChefGUI extends Application {
     @Override
     public void stop() {
         DBConnection.closeDataSource();
-        System.out.println("Pool DB chiuso al termine dell'applicazione.");
-    }
-
-    private void createBackground(StackPane root) {
-        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")),
-                new Stop(1, Color.web("#FFCC99")));
-        Region background = new Region();
-        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-        background.setPrefSize(600, 600);
-        root.getChildren().add(background);
     }
 
     private VBox createLoginCard() {
@@ -90,13 +84,13 @@ public class LoginChefGUI extends Application {
         card.setPrefSize(380, 380);
         card.setMaxSize(380, 380);
         card.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 25;
-            -fx-border-radius: 25;
-            -fx-border-color: #FF9966;
-            -fx-border-width: 2;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
-        """);
+                -fx-background-color: white;
+                -fx-background-radius: 25;
+                -fx-border-radius: 25;
+                -fx-border-color: #FF9966;
+                -fx-border-width: 2;
+                -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
+            """);
 
         Label titleLabel = new Label("UninaFoodLab");
         titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
@@ -115,16 +109,10 @@ public class LoginChefGUI extends Application {
         VBox passwordContainer = createStylishTextField("Password", true);
         PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
 
-        Label messageLabel = new Label();
-        messageLabel.setFont(Font.font("Roboto", FontWeight.MEDIUM, 13));
-        messageLabel.setTextFill(Color.web("#FF6600"));
-        messageLabel.setWrapText(true);
-        messageLabel.setAlignment(Pos.CENTER);
-
         Button loginButton = createStylishButton("ACCEDI", "#FF6600", "#FF8533");
         Button registerButton = createStylishButton("REGISTRATI", "#FFCC99", "#FFD9B3");
 
-        setupButtonEvents(loginButton, registerButton, usernameField, passwordField, messageLabel);
+        setupButtonEvents(loginButton, registerButton, usernameField, passwordField);
 
         formContainer.getChildren().addAll(usernameContainer, passwordContainer);
 
@@ -136,7 +124,7 @@ public class LoginChefGUI extends Application {
         headerContainer.setAlignment(Pos.CENTER);
         headerContainer.getChildren().addAll(titleLabel, subtitleLabel);
 
-        card.getChildren().addAll(headerContainer, formContainer, buttonContainer, messageLabel);
+        card.getChildren().addAll(headerContainer, formContainer, buttonContainer);
 
         return card;
     }
@@ -148,22 +136,22 @@ public class LoginChefGUI extends Application {
 
         Region background = new Region();
         background.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 15;
-            -fx-border-radius: 15;
-            -fx-border-color: #FF9966;
-            -fx-border-width: 1.5;
-        """);
+                -fx-background-color: white;
+                -fx-background-radius: 15;
+                -fx-border-radius: 15;
+                -fx-border-color: #FF9966;
+                -fx-border-width: 1.5;
+            """);
 
         TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
         inputField.setPromptText(placeholder);
         inputField.setStyle("""
-            -fx-background-color: transparent;
-            -fx-text-fill: black;
-            -fx-prompt-text-fill: gray;
-            -fx-font-size: 14px;
-            -fx-padding: 0 15 0 15;
-        """);
+                -fx-background-color: transparent;
+                -fx-text-fill: black;
+                -fx-prompt-text-fill: gray;
+                -fx-font-size: 14px;
+                -fx-padding: 0 15 0 15;
+            """);
         inputField.setPrefWidth(300);
 
         fieldContainer.getChildren().addAll(background, inputField);
@@ -176,7 +164,7 @@ public class LoginChefGUI extends Application {
         Button minimizeButton = new Button("_");
         Button maximizeButton = new Button("□");
 
-        Button[] buttons = {minimizeButton, maximizeButton, closeButton};
+        Button[] buttons = { minimizeButton, maximizeButton, closeButton };
         for (Button btn : buttons) {
             btn.setPrefSize(35, 35);
             btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -202,58 +190,74 @@ public class LoginChefGUI extends Application {
         button.setTextFill(Color.web("#4B2E2E"));
         button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
 
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+        button.setOnMouseEntered(e -> button
+                .setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+        button.setOnMouseExited(e -> button
+                .setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
 
         return button;
     }
 
     private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
-                                   PasswordField passwordField, Label messageLabel) {
-
-        loginButton.setOnAction(e -> {
-            try {
-                Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
-                mostraMessaggio(messageLabel, "✅ Login effettuato: " + chef.getUsername(), true);
-
-                GestioneCorsoController gestioneCorsoController =
-                        new GestioneCorsoController(corsiService, chefController.getGestioneChef());
-                gestioneCorsoController.setChefLoggato(chef);
-
-                VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
-
-                ChefMenuGUI menu = new ChefMenuGUI();
-                menu.setChefLoggato(chef);
-                menu.setController(corsiController, gestioneCorsoController);
-
-                Stage menuStage = new Stage();
-                menu.start(menuStage);
-
-                ((Stage) loginButton.getScene().getWindow()).close();
-
-            } catch (ValidationException ex) {
-                mostraMessaggio(messageLabel, ex.getMessage(), false);
-            } catch (DataAccessException ex) {
-                mostraMessaggio(messageLabel, ErrorMessages.ERRORE_DATABASE, false);
-            } catch (Exception ex) {
-                mostraMessaggio(messageLabel, "❌ Errore inatteso: " + ex.getMessage(), false);
-                ex.printStackTrace();
-            }
-        });
-
-        registerButton.setOnAction(e -> {
-            contentPane.getChildren().clear();
-            RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
-                contentPane.getChildren().clear();
-                contentPane.getChildren().add(createLoginCard());
-            });
-            contentPane.getChildren().add(regPane);
-        });
+            PasswordField passwordField) {
+        loginButton.setOnAction(e -> handleLogin(usernameField, passwordField));
+        registerButton.setOnAction(e -> handleRegister());
     }
 
-    private void mostraMessaggio(Label label, String testo, boolean success) {
-        label.setText(testo);
-        label.setTextFill(success ? Color.web("#FF6600") : Color.web("#CC3300"));
+    private void handleLogin(TextField usernameField, PasswordField passwordField) {
+        try {
+            Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
+            StyleHelper.showSuccessDialog("Login Effettuato", "Benvenuto " + chef.getUsername() + "!");
+            aprireMenuChef(chef);
+
+        } catch (ValidationException ex) {
+            StyleHelper.handleValidation(ex);
+
+        } catch (DataAccessException ex) {
+            StyleHelper.showErrorDialog("Errore Database", ErrorMessages.ERRORE_DATABASE);
+
+        } catch (Exception ex) {
+            StyleHelper.handleError(ex);
+        }
+    }
+
+    private void aprireMenuChef(Chef chef) {
+        try {
+            RicettaDAO ricettaDAO = new RicettaDAO();
+            UsaDAO usaDAO = new UsaDAO();
+            IngredienteDAO ingredienteDAO = new IngredienteDAO();
+            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
+            RicettaController ricettaController = new RicettaController(gestioneRicette);
+
+            GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
+                corsiService,
+                chefController.getGestioneChef()
+            );
+            gestioneCorsoController.setChefLoggato(chef);
+
+            VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
+
+            ChefMenuGUI menu = new ChefMenuGUI();
+            menu.setChefLoggato(chef);
+            menu.setControllers(corsiController, gestioneCorsoController, ricettaController);
+
+            Stage menuStage = new Stage();
+            menu.start(menuStage);
+
+            ((Stage) contentPane.getScene().getWindow()).close();
+
+        } catch (Exception ex) {
+            StyleHelper.showErrorDialog("Errore", "Impossibile aprire il menu: " + ex.getMessage());
+        }
+    }
+
+    private void handleRegister() {
+        contentPane.getChildren().clear();
+        RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
+            contentPane.getChildren().clear();
+            contentPane.getChildren().add(createLoginCard());
+        });
+        contentPane.getChildren().add(regPane);
     }
 
     private void makeDraggable(StackPane root, Stage stage) {

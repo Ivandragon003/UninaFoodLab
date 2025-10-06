@@ -33,22 +33,18 @@ public class GestioneRicette {
             Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
             
             if (!ingrDaDB.isPresent()) {
-                System.out.println("🔍 DEBUG: Ingrediente '" + ingr.getNome() + "' non trovato, lo salvo...");
                 ingredienteDAO.save(ingr);
                 ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
             }
             
             if (ingrDaDB.isPresent()) {
                 Ingrediente ingredienteConID = ingrDaDB.get();
-                System.out.println("✅ DEBUG: Uso ingrediente ID=" + ingredienteConID.getIdIngrediente() + ", Nome=" + ingredienteConID.getNome());
                 Usa usa = new Usa(r, ingredienteConID, entry.getValue());
                 usaDAO.save(usa);
             } else {
                 throw new SQLException("Impossibile recuperare ingrediente '" + ingr.getNome() + "' dal database");
             }
         }
-        
-        System.out.println("✅ Ricetta '" + r.getNome() + "' salvata con successo!");
     }
 
     public void aggiornaRicetta(int id, Ricetta r) throws SQLException {

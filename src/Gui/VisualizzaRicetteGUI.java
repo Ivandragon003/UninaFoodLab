@@ -1,5 +1,6 @@
 package Gui;
 
+import controller.RicettaController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -9,17 +10,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.Ricetta;
 import model.Ingrediente;
-import service.GestioneRicette;
 import util.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.ValidationUtils;
-import exceptions.ErrorMessages;
 
 import java.util.List;
 import java.util.Map;
 
 public class VisualizzaRicetteGUI {
-    private GestioneRicette gestioneRicette;
+    private RicettaController ricettaController;
     private ObservableList<Ricetta> ricetteData;
     private ListView<Ricetta> ricetteListView;
     private TextField filtroNomeField;
@@ -29,20 +28,15 @@ public class VisualizzaRicetteGUI {
     private TextField filtroIngredientiMaxField;
     private Button resetFiltriBtn;
 
-    // Per modalità selezione
     private boolean modalitaSelezione = false;
     private Ricetta ricettaSelezionata = null;
-
-    // Cache per performance
-    private List<Ricetta> tutteRicetteCache;
-    private boolean cacheValid = false;
     private VBox root;
 
-    public VisualizzaRicetteGUI(GestioneRicette gestioneRicette) {
-        this.gestioneRicette = gestioneRicette;
+    public VisualizzaRicetteGUI(RicettaController ricettaController) {
+        this.ricettaController = ricettaController;
         this.ricetteData = FXCollections.observableArrayList();
-        caricaRicetteInCache();
-        setupValidationListeners();
+        caricaRicette();
+        setupListeners();
     }
 
     public void setSelectionMode(boolean modalitaSelezione) {
@@ -90,19 +84,16 @@ public class VisualizzaRicetteGUI {
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        // Ricerca diretta mentre scrivi
         HBox nomeBox = new HBox(10);
         nomeBox.setAlignment(Pos.CENTER_LEFT);
         filtroNomeField = StyleHelper.createTextField("Cerca per nome ricetta...");
         filtroNomeField.setPrefWidth(300);
         nomeBox.getChildren().addAll(StyleHelper.createLabel("Nome:"), filtroNomeField);
 
-        // Filtri numerici
         GridPane filtriGrid = new GridPane();
         filtriGrid.setHgap(15);
         filtriGrid.setVgap(10);
 
-        // TEMPO
         filtroTempoMinField = StyleHelper.createTextField("Min");
         filtroTempoMinField.setPrefWidth(80);
         filtroTempoMaxField = StyleHelper.createTextField("Max");
@@ -110,7 +101,6 @@ public class VisualizzaRicetteGUI {
         HBox tempoBox = new HBox(5, filtroTempoMinField, new Label("-"), filtroTempoMaxField, new Label("min"));
         tempoBox.setAlignment(Pos.CENTER_LEFT);
 
-        // Numero ingredienti
         filtroIngredientiMinField = StyleHelper.createTextField("Min");
         filtroIngredientiMinField.setPrefWidth(80);
         filtroIngredientiMaxField = StyleHelper.createTextField("Max");
@@ -156,13 +146,11 @@ public class VisualizzaRicetteGUI {
             headerBox.getChildren().add(titleBox);
         }
 
-        // ListView
         ricetteListView = new ListView<>();
         ricetteListView.setPrefHeight(350);
         ricetteListView.setItems(ricetteData);
         StyleHelper.applyListViewStyle(ricetteListView);
 
-        // Cell factory
         ricetteListView.setCellFactory(listView -> new ListCell<Ricetta>() {
             @Override
             protected void updateItem(Ricetta item, boolean empty) {
@@ -204,7 +192,6 @@ public class VisualizzaRicetteGUI {
             }
         });
 
-        // Doppio click per ingredienti
         ricetteListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();
@@ -266,9 +253,13 @@ public class VisualizzaRicetteGUI {
         } else {
             Button aggiornaCacheBtn = StyleHelper.createInfoButton("🔄 Aggiorna");
             aggiornaCacheBtn.setOnAction(e -> {
-                cacheValid = false;
-                caricaRicetteInCache();
-                showSuccessAlert("Ricette ricaricate dal database");
+                try {
+                    ricettaController.ricaricaCache();
+                    caricaRicette();
+                    StyleHelper.showSuccessDialog("Successo", "Ricette ricaricate dal database");
+                } catch (Exception ex) {
+                    StyleHelper.showErrorDialog("Errore", "Errore nel ricaricamento: " + ex.getMessage());
+                }
             });
             buttonBox.getChildren().add(aggiornaCacheBtn);
         }
@@ -276,92 +267,37 @@ public class VisualizzaRicetteGUI {
         return buttonBox;
     }
 
-    // ===== METODI VALIDAZIONE CENTRALIZZATI =====
-    private void setupValidationListeners() {
-        filtroTempoMinField.textProperty().addListener((obs, old, val) -> {
-            setFieldValidationStyle(filtroTempoMinField, ValidationUtils.isValidInteger(val));
-            applicaFiltriSafe();
-        });
-
-        filtroTempoMaxField.textProperty().addListener((obs, old, val) -> {
-            setFieldValidationStyle(filtroTempoMaxField, ValidationUtils.isValidInteger(val));
-            applicaFiltriSafe();
-        });
-
-        filtroIngredientiMinField.textProperty().addListener((obs, old, val) -> {
-            setFieldValidationStyle(filtroIngredientiMinField, ValidationUtils.isValidInteger(val));
-            applicaFiltriSafe();
-        });
-
-        filtroIngredientiMaxField.textProperty().addListener((obs, old, val) -> {
-            setFieldValidationStyle(filtroIngredientiMaxField, ValidationUtils.isValidInteger(val));
-            applicaFiltriSafe();
-        });
-
-        filtroNomeField.textProperty().addListener((obs, oldVal, newVal) -> applicaFiltriSafe());
+    private void setupListeners() {
+        filtroNomeField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+        filtroTempoMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+        filtroTempoMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+        filtroIngredientiMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+        filtroIngredientiMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
     }
 
-    private void setFieldValidationStyle(TextField field, boolean valid) {
-        if (valid) {
-            field.setStyle("-fx-border-color: transparent;");
-        } else {
-            field.setStyle("-fx-border-color: #ff6b6b; -fx-border-width: 2px;");
-        }
-    }
-
-    private void applicaFiltriSafe() {
+    private void applicaFiltri() {
         try {
-            if (!cacheValid) {
-                caricaRicetteInCache();
-            }
-
-            List<Ricetta> filtrate = List.copyOf(tutteRicetteCache);
-
-            // Filtro nome
             String nome = filtroNomeField.getText();
-            if (nome != null && !nome.trim().isEmpty()) {
-                filtrate = filtrate.stream()
-                    .filter(r -> r.getNome().toLowerCase().contains(nome.toLowerCase().trim()))
-                    .toList();
-            }
+            Integer tempoMin = ValidationUtils.parseIntegerSafe(filtroTempoMinField.getText());
+            Integer tempoMax = ValidationUtils.parseIntegerSafe(filtroTempoMaxField.getText());
+            Integer ingredientiMin = ValidationUtils.parseIntegerSafe(filtroIngredientiMinField.getText());
+            Integer ingredientiMax = ValidationUtils.parseIntegerSafe(filtroIngredientiMaxField.getText());
 
-            // Filtri numerici centralizzati
-            filtrate = applicaFiltriNumerici(filtrate);
+            List<Ricetta> filtrate = ricettaController.filtraCombinato(nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax);
             ricetteData.setAll(filtrate);
 
         } catch (ValidationException e) {
-            showValidationAlert(e.getMessage());
+            StyleHelper.showValidationDialog("Validazione", e.getMessage());
         } catch (Exception e) {
-            showErrorAlert("Errore nell'applicazione filtri: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
         }
     }
 
-    private List<Ricetta> applicaFiltriNumerici(List<Ricetta> ricette) throws ValidationException {
-        // Validazione centralizzata usando ValidationUtils
-        Integer tempoMin = ValidationUtils.validateIntRange(filtroTempoMinField.getText(), "Tempo minimo", 0, null);
-        Integer tempoMax = ValidationUtils.validateIntRange(filtroTempoMaxField.getText(), "Tempo massimo", tempoMin, null);
-        Integer ingredientiMin = ValidationUtils.validateIntRange(filtroIngredientiMinField.getText(), "Ingredienti minimo", 1, null);
-        Integer ingredientiMax = ValidationUtils.validateIntRange(filtroIngredientiMaxField.getText(), "Ingredienti massimo", ingredientiMin, null);
-
-        // Filtraggio con Stream API
-        return ricette.stream()
-            .filter(r -> tempoMin == null || r.getTempoPreparazione() >= tempoMin)
-            .filter(r -> tempoMax == null || r.getTempoPreparazione() <= tempoMax)
-            .filter(r -> ingredientiMin == null || r.getNumeroIngredienti() >= ingredientiMin)
-            .filter(r -> ingredientiMax == null || r.getNumeroIngredienti() <= ingredientiMax)
-            .toList();
-    }
-
-    // Cache per performance
-    private void caricaRicetteInCache() {
+    private void caricaRicette() {
         try {
-            if (!cacheValid) {
-                tutteRicetteCache = gestioneRicette.getAllRicette();
-                cacheValid = true;
-            }
-            ricetteData.setAll(tutteRicetteCache);
+            ricetteData.setAll(ricettaController.getAllRicette());
         } catch (Exception e) {
-            showErrorAlert("Errore nel caricamento ricette: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nel caricamento ricette: " + e.getMessage());
         }
     }
 
@@ -374,28 +310,23 @@ public class VisualizzaRicetteGUI {
         caricaRicette();
     }
 
-    private void caricaRicette() {
-        cacheValid = false;
-        caricaRicetteInCache();
-    }
-
     private void apriCreaRicetta() {
         try {
-            CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicette);
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController);
             Ricetta nuovaRicetta = creaGUI.showAndReturn();
             if (nuovaRicetta != null) {
                 caricaRicette();
-                showSuccessAlert("Ricetta '" + nuovaRicetta.getNome() + "' creata con successo!");
+                StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo!");
             }
         } catch (Exception e) {
-            showErrorAlert("Errore nell'apertura creazione ricetta: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ricetta: " + e.getMessage());
         }
     }
 
     private void selezionaRicetta() {
         Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();
         if (selezionata == null) {
-            showValidationAlert("Seleziona una ricetta dalla lista");
+            StyleHelper.showValidationDialog("Validazione", "Seleziona una ricetta dalla lista");
             return;
         }
         ricettaSelezionata = selezionata;
@@ -403,30 +334,5 @@ public class VisualizzaRicetteGUI {
 
     public Ricetta showAndReturn() {
         return ricettaSelezionata;
-    }
-
-    // ===== GESTIONE ALERT CENTRALIZZATA =====
-    private void showSuccessAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Successo");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showErrorAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Errore");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showValidationAlert(String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Validazione");
-        alert.setHeaderText("Controlla i dati inseriti");
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 }
