@@ -3,6 +3,9 @@ package Gui;
 import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import controller.RicettaController;
+import controller.IngredienteController;
+import dao.IngredienteDAO;
+import service.GestioneIngrediente;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -93,7 +96,7 @@ public class ChefMenuGUI {
         ricetteBtn.setOnAction(e -> apriVisualizzaRicette());
 
         Button creaRicettaBtn = createSidebarButton("✨ Crea Ricetta");
-        creaRicettaBtn.setOnAction(e -> apriCreaRicettaDiretta());
+        creaRicettaBtn.setOnAction(e -> apriCreaRicetta());
 
         Button eliminaBtn = createSidebarButton("🗑️ Elimina Account");
         eliminaBtn.setOnAction(e -> eliminaAccount(stage));
@@ -286,10 +289,15 @@ public class ChefMenuGUI {
         }
     }
 
-    private void apriCreaRicettaDiretta() {
+    private void apriCreaRicetta() {
         try {
-            CreaRicettaGUI creaRicettaGUI = new CreaRicettaGUI(ricettaController);
-            Ricetta nuovaRicetta = creaRicettaGUI.showAndReturn();
+            // Crea IngredienteController localmente per CreaRicettaGUI
+            IngredienteDAO ingredienteDAO = new IngredienteDAO();
+            GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
+            IngredienteController ingredienteController = new IngredienteController(gestioneIngrediente);
+            
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
+            Ricetta nuovaRicetta = creaGUI.showAndReturn();
             if (nuovaRicetta != null) {
                 StyleHelper.showSuccessDialog("Successo", 
                     "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo");

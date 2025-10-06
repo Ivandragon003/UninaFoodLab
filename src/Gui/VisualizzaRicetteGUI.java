@@ -12,7 +12,6 @@ import model.Ricetta;
 import model.Ingrediente;
 import util.StyleHelper;
 import exceptions.ValidationException;
-import exceptions.ValidationUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,8 @@ public class VisualizzaRicetteGUI {
     private TextField filtroIngredientiMinField;
     private TextField filtroIngredientiMaxField;
     private Button resetFiltriBtn;
+    
+    private StackPane parentPane;
 
     private boolean modalitaSelezione = false;
     private Ricetta ricettaSelezionata = null;
@@ -36,7 +37,10 @@ public class VisualizzaRicetteGUI {
         this.ricettaController = ricettaController;
         this.ricetteData = FXCollections.observableArrayList();
         caricaRicette();
-        setupListeners();
+    }
+    
+    public void setParentPane(StackPane parentPane) {
+        this.parentPane = parentPane;
     }
 
     public void setSelectionMode(boolean modalitaSelezione) {
@@ -46,6 +50,7 @@ public class VisualizzaRicetteGUI {
     public VBox getRoot() {
         if (root == null) {
             root = createMainLayout();
+            setupListeners();
         }
         return root;
     }
@@ -58,7 +63,6 @@ public class VisualizzaRicetteGUI {
         Label titleLabel = StyleHelper.createTitleLabel("📖 Gestione Ricette");
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setTextFill(Color.WHITE);
-        titleLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
 
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
@@ -278,18 +282,31 @@ public class VisualizzaRicetteGUI {
     private void applicaFiltri() {
         try {
             String nome = filtroNomeField.getText();
-            Integer tempoMin = ValidationUtils.parseIntegerSafe(filtroTempoMinField.getText());
-            Integer tempoMax = ValidationUtils.parseIntegerSafe(filtroTempoMaxField.getText());
-            Integer ingredientiMin = ValidationUtils.parseIntegerSafe(filtroIngredientiMinField.getText());
-            Integer ingredientiMax = ValidationUtils.parseIntegerSafe(filtroIngredientiMaxField.getText());
+            Integer tempoMin = parseIntSafe(filtroTempoMinField.getText());
+            Integer tempoMax = parseIntSafe(filtroTempoMaxField.getText());
+            Integer ingredientiMin = parseIntSafe(filtroIngredientiMinField.getText());
+            Integer ingredientiMax = parseIntSafe(filtroIngredientiMaxField.getText());
 
-            List<Ricetta> filtrate = ricettaController.filtraCombinato(nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax);
+            List<Ricetta> filtrate = ricettaController.filtraCombinato(
+                nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax
+            );
             ricetteData.setAll(filtrate);
 
         } catch (ValidationException e) {
             StyleHelper.showValidationDialog("Validazione", e.getMessage());
         } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
+        }
+    }
+
+    private Integer parseIntSafe(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -312,7 +329,11 @@ public class VisualizzaRicetteGUI {
 
     private void apriCreaRicetta() {
         try {
-            CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController);
+            dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
+            service.GestioneIngrediente gestioneIngrediente = new service.GestioneIngrediente(ingredienteDAO);
+            controller.IngredienteController ingredienteController = new controller.IngredienteController(gestioneIngrediente);
+            
+            CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
             Ricetta nuovaRicetta = creaGUI.showAndReturn();
             if (nuovaRicetta != null) {
                 caricaRicette();
@@ -322,6 +343,7 @@ public class VisualizzaRicetteGUI {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ricetta: " + e.getMessage());
         }
     }
+
 
     private void selezionaRicetta() {
         Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();

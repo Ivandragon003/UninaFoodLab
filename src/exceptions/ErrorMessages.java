@@ -18,7 +18,9 @@ public class ErrorMessages {
     public static final String CHEF_NON_PRESENTE = "Chef non trovato nel sistema: ";
     public static final String CHEF_GIA_ASSEGNATO = "Questo chef è già assegnato al corso";
     public static final String PASSWORD_NON_VALIDA = "La password deve contenere almeno 6 caratteri";
-    public static final String CREDENZIALI_ERRATE = "Email o password non corretti";
+    public static final String USERNAME_NON_TROVATO = "Username non esistente";
+    public static final String PASSWORD_ERRATA = "Password non corretta";
+    public static final String CREDENZIALI_ERRATE = "Username o password non corretti";
     
     // ==================== SESSIONI ====================
     public static final String SESSIONE_NULLA = "La sessione non può essere nulla";
@@ -81,35 +83,22 @@ public class ErrorMessages {
     
     // ==================== HELPER METHODS ====================
     
-    /**
-     * Genera messaggio di campo obbligatorio dinamico
-     */
     public static String campoObbligatorio(String nomeCampo) {
         return "Il campo '" + nomeCampo + "' è obbligatorio";
     }
     
-    /**
-     * Genera messaggio per valore fuori range
-     */
     public static String valoreNonInRange(String nomeCampo, int min, int max) {
         return "Il campo '" + nomeCampo + "' deve essere compreso tra " + min + " e " + max;
     }
     
-    /**
-     * Genera messaggio per lunghezza non valida
-     */
     public static String lunghezzaNonValida(String nomeCampo, int minLen, int maxLen) {
         return "Il campo '" + nomeCampo + "' deve contenere tra " + minLen + " e " + maxLen + " caratteri";
     }
     
-    /**
-     * Genera messaggio di conferma eliminazione
-     */
     public static String confermaEliminazione(String oggetto) {
         return "Sei sicuro di voler eliminare " + oggetto + "? Questa operazione non può essere annullata.";
     }
-    
-    // Costruttore privato per prevenire istanziazione
+
     private ErrorMessages() {
         throw new AssertionError("Utility class non istanziabile");
     }
