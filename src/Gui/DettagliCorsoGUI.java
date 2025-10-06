@@ -318,7 +318,7 @@ public class DettagliCorsoGUI {
         LocalDate inizio = dataInizioPicker.getValue();
         
         // Se frequenza UNICA, sincronizza data fine
-        if (frequenzaCombo.getValue() == Frequenza.UNICA && inizio != null) {
+        if (frequenzaCombo.getValue() == Frequenza.unica && inizio != null) {
             dataFinePicker.setValue(inizio);
         }
         
@@ -331,7 +331,7 @@ public class DettagliCorsoGUI {
         
         Frequenza selezionata = frequenzaCombo.getValue();
         
-        if (selezionata == Frequenza.UNICA) {
+        if (selezionata == Frequenza.unica) {
             // BLOCCA data fine e sincronizza con inizio
             if (dataInizioPicker.getValue() != null) {
                 dataFinePicker.setValue(dataInizioPicker.getValue());
@@ -370,7 +370,7 @@ public class DettagliCorsoGUI {
 
     // ✅ NUOVO METODO: Aggiorna stato data fine in base a frequenza
     private void aggiornaStatoDataFine() {
-        if (corso.getFrequenzaCorso() == Frequenza.UNICA) {
+        if (corso.getFrequenzaCorso() == Frequenza.unica) {
             dataFinePicker.setDisable(!editable);  // Bloccato se non editable
             if (!editable) {
                 dataFinePicker.setStyle("-fx-opacity: 0.6;");
@@ -627,8 +627,7 @@ public class DettagliCorsoGUI {
         numeroPostiField.setEditable(edit);
         dataInizioPicker.setDisable(!edit);
         
-        // ✅ NUOVO: Data fine bloccata se UNICA
-        if (edit && frequenzaCombo.getValue() == Frequenza.UNICA) {
+        if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
             dataFinePicker.setDisable(true);
         } else {
             dataFinePicker.setDisable(!edit);

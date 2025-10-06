@@ -182,7 +182,7 @@ public class CreaCorsoGUI {
     private void onDataInizioChange() {
         LocalDate inizio = startDatePicker.getValue();
         
-        if (frequenzaBox.getValue() == Frequenza.UNICA && inizio != null) {
+        if (frequenzaBox.getValue() == Frequenza.unica && inizio != null) {
             endDatePicker.setValue(inizio);
         }
         
@@ -192,7 +192,7 @@ public class CreaCorsoGUI {
     private void onFrequenzaChange() {
         Frequenza selezionata = frequenzaBox.getValue();
         
-        if (selezionata == Frequenza.UNICA) {
+        if (selezionata == Frequenza.unica) {
             if (startDatePicker.getValue() != null) {
                 endDatePicker.setValue(startDatePicker.getValue());
             }

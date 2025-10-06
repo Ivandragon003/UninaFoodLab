@@ -27,7 +27,6 @@ public class GestioneRicette {
         this.ingredienteDAO = ingredienteDAO;
     }
 
-    // ==================== CRUD OPERATIONS ====================
 
     public void creaRicetta(Ricetta ricetta) throws SQLException, ValidationException {
         ValidationUtils.validateNotNull(ricetta, "Ricetta");
@@ -81,7 +80,6 @@ public class GestioneRicette {
         ricettaDAO.delete(id);
     }
 
-    // ==================== INGREDIENTI ====================
 
     public void aggiungiIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita) 
             throws SQLException, ValidationException {
@@ -132,7 +130,6 @@ public class GestioneRicette {
         usaDAO.delete(usa);
     }
 
-    // ==================== QUERY ====================
 
     public List<Ricetta> getAllRicette() throws SQLException {
         return ricettaDAO.getAll();
@@ -146,7 +143,6 @@ public class GestioneRicette {
         return ricettaDAO.findByNome(nome);
     }
 
-    // ==================== SUPPORTO ====================
 
     private void salvaIngredientiRicetta(Ricetta ricetta) throws SQLException {
         for (Map.Entry<Ingrediente, Double> entry : ricetta.getIngredienti().entrySet()) {
