@@ -22,11 +22,12 @@ public class RicettaController {
         this.gestioneRicette = gestioneRicette;
     }
 
-    // ==================== CRUD OPERATIONS ====================
+    // ==================== CRUD ====================
 
     public Ricetta creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti) 
             throws SQLException, ValidationException {
         
+        // Validazioni delegate a ValidationUtils
         ValidationUtils.validateNomeRicetta(nome);
         ValidationUtils.validateTempoPreparazione(tempoPreparazione);
         ValidationUtils.validateIngredienti(ingredienti);
@@ -56,24 +57,11 @@ public class RicettaController {
     }
 
     public void eliminaRicetta(int idRicetta) throws SQLException, ValidationException {
-        Ricetta ricetta = getRicettaPerId(idRicetta);
-        
-        if (ricetta == null) {
-            throw new ValidationException(ErrorMessages.RICETTA_NON_TROVATA);
-        }
-        
-        if (ricetta.getSessioni() != null && !ricetta.getSessioni().isEmpty()) {
-            throw new ValidationException(
-                "Impossibile eliminare: la ricetta è utilizzata in " + 
-                ricetta.getSessioni().size() + " sessione/i"
-            );
-        }
-        
         gestioneRicette.cancellaRicetta(idRicetta);
         invalidaCache();
     }
 
-    // ==================== QUERY OPERATIONS ====================
+    // ==================== QUERY ====================
 
     public List<Ricetta> getAllRicette() throws SQLException {
         if (cachedRicette == null) {
@@ -100,13 +88,12 @@ public class RicettaController {
                 .collect(Collectors.toList());
     }
 
-    // ==================== FILTRI AVANZATI ====================
+    // ==================== FILTRI ====================
 
     public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax,
             Integer ingredientiMin, Integer ingredientiMax) 
             throws SQLException, ValidationException {
         
-        // Validazioni range
         ValidationUtils.validateIntRange(tempoMin, tempoMax, "Tempo preparazione");
         ValidationUtils.validateIntRange(ingredientiMin, ingredientiMax, "Numero ingredienti");
         
@@ -144,39 +131,33 @@ public class RicettaController {
         return risultati;
     }
 
-    // ==================== GESTIONE INGREDIENTI ====================
+    // ==================== INGREDIENTI ====================
 
     public void aggiungiIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita) 
             throws SQLException, ValidationException {
-        
-        ValidationUtils.validateQuantita(quantita);
-        
         gestioneRicette.aggiungiIngrediente(ricetta, ingrediente, quantita);
         invalidaCache();
     }
 
     public void aggiornaQuantitaIngrediente(Ricetta ricetta, Ingrediente ingrediente, double nuovaQuantita) 
             throws SQLException, ValidationException {
-        
-        ValidationUtils.validateQuantita(nuovaQuantita);
-        
         gestioneRicette.aggiornaQuantitaIngrediente(ricetta, ingrediente, nuovaQuantita);
         invalidaCache();
     }
 
-    public void rimuoviIngrediente(Ricetta ricetta, Ingrediente ingrediente) throws SQLException {
+    public void rimuoviIngrediente(Ricetta ricetta, Ingrediente ingrediente) 
+            throws SQLException, ValidationException {
         gestioneRicette.rimuoviIngrediente(ricetta, ingrediente);
         invalidaCache();
     }
 
-    // ==================== SESSIONI IN PRESENZA ====================
+    // ==================== SESSIONI ====================
 
     public void associaRicettaASessione(Ricetta ricetta, InPresenza sessione) 
             throws ValidationException {
         
-        if (ricetta == null || sessione == null) {
-            throw new ValidationException(ErrorMessages.PARAMETRI_NULL);
-        }
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNotNull(sessione, "Sessione");
         
         if (!sessione.getRicette().contains(ricetta)) {
             sessione.getRicette().add(ricetta);
@@ -197,7 +178,7 @@ public class RicettaController {
                 .collect(Collectors.toList());
     }
 
-    // ==================== CACHE MANAGEMENT ====================
+    // ==================== CACHE ====================
 
     public void invalidaCache() {
         cachedRicette = null;

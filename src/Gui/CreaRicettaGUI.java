@@ -98,6 +98,7 @@ public class CreaRicettaGUI extends Stage {
         errorLabel.setTextFill(Color.RED);
         errorLabel.setVisible(false);
         errorLabel.setWrapText(true);
+        errorLabel.setMaxWidth(750);
         errorLabel.setAlignment(Pos.CENTER);
         errorLabel.setStyle("-fx-background-color: #ffe6e6; -fx-padding: 10; -fx-background-radius: 8;");
 
@@ -359,10 +360,8 @@ public class CreaRicettaGUI extends Stage {
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setPadding(new Insets(20, 0, 0, 0));
 
-        Button annullaBtn = new Button("❌ Annulla");
+        Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
         annullaBtn.setPrefSize(150, 45);
-        annullaBtn.setStyle("-fx-background-color:" + StyleHelper.NEUTRAL_GRAY
-                + "; -fx-text-fill:white; -fx-background-radius:20; -fx-cursor:hand; -fx-font-weight:bold; -fx-font-size:14px;");
         annullaBtn.setOnAction(e -> {
             ricettaCreata = null;
             close();
@@ -377,39 +376,22 @@ public class CreaRicettaGUI extends Stage {
     }
 
     private void salvaRicetta() {
+        nascondiErrore();
+
+        // La GUI delega TUTTA la validazione al Controller
         try {
-            nascondiErrore();
-
             String nome = nomeField.getText().trim();
-            if (nome.isEmpty()) {
-                mostraErrore("❌ Il nome della ricetta è obbligatorio");
-                nomeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                return;
-            }
-            nomeField.setStyle("");
-
             String tempoText = tempoField.getText().trim();
-            if (tempoText.isEmpty()) {
-                mostraErrore("❌ Il tempo di preparazione è obbligatorio");
-                tempoField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                return;
-            }
 
-            int tempoPreparazione;
-            try {
-                tempoPreparazione = Integer.parseInt(tempoText);
-            } catch (NumberFormatException e) {
-                mostraErrore("❌ Il tempo deve essere un numero valido");
-                tempoField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
-                return;
-            }
-            tempoField.setStyle("");
+            // Parsing minimo GUI
+            int tempoPreparazione = Integer.parseInt(tempoText);
 
             Map<Ingrediente, Double> ingredientiMap = new HashMap<>();
             for (IngredienteConPeso item : ingredientiSelezionati) {
                 ingredientiMap.put(item.getIngrediente(), item.getPeso());
             }
 
+            // Controller fa TUTTE le validazioni
             ricettaCreata = ricettaController.creaRicetta(nome, tempoPreparazione, ingredientiMap);
 
             StyleHelper.showSuccessDialog("Successo",
@@ -419,6 +401,8 @@ public class CreaRicettaGUI extends Stage {
 
             close();
 
+        } catch (NumberFormatException e) {
+            mostraErrore("❌ Il tempo deve essere un numero valido");
         } catch (ValidationException e) {
             mostraErrore("❌ " + e.getMessage());
         } catch (Exception e) {

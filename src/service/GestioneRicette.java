@@ -6,6 +6,9 @@ import dao.IngredienteDAO;
 import model.Ingrediente;
 import model.Ricetta;
 import model.Usa;
+import exceptions.ValidationException;
+import exceptions.ValidationUtils;
+import exceptions.ErrorMessages;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -13,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class GestioneRicette {
-
+    
     private final RicettaDAO ricettaDAO;
     private final UsaDAO usaDAO;
     private final IngredienteDAO ingredienteDAO;
@@ -24,70 +27,112 @@ public class GestioneRicette {
         this.ingredienteDAO = ingredienteDAO;
     }
 
-    public void creaRicetta(Ricetta r) throws SQLException {
-        ricettaDAO.save(r);
+    // ==================== CRUD OPERATIONS ====================
+
+    public void creaRicetta(Ricetta ricetta) throws SQLException, ValidationException {
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNomeRicetta(ricetta.getNome());
+        ValidationUtils.validateTempoPreparazione(ricetta.getTempoPreparazione());
+        ValidationUtils.validateIngredienti(ricetta.getIngredienti());
         
-        for (Map.Entry<Ingrediente, Double> entry : r.getIngredienti().entrySet()) {
-            Ingrediente ingr = entry.getKey();
-            
-            Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
-            
-            if (!ingrDaDB.isPresent()) {
-                ingredienteDAO.save(ingr);
-                ingrDaDB = ingredienteDAO.findByNome(ingr.getNome());
-            }
-            
-            if (ingrDaDB.isPresent()) {
-                Ingrediente ingredienteConID = ingrDaDB.get();
-                Usa usa = new Usa(r, ingredienteConID, entry.getValue());
-                usaDAO.save(usa);
-            } else {
-                throw new SQLException("Impossibile recuperare ingrediente '" + ingr.getNome() + "' dal database");
-            }
+        if (ricettaEsiste(ricetta.getNome())) {
+            throw new ValidationException("Esiste già una ricetta con il nome: " + ricetta.getNome());
         }
+        
+        ricettaDAO.save(ricetta);
+        salvaIngredientiRicetta(ricetta);
     }
 
-    public void aggiornaRicetta(int id, Ricetta r) throws SQLException {
-        ricettaDAO.update(id, r);
+    public void aggiornaRicetta(int id, Ricetta ricetta) throws SQLException, ValidationException {
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNomeRicetta(ricetta.getNome());
+        ValidationUtils.validateTempoPreparazione(ricetta.getTempoPreparazione());
+        ValidationUtils.validateIngredienti(ricetta.getIngredienti());
+        
+        if (!ricettaDAO.findById(id).isPresent()) {
+            throw new ValidationException(ErrorMessages.RICETTA_NON_TROVATA);
+        }
+        
+        Optional<Ricetta> altraRicetta = ricettaDAO.getByNome(ricetta.getNome());
+        if (altraRicetta.isPresent() && altraRicetta.get().getIdRicetta() != id) {
+            throw new ValidationException("Esiste già un'altra ricetta con questo nome");
+        }
+        
+        ricettaDAO.update(id, ricetta);
+        usaDAO.deleteByRicetta(id);
+        salvaIngredientiRicetta(ricetta);
     }
 
-    public void aggiungiIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {
-        if (r.getIngredienti().containsKey(i)) {
-            throw new IllegalArgumentException("Ingrediente già presente nella ricetta");
+    public void cancellaRicetta(int id) throws SQLException, ValidationException {
+        Optional<Ricetta> ricetta = ricettaDAO.findById(id);
+        
+        if (!ricetta.isPresent()) {
+            throw new ValidationException(ErrorMessages.RICETTA_NON_TROVATA);
         }
         
-        Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(i.getNome());
-        
-        if (!ingrDaDB.isPresent()) {
-            ingredienteDAO.save(i);
-            ingrDaDB = ingredienteDAO.findByNome(i.getNome());
+        if (ricetta.get().getSessioni() != null && !ricetta.get().getSessioni().isEmpty()) {
+            throw new ValidationException(
+                "Impossibile eliminare: la ricetta è utilizzata in " + 
+                ricetta.get().getSessioni().size() + " sessione/i"
+            );
         }
         
-        if (ingrDaDB.isPresent()) {
-            Ingrediente ingredienteConID = ingrDaDB.get();
-            r.getIngredienti().put(ingredienteConID, quantita);
-            Usa usa = new Usa(r, ingredienteConID, quantita);
-            usaDAO.save(usa);
-        }
+        usaDAO.deleteByRicetta(id);
+        ricettaDAO.delete(id);
     }
 
-    public void aggiornaQuantitaIngrediente(Ricetta r, Ingrediente i, double quantita) throws SQLException {
-        if (!r.getIngredienti().containsKey(i)) {
-            throw new IllegalArgumentException("Ingrediente non presente nella ricetta");
+    // ==================== INGREDIENTI ====================
+
+    public void aggiungiIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita) 
+            throws SQLException, ValidationException {
+        
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNotNull(ingrediente, "Ingrediente");
+        ValidationUtils.validateQuantita(quantita);
+        
+        if (ricetta.getIngredienti().containsKey(ingrediente)) {
+            throw new ValidationException("Ingrediente già presente nella ricetta");
         }
-        r.getIngredienti().put(i, quantita);
-        Usa usa = new Usa(r, i, quantita);
+        
+        Ingrediente ingredienteConID = recuperaOCreaIngrediente(ingrediente);
+        ricetta.getIngredienti().put(ingredienteConID, quantita);
+        
+        Usa usa = new Usa(ricetta, ingredienteConID, quantita);
+        usaDAO.save(usa);
+    }
+
+    public void aggiornaQuantitaIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita) 
+            throws SQLException, ValidationException {
+        
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNotNull(ingrediente, "Ingrediente");
+        ValidationUtils.validateQuantita(quantita);
+        
+        if (!ricetta.getIngredienti().containsKey(ingrediente)) {
+            throw new ValidationException("Ingrediente non presente nella ricetta");
+        }
+        
+        ricetta.getIngredienti().put(ingrediente, quantita);
+        Usa usa = new Usa(ricetta, ingrediente, quantita);
         usaDAO.updateQuantita(usa);
     }
 
-    public void rimuoviIngrediente(Ricetta r, Ingrediente i) throws SQLException {
-        if (r.getIngredienti().remove(i) != null) {
-            Usa usa = new Usa(r, i, 0);
-            usaDAO.delete(usa);
-        } else {
-            throw new IllegalArgumentException("Ingrediente non presente nella ricetta");
+    public void rimuoviIngrediente(Ricetta ricetta, Ingrediente ingrediente) 
+            throws SQLException, ValidationException {
+        
+        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        ValidationUtils.validateNotNull(ingrediente, "Ingrediente");
+        
+        if (!ricetta.getIngredienti().containsKey(ingrediente)) {
+            throw new ValidationException("Ingrediente non presente nella ricetta");
         }
+        
+        ricetta.getIngredienti().remove(ingrediente);
+        Usa usa = new Usa(ricetta, ingrediente, 0);
+        usaDAO.delete(usa);
     }
+
+    // ==================== QUERY ====================
 
     public List<Ricetta> getAllRicette() throws SQLException {
         return ricettaDAO.getAll();
@@ -97,13 +142,34 @@ public class GestioneRicette {
         return ingredienteDAO.getAll();
     }
 
-    public Ingrediente creaIngrediente(Ingrediente i) throws SQLException {
-        ingredienteDAO.save(i);
-        return i;
+    public Optional<Ricetta> findByNome(String nome) throws SQLException {
+        return ricettaDAO.findByNome(nome);
     }
 
-    public void cancellaRicetta(int id) throws SQLException {
-        usaDAO.deleteByRicetta(id);
-        ricettaDAO.delete(id);
+    // ==================== SUPPORTO ====================
+
+    private void salvaIngredientiRicetta(Ricetta ricetta) throws SQLException {
+        for (Map.Entry<Ingrediente, Double> entry : ricetta.getIngredienti().entrySet()) {
+            Ingrediente ingredienteConID = recuperaOCreaIngrediente(entry.getKey());
+            Usa usa = new Usa(ricetta, ingredienteConID, entry.getValue());
+            usaDAO.save(usa);
+        }
+    }
+
+    private Ingrediente recuperaOCreaIngrediente(Ingrediente ingrediente) throws SQLException {
+        Optional<Ingrediente> ingrDaDB = ingredienteDAO.findByNome(ingrediente.getNome());
+        
+        if (!ingrDaDB.isPresent()) {
+            ingredienteDAO.save(ingrediente);
+            ingrDaDB = ingredienteDAO.findByNome(ingrediente.getNome());
+        }
+        
+        return ingrDaDB.orElseThrow(() -> 
+            new SQLException("Impossibile recuperare ingrediente dal database: " + ingrediente.getNome())
+        );
+    }
+
+    private boolean ricettaEsiste(String nome) throws SQLException {
+        return ricettaDAO.findByNome(nome).isPresent();
     }
 }

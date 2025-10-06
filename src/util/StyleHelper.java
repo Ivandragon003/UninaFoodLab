@@ -13,23 +13,16 @@ import javafx.stage.Stage;
 import javafx.stage.Modality;
 import javafx.stage.StageStyle;
 import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
 import exceptions.ValidationException;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 
-
-/**
- * StyleHelper COMPLETO - Mantiene tutti i metodi originali + Dialog bellissimi
- * COMPATIBILE con ChefMenuGUI, CreaCorsoGUI, CreaIngredientiGUI, CreaSessioneGUI, VisualizzaIngredientiGUI
- */
 public class StyleHelper {
     
-    // ===== COLORI ORIGINALI (MANTENUTI) =====
     public static final String PRIMARY_ORANGE = "#FF6600";
     public static final String PRIMARY_LIGHT = "#FF8533";
     public static final String PRIMARY_LIGHTEST = "#FF9966";
-    public static final String SUCCESS_GREEN = "#27ae60";
+    public static final String SUCCESS_GREEN = "#00854b";
+    public static final String SECONDARY_BEIGE = "#bba79c";
+    public static final String CYAN_REGISTER = "#00c3c7";
     public static final String ERROR_RED = "#e74c3c";
     public static final String INFO_BLUE = "#3498db";
     public static final String WARNING_ORANGE = "#f39c12";
@@ -40,46 +33,28 @@ public class StyleHelper {
     public static final String BG_ORANGE_LIGHT = "#FFCC99";
     public static final String BG_ORANGE_START = "#FF9966";
 
-    // ===== DIALOG PERSONALIZZATI BELLISSIMI (NUOVI) =====
-    
-    /**
-     * Mostra dialog di successo con design uniforme
-     */
     public static void showSuccessDialog(String title, String message) {
         showCustomDialog(title, message, "✅", SUCCESS_GREEN, "#E8F5E8");
     }
     
-    /**
-     * Mostra dialog di errore con design uniforme
-     */
     public static void showErrorDialog(String title, String message) {
         showCustomDialog(title, message, "❌", ERROR_RED, "#FFE8E8");
     }
     
-    /**
-     * Mostra dialog di validazione con design uniforme
-     */
     public static void showValidationDialog(String title, String message) {
         showCustomDialog(title, message, "⚠️", WARNING_ORANGE, "#FFF4E6");
     }
     
-    /**
-     * Mostra dialog informativo con design uniforme
-     */
     public static void showInfoDialog(String title, String message) {
         showCustomDialog(title, message, "ℹ️", INFO_BLUE, "#E8F4FF");
     }
     
-    /**
-     * Dialog personalizzato bellissimo e uniforme
-     */
     private static void showCustomDialog(String title, String message, String icon, String accentColor, String bgColor) {
         Stage dialogStage = new Stage();
         dialogStage.initModality(Modality.APPLICATION_MODAL);
         dialogStage.initStyle(StageStyle.UNDECORATED);
         dialogStage.setResizable(false);
         
-        // Container principale con sfondo gradiente
         StackPane root = new StackPane();
         root.setPrefSize(400, 200);
         root.setStyle(
@@ -91,12 +66,10 @@ public class StyleHelper {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0.5, 0.0, 0.0);"
         );
         
-        // Content container
         VBox content = new VBox(20);
         content.setAlignment(javafx.geometry.Pos.CENTER);
         content.setPadding(new Insets(25));
         
-        // Header con icona e titolo
         HBox header = new HBox(15);
         header.setAlignment(javafx.geometry.Pos.CENTER);
         
@@ -115,7 +88,6 @@ public class StyleHelper {
         
         header.getChildren().addAll(iconLabel, titleLabel);
         
-        // Messaggio
         Label messageLabel = new Label(message);
         messageLabel.setWrapText(true);
         messageLabel.setAlignment(javafx.geometry.Pos.CENTER);
@@ -125,22 +97,19 @@ public class StyleHelper {
             "-fx-text-alignment: center;"
         );
         
-        // Pulsante OK stilizzato
         Button okButton = createStyledButton("OK", accentColor);
         okButton.setOnAction(e -> dialogStage.close());
         
-        // Pulsante chiusura (X)
         Button closeButton = new Button("✕");
         closeButton.setStyle(
             "-fx-background-color: transparent;" +
-            "-fx-text-fill: #BDC3C7;" +
+            "-fx-text-fill: " + ERROR_RED + ";" +
             "-fx-font-size: 16px;" +
             "-fx-font-weight: bold;" +
             "-fx-cursor: hand;"
         );
         closeButton.setOnAction(e -> dialogStage.close());
         
-        // Posiziona X in alto a destra
         StackPane.setAlignment(closeButton, javafx.geometry.Pos.TOP_RIGHT);
         StackPane.setMargin(closeButton, new Insets(10, 10, 0, 0));
         
@@ -153,35 +122,19 @@ public class StyleHelper {
         dialogStage.showAndWait();
     }
     
-    // ===== GESTIONE VALIDAZIONE CON DIALOG (NUOVI) =====
-    
-    /**
-     * Gestisce ValidationException con dialog bello
-     */
     public static void handleValidation(ValidationException e) {
         showValidationDialog("Validazione", e.getMessage());
     }
     
-    /**
-     * Gestisce eccezioni generiche con dialog bello
-     */
     public static void handleError(Exception e) {
         showErrorDialog("Errore", e.getMessage());
         e.printStackTrace();
     }
     
-    /**
-     * Mostra successo con dialog bello
-     */
     public static void handleSuccess(String message) {
         showSuccessDialog("Successo", message);
     }
     
-    // ===== VALIDAZIONE FIELD CON STILE (NUOVI) =====
-    
-    /**
-     * Applica stile di validazione ai campi
-     */
     public static void setValidationStyle(TextField field, boolean valid) {
         if (valid) {
             field.setStyle(
@@ -201,9 +154,6 @@ public class StyleHelper {
         }
     }
     
-    /**
-     * Applica stile neutral ai campi
-     */
     public static void setNeutralStyle(TextField field) {
         field.setStyle(
             "-fx-border-color: " + BORDER_LIGHT + ";" +
@@ -212,8 +162,6 @@ public class StyleHelper {
             "-fx-background-color: white;"
         );
     }
-
-    // ===== METODI ORIGINALI (MANTENUTI IDENTICI) =====
 
     public static Label createTitleLabel(String text) {
         Label label = new Label(text);
@@ -225,7 +173,7 @@ public class StyleHelper {
     public static Label createLabel(String text) {
         Label label = new Label(text);
         label.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        label.setTextFill(Color.web(TEXT_BLACK)); // NERO per visibilità
+        label.setTextFill(Color.web(TEXT_BLACK));
         return label;
     }
 
@@ -242,7 +190,7 @@ public class StyleHelper {
         Button button = new Button(text);
         button.setPrefSize(130, 45);
         button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        button.setTextFill(Color.web("#4B2E2E"));
+        button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + PRIMARY_ORANGE + "; " +
                 "-fx-background-radius: 20; -fx-cursor: hand;");
         button.setOnMouseEntered(e -> button.setStyle(
@@ -260,9 +208,35 @@ public class StyleHelper {
         button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
-                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: derive(" + SUCCESS_GREEN + ", -10%); " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + SUCCESS_GREEN + "; " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
+        return button;
+    }
+
+    public static Button createCyanButton(String text) {
+        Button button = new Button(text);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
+        button.setTextFill(Color.WHITE);
+        button.setStyle("-fx-background-color: " + CYAN_REGISTER + "; " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: derive(" + CYAN_REGISTER + ", -10%); " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + CYAN_REGISTER + "; " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
+        return button;
+    }
+
+    public static Button createSecondaryButton(String text) {
+        Button button = new Button(text);
+        button.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
+        button.setTextFill(Color.WHITE);
+        button.setStyle("-fx-background-color: " + SECONDARY_BEIGE + "; " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: derive(" + SECONDARY_BEIGE + ", -10%); " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
+        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + SECONDARY_BEIGE + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         return button;
     }
@@ -273,8 +247,8 @@ public class StyleHelper {
         button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
-                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: derive(" + ERROR_RED + ", -10%); " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + ERROR_RED + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         return button;
@@ -286,8 +260,8 @@ public class StyleHelper {
         button.setTextFill(Color.WHITE);
         button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;");
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
-                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16; -fx-opacity: 0.8;"));
+        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: derive(" + INFO_BLUE + ", -10%); " +
+                "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + INFO_BLUE + "; " +
                 "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 8 16;"));
         return button;
@@ -310,9 +284,6 @@ public class StyleHelper {
         return picker;
     }
 
-    /**
-     * Applica lo stile standard di ListView a un ListView esistente
-     */
     public static void applyListViewStyle(ListView<?> listView) {
         listView.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: " + BORDER_LIGHT + "; " +
                 "-fx-border-radius: 8; -fx-border-width: 1;");
@@ -327,7 +298,6 @@ public class StyleHelper {
         return section;
     }
 
-    // SFONDO ARANCIONE CHIARO per tutte le finestre
     public static void applyBackgroundGradient(Region region) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web(BG_ORANGE_START)),
@@ -335,12 +305,10 @@ public class StyleHelper {
         region.setBackground(new Background(new BackgroundFill(gradient, null, null)));
     }
 
-    // Metodo per applicare sfondo arancione semplice
     public static void applyOrangeBackground(Region region) {
         region.setStyle("-fx-background-color: " + BG_ORANGE_LIGHT + ";");
     }
 
-    // Text Area
     public static TextArea createTextArea(String promptText) {
         TextArea textArea = new TextArea();
         textArea.setPromptText(promptText);
@@ -349,8 +317,6 @@ public class StyleHelper {
                 "-fx-border-radius: 8; -fx-border-width: 1; -fx-font-size: 14px;");
         return textArea;
     }
-    
-    // ===== PULSANTI STILIZZATI PER NUOVI DIALOG (NUOVI) =====
     
     public static Button createStyledButton(String text, String color) {
         Button button = new Button(text);
@@ -364,7 +330,6 @@ public class StyleHelper {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0.3, 0.0, 2.0);"
         );
         
-        // Hover effect
         button.setOnMouseEntered(e -> button.setStyle(
             "-fx-background-color: derive(" + color + ", -10%);" +
             "-fx-text-fill: white;" +
@@ -402,5 +367,4 @@ public class StyleHelper {
             onConfirm.run();
         }
     }
-    
 }

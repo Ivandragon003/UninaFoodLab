@@ -14,14 +14,11 @@ import exceptions.*;
 
 import java.time.LocalDate;
 
-/**
- * GUI di Registrazione - gestisce SOLO l'interfaccia
- * Delega validazione e logica al Controller/Service
- */
 public class RegistrazioneChefGUI extends VBox {
     
     private final ChefController chefController;
     private final Runnable tornaAlLogin;
+    private Label errorLabel;
 
     public RegistrazioneChefGUI(ChefController controller, Runnable tornaAlLoginCallback) {
         this.chefController = controller;
@@ -44,16 +41,31 @@ public class RegistrazioneChefGUI extends VBox {
             -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
         """);
 
-        // Header
-        Label titleLabel = new Label("Registrazione Chef");
+        Label titleLabel = new Label("👨‍🍳 Registrazione Chef");
         titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
-        titleLabel.setTextFill(Color.web("#FF6600"));
+        titleLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
         Label subtitleLabel = new Label("Crea il tuo account");
         subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
-        subtitleLabel.setTextFill(Color.web("#FF8533"));
+        subtitleLabel.setTextFill(Color.web(StyleHelper.PRIMARY_LIGHT));
 
-        // Form Fields
+        errorLabel = new Label();
+        errorLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 11));
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.setVisible(false);
+        errorLabel.setWrapText(true);
+        errorLabel.setMaxWidth(450);
+        errorLabel.setMaxHeight(60);
+        errorLabel.setAlignment(Pos.CENTER);
+        errorLabel.setStyle("""
+                -fx-background-color: #ffe6e6;
+                -fx-padding: 8;
+                -fx-background-radius: 10;
+                -fx-border-color: red;
+                -fx-border-width: 1;
+                -fx-border-radius: 10;
+            """);
+
         TextField codFiscaleField = createField("Codice Fiscale");
         TextField nomeField = createField("Nome");
         TextField cognomeField = createField("Cognome");
@@ -67,17 +79,29 @@ public class RegistrazioneChefGUI extends VBox {
         PasswordField passwordField = createPasswordField("Password");
         PasswordField confermaPasswordField = createPasswordField("Conferma Password");
 
-        // Buttons
-        Button registratiButton = createStylishButton("REGISTRATI", "#FF6600", "#FF8533");
-        Button tornaButton = createStylishButton("TORNA AL LOGIN", "#FFCC99", "#FFD9B3");
+        codFiscaleField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        nomeField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        cognomeField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        emailField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        usernameField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        passwordField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+        confermaPasswordField.textProperty().addListener((obs, old, val) -> { if (!val.trim().isEmpty()) nascondiErrore(); });
+
+        Button registratiButton = StyleHelper.createSuccessButton("REGISTRATI");
+        registratiButton.setPrefSize(150, 45);
+        
+        Button tornaButton = StyleHelper.createDangerButton("TORNA INDIETRO");
+        tornaButton.setPrefSize(150, 45);
 
         setupRegistrationButton(registratiButton, codFiscaleField, nomeField, cognomeField,
                                emailField, dataNascitaPicker, disponibilitaCheck,
                                usernameField, passwordField, confermaPasswordField);
         
-        tornaButton.setOnAction(e -> tornaAlLogin.run());
+        tornaButton.setOnAction(e -> {
+            nascondiErrore();
+            tornaAlLogin.run();
+        });
 
-        // Layout
         VBox headerBox = new VBox(10, titleLabel, subtitleLabel);
         headerBox.setAlignment(Pos.CENTER);
 
@@ -115,7 +139,7 @@ public class RegistrazioneChefGUI extends VBox {
         HBox buttonBox = new HBox(15, tornaButton, registratiButton);
         buttonBox.setAlignment(Pos.CENTER);
 
-        getChildren().addAll(headerBox, formGrid, buttonBox);
+        getChildren().addAll(headerBox, errorLabel, formGrid, buttonBox);
         setSpacing(20);
     }
 
@@ -163,21 +187,6 @@ public class RegistrazioneChefGUI extends VBox {
         return picker;
     }
 
-    private Button createStylishButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefSize(150, 45);
-        button.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
-        button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
-
-        button.setOnMouseEntered(e -> button.setStyle(
-            "-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        button.setOnMouseExited(e -> button.setStyle(
-            "-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-
-        return button;
-    }
-
     private void setupRegistrationButton(Button button, TextField codFiscaleField, TextField nomeField,
                                         TextField cognomeField, TextField emailField, DatePicker dataNascitaPicker,
                                         CheckBox disponibilitaCheck, TextField usernameField,
@@ -196,40 +205,42 @@ public class RegistrazioneChefGUI extends VBox {
         ));
     }
 
-    /**
-     * Gestisce registrazione con validazione e feedback via dialog
-     */
     private void handleRegistration(String codFiscale, String nome, String cognome, String email,
                                     LocalDate dataNascita, boolean disponibilita,
                                     String username, String password, String confermaPassword) {
+        nascondiErrore();
+        
         try {
-            // Validazione password match (GUI-level check)
             if (!password.equals(confermaPassword)) {
-                throw new ValidationException("Le password non coincidono");
+                mostraErrore("❌ Le password non coincidono");
+                return;
             }
 
-            // Controller gestisce TUTTA la validazione e logica
             Chef chef = chefController.registraChef(codFiscale, nome, cognome, email,
                                                    dataNascita, disponibilita, username, password);
             
-            // Successo - mostra dialog e torna al login
             StyleHelper.showSuccessDialog("Registrazione Completata", 
                 "Account creato con successo! Ora puoi effettuare il login.");
             
             tornaAlLogin.run();
             
         } catch (ValidationException ex) {
-            // Errore validazione - dialog arancione
-            StyleHelper.handleValidation(ex);
+            mostraErrore("❌ " + ex.getMessage());
             
         } catch (DataAccessException ex) {
-            // Errore database - dialog rosso
-            StyleHelper.showErrorDialog("Errore Database", ErrorMessages.ERRORE_DATABASE);
-            ex.printStackTrace();
+            mostraErrore("❌ Errore di connessione al database");
             
         } catch (Exception ex) {
-            // Errore generico
-            StyleHelper.handleError(ex);
+            mostraErrore("❌ Errore durante la registrazione: " + ex.getMessage());
         }
+    }
+
+    private void mostraErrore(String messaggio) {
+        errorLabel.setText(messaggio);
+        errorLabel.setVisible(true);
+    }
+
+    private void nascondiErrore() {
+        errorLabel.setVisible(false);
     }
 }

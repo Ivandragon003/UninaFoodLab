@@ -248,10 +248,7 @@ public class VisualizzaRicetteGUI {
             Button selezionaBtn = StyleHelper.createPrimaryButton("✅ Seleziona");
             selezionaBtn.setOnAction(e -> selezionaRicetta());
 
-            Button annullaBtn = new Button("❌ Annulla");
-            annullaBtn.setPrefWidth(130);
-            annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
+            Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
 
             buttonBox.getChildren().addAll(annullaBtn, selezionaBtn);
         } else {
@@ -287,6 +284,7 @@ public class VisualizzaRicetteGUI {
             Integer ingredientiMin = parseIntSafe(filtroIngredientiMinField.getText());
             Integer ingredientiMax = parseIntSafe(filtroIngredientiMaxField.getText());
 
+            // Controller fa TUTTE le validazioni
             List<Ricetta> filtrate = ricettaController.filtraCombinato(
                 nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax
             );
@@ -343,7 +341,6 @@ public class VisualizzaRicetteGUI {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ricetta: " + e.getMessage());
         }
     }
-
 
     private void selezionaRicetta() {
         Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();
