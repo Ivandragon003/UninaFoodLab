@@ -184,11 +184,14 @@ public class VisualizzaIngredientiGUI extends Stage {
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        Label istruzioniLabel = new Label("💡 Doppio click per selezionare ingrediente");
-        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.SEMI_BOLD, 13));
-        istruzioniLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
+        // Spiegazione doppio click più visibile
+        Label istruzioniLabel = new Label("💡 Doppio click su un ingrediente per selezionarlo rapidamente");
+        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 13));
+        istruzioniLabel.setTextFill(Color.WHITE);
+        istruzioniLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + "; -fx-padding: 10; -fx-background-radius: 8;");
+        istruzioniLabel.setWrapText(true);
 
-        VBox titleBox = new VBox(5);
+        VBox titleBox = new VBox(8);
         titleBox.getChildren().addAll(sectionTitle, istruzioniLabel);
 
         HBox actionButtons = new HBox(10);
@@ -223,9 +226,9 @@ public class VisualizzaIngredientiGUI extends Stage {
                 } else {
                     HBox cellBox = new HBox(15);
                     cellBox.setAlignment(Pos.CENTER_LEFT);
-                    cellBox.setPadding(new Insets(10));
+                    cellBox.setPadding(new Insets(12));
 
-                    VBox infoBox = new VBox(4);
+                    VBox infoBox = new VBox(5);
 
                     Label nomeLabel = new Label("🥕 " + item.getNome());
                     nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 15));
@@ -277,7 +280,11 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void selezionaIngrediente() {
         Ingrediente selezionato = ingredientiListView.getSelectionModel().getSelectedItem();
         if (selezionato == null) {
-            StyleHelper.showValidationDialog("Selezione", "Seleziona un ingrediente dalla lista");
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Attenzione");
+            alert.setHeaderText(null);
+            alert.setContentText("⚠️ Seleziona un ingrediente dalla lista oppure fai doppio click su un ingrediente");
+            alert.showAndWait();
             return;
         }
         ingredienteSelezionato = selezionato;
@@ -317,16 +324,13 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void caricaIngredienti() {
         try {
             List<Ingrediente> ingredienti = ingredienteController.getAllIngredienti();
-
-            System.out.println("🔍 DEBUG: Caricati " + ingredienti.size() + " ingredienti");
-            for (Ingrediente ing : ingredienti) {
-                System.out.println(" - ID: " + ing.getIdIngrediente() + ", Nome: " + ing.getNome());
-            }
-
             ingredientiData.setAll(ingredienti);
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nel caricamento ingredienti: " + e.getMessage());
-            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Errore");
+            alert.setHeaderText(null);
+            alert.setContentText("❌ Errore nel caricamento ingredienti: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
@@ -355,7 +359,11 @@ public class VisualizzaIngredientiGUI extends Stage {
 
             ingredientiData.setAll(ingredientiFiltrati);
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Errore");
+            alert.setHeaderText(null);
+            alert.setContentText("❌ Errore nell'applicazione filtri: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
@@ -374,7 +382,11 @@ public class VisualizzaIngredientiGUI extends Stage {
                 StyleHelper.showSuccessDialog("Successo", "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
             }
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ingrediente: " + e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Errore");
+            alert.setHeaderText(null);
+            alert.setContentText("❌ Errore nell'apertura creazione ingrediente: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 
