@@ -5,6 +5,7 @@ import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import service.GestioneCorsiCucina;
 import util.DBConnection;
+import util.StyleHelper;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,9 +13,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.paint.CycleMethod;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
@@ -22,248 +20,268 @@ import javafx.stage.StageStyle;
 import model.Chef;
 import exceptions.*;
 
+/**
+ * GUI di Login - gestisce SOLO l'interfaccia Delega validazione e logica al
+ * Controller/Service
+ */
 public class LoginChefGUI extends Application {
-    private static ChefController chefController;
-    private static GestioneCorsiCucina corsiService;
-    private double xOffset = 0;
-    private double yOffset = 0;
+	private static ChefController chefController;
+	private static GestioneCorsiCucina corsiService;
+	private double xOffset = 0;
+	private double yOffset = 0;
+	private StackPane contentPane;
 
-    private StackPane contentPane;
+	public static void setController(ChefController controller, GestioneCorsiCucina corsiServiceArg) {
+		chefController = controller;
+		corsiService = corsiServiceArg;
+	}
 
-    public static void setController(ChefController controller, GestioneCorsiCucina corsiServiceArg) {
-        chefController = controller;
-        corsiService = corsiServiceArg;
-    }
+	@Override
+	public void start(Stage primaryStage) {
+		if (chefController == null || corsiService == null) {
+			throw new IllegalStateException("Controller o Service non inizializzati");
+		}
 
-    @Override
-    public void start(Stage primaryStage) {
-        if (chefController == null || corsiService == null) {
-            throw new IllegalStateException("Controller o Service non inizializzati");
-        }
+		primaryStage.initStyle(StageStyle.UNDECORATED);
+		primaryStage.setTitle("Chef Login - UninaFoodLab");
 
-        primaryStage.initStyle(StageStyle.UNDECORATED);
-        primaryStage.setTitle("Chef Login - UninaFoodLab");
+		StackPane root = new StackPane();
+		root.setPrefSize(600, 600);
 
-        StackPane root = new StackPane();
-        root.setPrefSize(600, 600);
+		// Sfondo gradiente
+		Region background = new Region();
+		StyleHelper.applyBackgroundGradient(background);
+		background.setPrefSize(600, 600);
+		root.getChildren().add(background);
 
-        createBackground(root);
+		contentPane = new StackPane();
+		VBox loginCard = createLoginCard();
+		contentPane.getChildren().add(loginCard);
+		root.getChildren().add(contentPane);
 
-        contentPane = new StackPane();
-        VBox loginCard = createLoginCard();
-        contentPane.getChildren().add(loginCard);
-        root.getChildren().add(contentPane);
+		HBox windowButtons = createWindowButtons(primaryStage);
+		root.getChildren().add(windowButtons);
+		StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+		StackPane.setMargin(windowButtons, new Insets(10));
 
-        HBox windowButtons = createWindowButtons(primaryStage);
-        root.getChildren().add(windowButtons);
-        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-        StackPane.setMargin(windowButtons, new Insets(10));
+		makeDraggable(root, primaryStage);
 
-        makeDraggable(root, primaryStage);
+		Scene scene = new Scene(root);
+		scene.setFill(Color.TRANSPARENT);
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
 
-        Scene scene = new Scene(root);
-        scene.setFill(Color.TRANSPARENT);
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
+	@Override
+	public void stop() {
+		DBConnection.closeDataSource();
+		System.out.println("Pool DB chiuso al termine dell'applicazione.");
+	}
 
-    @Override
-    public void stop() {
-        DBConnection.closeDataSource();
-        System.out.println("Pool DB chiuso al termine dell'applicazione.");
-    }
+	private VBox createLoginCard() {
+		VBox card = new VBox(20);
+		card.setAlignment(Pos.CENTER);
+		card.setPadding(new Insets(40));
+		card.setPrefSize(380, 380);
+		card.setMaxSize(380, 380);
+		card.setStyle("""
+				    -fx-background-color: white;
+				    -fx-background-radius: 25;
+				    -fx-border-radius: 25;
+				    -fx-border-color: #FF9966;
+				    -fx-border-width: 2;
+				    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
+				""");
 
-    private void createBackground(StackPane root) {
-        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF9966")),
-                new Stop(1, Color.web("#FFCC99")));
-        Region background = new Region();
-        background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
-        background.setPrefSize(600, 600);
-        root.getChildren().add(background);
-    }
+		Label titleLabel = new Label("UninaFoodLab");
+		titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
+		titleLabel.setTextFill(Color.web("#FF6600"));
 
-    private VBox createLoginCard() {
-        VBox card = new VBox(20);
-        card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(40));
-        card.setPrefSize(380, 380);
-        card.setMaxSize(380, 380);
-        card.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 25;
-            -fx-border-radius: 25;
-            -fx-border-color: #FF9966;
-            -fx-border-width: 2;
-            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
-        """);
+		Label subtitleLabel = new Label("Accedi al tuo account");
+		subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
+		subtitleLabel.setTextFill(Color.web("#FF8533"));
 
-        Label titleLabel = new Label("UninaFoodLab");
-        titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 30));
-        titleLabel.setTextFill(Color.web("#FF6600"));
+		VBox formContainer = new VBox(15);
+		formContainer.setAlignment(Pos.CENTER);
 
-        Label subtitleLabel = new Label("Accedi al tuo account");
-        subtitleLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 14));
-        subtitleLabel.setTextFill(Color.web("#FF8533"));
+		VBox usernameContainer = createStylishTextField("Username", false);
+		TextField usernameField = (TextField) ((StackPane) usernameContainer.getChildren().get(0)).getChildren().get(1);
 
-        VBox formContainer = new VBox(15);
-        formContainer.setAlignment(Pos.CENTER);
+		VBox passwordContainer = createStylishTextField("Password", true);
+		PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren()
+				.get(1);
 
-        VBox usernameContainer = createStylishTextField("Username", false);
-        TextField usernameField = (TextField) ((StackPane) usernameContainer.getChildren().get(0)).getChildren().get(1);
+		Button loginButton = createStylishButton("ACCEDI", "#FF6600", "#FF8533");
+		Button registerButton = createStylishButton("REGISTRATI", "#FFCC99", "#FFD9B3");
 
-        VBox passwordContainer = createStylishTextField("Password", true);
-        PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
+		setupButtonEvents(loginButton, registerButton, usernameField, passwordField);
 
-        Label messageLabel = new Label();
-        messageLabel.setFont(Font.font("Roboto", FontWeight.MEDIUM, 13));
-        messageLabel.setTextFill(Color.web("#FF6600"));
-        messageLabel.setWrapText(true);
-        messageLabel.setAlignment(Pos.CENTER);
+		formContainer.getChildren().addAll(usernameContainer, passwordContainer);
 
-        Button loginButton = createStylishButton("ACCEDI", "#FF6600", "#FF8533");
-        Button registerButton = createStylishButton("REGISTRATI", "#FFCC99", "#FFD9B3");
+		HBox buttonContainer = new HBox(15);
+		buttonContainer.setAlignment(Pos.CENTER);
+		buttonContainer.getChildren().addAll(registerButton, loginButton);
 
-        setupButtonEvents(loginButton, registerButton, usernameField, passwordField, messageLabel);
+		VBox headerContainer = new VBox(10);
+		headerContainer.setAlignment(Pos.CENTER);
+		headerContainer.getChildren().addAll(titleLabel, subtitleLabel);
 
-        formContainer.getChildren().addAll(usernameContainer, passwordContainer);
+		card.getChildren().addAll(headerContainer, formContainer, buttonContainer);
 
-        HBox buttonContainer = new HBox(15);
-        buttonContainer.setAlignment(Pos.CENTER);
-        buttonContainer.getChildren().addAll(registerButton, loginButton);
+		return card;
+	}
 
-        VBox headerContainer = new VBox(10);
-        headerContainer.setAlignment(Pos.CENTER);
-        headerContainer.getChildren().addAll(titleLabel, subtitleLabel);
+	private VBox createStylishTextField(String placeholder, boolean isPassword) {
+		VBox container = new VBox(3);
+		StackPane fieldContainer = new StackPane();
+		fieldContainer.setPrefHeight(45);
 
-        card.getChildren().addAll(headerContainer, formContainer, buttonContainer, messageLabel);
+		Region background = new Region();
+		background.setStyle("""
+				    -fx-background-color: white;
+				    -fx-background-radius: 15;
+				    -fx-border-radius: 15;
+				    -fx-border-color: #FF9966;
+				    -fx-border-width: 1.5;
+				""");
 
-        return card;
-    }
+		TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
+		inputField.setPromptText(placeholder);
+		inputField.setStyle("""
+				    -fx-background-color: transparent;
+				    -fx-text-fill: black;
+				    -fx-prompt-text-fill: gray;
+				    -fx-font-size: 14px;
+				    -fx-padding: 0 15 0 15;
+				""");
+		inputField.setPrefWidth(300);
 
-    private VBox createStylishTextField(String placeholder, boolean isPassword) {
-        VBox container = new VBox(3);
-        StackPane fieldContainer = new StackPane();
-        fieldContainer.setPrefHeight(45);
+		fieldContainer.getChildren().addAll(background, inputField);
+		container.getChildren().add(fieldContainer);
+		return container;
+	}
 
-        Region background = new Region();
-        background.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 15;
-            -fx-border-radius: 15;
-            -fx-border-color: #FF9966;
-            -fx-border-width: 1.5;
-        """);
+	private HBox createWindowButtons(Stage stage) {
+		Button closeButton = new Button("✕");
+		Button minimizeButton = new Button("_");
+		Button maximizeButton = new Button("□");
 
-        TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
-        inputField.setPromptText(placeholder);
-        inputField.setStyle("""
-            -fx-background-color: transparent;
-            -fx-text-fill: black;
-            -fx-prompt-text-fill: gray;
-            -fx-font-size: 14px;
-            -fx-padding: 0 15 0 15;
-        """);
-        inputField.setPrefWidth(300);
+		Button[] buttons = { minimizeButton, maximizeButton, closeButton };
+		for (Button btn : buttons) {
+			btn.setPrefSize(35, 35);
+			btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+			btn.setTextFill(Color.WHITE);
+			btn.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20;");
+			btn.setFocusTraversable(false);
+		}
 
-        fieldContainer.getChildren().addAll(background, inputField);
-        container.getChildren().add(fieldContainer);
-        return container;
-    }
+		closeButton.setOnAction(e -> stage.close());
+		minimizeButton.setOnAction(e -> stage.setIconified(true));
+		maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
 
-    private HBox createWindowButtons(Stage stage) {
-        Button closeButton = new Button("✕");
-        Button minimizeButton = new Button("_");
-        Button maximizeButton = new Button("□");
+		HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
+		box.setAlignment(Pos.TOP_RIGHT);
+		box.setPickOnBounds(false);
+		return box;
+	}
 
-        Button[] buttons = {minimizeButton, maximizeButton, closeButton};
-        for (Button btn : buttons) {
-            btn.setPrefSize(35, 35);
-            btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-            btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20;");
-            btn.setFocusTraversable(false);
-        }
+	private Button createStylishButton(String text, String baseColor, String hoverColor) {
+		Button button = new Button(text);
+		button.setPrefSize(130, 45);
+		button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+		button.setTextFill(Color.web("#4B2E2E"));
+		button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
 
-        closeButton.setOnAction(e -> stage.close());
-        minimizeButton.setOnAction(e -> stage.setIconified(true));
-        maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+		button.setOnMouseEntered(e -> button
+				.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+		button.setOnMouseExited(e -> button
+				.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
 
-        HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
-        box.setAlignment(Pos.TOP_RIGHT);
-        box.setPickOnBounds(false);
-        return box;
-    }
+		return button;
+	}
 
-    private Button createStylishButton(String text, String baseColor, String hoverColor) {
-        Button button = new Button(text);
-        button.setPrefSize(130, 45);
-        button.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        button.setTextFill(Color.web("#4B2E2E"));
-        button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;");
+	private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
+			PasswordField passwordField) {
 
-        button.setOnMouseEntered(e -> button.setStyle("-fx-background-color: " + hoverColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
-        button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + baseColor + "; -fx-background-radius: 20; -fx-cursor: hand;"));
+		loginButton.setOnAction(e -> handleLogin(usernameField, passwordField));
+		registerButton.setOnAction(e -> handleRegister());
+	}
 
-        return button;
-    }
+	/**
+	 * Gestisce login usando dialog StyleHelper per feedback
+	 */
+	private void handleLogin(TextField usernameField, PasswordField passwordField) {
+		try {
+			// Controller gestisce TUTTA la validazione e logica
+			Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
 
-    private void setupButtonEvents(Button loginButton, Button registerButton, TextField usernameField,
-                                   PasswordField passwordField, Label messageLabel) {
+			// Successo - mostra dialog e apri menu
+			StyleHelper.showSuccessDialog("Login Effettuato", "Benvenuto " + chef.getUsername() + "!");
 
-        loginButton.setOnAction(e -> {
-            try {
-                Chef chef = chefController.login(usernameField.getText(), passwordField.getText());
-                mostraMessaggio(messageLabel, "✅ Login effettuato: " + chef.getUsername(), true);
+			aprireMenuChef(chef);
 
-                GestioneCorsoController gestioneCorsoController =
-                        new GestioneCorsoController(corsiService, chefController.getGestioneChef());
-                gestioneCorsoController.setChefLoggato(chef);
+		} catch (ValidationException ex) {
+			// Errore validazione - dialog arancione
+			StyleHelper.handleValidation(ex);
 
-                VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
+		} catch (DataAccessException ex) {
+			// Errore database - dialog rosso
+			StyleHelper.showErrorDialog("Errore Database", ErrorMessages.ERRORE_DATABASE);
+			ex.printStackTrace();
 
-                ChefMenuGUI menu = new ChefMenuGUI();
-                menu.setChefLoggato(chef);
-                menu.setController(corsiController, gestioneCorsoController);
+		} catch (Exception ex) {
+			// Errore generico
+			StyleHelper.handleError(ex);
+		}
+	}
 
-                Stage menuStage = new Stage();
-                menu.start(menuStage);
+	/**
+	 * Apre menu chef dopo login
+	 */
+	private void aprireMenuChef(Chef chef) {
+		try {
+			GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(corsiService,
+					chefController.getGestioneChef());
+			gestioneCorsoController.setChefLoggato(chef);
 
-                ((Stage) loginButton.getScene().getWindow()).close();
+			VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
 
-            } catch (ValidationException ex) {
-                mostraMessaggio(messageLabel, ex.getMessage(), false);
-            } catch (DataAccessException ex) {
-                mostraMessaggio(messageLabel, ErrorMessages.ERRORE_DATABASE, false);
-            } catch (Exception ex) {
-                mostraMessaggio(messageLabel, "❌ Errore inatteso: " + ex.getMessage(), false);
-                ex.printStackTrace();
-            }
-        });
+			ChefMenuGUI menu = new ChefMenuGUI();
+			menu.setChefLoggato(chef);
+			menu.setController(corsiController, gestioneCorsoController);
 
-        registerButton.setOnAction(e -> {
-            contentPane.getChildren().clear();
-            RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
-                contentPane.getChildren().clear();
-                contentPane.getChildren().add(createLoginCard());
-            });
-            contentPane.getChildren().add(regPane);
-        });
-    }
+			Stage menuStage = new Stage();
+			menu.start(menuStage);
 
-    private void mostraMessaggio(Label label, String testo, boolean success) {
-        label.setText(testo);
-        label.setTextFill(success ? Color.web("#FF6600") : Color.web("#CC3300"));
-    }
+			// Chiudi login
+			((Stage) contentPane.getScene().getWindow()).close();
 
-    private void makeDraggable(StackPane root, Stage stage) {
-        root.setOnMousePressed(event -> {
-            xOffset = event.getSceneX();
-            yOffset = event.getSceneY();
-        });
-        root.setOnMouseDragged(event -> {
-            stage.setX(event.getScreenX() - xOffset);
-            stage.setY(event.getScreenY() - yOffset);
-        });
-    }
+		} catch (Exception ex) {
+			StyleHelper.showErrorDialog("Errore", "Impossibile aprire il menu: " + ex.getMessage());
+			ex.printStackTrace();
+		}
+	}
+
+	/**
+	 * Passa a schermata registrazione
+	 */
+	private void handleRegister() {
+		contentPane.getChildren().clear();
+		RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
+			contentPane.getChildren().clear();
+			contentPane.getChildren().add(createLoginCard());
+		});
+		contentPane.getChildren().add(regPane);
+	}
+
+	private void makeDraggable(StackPane root, Stage stage) {
+		root.setOnMousePressed(event -> {
+			xOffset = event.getSceneX();
+			yOffset = event.getSceneY();
+		});
+		root.setOnMouseDragged(event -> {
+			stage.setX(event.getScreenX() - xOffset);
+			stage.setY(event.getScreenY() - yOffset);
+		});
+	}
 }

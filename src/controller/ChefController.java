@@ -3,11 +3,14 @@ package controller;
 import model.Chef;
 import service.GestioneChef;
 import exceptions.ValidationException;
-import exceptions.ErrorMessages;
+import exceptions.DataAccessException;
 
 import java.time.LocalDate;
-import java.sql.SQLException;
 
+/**
+ * Controller semplificato - delega TUTTA la logica al Service
+ * Fa solo da tramite tra GUI e Service
+ */
 public class ChefController {
 
     private final GestioneChef gestioneChef;
@@ -16,90 +19,52 @@ public class ChefController {
         this.gestioneChef = gestioneChef;
     }
 
-    // LOGIN
-    public Chef login(String username, String password) throws ValidationException {
-        if (username == null || username.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
-        if (password == null || password.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Password"));
-
-        try {
-            Chef chef = gestioneChef.getChefByUsername(username);
-            if (chef == null)
-                throw new ValidationException(ErrorMessages.CREDENZIALI_ERRATE);
-            if (!chef.getPassword().equals(password))
-                throw new ValidationException(ErrorMessages.CREDENZIALI_ERRATE);
-
-            return chef;
-
-        } catch (SQLException e) {
-            throw new ValidationException(ErrorMessages.ERRORE_DATABASE, e);
-        }
+    /**
+     * Login - delega completamente al service
+     * @throws ValidationException se credenziali non valide
+     * @throws DataAccessException se errore database
+     */
+    public Chef login(String username, String password) 
+            throws ValidationException, DataAccessException {
+        return gestioneChef.login(username, password);
     }
 
-    // REGISTRAZIONE
+    /**
+     * Registrazione - delega completamente al service
+     * @throws ValidationException se validazione fallisce
+     * @throws DataAccessException se errore database
+     */
     public Chef registraChef(String codFiscale, String nome, String cognome, String email,
-                             LocalDate dataNascita, boolean disponibilita, String username, String password)
-                             throws ValidationException {
-
-        if (codFiscale == null || codFiscale.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Codice fiscale"));
-        if (nome == null || nome.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Nome"));
-        if (cognome == null || cognome.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Cognome"));
-        if (email == null || email.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Email"));
-        if (dataNascita == null)
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Data di nascita"));
-        if (username == null || username.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
-        if (password == null || password.length() < 6)
-            throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
-
-        try {
-            if (gestioneChef.getChefByUsername(username) != null)
-                throw new ValidationException("⚠️ Username già esistente");
-            if (gestioneChef.existsByCodFiscale(codFiscale))
-                throw new ValidationException("⚠️ Codice fiscale già presente");
-            if (gestioneChef.existsByEmail(email))
-                throw new ValidationException("⚠️ Email già presente");
-
-            Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
-            chef.setEmail(email);
-            chef.setDataNascita(dataNascita);
-
-            gestioneChef.creaChef(chef);
-            return chef;
-
-        } catch (SQLException e) {
-            throw new ValidationException(ErrorMessages.ERRORE_DATABASE, e);
-        }
+                            LocalDate dataNascita, boolean disponibilita, 
+                            String username, String password) 
+            throws ValidationException, DataAccessException {
+        
+        return gestioneChef.creaChef(codFiscale, nome, cognome, email, 
+                                     dataNascita, disponibilita, username, password);
     }
 
-    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) throws ValidationException {
-        if (nuovoUsername == null || nuovoUsername.isEmpty())
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Username"));
-        if (nuovaPassword == null || nuovaPassword.length() < 6)
-            throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
-
-        try {
-            chef.setUsername(nuovoUsername);
-            chef.setPassword(nuovaPassword);
-            gestioneChef.aggiornaChef(chef);
-        } catch (SQLException e) {
-            throw new ValidationException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
-        }
+    /**
+     * Aggiorna credenziali - delega al service
+     */
+    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword) 
+            throws ValidationException, DataAccessException {
+        gestioneChef.aggiornaCredenziali(chef, nuovoUsername, nuovaPassword);
     }
 
-    public void eliminaAccount(Chef chef) throws ValidationException {
-        try {
-            gestioneChef.eliminaChef(chef.getUsername());
-        } catch (SQLException e) {
-            throw new ValidationException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
+    /**
+     * Elimina account - delega al service
+     */
+    public void eliminaAccount(Chef chef) 
+            throws ValidationException, DataAccessException {
+        if (chef == null || chef.getUsername() == null) {
+            throw new ValidationException("Chef non valido");
         }
+        gestioneChef.eliminaChef(chef.getUsername());
     }
 
+    /**
+     * Getter per accesso al service (se necessario per altri controller)
+     */
     public GestioneChef getGestioneChef() {
         return gestioneChef;
     }

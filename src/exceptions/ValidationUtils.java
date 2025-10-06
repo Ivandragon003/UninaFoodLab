@@ -1,8 +1,9 @@
 package exceptions;
 
+import java.util.List;
+
 /**
- * Utility per validazione centralizzata usando solo exceptions
- * Riduce duplicazione codice senza helper esterni
+ * Utility per validazione centralizzata
  */
 public class ValidationUtils {
     
@@ -39,7 +40,7 @@ public class ValidationUtils {
     public static Integer validateIntRange(String value, String fieldName, Integer min, Integer max) 
             throws ValidationException {
         if (value == null || value.trim().isEmpty()) {
-            return null; // Campo opzionale
+            return null;
         }
         
         try {
@@ -70,13 +71,13 @@ public class ValidationUtils {
     }
     
     // ===== VALIDAZIONE LISTE =====
-    public static void validateNotEmpty(java.util.List<?> list, String fieldName) throws ValidationException {
+    public static void validateNotEmpty(List<?> list, String fieldName) throws ValidationException {
         if (list == null || list.isEmpty()) {
             throw new ValidationException(fieldName + " non può essere vuoto");
         }
     }
     
-    // ===== HELPER SICURI PER LISTENER (non lanciano eccezioni) =====
+    // ===== HELPER SICURI PER LISTENER =====
     public static boolean isValidInteger(String value) {
         if (value == null || value.trim().isEmpty()) return true;
         try {
@@ -97,7 +98,7 @@ public class ValidationUtils {
         }
     }
     
-    // ===== VALIDAZIONE EMAIL/CONTATTI =====
+    //  VALIDAZIONE EMAIL/CONTATTI 
     public static void validateEmail(String email) throws ValidationException {
         validateNotEmpty(email, "Email");
         if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {

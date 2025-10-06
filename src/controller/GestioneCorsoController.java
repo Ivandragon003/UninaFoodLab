@@ -1,5 +1,6 @@
 package controller;
 
+import exceptions.DataAccessException;
 import exceptions.ErrorMessages;
 import exceptions.ValidationException;
 import model.CorsoCucina;
@@ -9,7 +10,6 @@ import service.GestioneChef;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Objects;
 
 public class GestioneCorsoController {
 
@@ -22,39 +22,47 @@ public class GestioneCorsoController {
         this.chefService = chefService;
     }
 
-    public void setChefLoggato(Chef chef) { 
-        this.chefLoggato = chef; 
+    public void setChefLoggato(Chef chef) {
+        this.chefLoggato = chef;
     }
 
-    public Chef getChefLoggato() { 
-        return chefLoggato; 
+    public Chef getChefLoggato() {
+        return chefLoggato;
     }
 
     public List<Chef> getTuttiGliChef() {
-        try {
-            return chefService.getAll();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return List.of();
-        }
+        return chefService.getAll();
     }
 
     public void creaCorso(CorsoCucina corso) throws ValidationException {
-        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
+        if (corso == null) {
+            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        }
+        
         try {
             corsiService.creaCorso(corso);
-        } catch (IllegalArgumentException | SQLException e) {
+        } catch (IllegalArgumentException e) {
             throw new ValidationException("Errore di validazione del corso: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
         }
     }
 
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException {
-        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
-        Objects.requireNonNull(chef, ErrorMessages.CHEF_NULLO);
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) 
+            throws ValidationException {
+        if (corso == null) {
+            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        }
+        if (chef == null) {
+            throw new ValidationException(ErrorMessages.CHEF_NULLO);
+        }
+        
         try {
             corsiService.aggiungiChefACorso(corso, chef, password);
-        } catch (IllegalArgumentException | SQLException e) {
+        } catch (IllegalArgumentException e) {
             throw new ValidationException("Errore di validazione: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
         }
     }
 
@@ -62,7 +70,7 @@ public class GestioneCorsoController {
         try {
             corsiService.rimuoviChefDaCorso(corso, chef);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
         }
     }
 
@@ -70,16 +78,21 @@ public class GestioneCorsoController {
         try {
             corsiService.cancellaCorso(idCorso);
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
         }
     }
 
     public void modificaCorso(CorsoCucina corsoAggiornato) throws ValidationException {
-        Objects.requireNonNull(corsoAggiornato, ErrorMessages.CORSO_NULLO);
+        if (corsoAggiornato == null) {
+            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        }
+        
         try {
             corsiService.aggiornaCorso(corsoAggiornato);
-        } catch (IllegalArgumentException | SQLException e) {
+        } catch (IllegalArgumentException e) {
             throw new ValidationException("Errore di validazione: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
         }
     }
 
@@ -87,18 +100,20 @@ public class GestioneCorsoController {
         try {
             return corsiService.getCorsoCompleto(idCorso);
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
         }
     }
 
-    public CorsoCucina getDettagliCorso(CorsoCucina corso) {
-        Objects.requireNonNull(corso, ErrorMessages.CORSO_NULLO);
+
+    public CorsoCucina getDettagliCorso(CorsoCucina corso) throws ValidationException {
+        if (corso == null) {
+            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        }
+        
         try {
             return corsiService.getCorsoCompleto(corso.getIdCorso());
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
         }
     }
 }
