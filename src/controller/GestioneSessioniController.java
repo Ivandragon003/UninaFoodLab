@@ -66,13 +66,18 @@ public class GestioneSessioniController {
     }
 
     public void eliminaSessione(Sessione s) throws SQLException {
-        // ✅ FIX: Rimuovi prima le ricette associate se è InPresenza
-        if (s instanceof InPresenza ip) {
-            for (Ricetta r : new ArrayList<>(ip.getRicette())) {
-                rimuoviRicettaDaSessione(ip, r);
-            }
+        // ✅ VALIDAZIONE: Un corso deve avere almeno 1 sessione
+        if (corso.getSessioni().size() <= 1) {
+            throw new IllegalStateException(
+                "Impossibile eliminare questa sessione in quanto è l'unica sessione del corso. " +
+                "Aggiungere almeno un'altra sessione prima di eliminare questa."
+            );
         }
         
+        // Il database gestisce automaticamente con ON DELETE CASCADE:
+        // - segue (corso-sessione)
+        // - cucina (sessione-ricetta)
+        // - adesione (utente-sessione)
         corso.getSessioni().remove(s);
         gestioneSessioniService.rimuoviSessione(s);
     }

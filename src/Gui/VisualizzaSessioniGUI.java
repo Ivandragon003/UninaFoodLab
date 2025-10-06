@@ -121,14 +121,22 @@ public class VisualizzaSessioniGUI {
                 eliminaBtn.setStyle("-fx-background-color: #FF4444; -fx-text-fill: white; " +
                         "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
                         "-fx-padding: 8 15;");
-                eliminaBtn.setOnMouseEntered(e -> eliminaBtn.setStyle(
-                        "-fx-background-color: #CC0000; -fx-text-fill: white; " +
-                        "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                        "-fx-padding: 8 15;"));
-                eliminaBtn.setOnMouseExited(e -> eliminaBtn.setStyle(
-                        "-fx-background-color: #FF4444; -fx-text-fill: white; " +
-                        "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                        "-fx-padding: 8 15;"));
+                eliminaBtn.setOnMouseEntered(e -> {
+                    if (!eliminaBtn.isDisabled()) {
+                        eliminaBtn.setStyle(
+                            "-fx-background-color: #CC0000; -fx-text-fill: white; " +
+                            "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
+                            "-fx-padding: 8 15;");
+                    }
+                });
+                eliminaBtn.setOnMouseExited(e -> {
+                    if (!eliminaBtn.isDisabled()) {
+                        eliminaBtn.setStyle(
+                            "-fx-background-color: #FF4444; -fx-text-fill: white; " +
+                            "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
+                            "-fx-padding: 8 15;");
+                    }
+                });
                 
                 eliminaBtn.setOnAction(e -> {
                     Sessione s = getItem();
@@ -182,6 +190,9 @@ public class VisualizzaSessioniGUI {
                         infoBox.getChildren().addAll(luogoLabel, postiLabel, ricetteLabel);
                     }
 
+                    // ✅ AGGIORNA STATO BOTTONE ELIMINA
+                    aggiornaStatoBottoneElimina(eliminaBtn);
+
                     container.getChildren().clear();
                     container.getChildren().addAll(infoBox, spacer, eliminaBtn);
                     
@@ -198,6 +209,35 @@ public class VisualizzaSessioniGUI {
                 }
             }
         });
+    }
+
+    // ✅ NUOVO METODO: Aggiorna stato bottone elimina
+    private void aggiornaStatoBottoneElimina(Button eliminaBtn) {
+        boolean isUltimaSessione = corso.getSessioni() != null && corso.getSessioni().size() <= 1;
+        
+        eliminaBtn.setDisable(isUltimaSessione);
+        
+        if (isUltimaSessione) {
+            eliminaBtn.setStyle(
+                "-fx-background-color: #CCCCCC; -fx-text-fill: #666666; " +
+                "-fx-font-weight: bold; -fx-background-radius: 8; " +
+                "-fx-padding: 8 15; -fx-opacity: 0.6;"
+            );
+            
+            Tooltip tooltip = new Tooltip(
+                "⚠️ Impossibile eliminare l'unica sessione del corso.\n" +
+                "Aggiungi un'altra sessione prima di eliminare questa."
+            );
+            tooltip.setStyle("-fx-font-size: 12px;");
+            eliminaBtn.setTooltip(tooltip);
+        } else {
+            eliminaBtn.setStyle(
+                "-fx-background-color: #FF4444; -fx-text-fill: white; " +
+                "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
+                "-fx-padding: 8 15;"
+            );
+            eliminaBtn.setTooltip(null);
+        }
     }
 
     private void confermaEliminaSessione(Sessione sessione) {
@@ -232,6 +272,10 @@ public class VisualizzaSessioniGUI {
                     aggiornaLista();
                     showInfo("✅ Successo", "Sessione eliminata correttamente.");
                     
+                } catch (IllegalStateException ex) {
+                    // ✅ Cattura il vincolo (non dovrebbe succedere con bottone disabilitato)
+                    showError("⚠️ Impossibile Eliminare", ex.getMessage());
+                    
                 } catch (Exception ex) {
                     showError("❌ Errore", "Errore durante l'eliminazione: " + ex.getMessage());
                     ex.printStackTrace();
@@ -254,7 +298,7 @@ public class VisualizzaSessioniGUI {
             try {
                 GestioneSessioniGUI aggiungiGUI = new GestioneSessioniGUI();
                 aggiungiGUI.setModalitaAggiunta(true);
-                aggiungiGUI.setController(controller); // ✅ Passa il controller
+                aggiungiGUI.setController(controller);
                 aggiungiGUI.setCorso(corso);
                 
                 javafx.stage.Stage stage = new javafx.stage.Stage();

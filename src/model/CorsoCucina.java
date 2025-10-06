@@ -107,7 +107,7 @@ public class CorsoCucina {
 	}
 
 	public void setNumeroSessioni(int numeroSessioni) {
-		if (numeroSessioni <= 0)
+		if (numeroSessioni < 0)
 			throw new IllegalArgumentException("Il numero di sessioni deve essere maggiore di zero");
 		this.numeroSessioni = numeroSessioni;
 	}
