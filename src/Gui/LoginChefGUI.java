@@ -127,7 +127,6 @@ public class LoginChefGUI extends Application {
         VBox passwordContainer = createStylishTextField("Password", true);
         PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
 
-        // Listener auto-reset con ValidationUIHelper
         ValidationUIHelper.addAutoResetListener(usernameField, usernameContainer, errorLabel);
         ValidationUIHelper.addAutoResetListener(passwordField, passwordContainer, errorLabel);
 
@@ -224,7 +223,6 @@ public class LoginChefGUI extends Application {
             VBox passwordContainer) {
         ValidationUIHelper.hideError(errorLabel);
 
-        // Validazione UI con helper
         if (!ValidationUIHelper.validateNotEmpty(usernameField, usernameContainer, errorLabel, "il tuo username")) {
             return;
         }
@@ -263,6 +261,7 @@ public class LoginChefGUI extends Application {
         }
     }
 
+    // ✅ SEMPLIFICATO: Solo 3 controller
     private void aprireMenuChef(Chef chef) {
         try {
             RicettaDAO ricettaDAO = new RicettaDAO();
@@ -271,8 +270,10 @@ public class LoginChefGUI extends Application {
             GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO, usaDAO, ingredienteDAO);
             RicettaController ricettaController = new RicettaController(gestioneRicette);
 
-            GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(corsiService,
-                    chefController.getGestioneChef());
+            GestioneCorsoController gestioneCorsoController = new GestioneCorsoController(
+                corsiService,
+                chefController.getGestioneChef()
+            );
             gestioneCorsoController.setChefLoggato(chef);
 
             VisualizzaCorsiController corsiController = new VisualizzaCorsiController(corsiService, chef);
@@ -288,6 +289,7 @@ public class LoginChefGUI extends Application {
 
         } catch (Exception ex) {
             ValidationUIHelper.showError(errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 

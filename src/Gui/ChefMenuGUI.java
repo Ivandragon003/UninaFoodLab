@@ -31,6 +31,7 @@ public class ChefMenuGUI {
     private VisualizzaCorsiController corsiController;
     private GestioneCorsoController gestioneCorsoController;
     private RicettaController ricettaController;
+    private IngredienteController ingredienteController;  // Lazy initialization
     
     private double xOffset = 0;
     private double yOffset = 0;
@@ -40,11 +41,13 @@ public class ChefMenuGUI {
     private VBox sidebar;
     private Button hamburgerBtn;
     private boolean sidebarVisible = true;
+    private Stage currentStage;
 
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
     }
 
+    // ✅ Solo 3 controller obbligatori
     public void setControllers(VisualizzaCorsiController corsiController, 
                               GestioneCorsoController gestioneCorsoController,
                               RicettaController ricettaController) {
@@ -63,6 +66,11 @@ public class ChefMenuGUI {
             throw new IllegalStateException("Chef e controller devono essere impostati prima di start()");
         }
 
+        // ✅ Inizializza IngredienteController internamente
+        initializeIngredienteController();
+
+        this.currentStage = stage;
+        
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle("Menu Chef - " + chefLoggato.getUsername());
 
@@ -72,7 +80,56 @@ public class ChefMenuGUI {
         HBox mainLayout = new HBox();
         mainLayout.setSpacing(0);
 
-        sidebar = new VBox(20);
+        sidebar = createSidebar(stage);
+        
+        contentPane = new StackPane();
+        contentPane.setStyle("-fx-background-color: #FFFFFF;");
+        HBox.setHgrow(contentPane, Priority.ALWAYS);
+
+        hamburgerBtn = createHamburgerButton();
+
+        mostraBenvenutoIniziale();
+
+        mainLayout.getChildren().addAll(sidebar, contentPane);
+        menuRoot.getChildren().add(mainLayout);
+
+        menuRoot.getChildren().add(hamburgerBtn);
+        StackPane.setAlignment(hamburgerBtn, Pos.TOP_LEFT);
+        StackPane.setMargin(hamburgerBtn, new Insets(12));
+
+        HBox windowButtons = createWindowButtons(stage);
+        menuRoot.getChildren().add(windowButtons);
+        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+        StackPane.setMargin(windowButtons, new Insets(8));
+
+        makeDraggable(menuRoot, stage);
+
+        Scene scene = new Scene(menuRoot, 1200, 800);
+        scene.setFill(Color.TRANSPARENT);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    // ==================== LAZY INITIALIZATION ====================
+
+    private void initializeIngredienteController() {
+        if (ingredienteController == null) {
+            try {
+                IngredienteDAO ingredienteDAO = new IngredienteDAO();
+                GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
+                ingredienteController = new IngredienteController(gestioneIngrediente);
+            } catch (Exception e) {
+                StyleHelper.showErrorDialog("Errore", 
+                    "Impossibile inizializzare il controller ingredienti: " + e.getMessage());
+                throw new RuntimeException("Errore inizializzazione IngredienteController", e);
+            }
+        }
+    }
+
+    // ==================== CREAZIONE UI ====================
+
+    private VBox createSidebar(Stage stage) {
+        VBox sidebar = new VBox(20);
         sidebar.setAlignment(Pos.TOP_CENTER);
         sidebar.setPadding(new Insets(30, 15, 30, 15));
         sidebar.setStyle("-fx-background-color: #FF6600;");
@@ -99,58 +156,34 @@ public class ChefMenuGUI {
         creaRicettaBtn.setOnAction(e -> apriCreaRicetta());
 
         Button eliminaBtn = createSidebarButton("🗑️ Elimina Account");
-        eliminaBtn.setOnAction(e -> eliminaAccount(stage));
+        eliminaBtn.setOnAction(e -> eliminaAccount());
 
         Button logoutBtn = createSidebarButton("🚪 Logout");
         logoutBtn.setOnAction(e -> stage.close());
 
         sidebar.getChildren().addAll(
-            welcomeLabel,
-            corsiBtn,
-            creaCorsoBtn,
-            ricetteBtn,
-            creaRicettaBtn,
-            eliminaBtn,
-            logoutBtn
+            welcomeLabel, corsiBtn, creaCorsoBtn, ricetteBtn, 
+            creaRicettaBtn, eliminaBtn, logoutBtn
         );
 
-        contentPane = new StackPane();
-        contentPane.setStyle("-fx-background-color: #FFFFFF;");
-        HBox.setHgrow(contentPane, Priority.ALWAYS);
+        return sidebar;
+    }
 
-        hamburgerBtn = new Button("☰");
-        hamburgerBtn.setPrefSize(45, 45);
-        hamburgerBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
-        hamburgerBtn.setTextFill(Color.WHITE);
-        hamburgerBtn.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + "; " +
+    private Button createHamburgerButton() {
+        Button btn = new Button("☰");
+        btn.setPrefSize(45, 45);
+        btn.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
+        btn.setTextFill(Color.WHITE);
+        btn.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + "; " +
                 "-fx-background-radius: 25; -fx-cursor: hand;");
-        hamburgerBtn.setOnAction(e -> toggleSidebar());
+        btn.setOnAction(e -> toggleSidebar());
 
         DropShadow shadow = new DropShadow();
         shadow.setRadius(8);
         shadow.setColor(Color.web("#000000", 0.3));
-        hamburgerBtn.setEffect(shadow);
+        btn.setEffect(shadow);
 
-        mostraBenvenutoIniziale();
-
-        mainLayout.getChildren().addAll(sidebar, contentPane);
-        menuRoot.getChildren().add(mainLayout);
-
-        menuRoot.getChildren().add(hamburgerBtn);
-        StackPane.setAlignment(hamburgerBtn, Pos.TOP_LEFT);
-        StackPane.setMargin(hamburgerBtn, new Insets(12));
-
-        HBox windowButtons = createWindowButtons(stage);
-        menuRoot.getChildren().add(windowButtons);
-        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-        StackPane.setMargin(windowButtons, new Insets(8));
-
-        makeDraggable(menuRoot, stage);
-
-        Scene scene = new Scene(menuRoot, 1200, 800);
-        scene.setFill(Color.TRANSPARENT);
-        stage.setScene(scene);
-        stage.show();
+        return btn;
     }
 
     private void toggleSidebar() {
@@ -257,6 +290,8 @@ public class ChefMenuGUI {
         return box;
     }
 
+    // ==================== NAVIGAZIONE ====================
+
     private void apriVisualizzaCorsi() {
         try {
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
@@ -265,37 +300,34 @@ public class ChefMenuGUI {
             contentPane.getChildren().add(corsiGUI.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura corsi: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
     private void apriCreaCorso() {
         try {
-            CreaCorsoGUI gui = new CreaCorsoGUI();
-            gui.setController(gestioneCorsoController);
+            CreaCorsoGUI gui = new CreaCorsoGUI(gestioneCorsoController);
             contentPane.getChildren().clear();
             contentPane.getChildren().add(gui.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione corso: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
     private void apriVisualizzaRicette() {
         try {
-            VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(ricettaController);
+            VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(ricettaController, ingredienteController);
             contentPane.getChildren().clear();
             contentPane.getChildren().add(ricetteGUI.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura ricette: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
     private void apriCreaRicetta() {
         try {
-            // Crea IngredienteController localmente per CreaRicettaGUI
-            IngredienteDAO ingredienteDAO = new IngredienteDAO();
-            GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
-            IngredienteController ingredienteController = new IngredienteController(gestioneIngrediente);
-            
             CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
             Ricetta nuovaRicetta = creaGUI.showAndReturn();
             if (nuovaRicetta != null) {
@@ -304,17 +336,19 @@ public class ChefMenuGUI {
             }
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nella creazione ricetta: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 
-    private void eliminaAccount(Stage stage) {
+    private void eliminaAccount() {
         StyleHelper.showConfirmationDialog(
             "Conferma Eliminazione",
             "Eliminare definitivamente l'account? Questa operazione non può essere annullata.",
             () -> {
                 try {
+                    // TODO: Chiamata al controller per eliminare l'account
                     StyleHelper.showSuccessDialog("Account eliminato", "Account eliminato con successo");
-                    stage.close();
+                    currentStage.close();
                 } catch (Exception ex) {
                     StyleHelper.showErrorDialog("Errore", "Errore nell'eliminazione: " + ex.getMessage());
                 }
