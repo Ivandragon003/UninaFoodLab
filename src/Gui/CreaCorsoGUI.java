@@ -10,6 +10,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.*;
 import util.StyleHelper;
+import util.FrequenzaHelper;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -20,7 +22,7 @@ public class CreaCorsoGUI {
     private TextField prezzoField;
     private TextField argomentoField;
     private TextField postiField;
-    private ComboBox<String> frequenzaBox;
+    private ComboBox<Frequenza> frequenzaBox;
     private DatePicker startDatePicker;
     private DatePicker endDatePicker;
     private ComboBox<Integer> startHour;
@@ -29,6 +31,7 @@ public class CreaCorsoGUI {
     private ComboBox<Integer> endMinute;
     private VBox listaChefContainer;
     private VBox listaSessioniContainer;
+    private Label numeroSessioniLabel;
     private ObservableList<Chef> chefSelezionati = FXCollections.observableArrayList();
     private ObservableList<Sessione> corsoSessioni = FXCollections.observableArrayList();
     private VBox root;
@@ -93,9 +96,12 @@ public class CreaCorsoGUI {
         argomentoField = StyleHelper.createTextField("Es. Pasta fresca e condimenti");
         postiField = StyleHelper.createTextField("Es. 12");
 
-        frequenzaBox = StyleHelper.createComboBox();
-        frequenzaBox.getItems().addAll("GIORNALIERA", "SETTIMANALE", "MENSILE");
+        frequenzaBox = new ComboBox<>();
         frequenzaBox.setPromptText("Seleziona frequenza");
+        frequenzaBox.setPrefHeight(35);
+        frequenzaBox.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
+        
+        frequenzaBox.setOnAction(e -> onFrequenzaChange());
 
         grid.add(StyleHelper.createLabel("Nome Corso:"), 0, 0);
         grid.add(nomeField, 1, 0);
@@ -117,7 +123,7 @@ public class CreaCorsoGUI {
     private VBox createDateTimeSection() {
         VBox section = StyleHelper.createSection();
 
-        Label sectionTitle = new Label("📅 Date e Orari - OBBLIGATORIO per Sessioni");
+        Label sectionTitle = new Label("📅 Date e Orari - OBBLIGATORIO");
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
@@ -126,12 +132,19 @@ public class CreaCorsoGUI {
         grid.setVgap(15);
 
         startDatePicker = StyleHelper.createDatePicker();
-        startDatePicker.setPromptText("Data inizio OBBLIGATORIA");
+        startDatePicker.setPromptText("Data inizio");
         endDatePicker = StyleHelper.createDatePicker();
-        endDatePicker.setPromptText("Data fine OBBLIGATORIA");
+        endDatePicker.setPromptText("Data fine");
 
-        startDatePicker.setOnAction(e -> validateDatesForSessions());
-        endDatePicker.setOnAction(e -> validateDatesForSessions());
+        startDatePicker.setOnAction(e -> {
+            onDataInizioChange();
+            validateDatesForSessions();
+        });
+        
+        endDatePicker.setOnAction(e -> {
+            aggiornaFrequenzeDisponibili();
+            validateDatesForSessions();
+        });
 
         startHour = createTimeComboBox(24, 9);
         startMinute = createTimeComboBox(60, 0, 15);
@@ -153,12 +166,87 @@ public class CreaCorsoGUI {
         grid.add(StyleHelper.createLabel("Ora Fine:"), 2, 1);
         grid.add(endTimeBox, 3, 1);
 
-        Label avisoLabel = new Label("⚠️ OBBLIGATORIO: Completa le date per abilitare l'aggiunta di sessioni");
+        numeroSessioniLabel = new Label("📊 Sessioni: Non calcolate");
+        numeroSessioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
+        numeroSessioniLabel.setTextFill(Color.web("#666666"));
+        numeroSessioniLabel.setPadding(new Insets(10, 0, 0, 0));
+
+        Label avisoLabel = new Label("⚠️ Seleziona le date per vedere le frequenze disponibili");
         avisoLabel.setTextFill(Color.web(StyleHelper.ERROR_RED));
         avisoLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 12));
 
-        section.getChildren().addAll(sectionTitle, grid, avisoLabel);
+        section.getChildren().addAll(sectionTitle, grid, numeroSessioniLabel, avisoLabel);
         return section;
+    }
+
+    private void onDataInizioChange() {
+        LocalDate inizio = startDatePicker.getValue();
+        
+        if (frequenzaBox.getValue() == Frequenza.UNICA && inizio != null) {
+            endDatePicker.setValue(inizio);
+        }
+        
+        aggiornaFrequenzeDisponibili();
+    }
+
+    private void onFrequenzaChange() {
+        Frequenza selezionata = frequenzaBox.getValue();
+        
+        if (selezionata == Frequenza.UNICA) {
+            if (startDatePicker.getValue() != null) {
+                endDatePicker.setValue(startDatePicker.getValue());
+            }
+            endDatePicker.setDisable(true);
+            endDatePicker.setStyle("-fx-opacity: 0.6;");
+            
+        } else {
+            endDatePicker.setDisable(false);
+            endDatePicker.setStyle("");
+        }
+        
+        aggiornaNumeroSessioniCalcolato();
+    }
+
+    private void aggiornaFrequenzeDisponibili() {
+        LocalDate inizio = startDatePicker.getValue();
+        LocalDate fine = endDatePicker.getValue();
+        
+        if (inizio != null && fine != null) {
+            java.util.List<Frequenza> disponibili = FrequenzaHelper.getFrequenzeDisponibili(inizio, fine);
+            
+            Frequenza attuale = frequenzaBox.getValue();
+            frequenzaBox.getItems().setAll(disponibili);
+            
+            if (disponibili.contains(attuale)) {
+                frequenzaBox.setValue(attuale);
+            } else if (!disponibili.isEmpty()) {
+                frequenzaBox.setValue(disponibili.get(0));
+            }
+        } else {
+            frequenzaBox.getItems().setAll(Frequenza.values());
+        }
+        
+        aggiornaNumeroSessioniCalcolato();
+    }
+
+    private void aggiornaNumeroSessioniCalcolato() {
+        LocalDate inizio = startDatePicker.getValue();
+        LocalDate fine = endDatePicker.getValue();
+        Frequenza freq = frequenzaBox.getValue();
+        
+        if (inizio != null && fine != null && freq != null) {
+            try {
+                int numSessioni = FrequenzaHelper.calcolaNumeroSessioni(inizio, fine, freq);
+                numeroSessioniLabel.setText(String.format("📊 Sessioni calcolate: %d", numSessioni));
+                numeroSessioniLabel.setTextFill(Color.web("#4CAF50"));
+            } catch (Exception e) {
+                numeroSessioniLabel.setText("❌ Errore calcolo sessioni");
+                numeroSessioniLabel.setTextFill(Color.web("#F44336"));
+            }
+        } else {
+            numeroSessioniLabel.setText("📊 Sessioni: Non calcolate");
+            numeroSessioniLabel.setTextFill(Color.web("#666666"));
+        }
     }
 
     private VBox createChefSection() {
@@ -453,7 +541,7 @@ public class CreaCorsoGUI {
             String nome = nomeField.getText().trim();
             double prezzo = Double.parseDouble(prezzoField.getText());
             String argomento = argomentoField.getText().trim();
-            String frequenza = frequenzaBox.getValue();
+            Frequenza frequenza = frequenzaBox.getValue();  
             int numeroPosti = Integer.parseInt(postiField.getText());
 
             LocalDate startDate = startDatePicker.getValue();
@@ -505,6 +593,24 @@ public class CreaCorsoGUI {
             return false;
         }
 
+        if (frequenzaBox.getValue() == null) {
+            StyleHelper.showValidationDialog("Validazione", "Selezionare una frequenza");
+            return false;
+        }
+
+        if (!FrequenzaHelper.isFrequenzaValida(
+                startDatePicker.getValue(), 
+                endDatePicker.getValue(), 
+                frequenzaBox.getValue())) {
+            StyleHelper.showValidationDialog("Frequenza non valida", 
+                FrequenzaHelper.getMessaggioErroreFrequenza(
+                    startDatePicker.getValue(), 
+                    endDatePicker.getValue(), 
+                    frequenzaBox.getValue()
+                ));
+            return false;
+        }
+
         if (chefSelezionati.isEmpty()) {
             StyleHelper.showValidationDialog("Validazione", "Selezionare almeno uno chef per il corso");
             return false;
@@ -526,10 +632,13 @@ public class CreaCorsoGUI {
         frequenzaBox.setValue(null);
         startDatePicker.setValue(null);
         endDatePicker.setValue(null);
+        endDatePicker.setDisable(false); 
         chefSelezionati.clear();
         corsoSessioni.clear();
         updateChefDisplay();
         updateSessioniDisplay();
         validateDatesForSessions();
+        numeroSessioniLabel.setText("📊 Sessioni: Non calcolate");
+        numeroSessioniLabel.setTextFill(Color.web("#666666"));
     }
 }

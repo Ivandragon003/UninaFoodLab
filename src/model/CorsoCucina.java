@@ -107,10 +107,11 @@ public class CorsoCucina {
 	}
 
 	public void setNumeroSessioni(int numeroSessioni) {
-		if (numeroSessioni < 0)
-			throw new IllegalArgumentException("Il numero di sessioni deve essere maggiore di zero");
-		this.numeroSessioni = numeroSessioni;
+	    if (numeroSessioni < 0)
+	        throw new IllegalArgumentException("Il numero di sessioni non può essere negativo");
+	    this.numeroSessioni = numeroSessioni;
 	}
+
 
 	public List<Chef> getChef() {
 		return chef;

@@ -10,13 +10,15 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import model.*;
-import service.GestioneRicette;
 import util.StyleHelper;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import controller.RicettaController;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -27,7 +29,7 @@ public class CreaSessioniGUI extends Stage {
     private LocalDate dataInizioCorso;
     private LocalDate dataFineCorso;
     private Set<LocalDate> dateOccupate;
-    private GestioneRicette gestioneRicette;
+    private RicettaController ricettaController;
 
     private DatePicker dataSessionePicker;
     private ComboBox<Integer> oraInizio;
@@ -36,10 +38,8 @@ public class CreaSessioniGUI extends Stage {
     private ComboBox<Integer> minutoFine;
     private ComboBox<String> tipoCombo;
 
-    // Campi Online
     private TextField piattaformaField;
 
-    // Campi In Presenza
     private TextField viaField;
     private TextField cittaField;
     private TextField postiField;
@@ -53,11 +53,11 @@ public class CreaSessioniGUI extends Stage {
     private List<Ricetta> ricetteSelezionate = new ArrayList<>();
 
     public CreaSessioniGUI(LocalDate dataInizioCorso, LocalDate dataFineCorso, Set<LocalDate> dateOccupate, 
-            GestioneRicette gestioneRicette) {
+            RicettaController ricettaController) {
         this.dataInizioCorso = dataInizioCorso;
         this.dataFineCorso = dataFineCorso;
         this.dateOccupate = dateOccupate != null ? dateOccupate : new HashSet<>();
-        this.gestioneRicette = gestioneRicette;
+        this.ricettaController = ricettaController;
         initializeDialog();
     }
 
@@ -65,9 +65,10 @@ public class CreaSessioniGUI extends Stage {
         this.dataInizioCorso = dataInizioCorso;
         this.dataFineCorso = dataFineCorso;
         this.dateOccupate = dateOccupate != null ? dateOccupate : new HashSet<>();
-        this.gestioneRicette = null;
+        this.ricettaController = null;
         initializeDialog();
     }
+
 
     private void initializeDialog() {
         setTitle("Crea Sessione");
@@ -420,11 +421,10 @@ public class CreaSessioniGUI extends Stage {
         }
     }
 
-    // OPZIONE 1: Usa ricetta esistente dal database
     private void usaRicettaEsistente() {
-        if (gestioneRicette != null) {
+        if (ricettaController != null) {
             try {
-                VisualizzaRicetteGUI visualizzaGUI = new VisualizzaRicetteGUI(gestioneRicette);
+                VisualizzaRicetteGUI visualizzaGUI = new VisualizzaRicetteGUI(ricettaController);
                 visualizzaGUI.setSelectionMode(true);
                 Ricetta ricettaScelta = visualizzaGUI.showAndReturn();
 
@@ -443,24 +443,25 @@ public class CreaSessioniGUI extends Stage {
         }
     }
 
-    // OPZIONE 2: Crea nuova ricetta con ingredienti
-    private void creaNuovaRicetta() {
-        try {
-            CreaRicettaGUI creaGUI = new CreaRicettaGUI(gestioneRicette);
-            Ricetta nuovaRicetta = creaGUI.showAndReturn();
 
-            if (nuovaRicetta != null) {
-                ricetteSelezionate.add(nuovaRicetta);
-                updateRicetteDisplay();
-                showAlert("Successo", 
-                    "Ricetta '" + nuovaRicetta.getNome() + "' creata e aggiunta!\n" +
-                    "Ingredienti: " + nuovaRicetta.getNumeroIngredienti() + "\n" +
-                    "Tempo: " + nuovaRicetta.getTempoPreparazione() + " minuti");
-            }
-        } catch (Exception e) {
-            showAlert("Errore", "Errore nella creazione ricetta: " + e.getMessage());
+    private void creaNuovaRicetta() {
+    try {
+        CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController);
+        Ricetta nuovaRicetta = creaGUI.showAndReturn();
+
+        if (nuovaRicetta != null) {
+            ricetteSelezionate.add(nuovaRicetta);
+            updateRicetteDisplay();
+            showAlert("Successo", 
+                "Ricetta '" + nuovaRicetta.getNome() + "' creata e aggiunta!\n" +
+                "Ingredienti: " + nuovaRicetta.getNumeroIngredienti() + "\n" +
+                "Tempo: " + nuovaRicetta.getTempoPreparazione() + " minuti");
         }
+    } catch (Exception e) {
+        showAlert("Errore", "Errore nella creazione ricetta: " + e.getMessage());
     }
+}
+
 
     private HBox createButtonSection() {
         HBox buttonBox = new HBox(15);

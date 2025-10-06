@@ -4,6 +4,7 @@ import controller.GestioneCorsoController;
 import model.CorsoCucina;
 import model.Frequenza;
 import model.Chef;
+import util.FrequenzaHelper;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,6 +18,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -103,6 +105,9 @@ public class DettagliCorsoGUI {
         frequenzaCombo = new ComboBox<>();
         frequenzaCombo.getItems().setAll(Frequenza.values());
         frequenzaCombo.setValue(corso.getFrequenzaCorso());
+        
+        // ✅ NUOVO: Listener per gestire blocco/sblocco data fine
+        frequenzaCombo.setOnAction(e -> onFrequenzaChange());
 
         numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
         numeroPostiField.setFont(Font.font("Roboto", 14));
@@ -116,9 +121,16 @@ public class DettagliCorsoGUI {
         dataInizioPicker = new DatePicker(
                 corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
         );
+        
+        // ✅ NUOVO: Listener per sincronizzare data fine se UNICA
+        dataInizioPicker.setOnAction(e -> onDataInizioChange());
+        
         dataFinePicker = new DatePicker(
                 corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
         );
+        
+        // ✅ NUOVO: Listener per aggiornare frequenze disponibili
+        dataFinePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
 
         chefListView = new ListView<>();
         chefListView.setPrefHeight(150);
@@ -288,6 +300,9 @@ public class DettagliCorsoGUI {
 
         setEditable(false);
         refreshChefListView();
+        
+        // ✅ NUOVO: Aggiorna stato iniziale frequenza/date
+        aggiornaStatoDataFine();
 
         VBox wrapper = new VBox(card);
         wrapper.setAlignment(Pos.TOP_CENTER);
@@ -296,6 +311,71 @@ public class DettagliCorsoGUI {
 
         mainContainer.getChildren().add(scrollPane);
         return mainContainer;
+    }
+
+    // ✅ NUOVO METODO: Gestisce cambio data inizio
+    private void onDataInizioChange() {
+        LocalDate inizio = dataInizioPicker.getValue();
+        
+        // Se frequenza UNICA, sincronizza data fine
+        if (frequenzaCombo.getValue() == Frequenza.UNICA && inizio != null) {
+            dataFinePicker.setValue(inizio);
+        }
+        
+        aggiornaFrequenzeDisponibili();
+    }
+
+    // ✅ NUOVO METODO: Gestisce cambio frequenza
+    private void onFrequenzaChange() {
+        if (!editable) return;  // Solo se in modalità modifica
+        
+        Frequenza selezionata = frequenzaCombo.getValue();
+        
+        if (selezionata == Frequenza.UNICA) {
+            // BLOCCA data fine e sincronizza con inizio
+            if (dataInizioPicker.getValue() != null) {
+                dataFinePicker.setValue(dataInizioPicker.getValue());
+            }
+            dataFinePicker.setDisable(true);
+            dataFinePicker.setStyle("-fx-opacity: 0.6;");
+            
+        } else {
+            // SBLOCCA data fine
+            dataFinePicker.setDisable(false);
+            dataFinePicker.setStyle("");
+        }
+    }
+
+    // ✅ NUOVO METODO: Aggiorna frequenze disponibili
+    private void aggiornaFrequenzeDisponibili() {
+        if (!editable) return;  // Solo se in modalità modifica
+        
+        LocalDate inizio = dataInizioPicker.getValue();
+        LocalDate fine = dataFinePicker.getValue();
+        
+        if (inizio != null && fine != null) {
+            List<Frequenza> disponibili = FrequenzaHelper.getFrequenzeDisponibili(inizio, fine);
+            
+            Frequenza attuale = frequenzaCombo.getValue();
+            frequenzaCombo.getItems().setAll(disponibili);
+            
+            // Mantieni selezione se ancora valida
+            if (disponibili.contains(attuale)) {
+                frequenzaCombo.setValue(attuale);
+            } else if (!disponibili.isEmpty()) {
+                frequenzaCombo.setValue(disponibili.get(0));
+            }
+        }
+    }
+
+    // ✅ NUOVO METODO: Aggiorna stato data fine in base a frequenza
+    private void aggiornaStatoDataFine() {
+        if (corso.getFrequenzaCorso() == Frequenza.UNICA) {
+            dataFinePicker.setDisable(!editable);  // Bloccato se non editable
+            if (!editable) {
+                dataFinePicker.setStyle("-fx-opacity: 0.6;");
+            }
+        }
     }
 
     private Label createLabel(String text) {
@@ -337,6 +417,24 @@ public class DettagliCorsoGUI {
                     dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
                 showAlert("Errore", "La data di inizio deve precedere la data di fine.");
                 return;
+            }
+
+            // ✅ NUOVA VALIDAZIONE: Controlla frequenza compatibile
+            Frequenza freqSelezionata = frequenzaCombo.getValue();
+            if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null && 
+                freqSelezionata != null) {
+                if (!FrequenzaHelper.isFrequenzaValida(
+                        dataInizioPicker.getValue(), 
+                        dataFinePicker.getValue(), 
+                        freqSelezionata)) {
+                    showAlert("Frequenza non valida", 
+                        FrequenzaHelper.getMessaggioErroreFrequenza(
+                            dataInizioPicker.getValue(), 
+                            dataFinePicker.getValue(), 
+                            freqSelezionata
+                        ));
+                    return;
+                }
             }
 
             corso.setNomeCorso(nomeField.getText());
@@ -443,9 +541,6 @@ public class DettagliCorsoGUI {
         }
     }
 
-
-    
-    
     private String safeString(String s) {
         return s == null ? "" : s;
     }
@@ -531,7 +626,14 @@ public class DettagliCorsoGUI {
         frequenzaCombo.setDisable(!edit);
         numeroPostiField.setEditable(edit);
         dataInizioPicker.setDisable(!edit);
-        dataFinePicker.setDisable(!edit);
+        
+        // ✅ NUOVO: Data fine bloccata se UNICA
+        if (edit && frequenzaCombo.getValue() == Frequenza.UNICA) {
+            dataFinePicker.setDisable(true);
+        } else {
+            dataFinePicker.setDisable(!edit);
+        }
+        
         addChefCombo.setDisable(!edit);
         addChefBtn.setDisable(!edit);
 
