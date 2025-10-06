@@ -70,6 +70,12 @@ public class ValidationUtils {
             throw new ValidationException(ErrorMessages.TEMPO_TROPPO_LUNGO);
         }
     }
+    
+    public static void validateNotNull(Object obj, String fieldName) throws ValidationException {
+        if (obj == null) {
+            throw new ValidationException(fieldName + " non può essere nullo");
+        }
+    }
 
     public static void validateIngredienti(Map<Ingrediente, Double> ingredienti) throws ValidationException {
         if (ingredienti == null || ingredienti.isEmpty()) {

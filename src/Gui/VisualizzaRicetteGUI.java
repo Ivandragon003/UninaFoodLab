@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.RicettaController;
+import controller.IngredienteController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -8,6 +9,8 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import model.Ricetta;
 import model.Ingrediente;
 import util.StyleHelper;
@@ -17,341 +20,309 @@ import java.util.List;
 import java.util.Map;
 
 public class VisualizzaRicetteGUI {
-    private RicettaController ricettaController;
-    private ObservableList<Ricetta> ricetteData;
-    private ListView<Ricetta> ricetteListView;
-    private TextField filtroNomeField;
-    private TextField filtroTempoMinField;
-    private TextField filtroTempoMaxField;
-    private TextField filtroIngredientiMinField;
-    private TextField filtroIngredientiMaxField;
-    private Button resetFiltriBtn;
-    
-    private StackPane parentPane;
+	private final RicettaController ricettaController;
+	private final IngredienteController ingredienteController;
+	private final ObservableList<Ricetta> ricetteData;
+	private ListView<Ricetta> ricetteListView;
+	private TextField filtroNomeField, filtroTempoMinField, filtroTempoMaxField;
+	private TextField filtroIngredientiMinField, filtroIngredientiMaxField;
 
-    private boolean modalitaSelezione = false;
-    private Ricetta ricettaSelezionata = null;
-    private VBox root;
+	private boolean modalitaSelezione = false;
+	private Ricetta ricettaSelezionata = null;
+	private VBox root;
 
-    public VisualizzaRicetteGUI(RicettaController ricettaController) {
-        this.ricettaController = ricettaController;
-        this.ricetteData = FXCollections.observableArrayList();
-        caricaRicette();
-    }
-    
-    public void setParentPane(StackPane parentPane) {
-        this.parentPane = parentPane;
-    }
+	public VisualizzaRicetteGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
+		this.ricettaController = ricettaController;
+		this.ingredienteController = ingredienteController;
+		this.ricetteData = FXCollections.observableArrayList();
+		caricaRicette();
+	}
 
-    public void setSelectionMode(boolean modalitaSelezione) {
-        this.modalitaSelezione = modalitaSelezione;
-    }
+	public void setSelectionMode(boolean modalitaSelezione) {
+		this.modalitaSelezione = modalitaSelezione;
+	}
 
-    public VBox getRoot() {
-        if (root == null) {
-            root = createMainLayout();
-            setupListeners();
-        }
-        return root;
-    }
+	public VBox getRoot() {
+		if (root == null) {
+			root = createMainLayout();
+			setupListeners();
+		}
+		return root;
+	}
 
-    private VBox createMainLayout() {
-        VBox container = new VBox(15);
-        container.setPadding(new Insets(20));
-        StyleHelper.applyOrangeBackground(container);
+	// ==================== LAYOUT ====================
 
-        Label titleLabel = StyleHelper.createTitleLabel("📖 Gestione Ricette");
-        titleLabel.setAlignment(Pos.CENTER);
-        titleLabel.setTextFill(Color.WHITE);
+	private VBox createMainLayout() {
+		VBox container = new VBox(15);
+		container.setPadding(new Insets(20));
+		StyleHelper.applyOrangeBackground(container);
 
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		Label titleLabel = StyleHelper.createTitleLabel("📖 Gestione Ricette");
+		titleLabel.setAlignment(Pos.CENTER);
+		titleLabel.setTextFill(Color.WHITE);
 
-        VBox contentBox = new VBox(15);
-        contentBox.getChildren().addAll(
-            createFiltriSection(),
-            new Separator(),
-            createListaSection(),
-            new Separator(),
-            createButtonSection()
-        );
+		ScrollPane scrollPane = new ScrollPane(new VBox(15, createFiltriSection(), new Separator(),
+				createListaSection(), new Separator(), createButtonSection()));
+		scrollPane.setFitToWidth(true);
+		scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        scrollPane.setContent(contentBox);
-        container.getChildren().addAll(titleLabel, scrollPane);
-        return container;
-    }
+		container.getChildren().addAll(titleLabel, scrollPane);
+		return container;
+	}
 
-    private VBox createFiltriSection() {
-        VBox section = StyleHelper.createSection();
-        Label sectionTitle = new Label("🔍 Filtri Avanzati");
-        sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+	private VBox createFiltriSection() {
+		VBox section = StyleHelper.createSection();
 
-        HBox nomeBox = new HBox(10);
-        nomeBox.setAlignment(Pos.CENTER_LEFT);
-        filtroNomeField = StyleHelper.createTextField("Cerca per nome ricetta...");
-        filtroNomeField.setPrefWidth(300);
-        nomeBox.getChildren().addAll(StyleHelper.createLabel("Nome:"), filtroNomeField);
+		Label sectionTitle = new Label("🔍 Filtri Avanzati");
+		sectionTitle.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
+		sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        GridPane filtriGrid = new GridPane();
-        filtriGrid.setHgap(15);
-        filtriGrid.setVgap(10);
+		filtroNomeField = StyleHelper.createTextField("Cerca per nome...");
+		filtroNomeField.setPrefWidth(300);
 
-        filtroTempoMinField = StyleHelper.createTextField("Min");
-        filtroTempoMinField.setPrefWidth(80);
-        filtroTempoMaxField = StyleHelper.createTextField("Max");
-        filtroTempoMaxField.setPrefWidth(80);
-        HBox tempoBox = new HBox(5, filtroTempoMinField, new Label("-"), filtroTempoMaxField, new Label("min"));
-        tempoBox.setAlignment(Pos.CENTER_LEFT);
+		filtroTempoMinField = StyleHelper.createTextField("Min");
+		filtroTempoMaxField = StyleHelper.createTextField("Max");
+		filtroIngredientiMinField = StyleHelper.createTextField("Min");
+		filtroIngredientiMaxField = StyleHelper.createTextField("Max");
 
-        filtroIngredientiMinField = StyleHelper.createTextField("Min");
-        filtroIngredientiMinField.setPrefWidth(80);
-        filtroIngredientiMaxField = StyleHelper.createTextField("Max");
-        filtroIngredientiMaxField.setPrefWidth(80);
-        HBox ingredientiBox = new HBox(5, filtroIngredientiMinField, new Label("-"), filtroIngredientiMaxField);
-        ingredientiBox.setAlignment(Pos.CENTER_LEFT);
+		setFieldWidth(80, filtroTempoMinField, filtroTempoMaxField, filtroIngredientiMinField,
+				filtroIngredientiMaxField);
 
-        resetFiltriBtn = StyleHelper.createInfoButton("🔄 Reset Filtri");
-        resetFiltriBtn.setOnAction(e -> resetFiltri());
+		GridPane grid = new GridPane();
+		grid.setHgap(15);
+		grid.setVgap(10);
 
-        filtriGrid.add(StyleHelper.createLabel("Tempo prep.:"), 0, 0);
-        filtriGrid.add(tempoBox, 1, 0);
-        filtriGrid.add(StyleHelper.createLabel("N° ingredienti:"), 2, 0);
-        filtriGrid.add(ingredientiBox, 3, 0);
-        filtriGrid.add(resetFiltriBtn, 4, 0);
+		grid.add(StyleHelper.createLabel("Nome:"), 0, 0);
+		grid.add(filtroNomeField, 1, 0, 3, 1);
+		grid.add(StyleHelper.createLabel("Tempo:"), 0, 1);
+		grid.add(createRangeBox(filtroTempoMinField, filtroTempoMaxField, "min"), 1, 1);
+		grid.add(StyleHelper.createLabel("Ingredienti:"), 2, 1);
+		grid.add(createRangeBox(filtroIngredientiMinField, filtroIngredientiMaxField, ""), 3, 1);
 
-        section.getChildren().addAll(sectionTitle, nomeBox, filtriGrid);
-        return section;
-    }
+		Button resetBtn = StyleHelper.createInfoButton("🔄 Reset");
+		resetBtn.setOnAction(e -> resetFiltri());
+		grid.add(resetBtn, 4, 1);
 
-    private VBox createListaSection() {
-        VBox section = StyleHelper.createSection();
-        HBox headerBox = new HBox(10);
-        headerBox.setAlignment(Pos.CENTER_LEFT);
+		section.getChildren().addAll(sectionTitle, grid);
+		return section;
+	}
 
-        Label sectionTitle = new Label("📋 Lista Ricette");
-        sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+	private VBox createListaSection() {
+		VBox section = StyleHelper.createSection();
 
-        Label istruzioniLabel = new Label("💡 Doppio click per vedere ingredienti");
-        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-        istruzioniLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
+		Label sectionTitle = new Label("📋 Lista Ricette");
+		sectionTitle.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
+		sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        VBox titleBox = new VBox(5);
-        titleBox.getChildren().addAll(sectionTitle, istruzioniLabel);
+		Label infoLabel = new Label("💡 Doppio click per vedere ingredienti");
+		infoLabel.setFont(Font.font("Roboto", 12));
+		infoLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
 
-        if (!modalitaSelezione) {
-            Button creaRicettaBtn = StyleHelper.createSuccessButton("➕ Crea Nuova");
-            creaRicettaBtn.setOnAction(e -> apriCreaRicetta());
-            headerBox.getChildren().addAll(titleBox, new Region(), creaRicettaBtn);
-            HBox.setHgrow(headerBox.getChildren().get(1), Priority.ALWAYS);
-        } else {
-            headerBox.getChildren().add(titleBox);
-        }
+		VBox titleBox = new VBox(5, sectionTitle, infoLabel);
 
-        ricetteListView = new ListView<>();
-        ricetteListView.setPrefHeight(350);
-        ricetteListView.setItems(ricetteData);
-        StyleHelper.applyListViewStyle(ricetteListView);
+		HBox headerBox = new HBox(10);
+		headerBox.setAlignment(Pos.CENTER_LEFT);
+		headerBox.getChildren().add(titleBox);
 
-        ricetteListView.setCellFactory(listView -> new ListCell<Ricetta>() {
-            @Override
-            protected void updateItem(Ricetta item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    HBox cellBox = new HBox(15);
-                    cellBox.setAlignment(Pos.CENTER_LEFT);
-                    cellBox.setPadding(new Insets(12));
+		if (!modalitaSelezione) {
+			Region spacer = new Region();
+			HBox.setHgrow(spacer, Priority.ALWAYS);
+			Button creaBtn = StyleHelper.createSuccessButton("➕ Crea Nuova");
+			creaBtn.setOnAction(e -> apriCreaRicetta());
+			headerBox.getChildren().addAll(spacer, creaBtn);
+		}
 
-                    VBox infoBox = new VBox(5);
-                    Label nomeLabel = new Label("📖 " + item.getNome());
-                    nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
-                    nomeLabel.setTextFill(Color.BLACK);
+		ricetteListView = new ListView<>();
+		ricetteListView.setPrefHeight(350);
+		ricetteListView.setItems(ricetteData);
+		StyleHelper.applyListViewStyle(ricetteListView);
+		ricetteListView.setCellFactory(lv -> new RicettaCell());
+		ricetteListView.setOnMouseClicked(event -> {
+			if (event.getClickCount() == 2) {
+				Ricetta sel = ricetteListView.getSelectionModel().getSelectedItem();
+				if (sel != null) {
+					if (modalitaSelezione)
+						selezionaRicetta();
+					else
+						mostraIngredienti(sel);
+				}
+			}
+		});
 
-                    HBox detailsBox = new HBox(20);
-                    detailsBox.setAlignment(Pos.CENTER_LEFT);
+		section.getChildren().addAll(headerBox, ricetteListView);
+		return section;
+	}
 
-                    Label tempoLabel = new Label("⏱️ " + item.getTempoPreparazione() + " min");
-                    tempoLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                    tempoLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
+	private HBox createButtonSection() {
+		HBox box = new HBox(15);
+		box.setAlignment(Pos.CENTER);
+		box.setPadding(new Insets(20, 0, 0, 0));
 
-                    Label ingredientiLabel = new Label("🥕 " + item.getNumeroIngredienti() + " ingredienti");
-                    ingredientiLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                    ingredientiLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
+		if (modalitaSelezione) {
+			Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
+			Button selezionaBtn = StyleHelper.createPrimaryButton("✅ Seleziona");
+			selezionaBtn.setOnAction(e -> selezionaRicetta());
+			box.getChildren().addAll(annullaBtn, selezionaBtn);
+		} else {
+			Button aggiornaBtn = StyleHelper.createInfoButton("🔄 Aggiorna");
+			aggiornaBtn.setOnAction(e -> ricaricaRicette());
+			box.getChildren().add(aggiornaBtn);
+		}
 
-                    detailsBox.getChildren().addAll(tempoLabel, ingredientiLabel);
-                    infoBox.getChildren().addAll(nomeLabel, detailsBox);
+		return box;
+	}
 
-                    Region spacer = new Region();
-                    HBox.setHgrow(spacer, Priority.ALWAYS);
+	// ==================== LISTENERS ====================
 
-                    cellBox.getChildren().addAll(infoBox, spacer);
-                    setGraphic(cellBox);
-                    setText(null);
-                }
-            }
-        });
+	private void setupListeners() {
+		filtroNomeField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+		filtroTempoMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+		filtroTempoMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+		filtroIngredientiMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+		filtroIngredientiMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
+	}
 
-        ricetteListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();
-                if (selezionata != null) {
-                    if (modalitaSelezione) {
-                        selezionaRicetta();
-                    } else {
-                        mostraIngredienti(selezionata);
-                    }
-                }
-            }
-        });
+	private void applicaFiltri() {
+		try {
+			List<Ricetta> filtrate = ricettaController.filtraCombinato(filtroNomeField.getText(),
+					parseIntSafe(filtroTempoMinField.getText()), parseIntSafe(filtroTempoMaxField.getText()),
+					parseIntSafe(filtroIngredientiMinField.getText()),
+					parseIntSafe(filtroIngredientiMaxField.getText()));
+			ricetteData.setAll(filtrate);
+		} catch (ValidationException e) {
+			StyleHelper.showValidationDialog("Validazione", e.getMessage());
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore filtri: " + e.getMessage());
+		}
+	}
 
-        section.getChildren().addAll(headerBox, ricetteListView);
-        return section;
-    }
+	// ==================== AZIONI ====================
 
-    private void mostraIngredienti(Ricetta ricetta) {
-        Alert dialog = new Alert(Alert.AlertType.INFORMATION);
-        dialog.setTitle("Ingredienti - " + ricetta.getNome());
-        dialog.setHeaderText("🥕 Ingredienti di " + ricetta.getNome());
+	private void caricaRicette() {
+		try {
+			ricetteData.setAll(ricettaController.getAllRicette());
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore caricamento: " + e.getMessage());
+		}
+	}
 
-        StringBuilder ingredientiText = new StringBuilder();
-        ingredientiText.append("⏱️ Tempo: ").append(ricetta.getTempoPreparazione()).append(" minuti\n");
-        ingredientiText.append("🥕 Totale ingredienti: ").append(ricetta.getNumeroIngredienti()).append("\n\n");
+	private void resetFiltri() {
+		filtroNomeField.clear();
+		filtroTempoMinField.clear();
+		filtroTempoMaxField.clear();
+		filtroIngredientiMinField.clear();
+		filtroIngredientiMaxField.clear();
+		caricaRicette();
+	}
 
-        Map<Ingrediente, Double> ingredienti = ricetta.getIngredienti();
-        if (ingredienti.isEmpty()) {
-            ingredientiText.append("Nessun ingrediente trovato");
-        } else {
-            for (Map.Entry<Ingrediente, Double> entry : ingredienti.entrySet()) {
-                Ingrediente ingrediente = entry.getKey();
-                Double quantita = entry.getValue();
-                ingredientiText.append("🥕 ").append(ingrediente.getNome())
-                    .append(" (").append(ingrediente.getTipo()).append(")")
-                    .append(" - ").append(quantita).append("g\n");
-            }
-        }
+	private void ricaricaRicette() {
+		try {
+			ricettaController.ricaricaCache();
+			caricaRicette();
+			StyleHelper.showSuccessDialog("Successo", "Ricette ricaricate");
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore ricaricamento: " + e.getMessage());
+		}
+	}
 
-        dialog.setContentText(ingredientiText.toString());
-        dialog.showAndWait();
-    }
+	private void apriCreaRicetta() {
+		CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
+		Ricetta nuova = creaGUI.showAndReturn();
+		if (nuova != null) {
+			caricaRicette();
+			StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuova.getNome() + "' creata!");
+		}
+	}
 
-    private HBox createButtonSection() {
-        HBox buttonBox = new HBox(15);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(20, 0, 0, 0));
+	private void mostraIngredienti(Ricetta ricetta) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("⏱️ Tempo: ").append(ricetta.getTempoPreparazione()).append(" minuti\n");
+		sb.append("🥕 Totale: ").append(ricetta.getNumeroIngredienti()).append(" ingredienti\n\n");
 
-        if (modalitaSelezione) {
-            Button selezionaBtn = StyleHelper.createPrimaryButton("✅ Seleziona");
-            selezionaBtn.setOnAction(e -> selezionaRicetta());
+		Map<Ingrediente, Double> ingredienti = ricetta.getIngredienti();
+		if (ingredienti.isEmpty()) {
+			sb.append("Nessun ingrediente trovato");
+		} else {
+			ingredienti.forEach((ing, qnt) -> sb.append("🥕 ").append(ing.getNome()).append(" (").append(ing.getTipo())
+					.append(") - ").append(qnt).append("g\n"));
+		}
 
-            Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
+		Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+		dialog.setTitle("Ingredienti - " + ricetta.getNome());
+		dialog.setHeaderText("🥕 " + ricetta.getNome());
+		dialog.setContentText(sb.toString());
+		dialog.showAndWait();
+	}
 
-            buttonBox.getChildren().addAll(annullaBtn, selezionaBtn);
-        } else {
-            Button aggiornaCacheBtn = StyleHelper.createInfoButton("🔄 Aggiorna");
-            aggiornaCacheBtn.setOnAction(e -> {
-                try {
-                    ricettaController.ricaricaCache();
-                    caricaRicette();
-                    StyleHelper.showSuccessDialog("Successo", "Ricette ricaricate dal database");
-                } catch (Exception ex) {
-                    StyleHelper.showErrorDialog("Errore", "Errore nel ricaricamento: " + ex.getMessage());
-                }
-            });
-            buttonBox.getChildren().add(aggiornaCacheBtn);
-        }
+	private void selezionaRicetta() {
+		Ricetta sel = ricetteListView.getSelectionModel().getSelectedItem();
+		if (sel == null) {
+			StyleHelper.showValidationDialog("Validazione", "Seleziona una ricetta dalla lista");
+		} else {
+			ricettaSelezionata = sel;
+		}
+	}
 
-        return buttonBox;
-    }
+	// ==================== HELPER ====================
 
-    private void setupListeners() {
-        filtroNomeField.textProperty().addListener((obs, old, val) -> applicaFiltri());
-        filtroTempoMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
-        filtroTempoMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
-        filtroIngredientiMinField.textProperty().addListener((obs, old, val) -> applicaFiltri());
-        filtroIngredientiMaxField.textProperty().addListener((obs, old, val) -> applicaFiltri());
-    }
+	private HBox createRangeBox(TextField min, TextField max, String unit) {
+		HBox box = new HBox(5, min, new Label("-"), max);
+		if (!unit.isEmpty())
+			box.getChildren().add(new Label(unit));
+		box.setAlignment(Pos.CENTER_LEFT);
+		return box;
+	}
 
-    private void applicaFiltri() {
-        try {
-            String nome = filtroNomeField.getText();
-            Integer tempoMin = parseIntSafe(filtroTempoMinField.getText());
-            Integer tempoMax = parseIntSafe(filtroTempoMaxField.getText());
-            Integer ingredientiMin = parseIntSafe(filtroIngredientiMinField.getText());
-            Integer ingredientiMax = parseIntSafe(filtroIngredientiMaxField.getText());
+	private void setFieldWidth(int width, TextField... fields) {
+		for (TextField field : fields)
+			field.setPrefWidth(width);
+	}
 
-            // Controller fa TUTTE le validazioni
-            List<Ricetta> filtrate = ricettaController.filtraCombinato(
-                nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax
-            );
-            ricetteData.setAll(filtrate);
+	private Integer parseIntSafe(String text) {
+		if (text == null || text.trim().isEmpty())
+			return null;
+		try {
+			return Integer.parseInt(text.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
 
-        } catch (ValidationException e) {
-            StyleHelper.showValidationDialog("Validazione", e.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione filtri: " + e.getMessage());
-        }
-    }
+	public Ricetta showAndReturn() {
+		return ricettaSelezionata;
+	}
 
-    private Integer parseIntSafe(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(text.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
+	// ==================== CELL RENDERER ====================
 
-    private void caricaRicette() {
-        try {
-            ricetteData.setAll(ricettaController.getAllRicette());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nel caricamento ricette: " + e.getMessage());
-        }
-    }
+	private static class RicettaCell extends ListCell<Ricetta> {
+		@Override
+		protected void updateItem(Ricetta item, boolean empty) {
+			super.updateItem(item, empty);
+			if (empty || item == null) {
+				setGraphic(null);
+			} else {
+				Label nomeLabel = new Label("📖 " + item.getNome());
+				nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
+				nomeLabel.setTextFill(Color.BLACK);
 
-    private void resetFiltri() {
-        filtroNomeField.clear();
-        filtroTempoMinField.clear();
-        filtroTempoMaxField.clear();
-        filtroIngredientiMinField.clear();
-        filtroIngredientiMaxField.clear();
-        caricaRicette();
-    }
+				Label tempoLabel = new Label("⏱️ " + item.getTempoPreparazione() + " min");
+				tempoLabel.setFont(Font.font("Roboto", 12));
+				tempoLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
 
-    private void apriCreaRicetta() {
-        try {
-            dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
-            service.GestioneIngrediente gestioneIngrediente = new service.GestioneIngrediente(ingredienteDAO);
-            controller.IngredienteController ingredienteController = new controller.IngredienteController(gestioneIngrediente);
-            
-            CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
-            Ricetta nuovaRicetta = creaGUI.showAndReturn();
-            if (nuovaRicetta != null) {
-                caricaRicette();
-                StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo!");
-            }
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione ricetta: " + e.getMessage());
-        }
-    }
+				Label ingLabel = new Label("🥕 " + item.getNumeroIngredienti() + " ingredienti");
+				ingLabel.setFont(Font.font("Roboto", 12));
+				ingLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
 
-    private void selezionaRicetta() {
-        Ricetta selezionata = ricetteListView.getSelectionModel().getSelectedItem();
-        if (selezionata == null) {
-            StyleHelper.showValidationDialog("Validazione", "Seleziona una ricetta dalla lista");
-            return;
-        }
-        ricettaSelezionata = selezionata;
-    }
+				HBox details = new HBox(20, tempoLabel, ingLabel);
+				details.setAlignment(Pos.CENTER_LEFT);
 
-    public Ricetta showAndReturn() {
-        return ricettaSelezionata;
-    }
+				VBox info = new VBox(5, nomeLabel, details);
+				HBox cell = new HBox(info);
+				cell.setPadding(new Insets(12));
+				cell.setAlignment(Pos.CENTER_LEFT);
+
+				setGraphic(cell);
+			}
+		}
+	}
 }
