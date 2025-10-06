@@ -39,11 +39,11 @@ public class FrequenzaHelper {
         long giorniTotali = ChronoUnit.DAYS.between(dataInizio, dataFine);
         
         return switch (frequenza) {
-            case UNICA -> 1;
-            case GIORNALIERO -> (int) giorniTotali + 1;
-            case OGNI_DUE_GIORNI -> (int) (giorniTotali / 2) + 1;
-            case SETTIMANALE -> (int) (giorniTotali / 7) + 1;
-            case MENSILE -> (int) (giorniTotali / 30) + 1;
+            case unica -> 1;
+            case giornaliero -> (int) giorniTotali + 1;
+            case ogniDueGiorni -> (int) (giorniTotali / 2) + 1;
+            case settimanale -> (int) (giorniTotali / 7) + 1;
+            case mensile -> (int) (giorniTotali / 30) + 1;
         };
     }
 
