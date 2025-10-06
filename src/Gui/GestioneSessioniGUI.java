@@ -2,6 +2,11 @@ package Gui;
 
 import controller.GestioneSessioniController;
 import model.*;
+import util.StyleHelper;
+import exceptions.ValidationException;
+import exceptions.ErrorMessages;
+import exceptions.ValidationUtils;
+import exceptions.DataAccessException;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,18 +17,16 @@ import javafx.stage.Stage;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class GestioneSessioniGUI {
 
     private CorsoCucina corso;
     private GestioneSessioniController controller;
     private Stage primaryStage;
-
     private Sessione sessione;
     private boolean modalitaAggiunta = false;
-
     private InPresenza sessioneTemporanea;
 
     private ComboBox<String> tipoCombo;
@@ -32,33 +35,27 @@ public class GestioneSessioniGUI {
     private TextField piattaformaField, viaField, cittaField, postiField, capField;
     private VBox campiOnlineBox, campiPresenzaBox;
     private HBox pulsantiBox;
-
     private VBox root;
 
     public void setCorso(CorsoCucina corso) { this.corso = corso; }
-
     public void setController(GestioneSessioniController controller) { this.controller = controller; }
-
     public void setSessione(Sessione sessione) {
         this.sessione = sessione;
         this.modalitaAggiunta = false;
     }
-
     public void setModalitaAggiunta(boolean modalitaAggiunta) {
         this.modalitaAggiunta = modalitaAggiunta;
         this.sessione = null;
+        this.sessioneTemporanea = null;
     }
 
     public VBox getRoot() {
         if (root == null) {
             root = buildRoot();
-            if (!modalitaAggiunta && sessione != null) {
-                popolaFormConSessione();
-            } else if (modalitaAggiunta) {
-                if (tipoCombo != null) {
-                    tipoCombo.setValue("Online");
-                    aggiornaVisibilitaCampi();
-                }
+            if (!modalitaAggiunta && sessione != null) popolaForm();
+            else if (modalitaAggiunta) {
+                tipoCombo.setValue("Online");
+                aggiornaVisibilitaCampi();
             }
         }
         return root;
@@ -66,376 +63,182 @@ public class GestioneSessioniGUI {
 
     public void start(Stage stage) {
         this.primaryStage = stage;
-        Scene scene = new Scene(getRoot(), 650, 750);
-        stage.setScene(scene);
+        stage.setScene(new Scene(getRoot(), 650, 750));
         stage.setTitle("Gestione Sessione");
         stage.show();
     }
 
     private VBox buildRoot() {
-        VBox formContainer = new VBox(20);
-        formContainer.setPadding(new Insets(25));
-        formContainer.setStyle("-fx-background-color: #FAFAFA;");
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(25));
+        container.setStyle("-fx-background-color: #FAFAFA;");
 
-        Label titolo = new Label(modalitaAggiunta ? "➕ Aggiungi Nuova Sessione" : "✏️ Modifica Sessione");
-        titolo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FF6600;");
+        Label titolo = new Label(modalitaAggiunta ? "➕ Aggiungi Sessione" : "✏️ Modifica Sessione");
+        titolo.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:#FF6600;");
 
-        VBox formBox = createFormBox();
+        VBox form = createForm();
         pulsantiBox = createPulsanti();
 
-        formContainer.getChildren().addAll(titolo, formBox, pulsantiBox);
-        return formContainer;
+        container.getChildren().addAll(titolo, form, pulsantiBox);
+        return container;
     }
 
-    private VBox createFormBox() {
-        VBox formBox = new VBox(15);
-        formBox.setPadding(new Insets(20));
-        formBox.setStyle("-fx-background-color: white; -fx-border-color: #E0E0E0; " +
-                "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
+    private VBox createForm() {
+        VBox form = new VBox(15);
+        form.setPadding(new Insets(20));
+        form.setStyle("-fx-background:white;-fx-border-color:#E0E0E0;-fx-border-radius:8;-fx-background-radius:8;");
 
+        // Tipo
         HBox tipoBox = new HBox(10);
         tipoBox.setAlignment(Pos.CENTER_LEFT);
-        Label tipoLabel = new Label("Tipo Sessione:");
-        tipoLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 120;");
+        Label tipoLbl = new Label("Tipo Sessione:");
+        tipoLbl.setStyle("-fx-font-weight:bold;-fx-min-width:120;");
         tipoCombo = new ComboBox<>();
-        tipoCombo.getItems().addAll("Online", "In Presenza");
-        tipoCombo.setOnAction(e -> {
-            aggiornaVisibilitaCampi();
-            aggiornaPulsanti();
-        });
-        tipoBox.getChildren().addAll(tipoLabel, tipoCombo);
+        tipoCombo.getItems().addAll("Online","In Presenza");
+        tipoCombo.setOnAction(e -> aggiornaVisibilitaCampi());
+        tipoBox.getChildren().addAll(tipoLbl, tipoCombo);
 
+        // Date e orari
         GridPane dateGrid = new GridPane();
-        dateGrid.setHgap(15); 
-        dateGrid.setVgap(10);
-        
-        dataInizioPicker = new DatePicker(); 
-        oraInizioField = new TextField(); 
-        oraInizioField.setPromptText("HH:MM");
-        
-        dataFinePicker = new DatePicker(); 
-        oraFineField = new TextField(); 
-        oraFineField.setPromptText("HH:MM");
+        dateGrid.setHgap(15); dateGrid.setVgap(10);
+        dataInizioPicker = new DatePicker();
+        dataFinePicker   = new DatePicker();
+        oraInizioField   = new TextField(); oraInizioField.setPromptText("HH:MM");
+        oraFineField     = new TextField(); oraFineField.setPromptText("HH:MM");
 
-        dateGrid.add(new Label("Data Inizio:"), 0, 0);
-        dateGrid.add(dataInizioPicker, 1, 0);
-        dateGrid.add(new Label("Ora Inizio:"), 2, 0);
-        dateGrid.add(oraInizioField, 3, 0);
-        dateGrid.add(new Label("Data Fine:"), 0, 1);
-        dateGrid.add(dataFinePicker, 1, 1);
-        dateGrid.add(new Label("Ora Fine:"), 2, 1);
-        dateGrid.add(oraFineField, 3, 1);
+        dateGrid.add(new Label("Data Inizio:"),0,0);
+        dateGrid.add(dataInizioPicker,1,0);
+        dateGrid.add(new Label("Ora Inizio:"),2,0);
+        dateGrid.add(oraInizioField,3,0);
+        dateGrid.add(new Label("Data Fine:"),0,1);
+        dateGrid.add(dataFinePicker,1,1);
+        dateGrid.add(new Label("Ora Fine:"),2,1);
+        dateGrid.add(oraFineField,3,1);
 
+        // Online fields
         campiOnlineBox = new VBox(10);
-        piattaformaField = new TextField(); 
-        piattaformaField.setPromptText("Zoom, Teams, Meet...");
-        HBox piattaformaBox = new HBox(10); 
-        piattaformaBox.setAlignment(Pos.CENTER_LEFT);
-        piattaformaBox.getChildren().addAll(new Label("Piattaforma:"), piattaformaField);
-        campiOnlineBox.getChildren().add(piattaformaBox);
+        piattaformaField = new TextField(); piattaformaField.setPromptText("Zoom, Teams...");
+        campiOnlineBox.getChildren().add(new HBox(10,new Label("Piattaforma:"),piattaformaField));
 
+        // Presenza fields
         campiPresenzaBox = new VBox(10);
-        GridPane presenzaGrid = new GridPane();
-        presenzaGrid.setHgap(15); 
-        presenzaGrid.setVgap(10);
-        viaField = new TextField(); 
-        cittaField = new TextField(); 
-        postiField = new TextField(); 
-        capField = new TextField();
-        
-        presenzaGrid.add(new Label("Via:"), 0, 0); 
-        presenzaGrid.add(viaField, 1, 0);
-        presenzaGrid.add(new Label("Città:"), 2, 0); 
-        presenzaGrid.add(cittaField, 3, 0);
-        presenzaGrid.add(new Label("Posti:"), 0, 1); 
-        presenzaGrid.add(postiField, 1, 1);
-        presenzaGrid.add(new Label("CAP:"), 2, 1); 
-        presenzaGrid.add(capField, 3, 1);
-        
-        campiPresenzaBox.getChildren().add(presenzaGrid);
+        GridPane presGrid = new GridPane();
+        presGrid.setHgap(15); presGrid.setVgap(10);
+        viaField = new TextField(); cittaField = new TextField();
+        postiField = new TextField(); capField = new TextField();
 
-        formBox.getChildren().addAll(tipoBox, new Separator(), dateGrid, new Separator(), campiOnlineBox, campiPresenzaBox);
-        return formBox;
+        presGrid.add(new Label("Via:"),0,0); presGrid.add(viaField,1,0);
+        presGrid.add(new Label("Città:"),2,0);presGrid.add(cittaField,3,0);
+        presGrid.add(new Label("Posti:"),0,1);presGrid.add(postiField,1,1);
+        presGrid.add(new Label("CAP:"),2,1); presGrid.add(capField,3,1);
+
+        campiPresenzaBox.getChildren().add(presGrid);
+
+        form.getChildren().addAll(tipoBox,new Separator(),dateGrid,new Separator(),campiOnlineBox,campiPresenzaBox);
+        return form;
     }
 
     private HBox createPulsanti() {
-        HBox pulsantiBox = new HBox(15);
-        pulsantiBox.setAlignment(Pos.CENTER);
-        pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
+        HBox box = new HBox(15);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(20,0,0,0));
 
-        Button annullaBtn = new Button("❌ Annulla");
-        annullaBtn.setStyle("-fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
-        annullaBtn.setOnAction(e -> {
-            if (root != null && root.getScene() != null && root.getScene().getWindow() != null) {
-                root.getScene().getWindow().hide();
-            }
-        });
+        Button ann = new Button("❌ Annulla");
+        ann.setOnAction(e->primaryStage.hide());
 
-        Button salvaBtn = new Button(modalitaAggiunta ? "💾 Salva" : "💾 Aggiorna");
-        salvaBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
-        salvaBtn.setOnAction(e -> salvaSessione());
+        Button sal = new Button(modalitaAggiunta?"💾 Salva":"💾 Aggiorna");
+        sal.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;");
+        sal.setOnAction(e->salvaSessione());
 
-        pulsantiBox.getChildren().addAll(annullaBtn, salvaBtn);
-
-        return pulsantiBox;
+        box.getChildren().addAll(ann,sal);
+        return box;
     }
 
-    private void aggiornaPulsanti() {
-        if (pulsantiBox != null && root != null) {
-            root.getChildren().remove(pulsantiBox);
-            pulsantiBox = createPulsantiConRicette();
-            root.getChildren().add(pulsantiBox);
-        }
+    private void aggiornaVisibilitaCampi() {
+        boolean online = "Online".equals(tipoCombo.getValue());
+        campiOnlineBox.setVisible(online);
+        campiOnlineBox.setManaged(online);
+        campiPresenzaBox.setVisible(!online);
+        campiPresenzaBox.setManaged(!online);
     }
 
-    private HBox createPulsantiConRicette() {
-        HBox pulsantiBox = new HBox(15);
-        pulsantiBox.setAlignment(Pos.CENTER);
-        pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
+    private void popolaForm() {
+        tipoCombo.setValue(sessione instanceof Online ? "Online":"In Presenza");
+        dataInizioPicker.setValue(sessione.getDataInizioSessione().toLocalDate());
+        oraInizioField.setText(sessione.getDataInizioSessione().toLocalTime().toString());
+        dataFinePicker.setValue(sessione.getDataFineSessione().toLocalDate());
+        oraFineField.setText(sessione.getDataFineSessione().toLocalTime().toString());
 
-        Button annullaBtn = new Button("❌ Annulla");
-        annullaBtn.setStyle("-fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
-        annullaBtn.setOnAction(e -> {
-            if (root != null && root.getScene() != null && root.getScene().getWindow() != null) {
-                root.getScene().getWindow().hide();
-            }
-        });
-
-        Button salvaBtn = new Button(modalitaAggiunta ? "💾 Salva" : "💾 Aggiorna");
-        salvaBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-pref-width: 120; -fx-pref-height: 40; -fx-cursor: hand;");
-        salvaBtn.setOnAction(e -> salvaSessione());
-
-        pulsantiBox.getChildren().addAll(annullaBtn, salvaBtn);
-
-        if (tipoCombo != null && "In Presenza".equals(tipoCombo.getValue())) {
-            Button aggiungiRicettaEsistenteBtn = new Button("📚 Ricetta Esistente");
-            aggiungiRicettaEsistenteBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-pref-width: 160; -fx-pref-height: 40; -fx-cursor: hand;");
-            aggiungiRicettaEsistenteBtn.setOnAction(e -> aggiungiRicettaEsistente());
-
-            Button creaNuovaRicettaBtn = new Button("➕ Nuova Ricetta");
-            creaNuovaRicettaBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-pref-width: 150; -fx-pref-height: 40; -fx-cursor: hand;");
-            creaNuovaRicettaBtn.setOnAction(e -> creaNuovaRicetta());
-
-            pulsantiBox.getChildren().addAll(aggiungiRicettaEsistenteBtn, creaNuovaRicettaBtn);
-        }
-
-        return pulsantiBox;
-    }
-
-    private void popolaFormConSessione() {
-        if (sessione == null) return;
-        tipoCombo.setValue(sessione instanceof Online ? "Online" : "In Presenza");
-        if (sessione.getDataInizioSessione() != null) {
-            dataInizioPicker.setValue(sessione.getDataInizioSessione().toLocalDate());
-            oraInizioField.setText(sessione.getDataInizioSessione().toLocalTime().toString());
-        }
-        if (sessione.getDataFineSessione() != null) {
-            dataFinePicker.setValue(sessione.getDataFineSessione().toLocalDate());
-            oraFineField.setText(sessione.getDataFineSessione().toLocalTime().toString());
-        }
-
-        if (sessione instanceof Online) {
-            piattaformaField.setText(((Online) sessione).getPiattaformaStreaming());
+        if (sessione instanceof Online o) {
+            piattaformaField.setText(o.getPiattaformaStreaming());
         } else if (sessione instanceof InPresenza ip) {
             viaField.setText(ip.getVia());
             cittaField.setText(ip.getCitta());
             postiField.setText(String.valueOf(ip.getNumeroPosti()));
             capField.setText(String.valueOf(ip.getCAP()));
         }
-
         aggiornaVisibilitaCampi();
-        aggiornaPulsanti();
-    }
-
-    private void aggiornaVisibilitaCampi() {
-        boolean isOnline = tipoCombo != null && "Online".equals(tipoCombo.getValue());
-        if (campiOnlineBox != null && campiPresenzaBox != null) {
-            campiOnlineBox.setVisible(isOnline); 
-            campiOnlineBox.setManaged(isOnline);
-            campiPresenzaBox.setVisible(!isOnline); 
-            campiPresenzaBox.setManaged(!isOnline);
-        }
     }
 
     private void salvaSessione() {
         try {
-            if (dataInizioPicker.getValue() == null || dataFinePicker.getValue() == null) {
-                showError("Errore", "Compila le date.");
-                return;
-            }
-            LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(), LocalTime.parse(oraInizioField.getText().trim()));
-            LocalDateTime fine = LocalDateTime.of(dataFinePicker.getValue(), LocalTime.parse(oraFineField.getText().trim()));
+            ValidationUtils.validateNotNull(dataInizioPicker.getValue(),"Data inizio");
+            ValidationUtils.validateNotNull(dataFinePicker.getValue(),"Data fine");
+            LocalTime ti = LocalTime.parse(oraInizioField.getText().trim());
+            LocalTime tf = LocalTime.parse(oraFineField.getText().trim());
+            if (!tf.isAfter(ti)) throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
 
-            if (inizio.isAfter(fine) || inizio.equals(fine)) {
-                showError("Errore", "La data/ora di inizio deve precedere quella di fine");
-                return;
-            }
+            LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(),ti);
+            LocalDateTime fine   = LocalDateTime.of(dataFinePicker.getValue(),tf);
 
             if ("Online".equals(tipoCombo.getValue())) {
-                Online online = modalitaAggiunta ? new Online(inizio, fine, piattaformaField.getText().trim())
-                        : (Online) sessione;
-                online.setDataInizioSessione(inizio);
-                online.setDataFineSessione(fine);
-                online.setPiattaformaStreaming(piattaformaField.getText().trim());
-                online.setCorsoCucina(corso);
+                String p = piattaformaField.getText().trim();
+                ValidationUtils.validateNotEmpty(p,ErrorMessages.PIATTAFORMA_MANCANTE);
+                Online o = modalitaAggiunta
+                    ? new Online(inizio,fine,p)
+                    : (Online) sessione;
+                o.setDataInizioSessione(inizio);
+                o.setDataFineSessione(fine);
+                o.setPiattaformaStreaming(p);
+                o.setCorsoCucina(corso);
 
-                if (modalitaAggiunta) {
-                    if (controller != null) {
-                        try {
-                            controller.aggiungiSessione(online, new ArrayList<>());
-                            this.sessione = online;
-                            this.modalitaAggiunta = false;
-                            showInfo("✅ Sessione online salvata correttamente.");
-                        } catch (SQLException ex) {
-                            showError("Errore DB", ex.getMessage());
-                            return;
-                        }
-                    } else {
-                        showError("Errore", "Controller non impostato. Impossibile salvare.");
-                        return;
-                    }
-                } else {
-                    if (controller != null) {
-                        try {
-                            controller.aggiornaSessione(sessione, online);
-                            this.sessione = online;
-                            showInfo("✅ Sessione aggiornata.");
-                        } catch (SQLException ex) {
-                            showError("Errore DB", ex.getMessage());
-                            return;
-                        }
-                    }
-                }
+                if (modalitaAggiunta) controller.aggiungiSessione(o,new ArrayList<>());
+                else controller.aggiornaSessione(sessione,o);
 
-            } else { 
+            } else {
+                String via = viaField.getText().trim(), cit = cittaField.getText().trim();
+                ValidationUtils.validateNotEmpty(via,ErrorMessages.VIA_MANCANTE);
+                ValidationUtils.validateNotEmpty(cit,ErrorMessages.CITTA_MANCANTE);
                 int posti = Integer.parseInt(postiField.getText().trim());
+                if (posti<=0) throw new ValidationException(ErrorMessages.POSTI_NON_VALIDI);
                 int cap = Integer.parseInt(capField.getText().trim());
-                
-                InPresenza ip;
-                if (modalitaAggiunta) {
-                    // ✅ FIX: Crea sessione se non esiste
-                    if (sessioneTemporanea == null) {
-                        sessioneTemporanea = new InPresenza(inizio, fine, viaField.getText(), cittaField.getText(), posti, cap);
-                    } else {
-                        sessioneTemporanea.setDataInizioSessione(inizio);
-                        sessioneTemporanea.setDataFineSessione(fine);
-                        sessioneTemporanea.setVia(viaField.getText());
-                        sessioneTemporanea.setCitta(cittaField.getText());
-                        sessioneTemporanea.setNumeroPosti(posti);
-                        sessioneTemporanea.setCAP(cap);
-                    }
-                    ip = sessioneTemporanea;
-                } else {
-                    ip = (InPresenza) sessione;
-                    ip.setDataInizioSessione(inizio);
-                    ip.setDataFineSessione(fine);
-                    ip.setVia(viaField.getText());
-                    ip.setCitta(cittaField.getText());
-                    ip.setNumeroPosti(posti);
-                    ip.setCAP(cap);
-                }
-                
+                if (cap<10000||cap>99999) throw new ValidationException(ErrorMessages.CAP_NON_VALIDO);
+
+                InPresenza ip = modalitaAggiunta
+                    ? new InPresenza(inizio,fine,via,cit,posti,cap)
+                    : (InPresenza)sessione;
+                ip.setDataInizioSessione(inizio);
+                ip.setDataFineSessione(fine);
+                ip.setVia(via);
+                ip.setCitta(cit);
+                ip.setNumeroPosti(posti);
+                ip.setCAP(cap);
                 ip.setCorsoCucina(corso);
 
-                if (modalitaAggiunta && (ip.getRicette() == null || ip.getRicette().isEmpty())) {
-                    showError("Errore", "Una sessione in presenza deve avere almeno una ricetta associata.\n\nUsa il pulsante 'Ricetta Esistente' o 'Nuova Ricetta' per aggiungerne una.");
-                    return;
-                }
-
-                if (modalitaAggiunta) {
-                    if (controller != null) {
-                        try {
-                            controller.aggiungiSessione(ip, new ArrayList<>(ip.getRicette()));
-                            this.sessione = ip;
-                            this.modalitaAggiunta = false;
-                            showInfo("✅ Sessione in presenza salvata correttamente con " + ip.getRicette().size() + " ricette.");
-                            aggiornaPulsanti();
-                        } catch (SQLException ex) {
-                            showError("Errore DB", ex.getMessage());
-                            return;
-                        }
-                    } else {
-                        showError("Errore", "Controller non impostato. Impossibile salvare.");
-                        return;
-                    }
-                } else {
-                    if (controller != null) {
-                        try {
-                            controller.aggiornaSessione(sessione, ip);
-                            this.sessione = ip;
-                            showInfo("✅ Sessione aggiornata.");
-                        } catch (SQLException ex) {
-                            showError("Errore DB", ex.getMessage());
-                            return;
-                        }
-                    }
-                }
+                if (modalitaAggiunta) controller.aggiungiSessione(ip,new ArrayList<>(ip.getRicette()));
+                else controller.aggiornaSessione(sessione,ip);
             }
 
-        } catch (Exception ex) {
-            showError("Errore", "Errore durante il salvataggio: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
+            StyleHelper.showSuccessDialog("Successo","Sessione salvata correttamente");
+            primaryStage.hide();
 
-    private void aggiungiRicettaEsistente() {
-        InPresenza ipTarget = getOrCreateSessioneTemporanea();
-        
-        if (ipTarget == null) {
-            showError("Errore", "Errore interno: sessione non disponibile.");
-            return;
+        } catch (ValidationException ve) {
+            StyleHelper.showValidationDialog("Validazione",ve.getMessage());
+        } catch (DataAccessException dae) {
+            StyleHelper.showErrorDialog("Errore DB",dae.getMessage());
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore",e.getMessage());
+            e.printStackTrace();
         }
-        
-        if (controller != null) {
-            controller.apriSelezionaRicettaGUI(ipTarget);
-        } else {
-            showError("Controller non disponibile", "Impossibile gestire le ricette senza controller.");
-        }
-    }
-
-    private void creaNuovaRicetta() {
-        InPresenza ipTarget = getOrCreateSessioneTemporanea();
-        
-        if (ipTarget == null) {
-            showError("Errore", "Errore interno: sessione non disponibile.");
-            return;
-        }
-        
-        if (controller != null) {
-            controller.apriSelezionaRicettaGUI(ipTarget);
-        } else {
-            showError("Controller non disponibile", "Impossibile gestire le ricette senza controller.");
-        }
-    }
-
-    private InPresenza getOrCreateSessioneTemporanea() {
-        if (modalitaAggiunta) {
-            if (sessioneTemporanea == null) {
-                sessioneTemporanea = new InPresenza(
-                    LocalDateTime.now(), 
-                    LocalDateTime.now().plusHours(2), 
-                    "TEMP", "TEMP", 1, 12345
-                );
-            }
-            return sessioneTemporanea;
-        } else {
-            return (InPresenza) sessione;
-        }
-    }
-
-    private void showError(String titolo, String messaggio) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(titolo);
-        alert.setHeaderText(null);
-        alert.setContentText(messaggio);
-        alert.showAndWait();
-    }
-
-    private void showInfo(String messaggio) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Info");
-        alert.setHeaderText(null);
-        alert.setContentText(messaggio);
-        alert.showAndWait();
     }
 }
