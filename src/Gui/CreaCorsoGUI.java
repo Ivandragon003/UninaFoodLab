@@ -29,16 +29,16 @@ public class CreaCorsoGUI {
     private DatePicker startDatePicker, endDatePicker;
     private ComboBox<Integer> startHour, startMinute, endHour, endMinute;
     
-    // Container liste
+    // Container
     private VBox listaChefContainer, listaSessioniContainer;
     private Label numeroSessioniLabel;
+    private Button aggiungiSessioneBtn;
     
     // Dati
     private final ObservableList<Chef> chefSelezionati = FXCollections.observableArrayList();
     private final ObservableList<Sessione> corsoSessioni = FXCollections.observableArrayList();
     
     private VBox root;
-    private Button aggiungiSessioneBtn;
 
     public CreaCorsoGUI(GestioneCorsoController gestioneController) {
         this.gestioneController = gestioneController;
@@ -51,7 +51,7 @@ public class CreaCorsoGUI {
         return root;
     }
 
-    // ==================== LAYOUT PRINCIPALE ====================
+    // ==================== LAYOUT ====================
 
     private VBox createMainLayout() {
         VBox container = new VBox(15);
@@ -80,8 +80,6 @@ public class CreaCorsoGUI {
         return container;
     }
 
-    // ==================== SEZIONI ====================
-
     private VBox createInfoSection() {
         VBox section = StyleHelper.createSection();
 
@@ -89,31 +87,44 @@ public class CreaCorsoGUI {
         prezzoField = StyleHelper.createTextField("Es. 150.00");
         argomentoField = StyleHelper.createTextField("Es. Pasta fresca e condimenti");
         postiField = StyleHelper.createTextField("Es. 12");
-
         frequenzaBox = createFrequenzaComboBox();
 
+        GridPane grid = createInfoGrid();
+        section.getChildren().addAll(createSectionTitle("📋 Informazioni Corso"), grid);
+        return section;
+    }
+
+    private GridPane createInfoGrid() {
         GridPane grid = createGrid(15, 15);
-        grid.add(StyleHelper.createLabel("Nome Corso:"), 0, 0);
-        grid.add(nomeField, 1, 0);
-        grid.add(StyleHelper.createLabel("Prezzo (€):"), 2, 0);
-        grid.add(prezzoField, 3, 0);
-        grid.add(StyleHelper.createLabel("Argomento:"), 0, 1);
-        grid.add(argomentoField, 1, 1);
-        grid.add(StyleHelper.createLabel("Numero Posti:"), 2, 1);
-        grid.add(postiField, 3, 1);
+        addGridRow(grid, 0, "Nome Corso:", nomeField, "Prezzo (€):", prezzoField);
+        addGridRow(grid, 1, "Argomento:", argomentoField, "Numero Posti:", postiField);
         grid.add(StyleHelper.createLabel("Frequenza:"), 0, 2);
         grid.add(frequenzaBox, 1, 2);
-
-        section.getChildren().addAll(
-            createSectionTitle("📋 Informazioni Corso"),
-            grid
-        );
-        return section;
+        return grid;
     }
 
     private VBox createDateTimeSection() {
         VBox section = StyleHelper.createSection();
 
+        initializeDatePickers();
+        initializeTimeComboBoxes();
+
+        GridPane grid = createDateTimeGrid();
+        
+        numeroSessioniLabel = createInfoLabel("📊 Sessioni: Non calcolate", "#666666");
+        Label avisoLabel = createInfoLabel("⚠️ Seleziona le date per vedere le frequenze disponibili", 
+                                          StyleHelper.ERROR_RED);
+
+        section.getChildren().addAll(
+            createSectionTitle("📅 Date e Orari - OBBLIGATORIO"),
+            grid,
+            numeroSessioniLabel,
+            avisoLabel
+        );
+        return section;
+    }
+
+    private void initializeDatePickers() {
         startDatePicker = StyleHelper.createDatePicker();
         endDatePicker = StyleHelper.createDatePicker();
         startDatePicker.setPromptText("Data inizio");
@@ -128,48 +139,34 @@ public class CreaCorsoGUI {
             aggiornaFrequenzeDisponibili();
             validateDatesForSessions();
         });
+    }
 
+    private void initializeTimeComboBoxes() {
         startHour = createTimeComboBox(24, 9);
         startMinute = createTimeComboBox(60, 0, 15);
         endHour = createTimeComboBox(24, 17);
         endMinute = createTimeComboBox(60, 0, 15);
+    }
 
+    private GridPane createDateTimeGrid() {
         GridPane grid = createGrid(15, 15);
-        grid.add(StyleHelper.createLabel("Data Inizio:"), 0, 0);
-        grid.add(startDatePicker, 1, 0);
-        grid.add(StyleHelper.createLabel("Ora Inizio:"), 2, 0);
-        grid.add(createTimeBox(startHour, startMinute), 3, 0);
-        grid.add(StyleHelper.createLabel("Data Fine:"), 0, 1);
-        grid.add(endDatePicker, 1, 1);
-        grid.add(StyleHelper.createLabel("Ora Fine:"), 2, 1);
-        grid.add(createTimeBox(endHour, endMinute), 3, 1);
-
-        numeroSessioniLabel = createInfoLabel("📊 Sessioni: Non calcolate", "#666666");
-
-        Label avisoLabel = createInfoLabel("⚠️ Seleziona le date per vedere le frequenze disponibili", 
-                                          StyleHelper.ERROR_RED);
-
-        section.getChildren().addAll(
-            createSectionTitle("📅 Date e Orari - OBBLIGATORIO"),
-            grid,
-            numeroSessioniLabel,
-            avisoLabel
-        );
-        return section;
+        addGridRow(grid, 0, "Data Inizio:", startDatePicker, "Ora Inizio:", createTimeBox(startHour, startMinute));
+        addGridRow(grid, 1, "Data Fine:", endDatePicker, "Ora Fine:", createTimeBox(endHour, endMinute));
+        return grid;
     }
 
     private VBox createChefSection() {
         VBox section = StyleHelper.createSection();
 
-        Button selezionaChefBtn = StyleHelper.createPrimaryButton("+ Seleziona Chef");
-        selezionaChefBtn.setOnAction(e -> apriDialogSelezionaChef());
+        Button selezionaBtn = StyleHelper.createPrimaryButton("+ Seleziona Chef");
+        selezionaBtn.setOnAction(e -> apriDialogSelezionaChef());
 
         listaChefContainer = createListContainer();
         updateChefDisplay();
 
         section.getChildren().addAll(
             createSectionTitle("👨‍🍳 Selezione Chef"),
-            selezionaChefBtn,
+            selezionaBtn,
             StyleHelper.createLabel("Chef Selezionati:"),
             listaChefContainer
         );
@@ -186,14 +183,12 @@ public class CreaCorsoGUI {
         Button eliminaBtn = StyleHelper.createDangerButton("🗑️ Rimuovi");
         eliminaBtn.setOnAction(e -> eliminaUltimaSessione());
 
-        HBox buttonBox = new HBox(10, aggiungiSessioneBtn, eliminaBtn);
-
         listaSessioniContainer = createListContainer();
         updateSessioniDisplay();
 
         section.getChildren().addAll(
             createSectionTitle("🎯 Sessioni del Corso"),
-            buttonBox,
+            new HBox(10, aggiungiSessioneBtn, eliminaBtn),
             StyleHelper.createLabel("Sessioni aggiunte:"),
             listaSessioniContainer
         );
@@ -215,7 +210,7 @@ public class CreaCorsoGUI {
         return box;
     }
 
-    // ==================== GESTIONE FREQUENZA E DATE ====================
+    // ==================== FREQUENZA E DATE ====================
 
     private ComboBox<Frequenza> createFrequenzaComboBox() {
         ComboBox<Frequenza> combo = new ComboBox<>();
@@ -227,29 +222,21 @@ public class CreaCorsoGUI {
     }
 
     private void onDataInizioChange() {
-        LocalDate inizio = startDatePicker.getValue();
-        
-        if (frequenzaBox.getValue() == Frequenza.UNICA && inizio != null) {
-            endDatePicker.setValue(inizio);
+        if (frequenzaBox.getValue() == Frequenza.UNICA && startDatePicker.getValue() != null) {
+            endDatePicker.setValue(startDatePicker.getValue());
         }
-        
         aggiornaFrequenzeDisponibili();
     }
 
     private void onFrequenzaChange() {
-        Frequenza selezionata = frequenzaBox.getValue();
+        boolean isUnica = frequenzaBox.getValue() == Frequenza.UNICA;
         
-        if (selezionata == Frequenza.UNICA) {
-            if (startDatePicker.getValue() != null) {
-                endDatePicker.setValue(startDatePicker.getValue());
-            }
-            endDatePicker.setDisable(true);
-            endDatePicker.setStyle("-fx-opacity: 0.6;");
-        } else {
-            endDatePicker.setDisable(false);
-            endDatePicker.setStyle("");
+        if (isUnica && startDatePicker.getValue() != null) {
+            endDatePicker.setValue(startDatePicker.getValue());
         }
         
+        endDatePicker.setDisable(isUnica);
+        endDatePicker.setStyle(isUnica ? "-fx-opacity: 0.6;" : "");
         aggiornaNumeroSessioniCalcolato();
     }
 
@@ -262,12 +249,8 @@ public class CreaCorsoGUI {
             Frequenza attuale = frequenzaBox.getValue();
             
             frequenzaBox.getItems().setAll(disponibili);
-            
-            if (disponibili.contains(attuale)) {
-                frequenzaBox.setValue(attuale);
-            } else if (!disponibili.isEmpty()) {
-                frequenzaBox.setValue(disponibili.get(0));
-            }
+            frequenzaBox.setValue(disponibili.contains(attuale) ? attuale : 
+                                  (!disponibili.isEmpty() ? disponibili.get(0) : null));
         } else {
             frequenzaBox.getItems().setAll(Frequenza.values());
         }
@@ -283,16 +266,18 @@ public class CreaCorsoGUI {
         if (inizio != null && fine != null && freq != null) {
             try {
                 int numSessioni = FrequenzaHelper.calcolaNumeroSessioni(inizio, fine, freq);
-                numeroSessioniLabel.setText(String.format("📊 Sessioni calcolate: %d", numSessioni));
-                numeroSessioniLabel.setTextFill(Color.web("#4CAF50"));
+                updateSessioniLabel(String.format("📊 Sessioni calcolate: %d", numSessioni), "#4CAF50");
             } catch (Exception e) {
-                numeroSessioniLabel.setText("❌ Errore calcolo sessioni");
-                numeroSessioniLabel.setTextFill(Color.web("#F44336"));
+                updateSessioniLabel("❌ Errore calcolo sessioni", "#F44336");
             }
         } else {
-            numeroSessioniLabel.setText("📊 Sessioni: Non calcolate");
-            numeroSessioniLabel.setTextFill(Color.web("#666666"));
+            updateSessioniLabel("📊 Sessioni: Non calcolate", "#666666");
         }
+    }
+
+    private void updateSessioniLabel(String text, String color) {
+        numeroSessioniLabel.setText(text);
+        numeroSessioniLabel.setTextFill(Color.web(color));
     }
 
     private void validateDatesForSessions() {
@@ -306,30 +291,15 @@ public class CreaCorsoGUI {
     // ==================== GESTIONE CHEF ====================
 
     private void updateChefDisplay() {
-        listaChefContainer.getChildren().clear();
-
-        if (chefSelezionati.isEmpty()) {
-            listaChefContainer.getChildren().add(createEmptyLabel("Nessun chef selezionato"));
-        } else {
-            chefSelezionati.forEach(chef -> 
-                listaChefContainer.getChildren().add(createChefCard(chef))
-            );
-        }
+        updateListDisplay(listaChefContainer, chefSelezionati, 
+                         "Nessun chef selezionato", this::createChefCard);
     }
 
     private HBox createChefCard(Chef chef) {
-        VBox infoBox = new VBox(3);
-        
-        Label nameLabel = new Label("👨‍🍳 " + chef.getNome() + " " + chef.getCognome());
-        nameLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
-        nameLabel.setTextFill(Color.BLACK);
+        Label nameLabel = createBoldLabel("👨‍🍳 " + chef.getNome() + " " + chef.getCognome(), 16, Color.BLACK);
+        Label expLabel = createStandardLabel("📅 " + chef.getAnniEsperienza() + " anni di esperienza", 12, Color.GRAY);
 
-        Label expLabel = new Label("📅 " + chef.getAnniEsperienza() + " anni di esperienza");
-        expLabel.setFont(Font.font("Roboto", 12));
-        expLabel.setTextFill(Color.GRAY);
-
-        infoBox.getChildren().addAll(nameLabel, expLabel);
-
+        VBox infoBox = new VBox(3, nameLabel, expLabel);
         Button removeBtn = createRemoveButton(() -> {
             chefSelezionati.remove(chef);
             updateChefDisplay();
@@ -340,12 +310,12 @@ public class CreaCorsoGUI {
 
     private void apriDialogSelezionaChef() {
         try {
-            dao.ChefDAO chefDAO = new dao.ChefDAO();
-            dao.TieneDAO tieneDAO = new dao.TieneDAO();
-            service.GestioneChef gestioneChef = new service.GestioneChef(chefDAO, tieneDAO);
+            service.GestioneChef gestioneChef = new service.GestioneChef(
+                new dao.ChefDAO(), 
+                new dao.TieneDAO()
+            );
 
-            SelezionaChefDialog dialog = new SelezionaChefDialog(gestioneChef);
-            Chef scelto = dialog.showAndReturn();
+            Chef scelto = new SelezionaChefDialog(gestioneChef).showAndReturn();
 
             if (scelto != null) {
                 if (isChefGiaSelezionato(scelto)) {
@@ -369,42 +339,25 @@ public class CreaCorsoGUI {
     // ==================== GESTIONE SESSIONI ====================
 
     private void updateSessioniDisplay() {
-        listaSessioniContainer.getChildren().clear();
-
-        if (corsoSessioni.isEmpty()) {
-            listaSessioniContainer.getChildren().add(createEmptyLabel("Nessuna sessione aggiunta"));
-        } else {
-            for (int i = 0; i < corsoSessioni.size(); i++) {
-                final int index = i;
-                listaSessioniContainer.getChildren().add(createSessioneCard(corsoSessioni.get(i), index));
-            }
-        }
+        updateListDisplay(listaSessioniContainer, corsoSessioni, 
+                         "Nessuna sessione aggiunta", 
+                         (sessione, index) -> createSessioneCard(sessione, index));
     }
 
     private HBox createSessioneCard(Sessione sessione, int index) {
-        VBox infoBox = new VBox(3);
-        
         String tipo = sessione instanceof Online ? "🌐 Online" : "🏢 In Presenza";
-        Label tipoLabel = new Label(tipo);
-        tipoLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
-        tipoLabel.setTextFill(Color.BLACK);
-
         String data = sessione.getDataInizioSessione() != null
-                ? "📅 " + sessione.getDataInizioSessione().toLocalDate().toString()
+                ? "📅 " + sessione.getDataInizioSessione().toLocalDate()
                 : "Data non specificata";
-        Label dataLabel = new Label(data);
-        dataLabel.setFont(Font.font("Roboto", 13));
-        dataLabel.setTextFill(Color.web("#333333"));
 
-        infoBox.getChildren().addAll(tipoLabel, dataLabel);
+        Label tipoLabel = createBoldLabel(tipo, 16, Color.BLACK);
+        Label dataLabel = createStandardLabel(data, 13, Color.web("#333333"));
 
-        // Dettagli aggiuntivi
+        VBox infoBox = new VBox(3, tipoLabel, dataLabel);
+
         String dettagli = getSessioneDettagli(sessione);
         if (!dettagli.isEmpty()) {
-            Label dettagliLabel = new Label(dettagli);
-            dettagliLabel.setFont(Font.font("Roboto", 12));
-            dettagliLabel.setTextFill(Color.GRAY);
-            infoBox.getChildren().add(dettagliLabel);
+            infoBox.getChildren().add(createStandardLabel(dettagli, 12, Color.GRAY));
         }
 
         Button removeBtn = createRemoveButton(() -> {
@@ -426,33 +379,41 @@ public class CreaCorsoGUI {
     }
 
     private void aggiungiSessione() {
-        LocalDate dataInizio = startDatePicker.getValue();
-        LocalDate dataFine = endDatePicker.getValue();
-
-        if (dataInizio == null || dataFine == null) {
+        if (!areDateValide()) {
             StyleHelper.showErrorDialog("Errore", "Inserire prima le date del corso");
             return;
         }
 
         try {
-            Set<LocalDate> dateOccupate = new HashSet<>();
-            corsoSessioni.forEach(s -> {
-                if (s.getDataInizioSessione() != null) {
-                    dateOccupate.add(s.getDataInizioSessione().toLocalDate());
-                }
-            });
+            Set<LocalDate> dateOccupate = getDateOccupate();
+            Sessione nuova = new CreaSessioniGUI(
+                startDatePicker.getValue(), 
+                endDatePicker.getValue(), 
+                dateOccupate
+            ).showDialog();
 
-            CreaSessioniGUI sessioneDialog = new CreaSessioniGUI(dataInizio, dataFine, dateOccupate);
-            Sessione nuovaSessione = sessioneDialog.showDialog();
-
-            if (nuovaSessione != null) {
-                corsoSessioni.add(nuovaSessione);
+            if (nuova != null) {
+                corsoSessioni.add(nuova);
                 updateSessioniDisplay();
                 StyleHelper.showSuccessDialog("Successo", "Sessione creata con successo!");
             }
         } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore", "Errore creazione sessione: " + e.getMessage());
         }
+    }
+
+    private boolean areDateValide() {
+        return startDatePicker.getValue() != null && endDatePicker.getValue() != null;
+    }
+
+    private Set<LocalDate> getDateOccupate() {
+        Set<LocalDate> date = new HashSet<>();
+        corsoSessioni.forEach(s -> {
+            if (s.getDataInizioSessione() != null) {
+                date.add(s.getDataInizioSessione().toLocalDate());
+            }
+        });
+        return date;
     }
 
     private void eliminaUltimaSessione() {
@@ -465,24 +426,22 @@ public class CreaCorsoGUI {
     // ==================== SALVATAGGIO ====================
 
     private void salvaCorso() {
-        try {
-            if (!validateForm()) return;
+        if (!validateForm()) return;
 
+        try {
+            // Parsing dati
             String nome = nomeField.getText().trim();
             double prezzo = Double.parseDouble(prezzoField.getText());
             String argomento = argomentoField.getText().trim();
             Frequenza frequenza = frequenzaBox.getValue();
             int numeroPosti = Integer.parseInt(postiField.getText());
 
-            LocalDateTime dataInizio = LocalDateTime.of(
-                startDatePicker.getValue(),
-                LocalTime.of(startHour.getValue(), startMinute.getValue())
-            );
+            LocalDateTime dataInizio = buildDateTime(startDatePicker, startHour, startMinute);
+            LocalDateTime dataFine = buildDateTime(endDatePicker, endHour, endMinute);
 
-            LocalDateTime dataFine = LocalDateTime.of(
-                endDatePicker.getValue(),
-                LocalTime.of(endHour.getValue(), endMinute.getValue())
-            );
+            // TODO: Chiamata al controller per salvare il corso
+            // gestioneController.creaCorso(nome, prezzo, argomento, frequenza, numeroPosti, 
+            //                              dataInizio, dataFine, chefSelezionati, corsoSessioni);
 
             StyleHelper.showSuccessDialog("Successo", 
                 "Corso salvato con successo!\n\n" +
@@ -492,32 +451,55 @@ public class CreaCorsoGUI {
 
             clearForm();
 
-        } catch (Exception ex) {
-            StyleHelper.showErrorDialog("Errore", "Errore nella creazione del corso: " + ex.getMessage());
+        } catch (NumberFormatException e) {
+            StyleHelper.showErrorDialog("Errore", "Errore nel formato numerico: " + e.getMessage());
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore", "Errore nella creazione del corso: " + e.getMessage());
         }
     }
 
+    private LocalDateTime buildDateTime(DatePicker datePicker, ComboBox<Integer> hour, ComboBox<Integer> minute) {
+        return LocalDateTime.of(datePicker.getValue(), LocalTime.of(hour.getValue(), minute.getValue()));
+    }
+
     private boolean validateForm() {
-        if (nomeField.getText().trim().isEmpty()) {
-            StyleHelper.showValidationDialog("Validazione", "Il nome del corso è obbligatorio");
+        return validateNonEmpty(nomeField, "nome del corso")
+            && validateNumeric(prezzoField, "prezzo")
+            && validateNumeric(postiField, "numero di posti")
+            && validateDates()
+            && validateFrequenza()
+            && validateChefAndSessioni();
+    }
+
+    private boolean validateNonEmpty(TextField field, String fieldName) {
+        if (field.getText().trim().isEmpty()) {
+            StyleHelper.showValidationDialog("Validazione", "Il " + fieldName + " è obbligatorio");
             return false;
         }
+        return true;
+    }
 
-        if (!isValidDouble(prezzoField.getText())) {
-            StyleHelper.showValidationDialog("Validazione", "Inserire un prezzo valido");
+    private boolean validateNumeric(TextField field, String fieldName) {
+        if (field == prezzoField && !isValidDouble(field.getText())) {
+            StyleHelper.showValidationDialog("Validazione", "Inserire un " + fieldName + " valido");
             return false;
         }
-
-        if (!isValidInteger(postiField.getText())) {
-            StyleHelper.showValidationDialog("Validazione", "Inserire un numero di posti valido");
+        if (field == postiField && !isValidInteger(field.getText())) {
+            StyleHelper.showValidationDialog("Validazione", "Inserire un " + fieldName + " valido");
             return false;
         }
+        return true;
+    }
 
-        if (startDatePicker.getValue() == null || endDatePicker.getValue() == null) {
+    private boolean validateDates() {
+        if (!areDateValide()) {
             StyleHelper.showValidationDialog("Validazione", "Selezionare le date di inizio e fine");
             return false;
         }
+        return true;
+    }
 
+    private boolean validateFrequenza() {
         if (frequenzaBox.getValue() == null) {
             StyleHelper.showValidationDialog("Validazione", "Selezionare una frequenza");
             return false;
@@ -536,6 +518,10 @@ public class CreaCorsoGUI {
             return false;
         }
 
+        return true;
+    }
+
+    private boolean validateChefAndSessioni() {
         if (chefSelezionati.isEmpty()) {
             StyleHelper.showValidationDialog("Validazione", "Selezionare almeno uno chef per il corso");
             return false;
@@ -563,8 +549,7 @@ public class CreaCorsoGUI {
         updateChefDisplay();
         updateSessioniDisplay();
         validateDatesForSessions();
-        numeroSessioniLabel.setText("📊 Sessioni: Non calcolate");
-        numeroSessioniLabel.setTextFill(Color.web("#666666"));
+        updateSessioniLabel("📊 Sessioni: Non calcolate", "#666666");
     }
 
     // ==================== HELPER UI ====================
@@ -580,6 +565,20 @@ public class CreaCorsoGUI {
         Label label = new Label(text);
         label.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
         label.setTextFill(Color.web(color));
+        return label;
+    }
+
+    private Label createBoldLabel(String text, int fontSize, Color color) {
+        Label label = new Label(text);
+        label.setFont(Font.font("Roboto", FontWeight.BOLD, fontSize));
+        label.setTextFill(color);
+        return label;
+    }
+
+    private Label createStandardLabel(String text, int fontSize, Color color) {
+        Label label = new Label(text);
+        label.setFont(Font.font("Roboto", fontSize));
+        label.setTextFill(color);
         return label;
     }
 
@@ -599,8 +598,24 @@ public class CreaCorsoGUI {
         return container;
     }
 
+    private <T> void updateListDisplay(VBox container, ObservableList<T> items, 
+                                       String emptyMessage, CardCreator<T> cardCreator) {
+        container.getChildren().clear();
+        
+        if (items.isEmpty()) {
+            container.getChildren().add(createEmptyLabel(emptyMessage));
+        } else {
+            for (int i = 0; i < items.size(); i++) {
+                container.getChildren().add(cardCreator.create(items.get(i), i));
+            }
+        }
+    }
+
     private HBox createItemCard(VBox infoBox, Button removeBtn, String bgColor, String borderColor) {
-        HBox card = new HBox(10);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox card = new HBox(10, infoBox, spacer, removeBtn);
         card.setAlignment(Pos.CENTER_LEFT);
         card.setPadding(new Insets(10));
         card.setStyle(
@@ -608,11 +623,6 @@ public class CreaCorsoGUI {
             "-fx-border-color: " + borderColor + "; " +
             "-fx-border-radius: 8; -fx-background-radius: 8;"
         );
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        card.getChildren().addAll(infoBox, spacer, removeBtn);
         return card;
     }
 
@@ -632,6 +642,14 @@ public class CreaCorsoGUI {
         grid.setHgap(hgap);
         grid.setVgap(vgap);
         return grid;
+    }
+
+    private void addGridRow(GridPane grid, int row, String label1, Control field1, 
+                           String label2, Control field2) {
+        grid.add(StyleHelper.createLabel(label1), 0, row);
+        grid.add(field1, 1, row);
+        grid.add(StyleHelper.createLabel(label2), 2, row);
+        grid.add(field2, 3, row);
     }
 
     private HBox createTimeBox(ComboBox<Integer> hour, ComboBox<Integer> minute) {
@@ -658,8 +676,6 @@ public class CreaCorsoGUI {
         return combo;
     }
 
-    // ==================== VALIDAZIONI HELPER ====================
-
     private boolean isValidDouble(String text) {
         try {
             Double.parseDouble(text);
@@ -684,5 +700,12 @@ public class CreaCorsoGUI {
             sb.append("• ").append(chef.getNome()).append(" ").append(chef.getCognome()).append("\n")
         );
         return sb.toString();
+    }
+
+    // ==================== FUNCTIONAL INTERFACE ====================
+
+    @FunctionalInterface
+    private interface CardCreator<T> {
+        HBox create(T item, int index);
     }
 }
