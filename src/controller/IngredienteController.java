@@ -1,9 +1,9 @@
-
 package controller;
 
-import dao.IngredienteDAO;
+import exceptions.ValidationException;
 import model.Ingrediente;
 import service.GestioneIngrediente;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
@@ -16,15 +16,11 @@ public class IngredienteController {
         this.gestioneIngrediente = gestioneIngrediente;
     }
 
-    public int creaIngrediente(String nome, String tipo) throws SQLException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("Il nome dell'ingrediente è obbligatorio");
-        }
-        if (tipo == null || tipo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Il tipo dell'ingrediente è obbligatorio");
-        }
-
-        Ingrediente ingrediente = new Ingrediente(nome.trim(), tipo.trim());
+    public int creaIngrediente(String nome, String tipo) throws SQLException, ValidationException {
+        Ingrediente ingrediente = new Ingrediente(
+                nome == null ? null : nome.trim(),
+                tipo == null ? null : tipo.trim()
+        );
         return gestioneIngrediente.salvaIngrediente(ingrediente);
     }
 
@@ -32,11 +28,11 @@ public class IngredienteController {
         return gestioneIngrediente.getAllIngredienti();
     }
 
-    public List<Ingrediente> cercaIngredientiPerNome(String nome) throws SQLException {
+    public List<Ingrediente> cercaIngredientiPerNome(String nome) throws SQLException, ValidationException {
         return gestioneIngrediente.cercaPerNome(nome);
     }
 
-    public List<Ingrediente> cercaIngredientiPerTipo(String tipo) throws SQLException {
+    public List<Ingrediente> cercaIngredientiPerTipo(String tipo) throws SQLException, ValidationException {
         return gestioneIngrediente.cercaPerTipo(tipo);
     }
 
@@ -44,23 +40,23 @@ public class IngredienteController {
         return gestioneIngrediente.trovaIngredientePerId(id);
     }
 
-    public void aggiornaIngrediente(int id, String nome, String tipo) throws SQLException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("Il nome dell'ingrediente è obbligatorio");
-        }
-        if (tipo == null || tipo.trim().isEmpty()) {
-            throw new IllegalArgumentException("Il tipo dell'ingrediente è obbligatorio");
-        }
+    public Optional<Ingrediente> trovaIngredientePerNome(String nome) throws SQLException, ValidationException {
+        return gestioneIngrediente.trovaIngredientePerNome(nome);
+    }
 
-        Ingrediente ingrediente = new Ingrediente(nome.trim(), tipo.trim());
+    public void aggiornaIngrediente(int id, String nome, String tipo) throws SQLException, ValidationException {
+        Ingrediente ingrediente = new Ingrediente(
+                nome == null ? null : nome.trim(),
+                tipo == null ? null : tipo.trim()
+        );
         gestioneIngrediente.aggiornaIngrediente(id, ingrediente);
     }
-    
-    public void eliminaIngrediente(int id) throws SQLException {
+
+    public void eliminaIngrediente(int id) throws SQLException, ValidationException {
         gestioneIngrediente.eliminaIngrediente(id);
     }
-    
-    public boolean ingredienteEsiste(String nome) throws SQLException {
+
+    public boolean ingredienteEsiste(String nome) throws SQLException, ValidationException {
         return gestioneIngrediente.ingredienteEsiste(nome);
     }
 }

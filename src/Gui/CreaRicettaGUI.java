@@ -18,46 +18,64 @@ import model.Ingrediente;
 import util.StyleHelper;
 import exceptions.ValidationException;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * GUI per la creazione di nuove ricette
+ * Delega tutta la validazione al Controller e al Service
+ */
 public class CreaRicettaGUI {
+    
+    // ==================== CONTROLLER ====================
     private final RicettaController ricettaController;
     private final IngredienteController ingredienteController;
     private Ricetta ricettaCreata = null;
     
-    // Campi UI
-    private TextField nomeField, tempoField, quantitaField;
+    // ==================== CAMPI UI ====================
+    private TextField nomeField;
+    private TextField tempoField;
     private ComboBox<Ingrediente> ingredienteCombo;
+    private TextField quantitaField;
     private ListView<String> ingredientiListView;
+    
+    // ==================== DATI ====================
     private ObservableList<String> ingredientiData;
     private Map<Ingrediente, Double> ingredientiMap;
-    // NUOVO: Mantieni riferimento per sincronizzazione
     private Map<String, Ingrediente> ingredienteByDisplay;
 
+    // ==================== COSTRUTTORE ====================
+    
     public CreaRicettaGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
         this.ricettaController = ricettaController;
         this.ingredienteController = ingredienteController;
         this.ingredientiMap = new HashMap<>();
         this.ingredientiData = FXCollections.observableArrayList();
-        this.ingredienteByDisplay = new HashMap<>(); // NUOVO
+        this.ingredienteByDisplay = new HashMap<>();
     }
 
+    // ==================== METODO PRINCIPALE ====================
+    
+    /**
+     * Mostra la finestra di dialogo e restituisce la ricetta creata
+     * @return La ricetta creata, o null se l'operazione è stata annullata
+     */
     public Ricetta showAndReturn() {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Crea Nuova Ricetta");
         
-        Scene scene = new Scene(createLayout(stage), 600, 700);
+        Scene scene = new Scene(createMainLayout(stage), 600, 700);
         stage.setScene(scene);
         stage.showAndWait();
         
         return ricettaCreata;
     }
 
-    // ==================== LAYOUT ====================
+    // ==================== CREAZIONE LAYOUT ====================
 
-    private VBox createLayout(Stage stage) {
+    private VBox createMainLayout(Stage stage) {
         VBox container = new VBox(20);
         container.setPadding(new Insets(20));
         StyleHelper.applyOrangeBackground(container);
@@ -65,24 +83,36 @@ public class CreaRicettaGUI {
         Label titleLabel = StyleHelper.createTitleLabel("➕ Crea Nuova Ricetta");
         titleLabel.setAlignment(Pos.CENTER);
 
-        ScrollPane scrollPane = new ScrollPane(new VBox(15, 
-            createDettagliSection(), 
-            new Separator(), 
-            createIngredientiSection()
-        ));
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        ScrollPane scrollPane = createScrollPane();
+        HBox buttonBox = createButtonBar(stage);
 
-        container.getChildren().addAll(titleLabel, scrollPane, createButtonBox(stage));
+        container.getChildren().addAll(titleLabel, scrollPane, buttonBox);
         return container;
     }
 
+    private ScrollPane createScrollPane() {
+        VBox content = new VBox(15,
+            createDettagliSection(),
+            new Separator(),
+            createIngredientiSection()
+        );
+
+        ScrollPane scrollPane = new ScrollPane(content);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        
+        return scrollPane;
+    }
+
+    // ==================== SEZIONE DETTAGLI ====================
+
     private VBox createDettagliSection() {
         VBox section = StyleHelper.createSection();
-        section.getChildren().addAll(
-            createSectionTitle("📝 Dettagli Ricetta"),
-            createDettagliGrid()
-        );
+        
+        Label sectionTitle = createSectionTitle("📝 Dettagli Ricetta");
+        GridPane dettagliGrid = createDettagliGrid();
+        
+        section.getChildren().addAll(sectionTitle, dettagliGrid);
         return section;
     }
 
@@ -93,6 +123,7 @@ public class CreaRicettaGUI {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(15);
+        
         grid.add(StyleHelper.createLabel("Nome:"), 0, 0);
         grid.add(nomeField, 1, 0);
         grid.add(StyleHelper.createLabel("Tempo preparazione:"), 0, 1);
@@ -101,34 +132,40 @@ public class CreaRicettaGUI {
         return grid;
     }
 
+    // ==================== SEZIONE INGREDIENTI ====================
+
     private VBox createIngredientiSection() {
         VBox section = StyleHelper.createSection();
         
-        ingredienteCombo = StyleHelper.createComboBox();
-        quantitaField = StyleHelper.createTextField("Quantità in grammi...");
-        ingredientiListView = new ListView<>();
-        ingredientiListView.setItems(ingredientiData);
-        ingredientiListView.setPrefHeight(200);
-        StyleHelper.applyListViewStyle(ingredientiListView);
+        Label sectionTitle = createSectionTitle("🥕 Ingredienti");
+        HBox inputBox = createIngredientiInputBox();
+        ListView<String> listView = createIngredientiListView();
+        Button removeButton = createRimuoviButton();
         
-        caricaIngredienti();
-
-        section.getChildren().addAll(
-            createSectionTitle("🥕 Ingredienti"),
-            createIngredientiInputBox(),
-            ingredientiListView,
-            createRimuoviButton()
-        );
+        section.getChildren().addAll(sectionTitle, inputBox, listView, removeButton);
         return section;
     }
 
     private HBox createIngredientiInputBox() {
+        ingredienteCombo = StyleHelper.createComboBox();
+        quantitaField = StyleHelper.createTextField("Quantità in grammi...");
+        
         Button aggiungiBtn = StyleHelper.createSuccessButton("➕ Aggiungi");
         aggiungiBtn.setOnAction(e -> aggiungiIngrediente());
+
+        caricaIngredienti();
 
         HBox box = new HBox(10, ingredienteCombo, quantitaField, aggiungiBtn);
         box.setAlignment(Pos.CENTER_LEFT);
         return box;
+    }
+
+    private ListView<String> createIngredientiListView() {
+        ingredientiListView = new ListView<>();
+        ingredientiListView.setItems(ingredientiData);
+        ingredientiListView.setPrefHeight(200);
+        StyleHelper.applyListViewStyle(ingredientiListView);
+        return ingredientiListView;
     }
 
     private Button createRimuoviButton() {
@@ -137,7 +174,9 @@ public class CreaRicettaGUI {
         return btn;
     }
 
-    private HBox createButtonBox(Stage stage) {
+    // ==================== BARRA PULSANTI ====================
+
+    private HBox createButtonBar(Stage stage) {
         Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
         annullaBtn.setOnAction(e -> stage.close());
 
@@ -150,145 +189,146 @@ public class CreaRicettaGUI {
         return box;
     }
 
-    // ==================== AZIONI ====================
+    // ==================== CARICAMENTO DATI ====================
 
     private void caricaIngredienti() {
         try {
             ingredienteCombo.setItems(FXCollections.observableArrayList(
                 ingredienteController.getAllIngredienti()
             ));
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Impossibile caricare ingredienti: " + e.getMessage());
+        } catch (SQLException e) {
+            StyleHelper.showErrorDialog("Errore Database", 
+                "Impossibile caricare gli ingredienti: " + e.getMessage());
         }
     }
 
+    // ==================== GESTIONE INGREDIENTI ====================
+
     private void aggiungiIngrediente() {
-        Ingrediente ing = ingredienteCombo.getValue();
+        Ingrediente ingrediente = ingredienteCombo.getValue();
         String quantitaStr = quantitaField.getText();
 
-        // Validazioni
-        if (!validateIngredienteInput(ing, quantitaStr)) return;
+        // Solo controlli UI base, nessuna validazione business logic
+        if (ingrediente == null) {
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Seleziona un ingrediente");
+            return;
+        }
+
+        if (quantitaStr == null || quantitaStr.trim().isEmpty()) {
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Inserisci la quantità");
+            return;
+        }
 
         try {
             double quantita = Double.parseDouble(quantitaStr.trim());
             
-            if (quantita <= 0) {
-                StyleHelper.showValidationDialog("Validazione", "La quantità deve essere maggiore di zero");
+            // Controllo duplicati (UI logic, non business logic)
+            if (ingredientiMap.containsKey(ingrediente)) {
+                StyleHelper.showValidationDialog("Attenzione", 
+                    "Ingrediente già aggiunto alla lista");
                 return;
             }
 
-            if (ingredientiMap.containsKey(ing)) {
-                StyleHelper.showValidationDialog("Validazione", "Ingrediente già aggiunto");
-                return;
-            }
-
-            // Aggiungi ingrediente
-            String displayText = formatIngrediente(ing, quantita);
-            ingredientiMap.put(ing, quantita);
-            ingredientiData.add(displayText);
-            ingredienteByDisplay.put(displayText, ing); // NUOVO: mantieni mappatura
-            
-            // Reset campi
-            resetIngredientiFields();
+            aggiungiIngredienteAllaLista(ingrediente, quantita);
+            resetCampiIngrediente();
 
         } catch (NumberFormatException e) {
-            StyleHelper.showValidationDialog("Validazione", "Quantità non valida");
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Inserisci un numero valido per la quantità");
         }
     }
 
-    // FIX CRITICO: Rimozione sincronizzata corretta
+    private void aggiungiIngredienteAllaLista(Ingrediente ingrediente, double quantita) {
+        String displayText = formatDisplayIngrediente(ingrediente, quantita);
+        
+        ingredientiMap.put(ingrediente, quantita);
+        ingredientiData.add(displayText);
+        ingredienteByDisplay.put(displayText, ingrediente);
+    }
+
     private void rimuoviIngrediente() {
         int selectedIndex = ingredientiListView.getSelectionModel().getSelectedIndex();
         
         if (selectedIndex < 0) {
-            StyleHelper.showValidationDialog("Validazione", "Seleziona un ingrediente da rimuovere");
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Seleziona un ingrediente da rimuovere");
             return;
         }
 
         String displayText = ingredientiData.get(selectedIndex);
+        Ingrediente ingrediente = ingredienteByDisplay.get(displayText);
         
-        // Rimuovi usando la mappatura
-        Ingrediente ingredienteDaRimuovere = ingredienteByDisplay.get(displayText);
-        if (ingredienteDaRimuovere != null) {
-            ingredientiMap.remove(ingredienteDaRimuovere);
+        if (ingrediente != null) {
+            ingredientiMap.remove(ingrediente);
             ingredienteByDisplay.remove(displayText);
         }
         
-        // Rimuovi dalla lista visibile
         ingredientiData.remove(selectedIndex);
     }
+
+    // ==================== CREAZIONE RICETTA ====================
 
     private void creaRicetta(Stage stage) {
         String nome = nomeField.getText();
         String tempoStr = tempoField.getText();
 
-        // Validazioni
-        if (!validateRicettaInput(nome, tempoStr)) return;
+        // Solo controlli UI base: campi vuoti
+        if (nome == null || nome.trim().isEmpty()) {
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Inserisci il nome della ricetta");
+            return;
+        }
+
+        if (tempoStr == null || tempoStr.trim().isEmpty()) {
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Inserisci il tempo di preparazione");
+            return;
+        }
 
         try {
             int tempo = Integer.parseInt(tempoStr.trim());
             
-            // NUOVO: Validazione tempo positivo
-            if (tempo <= 0) {
-                StyleHelper.showValidationDialog("Validazione", "Il tempo deve essere maggiore di zero");
-                return;
-            }
-            
+            // Controllo lista vuota (UI logic)
             if (ingredientiMap.isEmpty()) {
-                StyleHelper.showValidationDialog("Validazione", "Aggiungi almeno un ingrediente");
+                StyleHelper.showValidationDialog("Attenzione", 
+                    "Aggiungi almeno un ingrediente alla ricetta");
                 return;
             }
 
-            // Crea ricetta
+            // DELEGA AL CONTROLLER: tutta la validazione business logic
             ricettaCreata = ricettaController.creaRicetta(nome.trim(), tempo, ingredientiMap);
             
-            // NUOVO: Messaggio di conferma più dettagliato
-            StyleHelper.showSuccessDialog("Successo", 
-                "Ricetta creata con successo!\n\n" +
-                "Nome: " + nome.trim() + "\n" +
-                "Tempo: " + tempo + " minuti\n" +
-                "Ingredienti: " + ingredientiMap.size());
-            
+            mostraConfermaCreazione(nome.trim(), tempo);
             stage.close();
 
         } catch (NumberFormatException e) {
-            StyleHelper.showValidationDialog("Validazione", "Tempo non valido");
+            StyleHelper.showValidationDialog("Attenzione", 
+                "Inserisci un numero valido per il tempo");
         } catch (ValidationException e) {
+            // Gestione errori di validazione dal Controller/Service
             StyleHelper.showValidationDialog("Validazione", e.getMessage());
+        } catch (SQLException e) {
+            StyleHelper.showErrorDialog("Errore Database", 
+                "Errore durante il salvataggio: " + e.getMessage());
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore creazione ricetta: " + e.getMessage());
-            e.printStackTrace(); // NUOVO: Log per debugging
+            StyleHelper.showErrorDialog("Errore", 
+                "Errore imprevisto: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    // ==================== VALIDAZIONI ====================
-
-    private boolean validateIngredienteInput(Ingrediente ing, String quantitaStr) {
-        if (ing == null) {
-            StyleHelper.showValidationDialog("Validazione", "Seleziona un ingrediente");
-            return false;
-        }
-
-        if (quantitaStr == null || quantitaStr.trim().isEmpty()) {
-            StyleHelper.showValidationDialog("Validazione", "Inserisci la quantità");
-            return false;
-        }
-
-        return true;
-    }
-
-    private boolean validateRicettaInput(String nome, String tempoStr) {
-        if (nome == null || nome.trim().isEmpty()) {
-            StyleHelper.showValidationDialog("Validazione", "Inserisci il nome della ricetta");
-            return false;
-        }
-
-        if (tempoStr == null || tempoStr.trim().isEmpty()) {
-            StyleHelper.showValidationDialog("Validazione", "Inserisci il tempo di preparazione");
-            return false;
-        }
-
-        return true;
+    private void mostraConfermaCreazione(String nome, int tempo) {
+        String messaggio = String.format(
+            "Ricetta creata con successo!\n\n" +
+            "Nome: %s\n" +
+            "Tempo: %d minuti\n" +
+            "Ingredienti: %d",
+            nome, tempo, ingredientiMap.size()
+        );
+        
+        StyleHelper.showSuccessDialog("Successo", messaggio);
     }
 
     // ==================== HELPER ====================
@@ -300,11 +340,11 @@ public class CreaRicettaGUI {
         return label;
     }
 
-    private String formatIngrediente(Ingrediente ing, double quantita) {
-        return ing.getNome() + " - " + quantita + "g";
+    private String formatDisplayIngrediente(Ingrediente ingrediente, double quantita) {
+        return String.format("%s - %.0fg", ingrediente.getNome(), quantita);
     }
 
-    private void resetIngredientiFields() {
+    private void resetCampiIngrediente() {
         quantitaField.clear();
         ingredienteCombo.setValue(null);
     }
