@@ -32,12 +32,15 @@ public class CreaRicettaGUI {
     private ListView<String> ingredientiListView;
     private ObservableList<String> ingredientiData;
     private Map<Ingrediente, Double> ingredientiMap;
+    // NUOVO: Mantieni riferimento per sincronizzazione
+    private Map<String, Ingrediente> ingredienteByDisplay;
 
     public CreaRicettaGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
         this.ricettaController = ricettaController;
         this.ingredienteController = ingredienteController;
         this.ingredientiMap = new HashMap<>();
         this.ingredientiData = FXCollections.observableArrayList();
+        this.ingredienteByDisplay = new HashMap<>(); // NUOVO
     }
 
     public Ricetta showAndReturn() {
@@ -180,8 +183,10 @@ public class CreaRicettaGUI {
             }
 
             // Aggiungi ingrediente
+            String displayText = formatIngrediente(ing, quantita);
             ingredientiMap.put(ing, quantita);
-            ingredientiData.add(formatIngrediente(ing, quantita));
+            ingredientiData.add(displayText);
+            ingredienteByDisplay.put(displayText, ing); // NUOVO: mantieni mappatura
             
             // Reset campi
             resetIngredientiFields();
@@ -191,6 +196,7 @@ public class CreaRicettaGUI {
         }
     }
 
+    // FIX CRITICO: Rimozione sincronizzata corretta
     private void rimuoviIngrediente() {
         int selectedIndex = ingredientiListView.getSelectionModel().getSelectedIndex();
         
@@ -199,10 +205,16 @@ public class CreaRicettaGUI {
             return;
         }
 
-        String selected = ingredientiData.get(selectedIndex);
-        String nomeIng = selected.split(" - ")[0];
+        String displayText = ingredientiData.get(selectedIndex);
         
-        ingredientiMap.entrySet().removeIf(entry -> entry.getKey().getNome().equals(nomeIng));
+        // Rimuovi usando la mappatura
+        Ingrediente ingredienteDaRimuovere = ingredienteByDisplay.get(displayText);
+        if (ingredienteDaRimuovere != null) {
+            ingredientiMap.remove(ingredienteDaRimuovere);
+            ingredienteByDisplay.remove(displayText);
+        }
+        
+        // Rimuovi dalla lista visibile
         ingredientiData.remove(selectedIndex);
     }
 
@@ -216,6 +228,12 @@ public class CreaRicettaGUI {
         try {
             int tempo = Integer.parseInt(tempoStr.trim());
             
+            // NUOVO: Validazione tempo positivo
+            if (tempo <= 0) {
+                StyleHelper.showValidationDialog("Validazione", "Il tempo deve essere maggiore di zero");
+                return;
+            }
+            
             if (ingredientiMap.isEmpty()) {
                 StyleHelper.showValidationDialog("Validazione", "Aggiungi almeno un ingrediente");
                 return;
@@ -223,6 +241,14 @@ public class CreaRicettaGUI {
 
             // Crea ricetta
             ricettaCreata = ricettaController.creaRicetta(nome.trim(), tempo, ingredientiMap);
+            
+            // NUOVO: Messaggio di conferma più dettagliato
+            StyleHelper.showSuccessDialog("Successo", 
+                "Ricetta creata con successo!\n\n" +
+                "Nome: " + nome.trim() + "\n" +
+                "Tempo: " + tempo + " minuti\n" +
+                "Ingredienti: " + ingredientiMap.size());
+            
             stage.close();
 
         } catch (NumberFormatException e) {
@@ -231,6 +257,7 @@ public class CreaRicettaGUI {
             StyleHelper.showValidationDialog("Validazione", e.getMessage());
         } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore", "Errore creazione ricetta: " + e.getMessage());
+            e.printStackTrace(); // NUOVO: Log per debugging
         }
     }
 

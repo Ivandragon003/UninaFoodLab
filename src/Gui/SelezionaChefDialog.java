@@ -1,241 +1,183 @@
 package Gui;
 
+import controller.ChefController;
+import exceptions.DataAccessException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Chef;
-import service.GestioneChef;
 import util.StyleHelper;
 
 import java.util.List;
+import java.util.Optional;
 
-public class SelezionaChefDialog extends Stage {
+public class SelezionaChefDialog {
+    private final ChefController chefController;
+    private final Stage stage;
 
-    private GestioneChef gestioneChef;
-    private Chef chefSelezionato = null;
-    private ObservableList<Chef> chefData;
+    private final ObservableList<Chef> chefData = FXCollections.observableArrayList();
     private ListView<Chef> chefListView;
+    private TextField searchField;
+    private ComboBox<String> filtroDisponibilita;
 
-    public SelezionaChefDialog(GestioneChef gestioneChef) {
-        this.gestioneChef = gestioneChef;
-        this.chefData = FXCollections.observableArrayList();
-
-        setTitle("Seleziona Chef");
-        initModality(Modality.APPLICATION_MODAL);
-        setResizable(true);
-
-        createLayout();
-        caricaChef();
+    public SelezionaChefDialog(ChefController chefController) {
+        this.chefController = chefController;
+        this.stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Seleziona Chef");
     }
 
-    private void createLayout() {
-        StackPane rootPane = new StackPane();
-        rootPane.setMinSize(700, 600);
-        rootPane.setPrefSize(800, 700);
+    /**
+     * Mostra il dialog e ritorna l'oggetto Chef scelto, oppure null.
+     */
+    public Chef showAndReturn() {
+        VBox root = new VBox(12);
+        root.setPadding(new Insets(15));
+        root.setStyle("-fx-background-color: white;");
 
-        Region background = new Region();
-        StyleHelper.applyBackgroundGradient(background);
+        // Header
+        Label title = new Label("Seleziona Chef");
+        title.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
 
-        VBox mainContainer = new VBox(25);
-        mainContainer.setAlignment(Pos.TOP_CENTER);
-        mainContainer.setPadding(new Insets(30));
+        // Search + filter row
+        HBox searchRow = new HBox(8);
+        searchField = new TextField();
+        searchField.setPromptText("Cerca per nome, cognome o username...");
+        searchField.setPrefWidth(300);
 
-        Label title = new Label("👨‍🍳 Seleziona Chef");
-        title.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 28));
-        title.setTextFill(Color.WHITE);
-        title.setAlignment(Pos.CENTER);
+        filtroDisponibilita = new ComboBox<>();
+        filtroDisponibilita.getItems().addAll("Tutti", "Solo Disponibili", "Solo Non Disponibili");
+        filtroDisponibilita.setValue("Tutti");
+        filtroDisponibilita.setPrefWidth(160);
 
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        Button refreshBtn = new Button("↻");
+        refreshBtn.setOnAction(e -> caricaChef());
 
-        VBox contentCard = StyleHelper.createSection();
-        contentCard.setSpacing(20);
+        searchRow.getChildren().addAll(searchField, filtroDisponibilita, refreshBtn);
 
-        VBox listaSection = createListaSection();
-
-        HBox buttonsSection = createButtonsSection();
-
-        contentCard.getChildren().addAll(
-            listaSection,
-            new Separator(),
-            buttonsSection
-        );
-
-        scrollPane.setContent(contentCard);
-        mainContainer.getChildren().addAll(title, scrollPane);
-
-        rootPane.getChildren().addAll(background, mainContainer);
-
-        Scene scene = new Scene(rootPane, 800, 700);
-        scene.setFill(Color.TRANSPARENT);
-        setScene(scene);
-    }
-
-    private VBox createListaSection() {
-        VBox section = new VBox(15);
-
-        Label sectionTitle = new Label("👨‍🍳 Lista Chef");
-        sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-
-        chefListView = new ListView<>();
-        chefListView.setPrefHeight(350);
-        chefListView.setItems(chefData);
-
-        StyleHelper.applyListViewStyle(chefListView);
-
-        chefListView.setCellFactory(listView -> new ListCell<Chef>() {
+        // listview
+        chefListView = new ListView<>(chefData);
+        chefListView.setPrefSize(480, 280);
+        chefListView.setCellFactory(lv -> new ListCell<>() {
             @Override
-            protected void updateItem(Chef chef, boolean empty) {
-                super.updateItem(chef, empty);
-                if (empty || chef == null) {
+            protected void updateItem(Chef item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
                     setText(null);
-                    setGraphic(null);
                 } else {
-                    HBox cellBox = new HBox(15);
-                    cellBox.setAlignment(Pos.CENTER_LEFT);
-                    cellBox.setPadding(new Insets(10));
-
-                    VBox infoBox = new VBox(5);
-
-                    
-                    Label nomeLabel = new Label("👨‍🍳 " + chef.getNome() + " " + chef.getCognome());
-                    nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 16));
-
-                    Label usernameLabel = new Label("👤 " + chef.getUsername());
-                    usernameLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                    usernameLabel.setTextFill(Color.GRAY);
-
-              
-                    Label disponibilitaLabel;
-                    if (chef.getDisponibilita()) {
-                        disponibilitaLabel = new Label("✅ Disponibile");
-                        disponibilitaLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
-                    } else {
-                        disponibilitaLabel = new Label("❌ Non disponibile");
-                        disponibilitaLabel.setTextFill(Color.web(StyleHelper.ERROR_RED));
-                    }
-                    disponibilitaLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 12));
-
-                   
-                    Label esperienzaLabel = new Label("🎓 " + chef.getAnniEsperienza() + " anni");
-                    esperienzaLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                    esperienzaLabel.setTextFill(Color.web(StyleHelper.INFO_BLUE));
-
-                    HBox detailsBox = new HBox(15);
-                    detailsBox.setAlignment(Pos.CENTER_LEFT);
-                    detailsBox.getChildren().addAll(disponibilitaLabel, esperienzaLabel);
-
-                    infoBox.getChildren().addAll(nomeLabel, usernameLabel, detailsBox);
-
-                    Region spacer = new Region();
-                    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                    cellBox.getChildren().addAll(infoBox, spacer);
-
-                    if (chef.getDisponibilita()) {
-                        cellBox.setStyle("-fx-background-color: #f0fff0; -fx-border-color: #90ee90; " +
-                            "-fx-border-radius: 5; -fx-background-radius: 5;");
-                    } else {
-                        cellBox.setStyle("-fx-background-color: #fff0f0; -fx-border-color: #ffcccb; " +
-                            "-fx-border-radius: 5; -fx-background-radius: 5;");
-                    }
-
-                    setGraphic(cellBox);
-                    setText(null);
+                    String disponibilita = item.getDisponibilita() ? "✅" : "❌";
+                    setText(String.format("%s %s %s (%s)", disponibilita, item.getNome(), item.getCognome(), item.getUsername()));
                 }
             }
         });
 
-        chefListView.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
-                selezionaChef();
+        // buttons
+        Button selectBtn = StyleHelper.createPrimaryButton("Seleziona");
+        Button cancelBtn = StyleHelper.createSecondaryButton("Annulla");
+        HBox btnBox = new HBox(10, selectBtn, cancelBtn);
+        btnBox.setAlignment(Pos.CENTER_RIGHT);
+
+        root.getChildren().addAll(title, searchRow, chefListView, btnBox);
+
+        // Events
+        selectBtn.setOnAction(e -> stage.close());
+        cancelBtn.setOnAction(e -> {
+            chefListView.getSelectionModel().clearSelection();
+            stage.close();
+        });
+
+        // doppio click per selezionare
+        chefListView.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                stage.close();
             }
         });
 
-        section.getChildren().addAll(sectionTitle, chefListView);
-        return section;
-    }
-
-    private HBox createButtonsSection() {
-        HBox buttonBox = new HBox(15);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(15, 0, 0, 0));
-
-        Button annullaBtn = new Button("❌ Annulla");
-        annullaBtn.setPrefWidth(130);
-        annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-            "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
-        annullaBtn.setOnAction(e -> {
-            chefSelezionato = null;
-            close();
+        // enter su search applica filtri
+        searchField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                applicaFiltri();
+            }
         });
 
-        Button selezionaBtn = StyleHelper.createPrimaryButton("✅ Seleziona Chef");
-        selezionaBtn.setPrefWidth(150);
-        selezionaBtn.setOnAction(e -> selezionaChef());
+        filtroDisponibilita.setOnAction(e -> applicaFiltri());
 
-        buttonBox.getChildren().addAll(annullaBtn, selezionaBtn);
-        return buttonBox;
+        Scene scene = new Scene(root);
+        stage.setScene(scene);
+
+        // carica iniziale
+        caricaChef();
+
+        stage.showAndWait();
+
+        return chefListView.getSelectionModel().getSelectedItem();
     }
 
+    // Carica tutti gli chef -> aggiorna chefData
     private void caricaChef() {
         try {
-            List<Chef> tuttiChef = gestioneChef.getAll();
+            List<Chef> tuttiChef = chefController.getAllChef();
             chefData.setAll(tuttiChef);
 
-        } catch (Exception e) {
-            showAlert("Errore", "Errore nel caricamento chef: " + e.getMessage());
-        }
-    }
-
-    private void selezionaChef() {
-        Chef selezionato = chefListView.getSelectionModel().getSelectedItem();
-        if (selezionato == null) {
-            showAlert("Selezione", "Seleziona un chef dalla lista");
-            return;
-        }
-
-        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
-        conferma.setTitle("Conferma Selezione");
-        conferma.setHeaderText("Conferma selezione chef");
-
-        String disponibilitaText = selezionato.getDisponibilita() ? "Disponibile" : "Non disponibile";
-        String messaggioConferma = "Chef: " + selezionato.getNome() + " " + selezionato.getCognome() + "\n" +
-            "Username: " + selezionato.getUsername() + "\n" +
-            "Disponibilità: " + disponibilitaText + "\n" +
-            "Esperienza: " + selezionato.getAnniEsperienza() + " anni\n\n" +
-            "Confermi la selezione di questo chef?";
-
-        conferma.setContentText(messaggioConferma);
-
-        conferma.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                chefSelezionato = selezionato;
-                close();
+            if (tuttiChef.isEmpty()) {
+                StyleHelper.showInfoDialog("Avviso", "Nessun chef disponibile nel sistema.");
             }
-        });
+        } catch (DataAccessException e) {
+            StyleHelper.showErrorDialog("Errore", "Errore nel caricamento chef: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore", "Errore imprevisto nel caricamento chef: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
-    private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-     
-    public Chef showAndReturn() {
-        showAndWait();
-        return chefSelezionato;
+    // Applicazione filtri (ricerca testuale + disponibilità)
+    private void applicaFiltri() {
+        try {
+            List<Chef> tuttiChef = chefController.getAllChef();
+            String searchText = Optional.ofNullable(searchField.getText()).orElse("").toLowerCase().trim();
+            String filtroDisp = filtroDisponibilita.getValue();
+
+            List<Chef> chefFiltrati = tuttiChef.stream()
+                .filter(chef -> {
+                    // Filtro ricerca testuale
+                    boolean matchSearch = searchText.isEmpty() ||
+                        chef.getNome().toLowerCase().contains(searchText) ||
+                        chef.getCognome().toLowerCase().contains(searchText) ||
+                        chef.getUsername().toLowerCase().contains(searchText);
+
+                    // Filtro disponibilità
+                    boolean matchDisponibilita = true;
+                    if ("Solo Disponibili".equals(filtroDisp)) {
+                        matchDisponibilita = chef.getDisponibilita();
+                    } else if ("Solo Non Disponibili".equals(filtroDisp)) {
+                        matchDisponibilita = !chef.getDisponibilita();
+                    }
+
+                    return matchSearch && matchDisponibilita;
+                })
+                .toList();
+
+            chefData.setAll(chefFiltrati);
+
+            if (chefFiltrati.isEmpty()) {
+                StyleHelper.showInfoDialog("Nessun risultato", "Nessun chef corrisponde ai filtri selezionati.");
+            }
+        } catch (DataAccessException e) {
+            StyleHelper.showErrorDialog("Errore", "Errore nell'applicazione dei filtri: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore", "Errore imprevisto durante i filtri: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

@@ -4,8 +4,12 @@ import controller.GestioneCorsoController;
 import controller.VisualizzaCorsiController;
 import controller.RicettaController;
 import controller.IngredienteController;
+import controller.ChefController;
 import dao.IngredienteDAO;
+import dao.ChefDAO;
+import dao.TieneDAO;
 import service.GestioneIngrediente;
+import service.GestioneChef;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -31,7 +35,8 @@ public class ChefMenuGUI {
     private VisualizzaCorsiController corsiController;
     private GestioneCorsoController gestioneCorsoController;
     private RicettaController ricettaController;
-    private IngredienteController ingredienteController;  // Lazy initialization
+    private IngredienteController ingredienteController;
+    private ChefController chefController;
     
     private double xOffset = 0;
     private double yOffset = 0;
@@ -47,7 +52,6 @@ public class ChefMenuGUI {
         this.chefLoggato = chef;
     }
 
-    // ✅ Solo 3 controller obbligatori
     public void setControllers(VisualizzaCorsiController corsiController, 
                               GestioneCorsoController gestioneCorsoController,
                               RicettaController ricettaController) {
@@ -66,8 +70,8 @@ public class ChefMenuGUI {
             throw new IllegalStateException("Chef e controller devono essere impostati prima di start()");
         }
 
-        // ✅ Inizializza IngredienteController internamente
         initializeIngredienteController();
+        initializeChefController();
 
         this.currentStage = stage;
         
@@ -110,8 +114,6 @@ public class ChefMenuGUI {
         stage.show();
     }
 
-    // ==================== LAZY INITIALIZATION ====================
-
     private void initializeIngredienteController() {
         if (ingredienteController == null) {
             try {
@@ -126,7 +128,20 @@ public class ChefMenuGUI {
         }
     }
 
-    // ==================== CREAZIONE UI ====================
+    private void initializeChefController() {
+        if (chefController == null) {
+            try {
+                ChefDAO chefDAO = new ChefDAO();
+                TieneDAO tieneDAO = new TieneDAO();
+                GestioneChef gestioneChef = new GestioneChef(chefDAO, tieneDAO);
+                chefController = new ChefController(gestioneChef);
+            } catch (Exception e) {
+                StyleHelper.showErrorDialog("Errore", 
+                    "Impossibile inizializzare il controller chef: " + e.getMessage());
+                throw new RuntimeException("Errore inizializzazione ChefController", e);
+            }
+        }
+    }
 
     private VBox createSidebar(Stage stage) {
         VBox sidebar = new VBox(20);
@@ -290,8 +305,6 @@ public class ChefMenuGUI {
         return box;
     }
 
-    // ==================== NAVIGAZIONE ====================
-
     private void apriVisualizzaCorsi() {
         try {
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
@@ -306,7 +319,11 @@ public class ChefMenuGUI {
 
     private void apriCreaCorso() {
         try {
-            CreaCorsoGUI gui = new CreaCorsoGUI(gestioneCorsoController);
+            CreaCorsoGUI gui = new CreaCorsoGUI(
+                gestioneCorsoController, 
+                chefController,
+                ricettaController
+            );
             contentPane.getChildren().clear();
             contentPane.getChildren().add(gui.getRoot());
         } catch (Exception ex) {
@@ -346,7 +363,7 @@ public class ChefMenuGUI {
             "Eliminare definitivamente l'account? Questa operazione non può essere annullata.",
             () -> {
                 try {
-                    // TODO: Chiamata al controller per eliminare l'account
+                    chefController.eliminaAccount(chefLoggato);
                     StyleHelper.showSuccessDialog("Account eliminato", "Account eliminato con successo");
                     currentStage.close();
                 } catch (Exception ex) {
