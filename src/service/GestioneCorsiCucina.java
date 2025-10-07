@@ -1,21 +1,11 @@
 package service;
 
-import dao.CorsoCucinaDAO;
-import dao.ChefDAO;
-import dao.TieneDAO;
-import dao.IscrizioneDAO;
-import dao.OnlineDAO;
-import dao.InPresenzaDAO;
-
+import dao.*;
+import exceptions.DataAccessException;
 import exceptions.ValidationException;
 import exceptions.ErrorMessages;
-
-import model.CorsoCucina;
-import model.Chef;
-import model.Sessione;
-import model.Iscrizione;
-import model.Online;
-import model.InPresenza;
+import exceptions.ValidationUtils;
+import model.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -40,10 +30,9 @@ public class GestioneCorsiCucina {
         this.inPresenzaDAO = inPresenzaDAO;
     }
 
-    public void creaCorso(CorsoCucina corso) throws SQLException, ValidationException {
-        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        if (corso.getNomeCorso() == null || corso.getNomeCorso().trim().isEmpty())
-            throw new ValidationException(ErrorMessages.NOME_CORSO_MANCANTE);
+    public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
+        ValidationUtils.validateNotNull(corso, "Corso");
+        ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
         if (corso.getNumeroPosti() <= 0) throw new ValidationException(ErrorMessages.NUMERO_POSTI_NON_VALIDO);
         if (corso.getPrezzo() < 0) throw new ValidationException(ErrorMessages.PREZZO_NON_VALIDO);
         if (corso.getDataInizioCorso() == null || corso.getDataFineCorso() == null)
@@ -53,103 +42,126 @@ public class GestioneCorsiCucina {
         if (corso.getDataFineCorso().isBefore(corso.getDataInizioCorso()))
             throw new ValidationException(ErrorMessages.DATA_FINE_PRECEDENTE);
 
-        corsoDAO.save(corso);
+        try {
+            corsoDAO.save(corso);
 
-        if (corso.getSessioni() != null) {
-            for (Sessione s : corso.getSessioni()) {
-                if (s instanceof Online) {
-                    Online o = (Online) s;
-                    o.setCorsoCucina(corso);
-                    onlineDAO.save(o);
-                } else if (s instanceof InPresenza) {
-                    InPresenza ip = (InPresenza) s;
-                    ip.setCorsoCucina(corso);
-                    inPresenzaDAO.save(ip);
+            if (corso.getSessioni() != null) {
+                for (Sessione s : corso.getSessioni()) {
+                    s.setCorsoCucina(corso);
+                    if (s instanceof Online o) onlineDAO.save(o);
+                    else if (s instanceof InPresenza ip) inPresenzaDAO.save(ip);
                 }
             }
-        }
 
-        if (corso.getChef() != null) {
-            for (Chef c : corso.getChef()) {
-                if (!chefDAO.findByCodFiscale(c.getCodFiscale()).isPresent()) {
-                    throw new ValidationException(ErrorMessages.CHEF_NON_PRESENTE + c.getCodFiscale());
+            if (corso.getChef() != null) {
+                for (Chef c : corso.getChef()) {
+                    if (!chefDAO.findByCodFiscale(c.getCodFiscale()).isPresent()) {
+                        throw new ValidationException(ErrorMessages.CHEF_NON_PRESENTE + c.getCodFiscale());
+                    }
+                    if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(c)) {
+                        tieneDAO.save(c.getCodFiscale(), corso.getIdCorso());
+                    }
                 }
-                if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(c)) {
-                    tieneDAO.save(c.getCodFiscale(), corso.getIdCorso());
-                }
             }
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
         }
     }
 
-    public void aggiornaCorso(CorsoCucina corso) throws SQLException, ValidationException {
-        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        corsoDAO.update(corso);
-    }
-
-    public void cancellaCorso(int idCorso) throws SQLException {
-        corsoDAO.delete(idCorso);
-    }
-
-    
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws SQLException, ValidationException {
-        if (corso == null || chef == null) {
-            throw new ValidationException(ErrorMessages.CORSO_NULLO);
+    public void aggiornaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
+        ValidationUtils.validateNotNull(corso, "Corso");
+        try {
+            corsoDAO.update(corso);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
         }
+    }
 
-        boolean chefEsiste = chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent();
-        
-        if (!chefEsiste) {
-            if (password == null || password.length() < 6) {
-                throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
+    public void cancellaCorso(int idCorso) throws DataAccessException {
+        try {
+            corsoDAO.delete(idCorso);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
+        }
+    }
+
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException, DataAccessException {
+        ValidationUtils.validateNotNull(corso, "Corso");
+        ValidationUtils.validateNotNull(chef, "Chef");
+
+        try {
+            boolean chefEsiste = chefDAO.findByCodFiscale(chef.getCodFiscale()).isPresent();
+
+            if (!chefEsiste) {
+                if (password == null || password.length() < 6)
+                    throw new ValidationException(ErrorMessages.PASSWORD_NON_VALIDA);
+                chefDAO.save(chef, password);
             }
-            chefDAO.save(chef, password);
-        }
 
-        if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
-            tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
-            
-            if (corso.getChef() == null) {
-                corso.setChef(new ArrayList<>());
+            if (!tieneDAO.getChefByCorso(corso.getIdCorso()).contains(chef)) {
+                tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
+                if (corso.getChef() == null) corso.setChef(new ArrayList<>());
+                corso.getChef().add(chef);
+            } else {
+                throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
             }
-            corso.getChef().add(chef);
-        } else {
-            throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
         }
     }
 
-    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws SQLException {
-        if (corso.getChef() != null && corso.getChef().remove(chef)) {
-            tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws DataAccessException {
+        try {
+            if (corso.getChef() != null && corso.getChef().remove(chef)) {
+                tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
         }
     }
 
-    public CorsoCucina getCorsoCompleto(int idCorso) throws SQLException {
-        CorsoCucina corso = corsoDAO.findById(idCorso)
-                .orElseThrow(() -> new SQLException("Corso non trovato"));
+    public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
+        try {
+            CorsoCucina corso = corsoDAO.findById(idCorso)
+                    .orElseThrow(() -> new DataAccessException("Corso non trovato"));
 
-        List<Sessione> sessioni = new ArrayList<>();
-        sessioni.addAll(onlineDAO.getByCorso(idCorso));
-        sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
-        corso.setSessioni(sessioni);
+            List<Sessione> sessioni = new ArrayList<>();
+            sessioni.addAll(onlineDAO.getByCorso(idCorso));
+            sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
+            corso.setSessioni(sessioni);
 
-        List<Iscrizione> iscrizioni = iscrizioneDAO.getAllFull().stream()
-                .filter(i -> i.getCorso().getIdCorso() == idCorso).toList();
-        corso.setIscrizioni(iscrizioni);
+            corso.setIscrizioni(iscrizioneDAO.getAllFull().stream()
+                    .filter(i -> i.getCorso().getIdCorso() == idCorso).toList());
 
-        corso.setChef(tieneDAO.getChefByCorso(idCorso));
+            corso.setChef(tieneDAO.getChefByCorso(idCorso));
+            return corso;
 
-        return corso;
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+        }
     }
 
-    public List<CorsoCucina> getCorsi() throws SQLException {
-        return corsoDAO.getAll();
+    public List<CorsoCucina> getCorsi() throws DataAccessException {
+        try {
+            return corsoDAO.getAll();
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+        }
     }
 
-    public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
-        return corsoDAO.findByNomeOrArgomento(filtro);
+    public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws DataAccessException {
+        try {
+            return corsoDAO.findByNomeOrArgomento(filtro);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+        }
     }
 
-    public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
-        return corsoDAO.getNumeroSessioniPerCorso(idCorso);
+    public int getNumeroSessioniPerCorso(int idCorso) throws DataAccessException {
+        try {
+            return corsoDAO.getNumeroSessioniPerCorso(idCorso);
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+        }
     }
 }

@@ -11,7 +11,7 @@ import service.GestioneCorsiCucina;
 import service.GestioneRicette;
 import util.DBConnection;
 import util.StyleHelper;
-import util.ValidationUIHelper;
+import util.ValidationHelper;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -25,6 +25,8 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
 import exceptions.*;
+
+import java.util.List;
 
 public class LoginChefGUI extends Application {
     private static ChefController chefController;
@@ -127,14 +129,13 @@ public class LoginChefGUI extends Application {
         VBox passwordContainer = createStylishTextField("Password", true);
         PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
 
-        ValidationUIHelper.addAutoResetListener(usernameField, usernameContainer, errorLabel);
-        ValidationUIHelper.addAutoResetListener(passwordField, passwordContainer, errorLabel);
+        ValidationHelper.addAutoResetListener(usernameField, usernameContainer, errorLabel);
+        ValidationHelper.addAutoResetListener(passwordField, passwordContainer, errorLabel);
 
         passwordField.setOnAction(e -> handleLogin(usernameField, passwordField, usernameContainer, passwordContainer));
 
         Button loginButton = StyleHelper.createSuccessButton("ACCEDI");
         loginButton.setPrefSize(140, 45);
-        
         Button registerButton = StyleHelper.createCyanButton("REGISTRATI");
         registerButton.setPrefSize(140, 45);
 
@@ -221,47 +222,43 @@ public class LoginChefGUI extends Application {
 
     private void handleLogin(TextField usernameField, PasswordField passwordField, VBox usernameContainer,
             VBox passwordContainer) {
-        ValidationUIHelper.hideError(errorLabel);
+        errorLabel.setVisible(false);
 
-        if (!ValidationUIHelper.validateNotEmpty(usernameField, usernameContainer, errorLabel, "il tuo username")) {
+        if (!ValidationHelper.validateNotEmpty(usernameField, usernameContainer, errorLabel, "il tuo username")) {
             return;
         }
 
-        if (!ValidationUIHelper.validateNotEmpty(passwordField, passwordContainer, errorLabel, "la tua password")) {
+        if (!ValidationHelper.validateNotEmpty(passwordField, passwordContainer, errorLabel, "la tua password")) {
             return;
         }
 
         try {
             Chef chef = chefController.login(usernameField.getText().trim(), passwordField.getText());
-            ValidationUIHelper.hideError(errorLabel);
+            errorLabel.setVisible(false);
             aprireMenuChef(chef);
 
         } catch (ValidationException ex) {
             String messaggio = ex.getMessage();
 
             if (messaggio.equals(ErrorMessages.USERNAME_NON_TROVATO)) {
-                ValidationUIHelper.showError(errorLabel, "❌ Username non esistente");
-                ValidationUIHelper.setFieldError(usernameContainer);
+                ValidationHelper.showError(usernameField, usernameContainer, errorLabel, "❌ Username non esistente");
                 usernameField.requestFocus();
 
             } else if (messaggio.equals(ErrorMessages.PASSWORD_ERRATA)) {
-                ValidationUIHelper.showError(errorLabel, "❌ Password non corretta");
-                ValidationUIHelper.setFieldError(passwordContainer);
+                ValidationHelper.showError(passwordField, passwordContainer, errorLabel, "❌ Password non corretta");
                 passwordField.clear();
                 passwordField.requestFocus();
 
             } else {
-                ValidationUIHelper.showError(errorLabel, "❌ " + messaggio);
-                ValidationUIHelper.setFieldError(usernameContainer);
-                ValidationUIHelper.setFieldError(passwordContainer);
+                ValidationHelper.showError(usernameField, usernameContainer, errorLabel, "❌ " + messaggio);
+                ValidationHelper.showError(passwordField, passwordContainer, errorLabel, "❌ " + messaggio);
             }
 
         } catch (Exception ex) {
-            ValidationUIHelper.showError(errorLabel, "❌ Errore durante il login: " + ex.getMessage());
+            ValidationHelper.showError(usernameField, null, errorLabel, "❌ Errore durante il login: " + ex.getMessage());
         }
     }
 
-    // ✅ SEMPLIFICATO: Solo 3 controller
     private void aprireMenuChef(Chef chef) {
         try {
             RicettaDAO ricettaDAO = new RicettaDAO();
@@ -288,13 +285,13 @@ public class LoginChefGUI extends Application {
             ((Stage) contentPane.getScene().getWindow()).close();
 
         } catch (Exception ex) {
-            ValidationUIHelper.showError(errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
+            ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
     private void handleRegister() {
-        ValidationUIHelper.hideError(errorLabel);
+        errorLabel.setVisible(false);
         contentPane.getChildren().clear();
         RegistrazioneChefGUI regPane = new RegistrazioneChefGUI(chefController, () -> {
             contentPane.getChildren().clear();

@@ -13,8 +13,10 @@ import service.GestioneChef;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -31,30 +33,31 @@ import model.Ricetta;
 import util.StyleHelper;
 
 public class ChefMenuGUI {
+
     private Chef chefLoggato;
     private VisualizzaCorsiController corsiController;
     private GestioneCorsoController gestioneCorsoController;
     private RicettaController ricettaController;
     private IngredienteController ingredienteController;
     private ChefController chefController;
-    
-    private double xOffset = 0;
-    private double yOffset = 0;
+
     private StackPane menuRoot;
     private StackPane contentPane;
-    
     private VBox sidebar;
     private Button hamburgerBtn;
     private boolean sidebarVisible = true;
     private Stage currentStage;
 
+    private double xOffset = 0;
+    private double yOffset = 0;
+
     public void setChefLoggato(Chef chef) {
         this.chefLoggato = chef;
     }
 
-    public void setControllers(VisualizzaCorsiController corsiController, 
-                              GestioneCorsoController gestioneCorsoController,
-                              RicettaController ricettaController) {
+    public void setControllers(VisualizzaCorsiController corsiController,
+                               GestioneCorsoController gestioneCorsoController,
+                               RicettaController ricettaController) {
         this.corsiController = corsiController;
         this.gestioneCorsoController = gestioneCorsoController;
         this.ricettaController = ricettaController;
@@ -65,16 +68,14 @@ public class ChefMenuGUI {
     }
 
     public void start(Stage stage) {
-        if (chefLoggato == null || corsiController == null || 
+        if (chefLoggato == null || corsiController == null ||
             gestioneCorsoController == null || ricettaController == null) {
             throw new IllegalStateException("Chef e controller devono essere impostati prima di start()");
         }
 
-        initializeIngredienteController();
-        initializeChefController();
+        initializeControllers();
 
         this.currentStage = stage;
-        
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setTitle("Menu Chef - " + chefLoggato.getUsername());
 
@@ -85,7 +86,7 @@ public class ChefMenuGUI {
         mainLayout.setSpacing(0);
 
         sidebar = createSidebar(stage);
-        
+
         contentPane = new StackPane();
         contentPane.setStyle("-fx-background-color: #FFFFFF;");
         HBox.setHgrow(contentPane, Priority.ALWAYS);
@@ -114,32 +115,21 @@ public class ChefMenuGUI {
         stage.show();
     }
 
-    private void initializeIngredienteController() {
-        if (ingredienteController == null) {
-            try {
-                IngredienteDAO ingredienteDAO = new IngredienteDAO();
-                GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
-                ingredienteController = new IngredienteController(gestioneIngrediente);
-            } catch (Exception e) {
-                StyleHelper.showErrorDialog("Errore", 
-                    "Impossibile inizializzare il controller ingredienti: " + e.getMessage());
-                throw new RuntimeException("Errore inizializzazione IngredienteController", e);
+    private void initializeControllers() {
+        try {
+            if (ingredienteController == null) {
+                ingredienteController = new IngredienteController(
+                        new GestioneIngrediente(new IngredienteDAO())
+                );
             }
-        }
-    }
-
-    private void initializeChefController() {
-        if (chefController == null) {
-            try {
-                ChefDAO chefDAO = new ChefDAO();
-                TieneDAO tieneDAO = new TieneDAO();
-                GestioneChef gestioneChef = new GestioneChef(chefDAO, tieneDAO);
-                chefController = new ChefController(gestioneChef);
-            } catch (Exception e) {
-                StyleHelper.showErrorDialog("Errore", 
-                    "Impossibile inizializzare il controller chef: " + e.getMessage());
-                throw new RuntimeException("Errore inizializzazione ChefController", e);
+            if (chefController == null) {
+                chefController = new ChefController(
+                        new GestioneChef(new ChefDAO(), new TieneDAO())
+                );
             }
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore", "Impossibile inizializzare i controller: " + e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
@@ -147,10 +137,8 @@ public class ChefMenuGUI {
         VBox sidebar = new VBox(20);
         sidebar.setAlignment(Pos.TOP_CENTER);
         sidebar.setPadding(new Insets(30, 15, 30, 15));
-        sidebar.setStyle("-fx-background-color: #FF6600;");
+        sidebar.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + ";");
         sidebar.setPrefWidth(240);
-        sidebar.setMinWidth(240);
-        sidebar.setMaxWidth(240);
 
         Label welcomeLabel = new Label("Benvenuto\n" + chefLoggato.getUsername());
         welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
@@ -158,30 +146,25 @@ public class ChefMenuGUI {
         welcomeLabel.setWrapText(true);
         welcomeLabel.setAlignment(Pos.CENTER);
 
-        Button corsiBtn = createSidebarButton("📚 Visualizza Corsi");
-        corsiBtn.setOnAction(e -> apriVisualizzaCorsi());
-
-        Button creaCorsoBtn = createSidebarButton("➕ Crea Corso");
-        creaCorsoBtn.setOnAction(e -> apriCreaCorso());
-
-        Button ricetteBtn = createSidebarButton("📖 Gestisci Ricette");
-        ricetteBtn.setOnAction(e -> apriVisualizzaRicette());
-
-        Button creaRicettaBtn = createSidebarButton("✨ Crea Ricetta");
-        creaRicettaBtn.setOnAction(e -> apriCreaRicetta());
-
-        Button eliminaBtn = createSidebarButton("🗑️ Elimina Account");
-        eliminaBtn.setOnAction(e -> eliminaAccount());
-
-        Button logoutBtn = createSidebarButton("🚪 Logout");
-        logoutBtn.setOnAction(e -> stage.close());
+        sidebar.getChildren().add(welcomeLabel);
 
         sidebar.getChildren().addAll(
-            welcomeLabel, corsiBtn, creaCorsoBtn, ricetteBtn, 
-            creaRicettaBtn, eliminaBtn, logoutBtn
+                createSidebarButton("📚 Visualizza Corsi", this::apriVisualizzaCorsi),
+                createSidebarButton("➕ Crea Corso", this::apriCreaCorso),
+                createSidebarButton("📖 Gestisci Ricette", this::apriVisualizzaRicette),
+                createSidebarButton("✨ Crea Ricetta", this::apriCreaRicetta),
+                createSidebarButton("🗑️ Elimina Account", this::eliminaAccount),
+                createSidebarButton("🚪 Logout", stage::close)
         );
 
         return sidebar;
+    }
+
+    private Button createSidebarButton(String text, Runnable action) {
+        Button btn = StyleHelper.createPrimaryButton(text);
+        btn.setPrefWidth(200);
+        btn.setOnAction(e -> action.run());
+        return btn;
     }
 
     private Button createHamburgerButton() {
@@ -189,8 +172,7 @@ public class ChefMenuGUI {
         btn.setPrefSize(45, 45);
         btn.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
         btn.setTextFill(Color.WHITE);
-        btn.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + "; " +
-                "-fx-background-radius: 25; -fx-cursor: hand;");
+        btn.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + "; -fx-background-radius: 25; -fx-cursor: hand;");
         btn.setOnAction(e -> toggleSidebar());
 
         DropShadow shadow = new DropShadow();
@@ -205,14 +187,11 @@ public class ChefMenuGUI {
         TranslateTransition transition = new TranslateTransition(Duration.millis(250), sidebar);
         if (sidebarVisible) {
             transition.setToX(-sidebar.getWidth());
-            hamburgerBtn.setText("☰");
-            hamburgerBtn.setTooltip(new Tooltip("Mostra menu"));
+            sidebarVisible = false;
         } else {
             transition.setToX(0);
-            hamburgerBtn.setText("✕");
-            hamburgerBtn.setTooltip(new Tooltip("Nascondi menu"));
+            sidebarVisible = true;
         }
-        transition.setOnFinished(e -> sidebarVisible = !sidebarVisible);
         transition.play();
     }
 
@@ -241,18 +220,16 @@ public class ChefMenuGUI {
         istruzioni2Label.setFont(Font.font("Roboto", FontWeight.NORMAL, 12));
         istruzioni2Label.setTextFill(Color.web(StyleHelper.INFO_BLUE));
 
-        benvenutoBox.getChildren().addAll(
-            titoloLabel, sottotitoloLabel, benvenutoLabel, istruzioniLabel, istruzioni2Label);
+        benvenutoBox.getChildren().addAll(titoloLabel, sottotitoloLabel, benvenutoLabel, istruzioniLabel, istruzioni2Label);
 
-        contentPane.getChildren().clear();
-        contentPane.getChildren().add(benvenutoBox);
+        showInContentPane(benvenutoBox);
     }
 
     private void createBackground(StackPane root) {
         LinearGradient gradient = new LinearGradient(
-            0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-            new Stop(0, Color.web("#FF9966")),
-            new Stop(1, Color.web("#FFCC99"))
+                0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web("#FF9966")),
+                new Stop(1, Color.web("#FFCC99"))
         );
 
         Region background = new Region();
@@ -262,42 +239,10 @@ public class ChefMenuGUI {
         root.getChildren().add(background);
     }
 
-    private Button createSidebarButton(String text) {
-        Button btn = new Button(text);
-        btn.setPrefWidth(200);
-        btn.setPrefHeight(40);
-        btn.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
-        btn.setTextFill(Color.WHITE);
-        btn.setStyle("-fx-background-color: #FF8533; -fx-background-radius: 10; -fx-cursor: hand;");
-
-        DropShadow shadow = new DropShadow();
-        shadow.setRadius(4);
-        shadow.setColor(Color.web("#000000", 0.2));
-        btn.setEffect(shadow);
-
-        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #FF6600; -fx-background-radius: 10; -fx-cursor: hand;"));
-        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: #FF8533; -fx-background-radius: 10; -fx-cursor: hand;"));
-
-        return btn;
-    }
-
     private HBox createWindowButtons(Stage stage) {
-        Button closeButton = new Button("✕");
-        Button minimizeButton = new Button("−");
-        Button maximizeButton = new Button("□");
-
-        Button[] buttons = { minimizeButton, maximizeButton, closeButton };
-        for (Button btn : buttons) {
-            btn.setPrefSize(30, 30);
-            btn.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
-            btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.7); -fx-background-radius: 15; -fx-cursor: hand;");
-            btn.setFocusTraversable(false);
-        }
-
-        closeButton.setOnAction(e -> stage.close());
-        minimizeButton.setOnAction(e -> stage.setIconified(true));
-        maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+        Button closeButton = StyleHelper.createWindowButton("✕", () -> stage.close());
+        Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true));
+        Button maximizeButton = StyleHelper.createWindowButton("□", () -> stage.setMaximized(!stage.isMaximized()));
 
         HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);
         box.setAlignment(Pos.TOP_RIGHT);
@@ -309,37 +254,31 @@ public class ChefMenuGUI {
         try {
             VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
             corsiGUI.setControllers(corsiController, gestioneCorsoController, contentPane);
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(corsiGUI.getRoot());
+            showInContentPane(corsiGUI.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura corsi: " + ex.getMessage());
-            ex.printStackTrace();
         }
     }
 
     private void apriCreaCorso() {
         try {
             CreaCorsoGUI gui = new CreaCorsoGUI(
-                gestioneCorsoController, 
-                chefController,
-                ricettaController
+                    gestioneCorsoController,
+                    chefController,
+                    ricettaController
             );
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(gui.getRoot());
+            showInContentPane(gui.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura creazione corso: " + ex.getMessage());
-            ex.printStackTrace();
         }
     }
 
     private void apriVisualizzaRicette() {
         try {
             VisualizzaRicetteGUI ricetteGUI = new VisualizzaRicetteGUI(ricettaController, ingredienteController);
-            contentPane.getChildren().clear();
-            contentPane.getChildren().add(ricetteGUI.getRoot());
+            showInContentPane(ricetteGUI.getRoot());
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura ricette: " + ex.getMessage());
-            ex.printStackTrace();
         }
     }
 
@@ -348,28 +287,26 @@ public class ChefMenuGUI {
             CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
             Ricetta nuovaRicetta = creaGUI.showAndReturn();
             if (nuovaRicetta != null) {
-                StyleHelper.showSuccessDialog("Successo", 
-                    "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo");
+                StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuovaRicetta.getNome() + "' creata con successo");
             }
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", "Errore nella creazione ricetta: " + ex.getMessage());
-            ex.printStackTrace();
         }
     }
 
     private void eliminaAccount() {
         StyleHelper.showConfirmationDialog(
-            "Conferma Eliminazione",
-            "Eliminare definitivamente l'account? Questa operazione non può essere annullata.",
-            () -> {
-                try {
-                    chefController.eliminaAccount(chefLoggato);
-                    StyleHelper.showSuccessDialog("Account eliminato", "Account eliminato con successo");
-                    currentStage.close();
-                } catch (Exception ex) {
-                    StyleHelper.showErrorDialog("Errore", "Errore nell'eliminazione: " + ex.getMessage());
+                "Conferma Eliminazione",
+                "Eliminare definitivamente l'account? Questa operazione non può essere annullata.",
+                () -> {
+                    try {
+                        chefController.eliminaAccount(chefLoggato);
+                        StyleHelper.showSuccessDialog("Account eliminato", "Account eliminato con successo");
+                        currentStage.close();
+                    } catch (Exception ex) {
+                        StyleHelper.showErrorDialog("Errore", "Errore nell'eliminazione: " + ex.getMessage());
+                    }
                 }
-            }
         );
     }
 
@@ -378,10 +315,13 @@ public class ChefMenuGUI {
             xOffset = event.getSceneX();
             yOffset = event.getSceneY();
         });
-
         root.setOnMouseDragged(event -> {
             stage.setX(event.getScreenX() - xOffset);
             stage.setY(event.getScreenY() - yOffset);
         });
+    }
+
+    private void showInContentPane(Node guiRoot) {
+        contentPane.getChildren().setAll(guiRoot);
     }
 }
