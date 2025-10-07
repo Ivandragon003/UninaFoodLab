@@ -8,6 +8,7 @@ import exceptions.ErrorMessages;
 import exceptions.ValidationUtils;
 import exceptions.DataAccessException;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,6 +16,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -36,6 +38,8 @@ public class GestioneSessioniGUI {
     private VBox campiOnlineBox, campiPresenzaBox;
     private HBox pulsantiBox;
     private VBox root;
+        
+    private Button annullaBtn, salvaBtn;
 
     public void setCorso(CorsoCucina corso) { this.corso = corso; }
     public void setController(GestioneSessioniController controller) { this.controller = controller; }
@@ -143,14 +147,23 @@ public class GestioneSessioniGUI {
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(20,0,0,0));
 
-        Button ann = new Button("❌ Annulla");
-        ann.setOnAction(e->primaryStage.hide());
+        // ✅ CORRETTO: Usa Platform.runLater e close() invece di hide()
+        annullaBtn = new Button("❌ Annulla");
+        annullaBtn.setOnAction(e -> {
+            Platform.runLater(() -> {
+                if (primaryStage != null) {
+                    primaryStage.close();
+                } else {
+                    ((Stage) annullaBtn.getScene().getWindow()).close();
+                }
+            });
+        });
 
-        Button sal = new Button(modalitaAggiunta?"💾 Salva":"💾 Aggiorna");
-        sal.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;");
-        sal.setOnAction(e->salvaSessione());
+        salvaBtn = new Button(modalitaAggiunta?"💾 Salva":"💾 Aggiorna");
+        salvaBtn.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;");
+        salvaBtn.setOnAction(e->salvaSessione());
 
-        box.getChildren().addAll(ann,sal);
+        box.getChildren().addAll(annullaBtn, salvaBtn);
         return box;
     }
 
@@ -181,64 +194,115 @@ public class GestioneSessioniGUI {
     }
 
     private void salvaSessione() {
-        try {
-            ValidationUtils.validateNotNull(dataInizioPicker.getValue(),"Data inizio");
-            ValidationUtils.validateNotNull(dataFinePicker.getValue(),"Data fine");
-            LocalTime ti = LocalTime.parse(oraInizioField.getText().trim());
-            LocalTime tf = LocalTime.parse(oraFineField.getText().trim());
-            if (!tf.isAfter(ti)) throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
+    try {
+        // Validazione campi base
+        ValidationUtils.validateNotNull(dataInizioPicker.getValue(),"Data inizio");
+        ValidationUtils.validateNotNull(dataFinePicker.getValue(),"Data fine");
+        
+        String oraInizioText = oraInizioField.getText().trim();
+        String oraFineText = oraFineField.getText().trim();
+        
+        if (oraInizioText.isEmpty() || oraFineText.isEmpty()) {
+            StyleHelper.showValidationDialog("Validazione", "Inserisci ora inizio e fine");
+            return;
+        }
+        
+        LocalTime ti = LocalTime.parse(oraInizioText);
+        LocalTime tf = LocalTime.parse(oraFineText);
+        
+        if (!tf.isAfter(ti)) {
+            throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
+        }
 
-            LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(),ti);
-            LocalDateTime fine   = LocalDateTime.of(dataFinePicker.getValue(),tf);
+        LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(), ti);
+        LocalDateTime fine = LocalDateTime.of(dataFinePicker.getValue(), tf);
 
-            if ("Online".equals(tipoCombo.getValue())) {
-                String p = piattaformaField.getText().trim();
-                ValidationUtils.validateNotEmpty(p,ErrorMessages.PIATTAFORMA_MANCANTE);
-                Online o = modalitaAggiunta
-                    ? new Online(inizio,fine,p)
-                    : (Online) sessione;
-                o.setDataInizioSessione(inizio);
-                o.setDataFineSessione(fine);
-                o.setPiattaformaStreaming(p);
-                o.setCorsoCucina(corso);
+        // ✅ VALIDAZIONE DATE RISPETTO AL CORSO (PRIMA di creare oggetti)
+        if (corso != null && corso.getDataInizioCorso() != null && corso.getDataFineCorso() != null) {
+            LocalDate corsoInizio = corso.getDataInizioCorso().toLocalDate();
+            LocalDate corsoFine = corso.getDataFineCorso().toLocalDate();
 
-                if (modalitaAggiunta) controller.aggiungiSessione(o,new ArrayList<>());
-                else controller.aggiornaSessione(sessione,o);
-
-            } else {
-                String via = viaField.getText().trim(), cit = cittaField.getText().trim();
-                ValidationUtils.validateNotEmpty(via,ErrorMessages.VIA_MANCANTE);
-                ValidationUtils.validateNotEmpty(cit,ErrorMessages.CITTA_MANCANTE);
-                int posti = Integer.parseInt(postiField.getText().trim());
-                if (posti<=0) throw new ValidationException(ErrorMessages.POSTI_NON_VALIDI);
-                int cap = Integer.parseInt(capField.getText().trim());
-                if (cap<10000||cap>99999) throw new ValidationException(ErrorMessages.CAP_NON_VALIDO);
-
-                InPresenza ip = modalitaAggiunta
-                    ? new InPresenza(inizio,fine,via,cit,posti,cap)
-                    : (InPresenza)sessione;
-                ip.setDataInizioSessione(inizio);
-                ip.setDataFineSessione(fine);
-                ip.setVia(via);
-                ip.setCitta(cit);
-                ip.setNumeroPosti(posti);
-                ip.setCAP(cap);
-                ip.setCorsoCucina(corso);
-
-                if (modalitaAggiunta) controller.aggiungiSessione(ip,new ArrayList<>(ip.getRicette()));
-                else controller.aggiornaSessione(sessione,ip);
+            if (dataInizioPicker.getValue().isBefore(corsoInizio)) {
+                StyleHelper.showValidationDialog("Validazione", 
+                    String.format("La sessione deve iniziare dopo l'inizio del corso.\n\n" +
+                        "Inizio corso: %s\n" +
+                        "Data sessione: %s", 
+                        corsoInizio, dataInizioPicker.getValue()));
+                return;  // ✅ IMPORTANTE: blocca qui
             }
 
-            StyleHelper.showSuccessDialog("Successo","Sessione salvata correttamente");
-            primaryStage.hide();
-
-        } catch (ValidationException ve) {
-            StyleHelper.showValidationDialog("Validazione",ve.getMessage());
-        } catch (DataAccessException dae) {
-            StyleHelper.showErrorDialog("Errore DB",dae.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore",e.getMessage());
-            e.printStackTrace();
+            if (dataFinePicker.getValue().isAfter(corsoFine)) {
+                StyleHelper.showValidationDialog("Validazione", 
+                    String.format("La sessione deve finire prima della fine del corso.\n\n" +
+                        "Fine corso: %s\n" +
+                        "Data sessione: %s", 
+                        corsoFine, dataFinePicker.getValue()));
+                return;  // ✅ IMPORTANTE: blocca qui
+            }
         }
+
+        if ("Online".equals(tipoCombo.getValue())) {
+            String p = piattaformaField.getText().trim();
+            ValidationUtils.validateNotEmpty(p, ErrorMessages.PIATTAFORMA_MANCANTE);
+            
+            Online o = modalitaAggiunta
+                ? new Online(inizio, fine, p)
+                : (Online) sessione;
+                
+            o.setDataInizioSessione(inizio);
+            o.setDataFineSessione(fine);
+            o.setPiattaformaStreaming(p);
+            o.setCorsoCucina(corso);
+
+            if (modalitaAggiunta) controller.aggiungiSessione(o, new ArrayList<>());
+            else controller.aggiornaSessione(sessione, o);
+
+        } else {
+            String via = viaField.getText().trim(), cit = cittaField.getText().trim();
+            ValidationUtils.validateNotEmpty(via, ErrorMessages.VIA_MANCANTE);
+            ValidationUtils.validateNotEmpty(cit, ErrorMessages.CITTA_MANCANTE);
+            
+            int posti = Integer.parseInt(postiField.getText().trim());
+            if (posti <= 0) throw new ValidationException(ErrorMessages.POSTI_NON_VALIDI);
+            
+            int cap = Integer.parseInt(capField.getText().trim());
+            if (cap < 10000 || cap > 99999) throw new ValidationException(ErrorMessages.CAP_NON_VALIDO);
+
+            InPresenza ip = modalitaAggiunta
+                ? new InPresenza(inizio, fine, via, cit, posti, cap)
+                : (InPresenza) sessione;
+                
+            ip.setDataInizioSessione(inizio);
+            ip.setDataFineSessione(fine);
+            ip.setVia(via);
+            ip.setCitta(cit);
+            ip.setNumeroPosti(posti);
+            ip.setCAP(cap);
+            ip.setCorsoCucina(corso);
+
+            if (modalitaAggiunta) controller.aggiungiSessione(ip, new ArrayList<>(ip.getRicette()));
+            else controller.aggiornaSessione(sessione, ip);
+        }
+
+        StyleHelper.showSuccessDialog("Successo", "Sessione salvata correttamente");
+        
+        Platform.runLater(() -> {
+            if (primaryStage != null) {
+                primaryStage.close();
+            } else {
+                ((Stage) salvaBtn.getScene().getWindow()).close();
+            }
+        });
+
+    } catch (ValidationException ve) {
+        StyleHelper.showValidationDialog("Validazione", ve.getMessage());
+    } catch (DataAccessException dae) {
+        StyleHelper.showErrorDialog("Errore DB", dae.getMessage());
+    } catch (Exception e) {
+        StyleHelper.showErrorDialog("Errore", e.getMessage());
+        e.printStackTrace();
     }
+}
+
+
 }

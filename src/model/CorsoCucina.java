@@ -122,35 +122,30 @@ public class CorsoCucina {
 	}
 
 	public void setDataInizioCorso(LocalDateTime dataInizioCorso) {
-		if (dataInizioCorso == null)
-			throw new IllegalArgumentException("Data inizio corso non può essere null");
-		if (dataInizioCorso.isBefore(LocalDateTime.now()))
-			throw new IllegalArgumentException("Data inizio corso non può essere nel passato");
-		this.dataInizioCorso = dataInizioCorso;
-	}
-
-	public LocalDateTime getDataFineCorso() {
-		return dataFineCorso;
+	    if (dataInizioCorso == null)
+	        throw new IllegalArgumentException("Data inizio corso non può essere null");
+	    this.dataInizioCorso = dataInizioCorso;
 	}
 
 	public void setDataFineCorso(LocalDateTime dataFineCorso) {
-		if (dataFineCorso == null)
-			throw new IllegalArgumentException("Data fine corso non può essere null");
-		if (this.dataInizioCorso != null && dataFineCorso.isBefore(this.dataInizioCorso))
-			throw new IllegalArgumentException("Data fine corso deve essere dopo la data di inizio");
-		this.dataFineCorso = dataFineCorso;
+	    if (dataFineCorso == null)
+	        throw new IllegalArgumentException("Data fine corso non può essere null");
+	    this.dataFineCorso = dataFineCorso;
+	}
+
+	
+	public LocalDateTime getDataFineCorso() {
+		return dataFineCorso;
 	}
 
 	public List<Iscrizione> getIscrizioni() {
 		return iscrizioni;
 	}
 
-	// usato solo per il dao
 	public void setDataInizioCorsoFromDB(LocalDateTime dataInizioCorso) {
 		this.dataInizioCorso = dataInizioCorso;
 	}
 
-	// usato solo per i dao
 	public void setDataFineCorsoFromDB(LocalDateTime dataFineCorso) {
 		this.dataFineCorso = dataFineCorso;
 	}
