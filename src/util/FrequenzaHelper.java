@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.temporal.WeekFields;
+import java.util.Set;
 
 public class FrequenzaHelper {
 
@@ -94,7 +97,47 @@ public class FrequenzaHelper {
             "💡 Aumenta la durata del corso o scegli una frequenza diversa.",
             frequenza.getDescrizione(), durataMinima, giorniDurata
         );
+    }  
+
+public static boolean isDataDisponibile(LocalDate data, Frequenza frequenza, Set<LocalDate> dateOccupate, LocalDate corsoInizio) {
+    if (frequenza == null || data == null || dateOccupate == null) return false;
+
+    switch (frequenza) {
+        case UNICA:
+            return dateOccupate.isEmpty();
+
+        case GIORNALIERO:
+            return !dateOccupate.contains(data);
+
+        case OGNI_DUE_GIORNI:
+            LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
+            long giorniDiff = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
+            return giorniDiff >= 2 && giorniDiff % 2 == 0;
+
+        case SETTIMANALE:
+            int settimanaData = data.get(WeekFields.ISO.weekOfWeekBasedYear());
+            int annoData = data.getYear();
+            for (LocalDate d : dateOccupate) {
+                if (d.getYear() == annoData && d.get(WeekFields.ISO.weekOfWeekBasedYear()) == settimanaData) {
+                    return false;
+                }
+            }
+            return true;
+
+        case MENSILE:
+            int meseData = data.getMonthValue();
+            annoData = data.getYear();
+            for (LocalDate d : dateOccupate) {
+                if (d.getYear() == annoData && d.getMonthValue() == meseData) {
+                    return false;
+                }
+            }
+            return true;
+
+        default:
+            return true;
     }
+}
 
     private FrequenzaHelper() {
         throw new AssertionError("Utility class - non istanziabile");
