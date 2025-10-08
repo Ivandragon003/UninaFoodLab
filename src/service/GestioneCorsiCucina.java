@@ -110,15 +110,25 @@ public class GestioneCorsiCucina {
         }
     }
 
-    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws DataAccessException {
-        try {
-            if (corso.getChef() != null && corso.getChef().remove(chef)) {
-                tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
-        }
+  public void rimuoviChefDaCorso(Chef chef, CorsoCucina corso)
+        throws ValidationException, DataAccessException {
+
+    if (chef == null)
+        throw new ValidationException(ErrorMessages.CHEF_NULLO);
+    if (corso == null)
+        throw new ValidationException(ErrorMessages.CORSO_NULLO);
+    if (!chef.getCorsi().contains(corso))
+        throw new ValidationException("Lo chef non è assegnato a questo corso");
+
+    try {
+        tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso()); 
+        chef.getCorsi().remove(corso);                           
+        corso.getChef().remove(chef);
+    } catch (SQLException e) {
+        throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
     }
+}
+
 
     public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
         try {

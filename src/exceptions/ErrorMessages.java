@@ -33,6 +33,9 @@ public class ErrorMessages {
     public static final String CITTA_MANCANTE = "Inserisci la città";
     public static final String CAP_NON_VALIDO = "Inserisci un CAP valido (5 cifre)";
     public static final String POSTI_NON_VALIDI = "Il numero di posti deve essere almeno 1";
+    public static final String SOLO_SESSIONI_IN_PRESENZA = "È possibile associare ricette solo alle sessioni in presenza";
+    public static final String SESSIONE_NON_TROVATA = "La sessione selezionata non è stata trovata";
+
     
     // ==================== RICETTE ====================
     public static final String NOME_RICETTA_MANCANTE = "Il nome della ricetta è obbligatorio";

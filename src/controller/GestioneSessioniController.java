@@ -33,28 +33,11 @@ public class GestioneSessioniController {
         this.gestioneRicetteService = gestioneRicetteService;
     }
 
-    public void aggiungiSessione(Sessione s, List<Ricetta> ricette) {
+    // --- WRAPPER PER AZIONI ---
+    private void executeAction(Runnable action, String successMessage) {
         try {
-            ValidationUtils.validateNotNull(s, "Sessione");
-            ValidationUtils.validateNotNull(corso, "Corso");
-
-            LocalDateTime now = LocalDateTime.now();
-            if (s.getDataInizioSessione().isBefore(now))
-                throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
-            if (!s.getDataFineSessione().isAfter(s.getDataInizioSessione()))
-                throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
-
-            corso.getSessioni().add(s);
-            gestioneSessioniService.creaSessione(s);
-
-            if (s instanceof InPresenza ip && ricette != null) {
-                for (Ricetta r : ricette) {
-                    gestioneSessioniService.aggiungiRicettaASessione(ip, r);
-                }
-            }
-
-            StyleHelper.showSuccessDialog("Successo", ErrorMessages.SESSIONE_CREATA);
-
+            action.run();
+            StyleHelper.showSuccessDialog("Successo", successMessage);
         } catch (ValidationException ve) {
             StyleHelper.showValidationDialog("Validazione", ve.getMessage());
         } catch (DataAccessException dae) {
@@ -65,13 +48,36 @@ public class GestioneSessioniController {
         }
     }
 
+    // --- SESSIONI ---
+    public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette) {
+        executeAction(() -> {
+            ValidationUtils.validateNotNull(sessione, "Sessione");
+            ValidationUtils.validateNotNull(corso, "Corso");
+
+            LocalDateTime now = LocalDateTime.now();
+            if (sessione.getDataInizioSessione().isBefore(now))
+                throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
+            if (!sessione.getDataFineSessione().isAfter(sessione.getDataInizioSessione()))
+                throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
+
+            gestioneSessioniService.creaSessione(sessione);
+            corso.getSessioni().add(sessione);
+
+            if (sessione instanceof InPresenza ip && ricette != null) {
+                for (Ricetta r : ricette) {
+                    gestioneSessioniService.aggiungiRicettaASessione(ip, r);
+                }
+            }
+        }, ErrorMessages.SESSIONE_CREATA);
+    }
+
     public void aggiornaSessione(Sessione oldS, Sessione newS) {
-        try {
+        executeAction(() -> {
             ValidationUtils.validateNotNull(oldS, "Sessione vecchia");
             ValidationUtils.validateNotNull(newS, "Sessione nuova");
 
             int idx = corso.getSessioni().indexOf(oldS);
-            if (idx < 0) throw new ValidationException("Sessione non trovata");
+            if (idx < 0) throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
 
             LocalDateTime now = LocalDateTime.now();
             if (newS.getDataInizioSessione().isBefore(now))
@@ -79,50 +85,31 @@ public class GestioneSessioniController {
             if (!newS.getDataFineSessione().isAfter(newS.getDataInizioSessione()))
                 throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
 
-            corso.getSessioni().set(idx, newS);
-            gestioneSessioniService.rimuoviSessione(oldS);
             gestioneSessioniService.creaSessione(newS);
-
-            StyleHelper.showSuccessDialog("Successo", "Sessione aggiornata con successo!");
-
-        } catch (ValidationException ve) {
-            StyleHelper.showValidationDialog("Validazione", ve.getMessage());
-        } catch (DataAccessException dae) {
-            StyleHelper.showErrorDialog("Errore Database", dae.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", e.getMessage());
-            e.printStackTrace();
-        }
+            gestioneSessioniService.rimuoviSessione(oldS);
+            corso.getSessioni().set(idx, newS);
+        }, "Sessione aggiornata con successo!");
     }
 
-    public void eliminaSessione(Sessione s) {
-        try {
-            ValidationUtils.validateNotNull(s, "Sessione");
+    public void eliminaSessione(Sessione sessione) {
+        executeAction(() -> {
+            ValidationUtils.validateNotNull(sessione, "Sessione");
 
             if (corso.getSessioni().size() <= 1)
                 throw new ValidationException(
                         "Impossibile eliminare l'unica sessione del corso. Aggiungere almeno un'altra."
                 );
 
-            corso.getSessioni().remove(s);
-            gestioneSessioniService.rimuoviSessione(s);
-
-            StyleHelper.showSuccessDialog("Successo", "Sessione eliminata con successo!");
-
-        } catch (ValidationException ve) {
-            StyleHelper.showValidationDialog("Validazione", ve.getMessage());
-        } catch (DataAccessException dae) {
-            StyleHelper.showErrorDialog("Errore Database", dae.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", e.getMessage());
-            e.printStackTrace();
-        }
+            gestioneSessioniService.rimuoviSessione(sessione);
+            corso.getSessioni().remove(sessione);
+        }, "Sessione eliminata con successo!");
     }
 
+    // --- RICETTE ---
     public void aggiungiRicettaASessione(Sessione sessione, Ricetta ricetta) {
-        try {
+        executeAction(() -> {
             if (!(sessione instanceof InPresenza ip))
-                throw new ValidationException("Solo sessioni in presenza possono avere ricette");
+                throw new ValidationException(ErrorMessages.SOLO_SESSIONI_IN_PRESENZA);
 
             ValidationUtils.validateNotNull(ricetta, "Ricetta");
 
@@ -130,33 +117,15 @@ public class GestioneSessioniController {
                 gestioneRicetteService.creaRicetta(ricetta);
 
             gestioneSessioniService.aggiungiRicettaASessione(ip, ricetta);
-            StyleHelper.showSuccessDialog("Successo", "Ricetta associata con successo!");
-
-        } catch (ValidationException ve) {
-            StyleHelper.showValidationDialog("Validazione", ve.getMessage());
-        } catch (DataAccessException dae) {
-            StyleHelper.showErrorDialog("Errore Database", dae.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", e.getMessage());
-            e.printStackTrace();
-        }
+        }, "Ricetta associata con successo!");
     }
 
-    public void rimuoviRicettaDaSessione(InPresenza ip, Ricetta r) {
-        try {
-            ValidationUtils.validateNotNull(ip, "Sessione");
-            ValidationUtils.validateNotNull(r, "Ricetta");
+    public void rimuoviRicettaDaSessione(InPresenza sessione, Ricetta ricetta) {
+        executeAction(() -> {
+            ValidationUtils.validateNotNull(sessione, "Sessione");
+            ValidationUtils.validateNotNull(ricetta, "Ricetta");
 
-            gestioneSessioniService.rimuoviRicettaDaSessione(ip, r);
-            StyleHelper.showSuccessDialog("Successo", "Ricetta rimossa con successo!");
-
-        } catch (ValidationException ve) {
-            StyleHelper.showValidationDialog("Validazione", ve.getMessage());
-        } catch (DataAccessException dae) {
-            StyleHelper.showErrorDialog("Errore Database", dae.getMessage());
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", e.getMessage());
-            e.printStackTrace();
-        }
+            gestioneSessioniService.rimuoviRicettaDaSessione(sessione, ricetta);
+        }, "Ricetta rimossa con successo!");
     }
 }

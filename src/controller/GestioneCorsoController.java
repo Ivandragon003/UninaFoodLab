@@ -42,9 +42,13 @@ public class GestioneCorsoController {
         corsiService.aggiungiChefACorso(corso, chef, password);
     }
 
-    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) {
-        corsiService.rimuoviChefDaCorso(corso, chef);
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
+        if (chef == null) throw new ValidationException(ErrorMessages.CHEF_NULLO);
+        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
+
+        corsiService.rimuoviChefDaCorso(chef, corso);
     }
+
 
     public void eliminaCorso(int idCorso) {
         corsiService.cancellaCorso(idCorso);

@@ -1,6 +1,9 @@
 package service;
 
 import dao.CucinaDAO;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
+import exceptions.ErrorMessages;
 import model.InPresenza;
 import model.Ricetta;
 import model.Sessione;
@@ -15,28 +18,52 @@ public class GestioneCucina {
         this.cucinaDAO = cucinaDAO;
     }
 
-    public void aggiungiSessioneARicetta(Ricetta r, Sessione s) throws SQLException {
-        if (!(s instanceof InPresenza)) {
-            throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");
+    public void aggiungiSessioneARicetta(Ricetta ricetta, Sessione sessione)
+            throws ValidationException, DataAccessException {
+
+        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLO);
+        if (sessione == null) throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
+
+        if (!(sessione instanceof InPresenza)) {
+            throw new ValidationException(ErrorMessages.SOLO_SESSIONI_IN_PRESENZA);
         }
 
-        if (!r.getSessioni().contains(s)) {
-            r.getSessioni().add(s);
-            cucinaDAO.save(r.getIdRicetta(), s.getIdSessione());
-        } else {
-            throw new IllegalArgumentException("Sessione già associata a questa ricetta");
+        InPresenza ip = (InPresenza) sessione;
+
+        try {
+            if (ricetta.getSessioni().contains(ip)) {
+                throw new ValidationException("La sessione è già associata a questa ricetta");
+            }
+
+            cucinaDAO.save(ricetta.getIdRicetta(), ip.getIdSessione());
+            ricetta.getSessioni().add(ip);
+
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_INSERIMENTO, e);
         }
     }
 
-    public void rimuoviSessioneDaRicetta(Ricetta r, Sessione s) throws SQLException {
-        if (!(s instanceof InPresenza)) {
-            throw new IllegalArgumentException("Le ricette possono essere associate solo a sessioni in presenza");
+    public void rimuoviSessioneDaRicetta(Ricetta ricetta, Sessione sessione)
+            throws ValidationException, DataAccessException {
+
+        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLO);
+        if (sessione == null) throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
+
+        if (!(sessione instanceof InPresenza)) {
+            throw new ValidationException(ErrorMessages.SOLO_SESSIONI_IN_PRESENZA);
         }
 
-        if (r.getSessioni().remove(s)) {
-            cucinaDAO.delete(r.getIdRicetta(), s.getIdSessione());
-        } else {
-            throw new IllegalArgumentException("Sessione non associata a questa ricetta");
+        InPresenza ip = (InPresenza) sessione;
+
+        try {
+            if (!ricetta.getSessioni().remove(ip)) {
+                throw new ValidationException("La sessione non è associata a questa ricetta");
+            }
+
+            cucinaDAO.delete(ricetta.getIdRicetta(), ip.getIdSessione());
+
+        } catch (SQLException e) {
+            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
         }
     }
 }

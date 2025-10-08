@@ -16,188 +16,162 @@ import java.time.LocalDate;
 
 public class GestioneChef {
 
-    private final ChefDAO chefDAO;
-    private final TieneDAO tieneDAO;
+	private final ChefDAO chefDAO;
+	private final TieneDAO tieneDAO;
 
-    public GestioneChef(ChefDAO chefDAO, TieneDAO tieneDAO) {
-        this.chefDAO = chefDAO;
-        this.tieneDAO = tieneDAO;
-    }
+	public GestioneChef(ChefDAO chefDAO, TieneDAO tieneDAO) {
+		this.chefDAO = chefDAO;
+		this.tieneDAO = tieneDAO;
+	}
 
-    // ==================== LOGIN ====================
-    public Chef login(String username, String password)
-            throws ValidationException, DataAccessException {
-        ValidationUtils.validateNotEmpty(username, "Username");
-        ValidationUtils.validateNotEmpty(password, "Password");
+	// ==================== LOGIN ====================
+	public Chef login(String username, String password) throws ValidationException, DataAccessException {
+		ValidationUtils.validateNotEmpty(username, "Username");
+		ValidationUtils.validateNotEmpty(password, "Password");
 
-        try {
-            Optional<Chef> chefOpt = chefDAO.findByUsername(username);
-            if (chefOpt.isEmpty())
-                throw new ValidationException(ErrorMessages.USERNAME_NON_TROVATO);
+		try {
+			Chef chef = chefDAO.findByUsername(username)
+					.orElseThrow(() -> new ValidationException(ErrorMessages.USERNAME_NON_TROVATO));
 
-            Chef chef = chefOpt.get();
-            if (!chef.getPassword().equals(password))
-                throw new ValidationException(ErrorMessages.PASSWORD_ERRATA);
+			if (!chef.getPassword().equals(password))
+				throw new ValidationException(ErrorMessages.PASSWORD_ERRATA);
 
-            return chef;
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_DATABASE, e);
-        }
-    }
+			return chef;
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_DATABASE, e);
+		}
+	}
 
-    // ==================== CREAZIONE ====================
-    public Chef creaChef(String codFiscale, String nome, String cognome, String email,
-                         LocalDate dataNascita, boolean disponibilita,
-                         String username, String password)
-            throws ValidationException, DataAccessException {
+	// ==================== CREAZIONE ====================
+	public Chef creaChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
+			boolean disponibilita, String username, String password) throws ValidationException, DataAccessException {
 
-        validateChefInput(codFiscale, nome, cognome, email, dataNascita, username, password);
+		validateChefInput(codFiscale, nome, cognome, email, dataNascita, username, password);
 
-        try {
-            checkUniqueConstraints(codFiscale, email, username);
-            Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
-            chef.setEmail(email);
-            chef.setDataNascita(dataNascita);
-            chefDAO.save(chef, password);
-            return chef;
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
-        }
-    }
+		try {
+			checkUniqueConstraints(codFiscale, email, username);
+			Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
+			chef.setEmail(email);
+			chef.setDataNascita(dataNascita);
+			chefDAO.save(chef, password);
+			return chef;
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
+		}
+	}
 
-    // ==================== AGGIORNAMENTO ====================
-    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword)
-            throws ValidationException, DataAccessException {
+	// ==================== AGGIORNAMENTO ====================
+	public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword)
+			throws ValidationException, DataAccessException {
 
-        if (chef == null)
-            throw new ValidationException(ErrorMessages.CHEF_NULLO);
+		if (chef == null)
+			throw new ValidationException(ErrorMessages.CHEF_NULLO);
 
-        ValidationUtils.validateNotEmpty(nuovoUsername, "Username");
-        ValidationUtils.validateTextLength(nuovoUsername, "Username", 3, 30);
-        ValidationUtils.validateTextLength(nuovaPassword, "Password", 6, 50);
+		ValidationUtils.validateNotEmpty(nuovoUsername, "Username");
+		ValidationUtils.validateTextLength(nuovoUsername, "Username", 3, 30);
+		ValidationUtils.validateTextLength(nuovaPassword, "Password", 6, 50);
 
-        try {
-            if (!nuovoUsername.equals(chef.getUsername())
-                    && chefDAO.findByUsername(nuovoUsername).isPresent()) {
-                throw new ValidationException("Username già esistente");
-            }
+		try {
+			if (!nuovoUsername.equals(chef.getUsername()) && chefDAO.findByUsername(nuovoUsername).isPresent()) {
+				throw new ValidationException("Username già esistente");
+			}
 
-            chef.setUsername(nuovoUsername);
-            chef.setPassword(nuovaPassword);
-            chefDAO.update(chef, nuovaPassword);
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
-        }
-    }
+			chef.setUsername(nuovoUsername);
+			chef.setPassword(nuovaPassword);
+			chefDAO.update(chef, nuovaPassword);
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_AGGIORNAMENTO, e);
+		}
+	}
 
-    // ==================== ELIMINAZIONE ====================
-    public void eliminaChef(String username)
-            throws ValidationException, DataAccessException {
+	// ==================== ELIMINAZIONE ====================
+	public void eliminaChef(String username) throws ValidationException, DataAccessException {
 
-        ValidationUtils.validateNotEmpty(username, "Username");
+		ValidationUtils.validateNotEmpty(username, "Username");
 
-        try {
-            Optional<Chef> chefOpt = chefDAO.findByUsername(username);
-            if (chefOpt.isEmpty())
-                throw new ValidationException(ErrorMessages.CHEF_NON_PRESENTE + username);
+		try {
+			Optional<Chef> chefOpt = chefDAO.findByUsername(username);
+			if (chefOpt.isEmpty())
+				throw new ValidationException(ErrorMessages.CHEF_NON_PRESENTE + username);
 
-            chefDAO.delete(chefOpt.get().getCodFiscale());
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
-        }
-    }
+			chefDAO.delete(chefOpt.get().getCodFiscale());
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
+		}
+	}
 
-    // ==================== LETTURA ====================
-    public List<Chef> getAll() throws DataAccessException {
-        try {
-            return chefDAO.getAll();
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
-        }
-    }
+	// ==================== LETTURA ====================
+	public List<Chef> getAll() throws DataAccessException {
+		try {
+			return chefDAO.getAll();
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+		}
+	}
 
-    public Chef getChefByUsername(String username) throws DataAccessException {
-        try {
-            return chefDAO.findByUsername(username).orElse(null);
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
-        }
-    }
+	public Chef getChefByUsername(String username) throws DataAccessException {
+		try {
+			return chefDAO.findByUsername(username).orElse(null);
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+		}
+	}
 
-    // ==================== RELAZIONI CON CORSI ====================
-    public void aggiungiCorso(Chef chef, CorsoCucina corso)
-            throws ValidationException, DataAccessException {
+	// ==================== RELAZIONI CON CORSI ====================
+	public void aggiungiCorso(Chef chef, CorsoCucina corso) throws ValidationException, DataAccessException {
 
-        if (chef == null)
-            throw new ValidationException(ErrorMessages.CHEF_NULLO);
-        if (corso == null)
-            throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        if (chef.getCorsi().contains(corso))
-            throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
+		if (chef == null)
+			throw new ValidationException(ErrorMessages.CHEF_NULLO);
+		if (corso == null)
+			throw new ValidationException(ErrorMessages.CORSO_NULLO);
+		if (chef.getCorsi().contains(corso))
+			throw new ValidationException(ErrorMessages.CHEF_GIA_ASSEGNATO);
 
-        try {
-            chef.getCorsi().add(corso);
-            corso.getChef().add(chef);
-            tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
-        } catch (SQLException e) {
-            chef.getCorsi().remove(corso);
-            corso.getChef().remove(chef);
-            throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
-        }
-    }
+		try {
+			tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
+			chef.getCorsi().add(corso);
+			corso.getChef().add(chef);
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_SALVATAGGIO, e);
+		}
+	}
 
-    public void rimuoviCorso(Chef chef, CorsoCucina corso)
-            throws ValidationException, DataAccessException {
+	public void rimuoviCorso(Chef chef, CorsoCucina corso) throws ValidationException, DataAccessException {
 
-        if (chef == null)
-            throw new ValidationException(ErrorMessages.CHEF_NULLO);
-        if (corso == null)
-            throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        if (!chef.getCorsi().contains(corso))
-            throw new ValidationException("Chef non insegna questo corso");
+		if (chef == null)
+			throw new ValidationException(ErrorMessages.CHEF_NULLO);
+		if (corso == null)
+			throw new ValidationException(ErrorMessages.CORSO_NULLO);
+		if (!chef.getCorsi().contains(corso))
+			throw new ValidationException("Lo chef non è assegnato a questo corso");
 
-        try {
-            chef.getCorsi().remove(corso);
-            corso.getChef().remove(chef);
-            tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
-        } catch (SQLException e) {
-            throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
-        }
-    }
+		try {
+			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
+			chef.getCorsi().remove(corso);
+			corso.getChef().remove(chef);
+		} catch (SQLException e) {
+			throw new DataAccessException(ErrorMessages.ERRORE_ELIMINAZIONE, e);
+		}
+	}
 
-    // ==================== VALIDAZIONE INTERNA ====================
-    private void validateChefInput(String codFiscale, String nome, String cognome,
-                                   String email, LocalDate dataNascita,
-                                   String username, String password)
-            throws ValidationException {
+	// ==================== VALIDAZIONE INTERNA ====================
+	private void validateChefInput(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
+			String username, String password) throws ValidationException {
 
-        ValidationUtils.validateNotEmpty(codFiscale, "Codice fiscale");
-        ValidationUtils.validateTextLength(codFiscale, "Codice fiscale", 16, 16);
-        ValidationUtils.validateNotEmpty(nome, "Nome");
-        ValidationUtils.validateTextLength(nome, "Nome", 2, 50);
-        ValidationUtils.validateNotEmpty(cognome, "Cognome");
-        ValidationUtils.validateTextLength(cognome, "Cognome", 2, 50);
-        ValidationUtils.validateEmail(email);
+		if (dataNascita == null)
+			throw new ValidationException(ErrorMessages.campoObbligatorio("Data di nascita"));
+		if (dataNascita.isAfter(LocalDate.now().minusYears(18)))
+			throw new ValidationException("Lo chef deve avere almeno 18 anni");
+	}
 
-        if (dataNascita == null)
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Data di nascita"));
-        if (dataNascita.isAfter(LocalDate.now().minusYears(18)))
-            throw new ValidationException("Lo chef deve avere almeno 18 anni");
+	private void checkUniqueConstraints(String codFiscale, String email, String username)
+			throws ValidationException, SQLException {
 
-        ValidationUtils.validateNotEmpty(username, "Username");
-        ValidationUtils.validateTextLength(username, "Username", 3, 30);
-        ValidationUtils.validateNotEmpty(password, "Password");
-        ValidationUtils.validateTextLength(password, "Password", 6, 50);
-    }
-
-    private void checkUniqueConstraints(String codFiscale, String email, String username)
-            throws ValidationException, SQLException {
-
-        if (chefDAO.existsByCodFiscale(codFiscale))
-            throw new ValidationException("Codice fiscale già presente nel sistema");
-        if (chefDAO.existsByEmail(email))
-            throw new ValidationException("Email già utilizzata");
-        if (chefDAO.findByUsername(username).isPresent())
-            throw new ValidationException("Username già esistente");
-    }
+		if (chefDAO.existsByCodFiscale(codFiscale))
+			throw new ValidationException("Codice fiscale già presente nel sistema");
+		if (chefDAO.existsByEmail(email))
+			throw new ValidationException("Email già utilizzata");
+		if (chefDAO.findByUsername(username).isPresent())
+			throw new ValidationException("Username già esistente");
+	}
 }
