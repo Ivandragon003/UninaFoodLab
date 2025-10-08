@@ -92,6 +92,21 @@ public class ValidationUtils {
             throw new ValidationException(ErrorMessages.QUANTITA_NON_VALIDA);
         }
     }
+    
+ // ==================== VALIDAZIONI INGREDIENTI ====================
+    public static void validateNomeIngrediente(String nome) throws ValidationException {
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new ValidationException("Nome ingrediente mancante");
+        }
+        int len = nome.trim().length();
+        if (len < 2) {
+            throw new ValidationException("Nome ingrediente troppo corto");
+        }
+        if (len > 100) {
+            throw new ValidationException("Nome ingrediente troppo lungo");
+        }
+    }
+
 
     // ==================== VALIDAZIONI RANGE ====================
     

@@ -1,4 +1,4 @@
-package util;
+package guihelper;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -9,12 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-import util.StyleHelper;
 
-
-
-//  Factory per dialog riutilizzabili (successo, errore, avviso)
- 
 public class DialogFactory {
 
     private final Stage parentStage;

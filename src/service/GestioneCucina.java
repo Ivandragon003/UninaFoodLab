@@ -21,7 +21,7 @@ public class GestioneCucina {
     public void aggiungiSessioneARicetta(Ricetta ricetta, Sessione sessione)
             throws ValidationException, DataAccessException {
 
-        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLO);
+        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLA);
         if (sessione == null) throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
 
         if (!(sessione instanceof InPresenza)) {
@@ -46,7 +46,7 @@ public class GestioneCucina {
     public void rimuoviSessioneDaRicetta(Ricetta ricetta, Sessione sessione)
             throws ValidationException, DataAccessException {
 
-        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLO);
+        if (ricetta == null) throw new ValidationException(ErrorMessages.RICETTA_NULLA);
         if (sessione == null) throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
 
         if (!(sessione instanceof InPresenza)) {

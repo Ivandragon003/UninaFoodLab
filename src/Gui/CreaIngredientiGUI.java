@@ -11,15 +11,15 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ingrediente;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 import java.util.Optional;
 
 public class CreaIngredientiGUI extends Stage {
     private IngredienteController ingredienteController;
     private Ingrediente ingredienteCreato = null;
     private TextField nomeField;
-    private TextField tipoField; // Campo testo libero invece di ComboBox
-    private Label errorLabel; // Errore inline rosso
+    private TextField tipoField; 
+    private Label errorLabel; 
     private double xOffset = 0;
     private double yOffset = 0;
 

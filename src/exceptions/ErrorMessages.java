@@ -44,6 +44,9 @@ public class ErrorMessages {
     public static final String TEMPO_NON_VALIDO = "Il tempo di preparazione deve essere maggiore di zero";
     public static final String TEMPO_TROPPO_LUNGO = "Il tempo non può superare 24 ore (1440 minuti)";
     public static final String RICETTA_NON_TROVATA = "Ricetta non trovata";
+    public static final String RICETTA_NULLA = "La ricetta non può essere nulla";
+    public static final String ERRORE_INSERIMENTO = "Si è verificato un errore durante l'inserimento";
+
     
     // ==================== INGREDIENTI ====================
     public static final String INGREDIENTI_MANCANTI = "Aggiungi almeno un ingrediente";

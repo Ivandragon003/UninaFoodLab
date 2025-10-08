@@ -1,4 +1,5 @@
-package util;
+package guihelper;
+
 
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -34,6 +35,7 @@ public final class StyleHelper {
 	public static final String BG_WHITE = "#FFFFFF";
 	public static final String BG_ORANGE_LIGHT = "#FFCC99";
 	public static final String BG_ORANGE_START = "#FF9966";
+	public static final String NEUTRAL_GRAY = "#6c757d";
 
 	// PULSANTI
 

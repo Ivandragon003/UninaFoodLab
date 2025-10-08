@@ -15,7 +15,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Chef;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 
 import java.util.List;
 import java.util.Optional;

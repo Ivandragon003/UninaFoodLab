@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.*;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 import controller.RicettaController;
 
 import java.time.LocalDate;

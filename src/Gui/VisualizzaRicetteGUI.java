@@ -13,8 +13,9 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import model.Ricetta;
 import model.Ingrediente;
-import util.StyleHelper;
+import guihelper.StyleHelper;  // ✅ CORRETTO: import da guihelper, non util
 import exceptions.ValidationException;
+import exceptions.DataAccessException;
 
 import java.util.List;
 import java.util.Map;
@@ -61,8 +62,13 @@ public class VisualizzaRicetteGUI {
 		titleLabel.setAlignment(Pos.CENTER);
 		titleLabel.setTextFill(Color.WHITE);
 
-		ScrollPane scrollPane = new ScrollPane(new VBox(15, createFiltriSection(), new Separator(),
-				createListaSection(), new Separator(), createButtonSection()));
+		ScrollPane scrollPane = new ScrollPane(new VBox(15, 
+			createFiltriSection(), 
+			new Separator(),
+			createListaSection(), 
+			new Separator(), 
+			createButtonSection()
+		));
 		scrollPane.setFitToWidth(true);
 		scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
@@ -135,7 +141,16 @@ public class VisualizzaRicetteGUI {
 		ricetteListView = new ListView<>();
 		ricetteListView.setPrefHeight(350);
 		ricetteListView.setItems(ricetteData);
-		StyleHelper.applyListViewStyle(ricetteListView);
+		
+		// ✅ CORRETTO: Applica stile inline invece di chiamare metodo inesistente
+		ricetteListView.setStyle(
+			"-fx-background-color: white;" +
+			"-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+			"-fx-border-radius: 8;" +
+			"-fx-background-radius: 8;" +
+			"-fx-border-width: 1;"
+		);
+		
 		ricetteListView.setCellFactory(lv -> new RicettaCell());
 		ricetteListView.setOnMouseClicked(event -> {
 			if (event.getClickCount() == 2) {
@@ -184,13 +199,18 @@ public class VisualizzaRicetteGUI {
 
 	private void applicaFiltri() {
 		try {
-			List<Ricetta> filtrate = ricettaController.filtraCombinato(filtroNomeField.getText(),
-					parseIntSafe(filtroTempoMinField.getText()), parseIntSafe(filtroTempoMaxField.getText()),
-					parseIntSafe(filtroIngredientiMinField.getText()),
-					parseIntSafe(filtroIngredientiMaxField.getText()));
+			List<Ricetta> filtrate = ricettaController.filtraCombinato(
+				filtroNomeField.getText(),
+				parseIntSafe(filtroTempoMinField.getText()), 
+				parseIntSafe(filtroTempoMaxField.getText()),
+				parseIntSafe(filtroIngredientiMinField.getText()),
+				parseIntSafe(filtroIngredientiMaxField.getText())
+			);
 			ricetteData.setAll(filtrate);
 		} catch (ValidationException e) {
 			StyleHelper.showValidationDialog("Validazione", e.getMessage());
+		} catch (DataAccessException e) {
+			StyleHelper.showErrorDialog("Errore Database", e.getMessage());
 		} catch (Exception e) {
 			StyleHelper.showErrorDialog("Errore", "Errore filtri: " + e.getMessage());
 		}
@@ -201,6 +221,8 @@ public class VisualizzaRicetteGUI {
 	private void caricaRicette() {
 		try {
 			ricetteData.setAll(ricettaController.getAllRicette());
+		} catch (DataAccessException e) {
+			StyleHelper.showErrorDialog("Errore Database", "Errore caricamento: " + e.getMessage());
 		} catch (Exception e) {
 			StyleHelper.showErrorDialog("Errore", "Errore caricamento: " + e.getMessage());
 		}
@@ -219,18 +241,24 @@ public class VisualizzaRicetteGUI {
 		try {
 			ricettaController.ricaricaCache();
 			caricaRicette();
-			StyleHelper.showSuccessDialog("Successo", "Ricette ricaricate");
+			StyleHelper.showSuccessDialog("Successo", "Ricette ricaricate con successo");
+		} catch (DataAccessException e) {
+			StyleHelper.showErrorDialog("Errore Database", "Errore ricaricamento: " + e.getMessage());
 		} catch (Exception e) {
 			StyleHelper.showErrorDialog("Errore", "Errore ricaricamento: " + e.getMessage());
 		}
 	}
 
 	private void apriCreaRicetta() {
-		CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
-		Ricetta nuova = creaGUI.showAndReturn();
-		if (nuova != null) {
-			caricaRicette();
-			StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuova.getNome() + "' creata!");
+		try {
+			CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
+			Ricetta nuova = creaGUI.showAndReturn();
+			if (nuova != null) {
+				caricaRicette();
+				StyleHelper.showSuccessDialog("Successo", "Ricetta '" + nuova.getNome() + "' creata con successo!");
+			}
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore creazione ricetta: " + e.getMessage());
 		}
 	}
 
@@ -240,18 +268,22 @@ public class VisualizzaRicetteGUI {
 		sb.append("🥕 Totale: ").append(ricetta.getNumeroIngredienti()).append(" ingredienti\n\n");
 
 		Map<Ingrediente, Double> ingredienti = ricetta.getIngredienti();
-		if (ingredienti.isEmpty()) {
+		if (ingredienti == null || ingredienti.isEmpty()) {
 			sb.append("Nessun ingrediente trovato");
 		} else {
-			ingredienti.forEach((ing, qnt) -> sb.append("🥕 ").append(ing.getNome()).append(" (").append(ing.getTipo())
-					.append(") - ").append(qnt).append("g\n"));
+			ingredienti.forEach((ing, qnt) -> 
+				sb.append("🥕 ")
+				  .append(ing.getNome())
+				  .append(" (")
+				  .append(ing.getTipo())
+				  .append(") - ")
+				  .append(String.format("%.0f", qnt))
+				  .append("g\n")
+			);
 		}
 
-		Alert dialog = new Alert(Alert.AlertType.INFORMATION);
-		dialog.setTitle("Ingredienti - " + ricetta.getNome());
-		dialog.setHeaderText("🥕 " + ricetta.getNome());
-		dialog.setContentText(sb.toString());
-		dialog.showAndWait();
+		// ✅ Usa StyleHelper invece di Alert standard
+		StyleHelper.showInfoDialog("Ingredienti - " + ricetta.getNome(), sb.toString());
 	}
 
 	private void selezionaRicetta() {
@@ -300,6 +332,7 @@ public class VisualizzaRicetteGUI {
 			super.updateItem(item, empty);
 			if (empty || item == null) {
 				setGraphic(null);
+				setText(null);
 			} else {
 				Label nomeLabel = new Label("📖 " + item.getNome());
 				nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
@@ -320,6 +353,13 @@ public class VisualizzaRicetteGUI {
 				HBox cell = new HBox(info);
 				cell.setPadding(new Insets(12));
 				cell.setAlignment(Pos.CENTER_LEFT);
+				cell.setStyle(
+					"-fx-background-color: #f8f9fa;" +
+					"-fx-background-radius: 8;" +
+					"-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+					"-fx-border-radius: 8;" +
+					"-fx-border-width: 1;"
+				);
 
 				setGraphic(cell);
 			}

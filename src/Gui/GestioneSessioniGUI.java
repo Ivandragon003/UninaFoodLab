@@ -2,7 +2,7 @@ package Gui;
 
 import controller.GestioneSessioniController;
 import model.*;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.ErrorMessages;
 import exceptions.ValidationUtils;
@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.List;
+
 
 public class GestioneSessioniGUI {
 

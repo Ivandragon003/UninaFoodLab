@@ -1,10 +1,16 @@
 package Gui;
 
 import controller.GestioneCorsoController;
+import controller.GestioneSessioniController;
+import dao.*;
+import service.*;
 import model.CorsoCucina;
 import model.Frequenza;
 import model.Chef;
 import util.FrequenzaHelper;
+import guihelper.StyleHelper;
+import exceptions.ValidationException;
+import exceptions.DataAccessException;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,15 +23,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.stage.Modality;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import exceptions.ValidationException;
-import controller.GestioneSessioniController;
 
 public class DettagliCorsoGUI {
     private GestioneCorsoController gestioneController;
@@ -91,37 +95,40 @@ public class DettagliCorsoGUI {
 
         Label title = new Label("📋 Dettagli Corso");
         title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
-        title.setTextFill(Color.web("#FF6600"));
+        title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        nomeField = new TextField(safeString(corso.getNomeCorso()));
-        nomeField.setFont(Font.font("Roboto", 14));
+        nomeField = StyleHelper.createTextField(safeString(corso.getNomeCorso()));
+        nomeField.setText(safeString(corso.getNomeCorso()));
         
-        prezzoField = new TextField(String.valueOf(corso.getPrezzo()));
-        prezzoField.setFont(Font.font("Roboto", 14));
+        prezzoField = StyleHelper.createTextField(String.valueOf(corso.getPrezzo()));
+        prezzoField.setText(String.valueOf(corso.getPrezzo()));
         
-        argomentoField = new TextField(safeString(corso.getArgomento()));
-        argomentoField.setFont(Font.font("Roboto", 14));
+        argomentoField = StyleHelper.createTextField(safeString(corso.getArgomento()));
+        argomentoField.setText(safeString(corso.getArgomento()));
 
-        frequenzaCombo = new ComboBox<>();
+        frequenzaCombo = StyleHelper.createComboBox();
         frequenzaCombo.getItems().setAll(Frequenza.values());
         frequenzaCombo.setValue(corso.getFrequenzaCorso());
         frequenzaCombo.setOnAction(e -> onFrequenzaChange());
 
-        numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
-        numeroPostiField.setFont(Font.font("Roboto", 14));
+        numeroPostiField = StyleHelper.createTextField(String.valueOf(corso.getNumeroPosti()));
+        numeroPostiField.setText(String.valueOf(corso.getNumeroPosti()));
 
-        numeroSessioniField = new TextField(
+        numeroSessioniField = StyleHelper.createTextField(
                 corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
         );
+        numeroSessioniField.setText(corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0");
         numeroSessioniField.setEditable(false);
-        numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF; -fx-font-size: 14;");
+        numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF;");
 
-        dataInizioPicker = new DatePicker(
+        dataInizioPicker = StyleHelper.createDatePicker();
+        dataInizioPicker.setValue(
                 corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
         );
         dataInizioPicker.setOnAction(e -> onDataInizioChange());
         
-        dataFinePicker = new DatePicker(
+        dataFinePicker = StyleHelper.createDatePicker();
+        dataFinePicker.setValue(
                 corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
         );
         dataFinePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
@@ -130,6 +137,14 @@ public class DettagliCorsoGUI {
         chefListView.setPrefHeight(150);
         chefListView.setMinHeight(100);
         chefListView.setMaxHeight(250);
+        chefListView.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+            "-fx-border-radius: 8;" +
+            "-fx-background-radius: 8;" +
+            "-fx-border-width: 1;"
+        );
+        
         chefListView.setCellFactory(lv -> new ListCell<>() {
             private final HBox box = new HBox(8);
             private final Label nameLabel = new Label();
@@ -137,8 +152,13 @@ public class DettagliCorsoGUI {
             private final Button removeBtn = new Button("Rimuovi");
 
             {
-                meLabel.setStyle("-fx-text-fill: #FF6600; -fx-font-weight: bold;");
-                removeBtn.setStyle("-fx-background-radius: 8; -fx-background-color: #FF6666; -fx-text-fill: white; -fx-cursor: hand;");
+                meLabel.setStyle("-fx-text-fill: " + StyleHelper.PRIMARY_ORANGE + "; -fx-font-weight: bold;");
+                removeBtn.setStyle(
+                    "-fx-background-radius: 8;" +
+                    "-fx-background-color: " + StyleHelper.ERROR_RED + ";" +
+                    "-fx-text-fill: white;" +
+                    "-fx-cursor: hand;"
+                );
                 removeBtn.setOnAction(e -> {
                     Chef it = getItem();
                     if (it != null) rimuoviChef(it);
@@ -177,18 +197,14 @@ public class DettagliCorsoGUI {
             }
         });
 
-        addChefCombo = new ComboBox<>();
+        addChefCombo = StyleHelper.createComboBox();
         addChefCombo.setPrefWidth(300);
         
         addChefCombo.setCellFactory(lv -> new ListCell<>() {
             @Override
             protected void updateItem(Chef item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getNome() + " " + item.getCognome());
-                }
+                setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
             }
         });
         
@@ -196,20 +212,15 @@ public class DettagliCorsoGUI {
             @Override
             protected void updateItem(Chef item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getNome() + " " + item.getCognome());
-                }
+                setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
             }
         });
         
-        addChefBtn = new Button("➕ Aggiungi chef");
-        addChefBtn.setStyle("-fx-cursor: hand; -fx-background-color: #28A745; -fx-text-fill: white; -fx-font-weight: bold;");
+        addChefBtn = StyleHelper.createSuccessButton("➕ Aggiungi");
         addChefBtn.setOnAction(e -> {
             Chef toAdd = addChefCombo.getValue();
             if (toAdd == null) {
-                showAlert("Attenzione", "Seleziona uno chef.");
+                StyleHelper.showValidationDialog("Attenzione", "Seleziona uno chef dalla lista");
                 return;
             }
             aggiungiChef(toAdd, null);
@@ -224,28 +235,28 @@ public class DettagliCorsoGUI {
         grid.setAlignment(Pos.CENTER);
 
         int row = 0;
-        grid.add(createLabel("📚 Nome:"), 0, row);
+        grid.add(StyleHelper.createLabel("📚 Nome:"), 0, row);
         grid.add(nomeField, 1, row++);
 
-        grid.add(createLabel("💰 Prezzo (€):"), 0, row);
+        grid.add(StyleHelper.createLabel("💰 Prezzo (€):"), 0, row);
         grid.add(prezzoField, 1, row++);
 
-        grid.add(createLabel("📖 Argomento:"), 0, row);
+        grid.add(StyleHelper.createLabel("📖 Argomento:"), 0, row);
         grid.add(argomentoField, 1, row++);
 
-        grid.add(createLabel("📅 Frequenza:"), 0, row);
+        grid.add(StyleHelper.createLabel("📅 Frequenza:"), 0, row);
         grid.add(frequenzaCombo, 1, row++);
 
-        grid.add(createLabel("🪑 Numero posti:"), 0, row);
+        grid.add(StyleHelper.createLabel("🪑 Numero posti:"), 0, row);
         grid.add(numeroPostiField, 1, row++);
 
-        grid.add(createLabel("⏰ Numero sessioni:"), 0, row);
+        grid.add(StyleHelper.createLabel("⏰ Numero sessioni:"), 0, row);
         grid.add(numeroSessioniField, 1, row++);
 
-        grid.add(createLabel("🕑 Data inizio:"), 0, row);
+        grid.add(StyleHelper.createLabel("🕑 Data inizio:"), 0, row);
         grid.add(dataInizioPicker, 1, row++);
 
-        grid.add(createLabel("🏁 Data fine:"), 0, row);
+        grid.add(StyleHelper.createLabel("🏁 Data fine:"), 0, row);
         grid.add(dataFinePicker, 1, row++);
 
         ColumnConstraints c0 = new ColumnConstraints();
@@ -260,12 +271,18 @@ public class DettagliCorsoGUI {
         buttons.setAlignment(Pos.CENTER);
         buttons.setPadding(new Insets(20, 0, 0, 0));
 
-        modificaBtn = createStylishButton("✏️ Modifica", "#FFC107");
-        salvaBtn = createStylishButton("💾 Salva", "#28A745");
-        Button visualizzaSessioniBtn = createStylishButton("👁️ Visualizza Sessioni", "#007BFF");
-        Button chiudiBtn = createStylishButton("❌ Chiudi", "#6C757D");
-
+        modificaBtn = StyleHelper.createInfoButton("✏️ Modifica");
+        modificaBtn.setPrefWidth(160);
+        
+        salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
+        salvaBtn.setPrefWidth(160);
         salvaBtn.setDisable(true);
+        
+        Button visualizzaSessioniBtn = StyleHelper.createPrimaryButton("👁️ Sessioni");
+        visualizzaSessioniBtn.setPrefWidth(160);
+        
+        Button chiudiBtn = StyleHelper.createStyledButton("❌ Chiudi", StyleHelper.NEUTRAL_GRAY);
+        chiudiBtn.setPrefWidth(160);
 
         modificaBtn.setOnAction(e -> {
             setEditable(true);
@@ -284,10 +301,10 @@ public class DettagliCorsoGUI {
                 new Separator(),
                 grid,
                 new Separator(),
-                createLabel("👥 Chef assegnati al corso:"),
+                StyleHelper.createLabel("👥 Chef assegnati al corso:"),
                 chefListView,
                 selezionatoLabel,
-                createLabel("➕ Aggiungi uno chef dal sistema:"),
+                StyleHelper.createLabel("➕ Aggiungi uno chef dal sistema:"),
                 addBox,
                 buttons
         );
@@ -305,26 +322,20 @@ public class DettagliCorsoGUI {
         return mainContainer;
     }
 
-    // ✅ CORRETTO: Gestisce cambio data inizio
     private void onDataInizioChange() {
         LocalDate inizio = dataInizioPicker.getValue();
         
-        // Se frequenza UNICA, sincronizza data fine
-        if (frequenzaCombo.getValue() == Frequenza.unica && inizio != null) {
+        if (frequenzaCombo.getValue() == Frequenza.UNICA && inizio != null) {
             dataFinePicker.setValue(inizio);
         }
-        
-        // NON chiamare aggiornaFrequenzeDisponibili() qui
-        // per evitare che la data fine si resetti automaticamente
     }
 
-    // ✅ CORRETTO: Gestisce cambio frequenza
     private void onFrequenzaChange() {
         if (!editable) return;
         
         Frequenza selezionata = frequenzaCombo.getValue();
         
-        if (selezionata == Frequenza.unica) {
+        if (selezionata == Frequenza.UNICA) {
             if (dataInizioPicker.getValue() != null) {
                 dataFinePicker.setValue(dataInizioPicker.getValue());
             }
@@ -336,7 +347,6 @@ public class DettagliCorsoGUI {
         }
     }
 
-    // ✅ CORRETTO: Aggiorna frequenze disponibili
     private void aggiornaFrequenzeDisponibili() {
         if (!editable) return;
         
@@ -357,35 +367,13 @@ public class DettagliCorsoGUI {
         }
     }
 
-    // ✅ CORRETTO: Aggiorna stato data fine
     private void aggiornaStatoDataFine() {
-        if (corso.getFrequenzaCorso() == Frequenza.unica) {
+        if (corso.getFrequenzaCorso() == Frequenza.UNICA) {
             dataFinePicker.setDisable(!editable);
             if (!editable) {
                 dataFinePicker.setStyle("-fx-opacity: 0.6;");
             }
         }
-    }
-
-    private Label createLabel(String text) {
-        Label label = new Label(text);
-        label.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 15));
-        label.setTextFill(Color.web("#212529"));
-        return label;
-    }
-
-    private Button createStylishButton(String text, String color) {
-        Button b = new Button(text);
-        b.setPrefWidth(160);
-        b.setPrefHeight(42);
-        b.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        b.setTextFill(Color.WHITE);
-        b.setStyle(String.format("-fx-background-radius: 10; -fx-background-color: %s; -fx-cursor: hand;", color));
-        
-        b.setOnMouseEntered(e -> b.setOpacity(0.8));
-        b.setOnMouseExited(e -> b.setOpacity(1.0));
-        
-        return b;
     }
 
     private void tornaAllaListaCorsi() {
@@ -404,7 +392,7 @@ public class DettagliCorsoGUI {
 
             if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null &&
                     dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
-                showAlert("Errore", "La data di inizio deve precedere la data di fine.");
+                StyleHelper.showValidationDialog("Errore", "La data di inizio deve precedere la data di fine");
                 return;
             }
 
@@ -415,7 +403,7 @@ public class DettagliCorsoGUI {
                         dataInizioPicker.getValue(), 
                         dataFinePicker.getValue(), 
                         freqSelezionata)) {
-                    showAlert("Frequenza non valida", 
+                    StyleHelper.showValidationDialog("Frequenza non valida", 
                         FrequenzaHelper.getMessaggioErroreFrequenza(
                             dataInizioPicker.getValue(), 
                             dataFinePicker.getValue(), 
@@ -441,18 +429,20 @@ public class DettagliCorsoGUI {
             corso.setNumeroSessioni(corso.getSessioni() != null ? corso.getSessioni().size() : 0);
             numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
 
-            showAlert("Successo", "Corso modificato correttamente!");
+            StyleHelper.showSuccessDialog("Successo", "Corso modificato correttamente!");
             setEditable(false);
             salvaBtn.setDisable(true);
             modificaBtn.setDisable(false);
             refreshChefListView();
 
         } catch (ValidationException ex) {
-            showAlert("Errore di validazione", ex.getMessage());
+            StyleHelper.showValidationDialog("Errore di validazione", ex.getMessage());
+        } catch (DataAccessException ex) {
+            StyleHelper.showErrorDialog("Errore Database", ex.getMessage());
         } catch (NumberFormatException ex) {
-            showAlert("Errore", "Valori numerici non validi per prezzo o posti.");
+            StyleHelper.showValidationDialog("Errore", "Valori numerici non validi per prezzo o posti");
         } catch (Exception ex) {
-            showAlert("Errore", "Errore nel salvataggio: " + ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore nel salvataggio: " + ex.getMessage());
         }
     }
 
@@ -470,7 +460,7 @@ public class DettagliCorsoGUI {
             sessioniGUI.setController(sessioniController);
             
             Stage stage = new Stage();
-            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("📅 Sessioni - " + safeString(corso.getNomeCorso()));
             stage.setScene(new Scene(sessioniGUI.getRoot(), 1000, 750));
             stage.showAndWait();
@@ -483,39 +473,33 @@ public class DettagliCorsoGUI {
             }
             
         } catch (Exception ex) {
-            showAlert("Errore", "Impossibile aprire gestione sessioni: " + ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Impossibile aprire gestione sessioni: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
     
     private GestioneSessioniController creaSessioniController() {
         try {
-            dao.OnlineDAO onlineDAO = new dao.OnlineDAO();
-            dao.InPresenzaDAO inPresenzaDAO = new dao.InPresenzaDAO();
-            dao.RicettaDAO ricettaDAO = new dao.RicettaDAO();
-            dao.CucinaDAO cucinaDAO = new dao.CucinaDAO();
-            dao.AdesioneDAO adesioneDAO = new dao.AdesioneDAO();
-            dao.UsaDAO usaDAO = new dao.UsaDAO();
-            dao.IngredienteDAO ingredienteDAO = new dao.IngredienteDAO();
+            OnlineDAO onlineDAO = new OnlineDAO();
+            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
+            RicettaDAO ricettaDAO = new RicettaDAO();
+            CucinaDAO cucinaDAO = new CucinaDAO();
+            AdesioneDAO adesioneDAO = new AdesioneDAO();
+            UsaDAO usaDAO = new UsaDAO();
+            IngredienteDAO ingredienteDAO = new IngredienteDAO();
             
-            service.GestioneSessioni gestioneSessioni = new service.GestioneSessioni(
+            GestioneSessioni gestioneSessioni = new GestioneSessioni(
                 inPresenzaDAO,
                 onlineDAO,
                 adesioneDAO,
                 cucinaDAO
             );
             
-            service.GestioneCucina gestioneCucina = new service.GestioneCucina(
-                cucinaDAO
-            );
+            GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
             
-            service.GestioneRicette gestioneRicette = new service.GestioneRicette(
-                ricettaDAO,
-                usaDAO,
-                ingredienteDAO
-            );
+            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
             
-            return new controller.GestioneSessioniController(
+            return new GestioneSessioniController(
                 corso,              
                 gestioneSessioni,   
                 gestioneCucina,     
@@ -523,7 +507,7 @@ public class DettagliCorsoGUI {
             );
             
         } catch (Exception e) {
-            showAlert("Errore", "Impossibile creare il controller sessioni: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Impossibile creare il controller sessioni: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -570,25 +554,29 @@ public class DettagliCorsoGUI {
     private void rimuoviChef(Chef chef) {
         if (!editable) return;
         if (isChefLoggato(chef)) {
-            showAlert("Operazione non permessa", "Non puoi rimuovere te stesso dall'elenco.");
+            StyleHelper.showValidationDialog("Operazione non permessa", 
+                "Non puoi rimuovere te stesso dall'elenco");
             return;
         }
 
-        Alert conf = new Alert(Alert.AlertType.CONFIRMATION,
-                "Rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?", 
-                ButtonType.OK, ButtonType.CANCEL);
-        conf.showAndWait().ifPresent(b -> {
-            if (b == ButtonType.OK) {
+        StyleHelper.showConfirmationDialog(
+            "Conferma Rimozione",
+            "Rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?",
+            () -> {
                 try {
                     gestioneController.rimuoviChefDaCorso(corso, chef);
                     corso.getChef().remove(chef);
                     refreshChefListView();
-                    showAlert("Rimosso", "Chef rimosso correttamente.");
+                    StyleHelper.showSuccessDialog("Rimosso", "Chef rimosso correttamente");
+                } catch (ValidationException ex) {
+                    StyleHelper.showValidationDialog("Errore", ex.getMessage());
+                } catch (DataAccessException ex) {
+                    StyleHelper.showErrorDialog("Errore Database", ex.getMessage());
                 } catch (Exception ex) {
-                    showAlert("Errore", ex.getMessage());
+                    StyleHelper.showErrorDialog("Errore", ex.getMessage());
                 }
             }
-        });
+        );
     }
 
     private void aggiungiChef(Chef chef, String password) {
@@ -598,11 +586,13 @@ public class DettagliCorsoGUI {
             if (corso.getChef() == null) corso.setChef(new ArrayList<>());
             if (!corso.getChef().contains(chef)) corso.getChef().add(chef);
             refreshChefListView();
-            showAlert("Aggiunto", "Chef aggiunto correttamente.");
+            StyleHelper.showSuccessDialog("Aggiunto", "Chef aggiunto correttamente");
         } catch (ValidationException ex) {
-            showAlert("Attenzione", ex.getMessage());
+            StyleHelper.showValidationDialog("Attenzione", ex.getMessage());
+        } catch (DataAccessException ex) {
+            StyleHelper.showErrorDialog("Errore Database", ex.getMessage());
         } catch (Exception ex) {
-            showAlert("Errore", ex.getMessage());
+            StyleHelper.showErrorDialog("Errore", ex.getMessage());
         }
     }
 
@@ -610,10 +600,9 @@ public class DettagliCorsoGUI {
         this.editable = edit;
         LocalDate oggi = LocalDate.now();
         LocalDate dataInizio = corso.getDataInizioCorso() != null 
-        	    ? corso.getDataInizioCorso().toLocalDate() 
-        	    : null;
+            ? corso.getDataInizioCorso().toLocalDate() 
+            : null;
         
-        // Se corso già iniziato, blocca SOLO data inizio
         boolean corsoGiaIniziato = dataInizio != null && dataInizio.isBefore(oggi);
         
         nomeField.setEditable(edit);
@@ -624,8 +613,7 @@ public class DettagliCorsoGUI {
         
         dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
         
-        // ✅ Data fine: sempre modificabile (se in edit mode)
-        if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
+        if (edit && frequenzaCombo.getValue() == Frequenza.UNICA) {
             dataFinePicker.setDisable(true);
         } else {
             dataFinePicker.setDisable(!edit);
@@ -634,18 +622,10 @@ public class DettagliCorsoGUI {
         addChefCombo.setDisable(!edit);
         addChefBtn.setDisable(!edit);
 
-        String borderColor = edit ? "#FF9966" : "#CED4DA";
+        String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16;" +
                 "-fx-border-radius: 16; -fx-border-color: " + borderColor + "; -fx-border-width: 2;");
 
         refreshChefListView();
-    }
-
-    private void showAlert(String title, String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
     }
 }

@@ -15,10 +15,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Ricetta;
 import model.Ingrediente;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 import exceptions.ValidationException;
+import exceptions.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -164,7 +164,9 @@ public class CreaRicettaGUI {
         ingredientiListView = new ListView<>();
         ingredientiListView.setItems(ingredientiData);
         ingredientiListView.setPrefHeight(200);
-        StyleHelper.applyListViewStyle(ingredientiListView);
+        // ✅ RIMOSSO: StyleHelper.applyListViewStyle() non esiste
+        ingredientiListView.setStyle("-fx-background-color: white; -fx-border-color: " + 
+            StyleHelper.BORDER_LIGHT + "; -fx-border-radius: 8; -fx-background-radius: 8;");
         return ingredientiListView;
     }
 
@@ -196,7 +198,7 @@ public class CreaRicettaGUI {
             ingredienteCombo.setItems(FXCollections.observableArrayList(
                 ingredienteController.getAllIngredienti()
             ));
-        } catch (SQLException e) {
+        } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore Database", 
                 "Impossibile caricare gli ingredienti: " + e.getMessage());
         }
@@ -208,7 +210,6 @@ public class CreaRicettaGUI {
         Ingrediente ingrediente = ingredienteCombo.getValue();
         String quantitaStr = quantitaField.getText();
 
-        // Solo controlli UI base, nessuna validazione business logic
         if (ingrediente == null) {
             StyleHelper.showValidationDialog("Attenzione", 
                 "Seleziona un ingrediente");
@@ -224,7 +225,6 @@ public class CreaRicettaGUI {
         try {
             double quantita = Double.parseDouble(quantitaStr.trim());
             
-            // Controllo duplicati (UI logic, non business logic)
             if (ingredientiMap.containsKey(ingrediente)) {
                 StyleHelper.showValidationDialog("Attenzione", 
                     "Ingrediente già aggiunto alla lista");
@@ -274,7 +274,6 @@ public class CreaRicettaGUI {
         String nome = nomeField.getText();
         String tempoStr = tempoField.getText();
 
-        // Solo controlli UI base: campi vuoti
         if (nome == null || nome.trim().isEmpty()) {
             StyleHelper.showValidationDialog("Attenzione", 
                 "Inserisci il nome della ricetta");
@@ -290,14 +289,13 @@ public class CreaRicettaGUI {
         try {
             int tempo = Integer.parseInt(tempoStr.trim());
             
-            // Controllo lista vuota (UI logic)
             if (ingredientiMap.isEmpty()) {
                 StyleHelper.showValidationDialog("Attenzione", 
                     "Aggiungi almeno un ingrediente alla ricetta");
                 return;
             }
 
-            // DELEGA AL CONTROLLER: tutta la validazione business logic
+            // DELEGA AL CONTROLLER
             ricettaCreata = ricettaController.creaRicetta(nome.trim(), tempo, ingredientiMap);
             
             mostraConfermaCreazione(nome.trim(), tempo);
@@ -307,9 +305,8 @@ public class CreaRicettaGUI {
             StyleHelper.showValidationDialog("Attenzione", 
                 "Inserisci un numero valido per il tempo");
         } catch (ValidationException e) {
-            // Gestione errori di validazione dal Controller/Service
             StyleHelper.showValidationDialog("Validazione", e.getMessage());
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             StyleHelper.showErrorDialog("Errore Database", 
                 "Errore durante il salvataggio: " + e.getMessage());
         } catch (Exception e) {

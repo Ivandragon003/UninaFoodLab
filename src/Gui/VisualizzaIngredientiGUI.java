@@ -14,7 +14,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ingrediente;
-import util.StyleHelper;
+import guihelper.StyleHelper;
 import java.util.List;
 
 public class VisualizzaIngredientiGUI extends Stage {
@@ -184,7 +184,6 @@ public class VisualizzaIngredientiGUI extends Stage {
         sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 
-        // Spiegazione doppio click più visibile
         Label istruzioniLabel = new Label("💡 Doppio click su un ingrediente per selezionarlo rapidamente");
         istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 13));
         istruzioniLabel.setTextFill(Color.WHITE);
@@ -213,7 +212,15 @@ public class VisualizzaIngredientiGUI extends Stage {
         ingredientiListView = new ListView<>();
         ingredientiListView.setPrefHeight(300);
         ingredientiListView.setItems(ingredientiData);
-        StyleHelper.applyListViewStyle(ingredientiListView);
+        
+        // ✅ CORRETTO: Applica stile inline invece di chiamare metodo inesistente
+        ingredientiListView.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+            "-fx-border-radius: 8;" +
+            "-fx-background-radius: 8;" +
+            "-fx-border-width: 1;"
+        );
 
         ingredientiListView.setCellFactory(listView -> new ListCell<Ingrediente>() {
             @Override
@@ -280,11 +287,8 @@ public class VisualizzaIngredientiGUI extends Stage {
     private void selezionaIngrediente() {
         Ingrediente selezionato = ingredientiListView.getSelectionModel().getSelectedItem();
         if (selezionato == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Attenzione");
-            alert.setHeaderText(null);
-            alert.setContentText("⚠️ Seleziona un ingrediente dalla lista oppure fai doppio click su un ingrediente");
-            alert.showAndWait();
+            StyleHelper.showValidationDialog("Attenzione", 
+                "⚠️ Seleziona un ingrediente dalla lista oppure fai doppio click su un ingrediente");
             return;
         }
         ingredienteSelezionato = selezionato;
@@ -297,11 +301,10 @@ public class VisualizzaIngredientiGUI extends Stage {
         buttonBox.setPadding(new Insets(15, 0, 0, 0));
 
         if (modalitaSelezione) {
-            Button annullaBtn = new Button("❌ Annulla");
+            // ✅ Usa StyleHelper.createStyledButton() con NEUTRAL_GRAY
+            Button annullaBtn = StyleHelper.createStyledButton("❌ Annulla", StyleHelper.NEUTRAL_GRAY);
             annullaBtn.setPrefWidth(130);
             annullaBtn.setPrefHeight(40);
-            annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; " +
-                    "-fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand; -fx-font-weight: bold;");
             annullaBtn.setOnAction(e -> {
                 ingredienteSelezionato = null;
                 close();
@@ -326,11 +329,8 @@ public class VisualizzaIngredientiGUI extends Stage {
             List<Ingrediente> ingredienti = ingredienteController.getAllIngredienti();
             ingredientiData.setAll(ingredienti);
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Errore");
-            alert.setHeaderText(null);
-            alert.setContentText("❌ Errore nel caricamento ingredienti: " + e.getMessage());
-            alert.showAndWait();
+            StyleHelper.showErrorDialog("Errore", 
+                "❌ Errore nel caricamento ingredienti: " + e.getMessage());
         }
     }
 
@@ -359,11 +359,8 @@ public class VisualizzaIngredientiGUI extends Stage {
 
             ingredientiData.setAll(ingredientiFiltrati);
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Errore");
-            alert.setHeaderText(null);
-            alert.setContentText("❌ Errore nell'applicazione filtri: " + e.getMessage());
-            alert.showAndWait();
+            StyleHelper.showErrorDialog("Errore", 
+                "❌ Errore nell'applicazione filtri: " + e.getMessage());
         }
     }
 
@@ -379,14 +376,12 @@ public class VisualizzaIngredientiGUI extends Stage {
             Ingrediente nuovoIngrediente = creaGUI.showAndReturn();
             if (nuovoIngrediente != null) {
                 caricaIngredienti();
-                StyleHelper.showSuccessDialog("Successo", "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
+                StyleHelper.showSuccessDialog("Successo", 
+                    "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
             }
         } catch (Exception e) {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Errore");
-            alert.setHeaderText(null);
-            alert.setContentText("❌ Errore nell'apertura creazione ingrediente: " + e.getMessage());
-            alert.showAndWait();
+            StyleHelper.showErrorDialog("Errore", 
+                "❌ Errore nell'apertura creazione ingrediente: " + e.getMessage());
         }
     }
 

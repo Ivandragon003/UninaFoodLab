@@ -1,6 +1,7 @@
 package service;
 
 import dao.RicettaDAO;
+import exceptions.DataAccessException;
 import exceptions.ValidationException;
 import exceptions.ValidationUtils;
 import model.Ricetta;
@@ -11,7 +12,6 @@ import java.util.List;
 /**
  * Servizio dedicato esclusivamente alla gestione delle ricette.
  * CRUD, ricerca e filtraggio semplice.
- * Non gestisce ingredienti né associazioni a sessioni.
  */
 public class GestioneRicette {
 
@@ -23,48 +23,67 @@ public class GestioneRicette {
 
     // ==================== CRUD ====================
 
-    public void creaRicetta(Ricetta ricetta) throws SQLException, ValidationException {
-        validateRicetta(ricetta);
-        if (ricettaEsiste(ricetta.getNome())) {
-            throw new ValidationException("Esiste già una ricetta con il nome: " + ricetta.getNome());
-        }
-        ricettaDAO.save(ricetta);
-    }
-
-    public void aggiornaRicetta(int id, Ricetta ricetta) throws SQLException, ValidationException {
+    public void creaRicetta(Ricetta ricetta) throws ValidationException, DataAccessException {
+        // assumiamo che il model assicuri campi non-null; qui restano le validazioni di business
         validateRicetta(ricetta);
 
-      
-        ricettaDAO.findById(id)
-            .orElseThrow(() -> new ValidationException("Ricetta non trovata"));
-     
-        List<Ricetta> omonime = ricettaDAO.getByNome(ricetta.getNome());
-        for (Ricetta r : omonime) {
-            if (r.getIdRicetta() != id) {
-                throw new ValidationException("Esiste già un'altra ricetta con questo nome");
+        try {
+            if (ricettaEsiste(ricetta.getNome())) {
+                throw new ValidationException("Esiste già una ricetta con il nome: " + ricetta.getNome());
             }
+            ricettaDAO.save(ricetta);
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante la creazione della ricetta", e);
         }
-
-        ricettaDAO.update(id, ricetta);
     }
 
-    public void cancellaRicetta(int id) throws SQLException, ValidationException {
-        
-        ricettaDAO.findById(id)
-            .orElseThrow(() -> new ValidationException("Ricetta non trovata"));
+    public void aggiornaRicetta(int id, Ricetta ricetta) throws ValidationException, DataAccessException {
+        validateRicetta(ricetta);
 
-        ricettaDAO.delete(id);
+        try {
+            ricettaDAO.findById(id)
+                .orElseThrow(() -> new ValidationException("Ricetta non trovata"));
+
+            List<Ricetta> omonime = ricettaDAO.getByNome(ricetta.getNome());
+            for (Ricetta r : omonime) {
+                if (r.getIdRicetta() != id) {
+                    throw new ValidationException("Esiste già un'altra ricetta con questo nome");
+                }
+            }
+
+            ricettaDAO.update(id, ricetta);
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante l'aggiornamento della ricetta", e);
+        }
     }
 
+    public void cancellaRicetta(int id) throws ValidationException, DataAccessException {
+        try {
+            ricettaDAO.findById(id)
+                .orElseThrow(() -> new ValidationException("Ricetta non trovata"));
+
+            ricettaDAO.delete(id);
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante la cancellazione della ricetta", e);
+        }
+    }
 
     // ==================== QUERY ====================
 
-    public List<Ricetta> getAllRicette() throws SQLException {
-        return ricettaDAO.getAll();
+    public List<Ricetta> getAllRicette() throws DataAccessException {
+        try {
+            return ricettaDAO.getAll();
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore nel recupero delle ricette", e);
+        }
     }
 
-    public List<Ricetta> findByNome(String nome) throws SQLException {
-        return ricettaDAO.getByNome(nome);
+    public List<Ricetta> findByNome(String nome) throws DataAccessException {
+        try {
+            return ricettaDAO.getByNome(nome);
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante la ricerca per nome", e);
+        }
     }
 
     // ==================== FILTRI ====================
@@ -93,7 +112,7 @@ public class GestioneRicette {
     // ==================== VALIDAZIONI PRIVATE ====================
 
     private void validateRicetta(Ricetta ricetta) throws ValidationException {
-        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+        // tolta la validateNotNull(ricetta, "Ricetta") per evitare ridondanza col model
         ValidationUtils.validateNomeRicetta(ricetta.getNome());
         ValidationUtils.validateTempoPreparazione(ricetta.getTempoPreparazione());
     }
@@ -108,7 +127,11 @@ public class GestioneRicette {
         return max == null || value <= max;
     }
 
-    private boolean ricettaEsiste(String nome) throws SQLException {
-        return !ricettaDAO.getByNome(nome).isEmpty();
+    private boolean ricettaEsiste(String nome) throws DataAccessException {
+        try {
+            return !ricettaDAO.getByNome(nome).isEmpty();
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante la verifica di esistenza della ricetta", e);
+        }
     }
 }
