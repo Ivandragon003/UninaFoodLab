@@ -31,10 +31,6 @@ import model.CorsoCucina;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * GUI per visualizzare la lista dei corsi.
- * Best practices: separazione tra logica (controller) e presentazione (GUI).
- */
 public class VisualizzaCorsiGUI {
 
     private VisualizzaCorsiController visualizzaController;

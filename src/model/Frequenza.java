@@ -1,11 +1,11 @@
 package model;
 
 public enum Frequenza {
-    UNICA(0, "Sessione Unica"),
-    GIORNALIERO(1, "Giornaliero"),
-    OGNI_DUE_GIORNI(2, "Ogni Due Giorni"),
-    SETTIMANALE(7, "Settimanale"),
-    MENSILE(30, "Mensile");
+    unica(0, "Sessione Unica"),
+    giornaliero(1, "Giornaliero"),
+    ogniDueGiorni(2, "Ogni Due Giorni"),
+    settimanale(7, "Settimanale"),
+    mensile(30, "Mensile");
 
     private final int intervallo;
     private final String descrizione;
@@ -20,11 +20,11 @@ public enum Frequenza {
 
     public int getDurataMinima() {
         return switch (this) {
-            case UNICA -> 0;              
-            case GIORNALIERO -> 1;        
-            case OGNI_DUE_GIORNI -> 2;      
-            case SETTIMANALE -> 7;        
-            case MENSILE -> 30;           
+            case unica -> 0;              
+            case giornaliero -> 1;        
+            case ogniDueGiorni -> 2;      
+            case settimanale -> 7;        
+            case mensile -> 30;           
         };
     }
 
