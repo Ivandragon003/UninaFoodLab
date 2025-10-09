@@ -3,6 +3,7 @@ package Gui;
 import controller.GestioneCorsoController;
 import controller.ChefController;
 import controller.RicettaController;
+import controller.IngredienteController;
 import exceptions.ValidationException;
 import guihelper.StyleHelper;
 import util.FrequenzaHelper;
@@ -34,6 +35,7 @@ public class CreaCorsoGUI {
     private final GestioneCorsoController corsoController;
     private final ChefController chefController;
     private final RicettaController ricettaController;
+    private final IngredienteController ingredienteController;
 
     // ========== ROOT ==========
     private VBox root;
@@ -63,13 +65,30 @@ public class CreaCorsoGUI {
     // ========== BOTTONI ==========
     private Button aggiungiSessioneBtn;
 
-    // ========== COSTRUTTORE ==========
+    // ========== COSTRUTTORE AGGIORNATO ==========
     public CreaCorsoGUI(GestioneCorsoController corsoController, 
                         ChefController chefController,
-                        RicettaController ricettaController) {
+                        RicettaController ricettaController,
+                        IngredienteController ingredienteController) {
+        
+        // Validazione parametri
+        if (corsoController == null) {
+            throw new IllegalArgumentException("GestioneCorsoController non può essere null");
+        }
+        if (chefController == null) {
+            throw new IllegalArgumentException("ChefController non può essere null");
+        }
+        if (ricettaController == null) {
+            throw new IllegalArgumentException("RicettaController non può essere null");
+        }
+        if (ingredienteController == null) {
+            throw new IllegalArgumentException("IngredienteController non può essere null");
+        }
+        
         this.corsoController = corsoController;
         this.chefController = chefController;
         this.ricettaController = ricettaController;
+        this.ingredienteController = ingredienteController;
     }
 
     // ========== GET ROOT ==========
@@ -134,7 +153,7 @@ public class CreaCorsoGUI {
             }
         });
 
-        // CORREZIONE: Frequenza ora precaricata con tutte le opzioni
+        // Frequenza precaricata con tutte le opzioni
         frequenzaBox = createFrequenzaComboBox();
         frequenzaBox.getItems().setAll(Frequenza.values());
         frequenzaBox.setOnAction(e -> aggiornaNumeroSessioni());
@@ -275,7 +294,6 @@ public class CreaCorsoGUI {
         ComboBox<Frequenza> combo = StyleHelper.createComboBox();
         combo.setPromptText("Seleziona frequenza");
         
-        // CORREZIONE: StringConverter per visualizzare correttamente l'enum
         combo.setConverter(new StringConverter<Frequenza>() {
             @Override
             public String toString(Frequenza frequenza) {
@@ -316,7 +334,6 @@ public class CreaCorsoGUI {
     private VBox createListContainer() {
         VBox box = new VBox(10);
         box.setPadding(new Insets(10));
-        // CORREZIONE: Sfondo più scuro per miglior contrasto
         box.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 8;");
         return box;
     }
@@ -468,7 +485,6 @@ public class CreaCorsoGUI {
             Chef scelto = dialog.showAndReturn();
             
             if (scelto != null) {
-                // CORREZIONE: Verifica disponibilità già gestita nel dialog
                 if (!chefSelezionati.contains(scelto)) {
                     chefSelezionati.add(scelto);
                 } else {
@@ -487,6 +503,7 @@ public class CreaCorsoGUI {
         }
     }
 
+    // ========== METODO CORRETTO CON INGREDIENTECONTROLLER ==========
     private void aggiungiSessione() {
         try {
             LocalDate inizio = startDatePicker.getValue();
@@ -520,10 +537,16 @@ public class CreaCorsoGUI {
                 }
             }
 
-            // Apri dialog creazione sessione
+            // CORREZIONE: Passa TUTTI E SEI i parametri richiesti da CreaSessioniGUI
             CreaSessioniGUI dialog = new CreaSessioniGUI(
-                inizio, fine, freq, dateOccupate, ricettaController
+                inizio, 
+                fine, 
+                freq, 
+                dateOccupate, 
+                ricettaController,
+                ingredienteController  // PARAMETRO MANCANTE AGGIUNTO
             );
+            
             Sessione nuovaSessione = dialog.showDialog();
 
             if (nuovaSessione != null) {
@@ -658,7 +681,6 @@ public class CreaCorsoGUI {
         }
     }
 
-    // CORREZIONE: Nuovo metodo per box chef con pulsante rimozione
     private HBox createChefBox(Chef chef) {
         HBox chefBox = new HBox(10);
         chefBox.setAlignment(Pos.CENTER_LEFT);

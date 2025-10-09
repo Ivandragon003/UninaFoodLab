@@ -360,8 +360,15 @@ public class ChefMenuGUI {
         showInContentPane(corsiGUI.getRoot());
     }
 
+    // ========== METODO CORRETTO CON INGREDIENTECONTROLLER ==========
     private void apriCreaCorso() {
-        CreaCorsoGUI gui = new CreaCorsoGUI(gestioneCorsoController, chefController, ricettaController);
+        // CORREZIONE: Passa tutti e quattro i controller richiesti
+        CreaCorsoGUI gui = new CreaCorsoGUI(
+            gestioneCorsoController, 
+            chefController, 
+            ricettaController,
+            ingredienteController  // PARAMETRO MANCANTE AGGIUNTO
+        );
         showInContentPane(gui.getRoot());
     }
 
