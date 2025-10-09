@@ -16,6 +16,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.util.StringConverter;
 import model.*;
 
 import java.time.LocalDate;
@@ -270,6 +271,23 @@ public class CreaCorsoGUI {
     private ComboBox<Frequenza> createFrequenzaComboBox() {
         ComboBox<Frequenza> combo = StyleHelper.createComboBox();
         combo.setPromptText("Seleziona frequenza");
+        
+        // CORREZIONE: StringConverter per visualizzare correttamente l'enum
+        combo.setConverter(new StringConverter<Frequenza>() {
+            @Override
+            public String toString(Frequenza frequenza) {
+                return frequenza != null ? frequenza.getDescrizione() : "";
+            }
+
+            @Override
+            public Frequenza fromString(String string) {
+                return combo.getItems().stream()
+                    .filter(f -> f.getDescrizione().equals(string))
+                    .findFirst()
+                    .orElse(null);
+            }
+        });
+        
         return combo;
     }
 
@@ -294,8 +312,9 @@ public class CreaCorsoGUI {
 
     private VBox createListContainer() {
         VBox box = new VBox(10);
-        box.setPadding(new Insets(5));
-        box.setStyle("-fx-background-color: #fff3e0; -fx-background-radius: 8;");
+        box.setPadding(new Insets(10));
+        // CORREZIONE: Sfondo più scuro per miglior contrasto
+        box.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 8;");
         return box;
     }
 
@@ -315,7 +334,9 @@ public class CreaCorsoGUI {
 
     private Label createEmptyLabel(String text) {
         Label label = new Label(text);
-        label.setTextFill(Color.RED);
+        label.setTextFill(Color.web("#d32f2f"));
+        label.setFont(Font.font(13));
+        label.setStyle("-fx-font-weight: bold;");
         return label;
     }
 
@@ -444,16 +465,14 @@ public class CreaCorsoGUI {
             Chef scelto = dialog.showAndReturn();
             
             if (scelto != null) {
-                if (!Boolean.TRUE.equals(scelto.getDisponibilita())) {
-                    StyleHelper.showValidationDialog(
-                        "Errore Selezione Chef", 
-                        "Lo chef selezionato non è disponibile ❌"
-                    );
-                    return;
-                }
-                
+                // CORREZIONE: Verifica disponibilità già gestita nel dialog
                 if (!chefSelezionati.contains(scelto)) {
                     chefSelezionati.add(scelto);
+                } else {
+                    StyleHelper.showValidationDialog(
+                        "Chef già selezionato", 
+                        "Questo chef è già stato aggiunto al corso"
+                    );
                 }
             }
         } catch (Exception e) {
@@ -629,10 +648,54 @@ public class CreaCorsoGUI {
             );
         } else {
             chefSelezionati.forEach(c -> {
-                Label label = new Label(c.getNome() + " " + c.getCognome());
-                listaChefContainer.getChildren().add(label);
+                listaChefContainer.getChildren().add(
+                    createChefBox(c)
+                );
             });
         }
+    }
+
+    // CORREZIONE: Nuovo metodo per box chef con pulsante rimozione
+    private HBox createChefBox(Chef chef) {
+        HBox chefBox = new HBox(10);
+        chefBox.setAlignment(Pos.CENTER_LEFT);
+        chefBox.setPadding(new Insets(8));
+        chefBox.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 6;" +
+            "-fx-border-color: #FF6600;" +
+            "-fx-border-radius: 6;" +
+            "-fx-border-width: 1.5;"
+        );
+
+        String disponibilita = Boolean.TRUE.equals(chef.getDisponibilita()) ? "✅" : "❌";
+        Label chefLabel = new Label(String.format("%s %s %s", 
+            disponibilita, chef.getNome(), chef.getCognome()));
+        chefLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button rimuoviBtn = new Button("✖");
+        rimuoviBtn.setStyle(
+            "-fx-background-color: #e74c3c;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;" +
+            "-fx-background-radius: 15;" +
+            "-fx-cursor: hand;" +
+            "-fx-min-width: 25;" +
+            "-fx-min-height: 25;" +
+            "-fx-max-width: 25;" +
+            "-fx-max-height: 25;" +
+            "-fx-font-size: 11px;"
+        );
+        rimuoviBtn.setOnAction(e -> {
+            chefSelezionati.remove(chef);
+            updateChefDisplay();
+        });
+
+        chefBox.getChildren().addAll(chefLabel, spacer, rimuoviBtn);
+        return chefBox;
     }
 
     private void updateSessioniDisplay() {
@@ -658,17 +721,18 @@ public class CreaCorsoGUI {
         sessioneBox.setAlignment(Pos.CENTER_LEFT);
         sessioneBox.setPadding(new Insets(8));
         sessioneBox.setStyle(
-            "-fx-background-color: #f8f9fa;" +
-            "-fx-background-radius: 5;" +
-            "-fx-border-color: #dee2e6;" +
-            "-fx-border-radius: 5;"
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 6;" +
+            "-fx-border-color: #28a745;" +
+            "-fx-border-radius: 6;" +
+            "-fx-border-width: 1.5;"
         );
 
         Label numeroLabel = new Label((corsoSessioni.indexOf(s) + 1) + ".");
-        numeroLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #FF6600;");
+        numeroLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #FF6600; -fx-font-size: 13px;");
 
         Label infoLabel = new Label(formatSessioneDettagliata(s));
-        infoLabel.setStyle("-fx-font-size: 12px;");
+        infoLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #2c3e50;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -677,7 +741,10 @@ public class CreaCorsoGUI {
         rimuoviBtn.setStyle(
             "-fx-background-color: #dc3545;" +
             "-fx-text-fill: white;" +
-            "-fx-cursor: hand;"
+            "-fx-background-radius: 15;" +
+            "-fx-cursor: hand;" +
+            "-fx-min-width: 30;" +
+            "-fx-min-height: 30;"
         );
         rimuoviBtn.setOnAction(e -> {
             corsoSessioni.remove(s);
