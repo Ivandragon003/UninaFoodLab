@@ -14,10 +14,12 @@ public class CorsoCucinaDAO {
 
     public int save(CorsoCucina corso) throws SQLException {
         String sql = "INSERT INTO corsocucina "
-                + "(nomeCorso, argomento, frequenzaCorso, prezzo, numeroPosti, dataInizioCorso, dataFineCorso) "
-                + "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?) RETURNING idCorsoCucina";
+                + "(nomecorso, argomento, frequenzacorso, prezzo, numeroposti, " 
+                + "datainiziocorso, datafinecorso, codfiscalefondatore) "  // ✅ AGGIUNTO
+                + "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?, ?) RETURNING idcorsocucina";
 
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, corso.getNomeCorso());
             ps.setString(2, corso.getArgomento());
@@ -34,6 +36,9 @@ public class CorsoCucinaDAO {
                 ps.setTimestamp(7, Timestamp.valueOf(corso.getDataFineCorso()));
             else
                 ps.setNull(7, Types.TIMESTAMP);
+
+            // ✅ NUOVO: Salva codice fiscale fondatore
+            ps.setString(8, corso.getCodfiscaleFondatore());
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -47,11 +52,14 @@ public class CorsoCucinaDAO {
     }
 
     public void update(CorsoCucina corso) throws SQLException {
-        String sql = "UPDATE corsocucina SET nomeCorso = ?, argomento = ?, frequenzaCorso = ?::frequenza, "
-                + "prezzo = ?, numeroPosti = ?, dataInizioCorso = ?, dataFineCorso = ? "
-                + "WHERE idCorsoCucina = ?";
+        String sql = "UPDATE corsocucina SET nomecorso = ?, argomento = ?, frequenzacorso = ?::frequenza, "
+                + "prezzo = ?, numeroposti = ?, datainiziocorso = ?, datafinecorso = ?, "
+                + "codfiscalefondatore = ? "  // ✅ AGGIUNTO
+                + "WHERE idcorsocucina = ?";
 
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            
             ps.setString(1, corso.getNomeCorso());
             ps.setString(2, corso.getArgomento());
             ps.setString(3, corso.getFrequenzaCorso() != null ? corso.getFrequenzaCorso().name() : null);
@@ -68,14 +76,18 @@ public class CorsoCucinaDAO {
             else
                 ps.setNull(7, Types.TIMESTAMP);
 
-            ps.setInt(8, corso.getIdCorso());
+            // ✅ NUOVO: Aggiorna fondatore
+            ps.setString(8, corso.getCodfiscaleFondatore());
+            ps.setInt(9, corso.getIdCorso());  // WHERE clause
+            
             ps.executeUpdate();
         }
     }
 
     public Optional<CorsoCucina> findById(int id) throws SQLException {
-        String sql = "SELECT * FROM corsocucina WHERE idCorsoCucina = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql = "SELECT * FROM corsocucina WHERE idcorsocucina = ?";
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next())
@@ -87,7 +99,7 @@ public class CorsoCucinaDAO {
 
     public List<CorsoCucina> getAll() throws SQLException {
         List<CorsoCucina> list = new ArrayList<>();
-        String sql = "SELECT * FROM corsocucina ORDER BY nomeCorso";
+        String sql = "SELECT * FROM corsocucina ORDER BY nomecorso";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -102,8 +114,9 @@ public class CorsoCucinaDAO {
     }
 
     public void delete(int id) throws SQLException {
-        String sql = "DELETE FROM corsocucina WHERE idCorsoCucina = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+        String sql = "DELETE FROM corsocucina WHERE idcorsocucina = ?";
+        try (Connection conn = DBConnection.getConnection(); 
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
@@ -111,7 +124,7 @@ public class CorsoCucinaDAO {
 
     public List<CorsoCucina> findByNomeOrArgomento(String filtro) throws SQLException {
         List<CorsoCucina> list = new ArrayList<>();
-        String sql = "SELECT * FROM corsocucina WHERE nomeCorso ILIKE ? OR argomento ILIKE ? ORDER BY dataInizioCorso";
+        String sql = "SELECT * FROM corsocucina WHERE nomecorso ILIKE ? OR argomento ILIKE ? ORDER BY datainiziocorso";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -130,18 +143,21 @@ public class CorsoCucinaDAO {
     }
 
     private CorsoCucina mapResultSetToCorso(ResultSet rs) throws SQLException {
-        String nome = rs.getString("nomeCorso");
+        String nome = rs.getString("nomecorso");
         double prezzo = rs.getDouble("prezzo");
         String argomento = rs.getString("argomento");
-        String freqStr = rs.getString("frequenzaCorso");
+        String freqStr = rs.getString("frequenzacorso");
         Frequenza freq = freqStr != null ? Frequenza.valueOf(freqStr) : null;
-        int numeroPosti = rs.getInt("numeroPosti");
+        int numeroPosti = rs.getInt("numeroposti");
 
         CorsoCucina corso = new CorsoCucina(nome, prezzo, argomento, freq, numeroPosti);
-        corso.setIdCorso(rs.getInt("idCorsoCucina"));
+        corso.setIdCorso(rs.getInt("idcorsocucina"));
 
-        Timestamp tsInizio = rs.getTimestamp("dataInizioCorso");
-        Timestamp tsFine = rs.getTimestamp("dataFineCorso");
+        // ✅ NUOVO: Leggi codice fiscale fondatore dal database
+        corso.setCodfiscaleFondatore(rs.getString("codfiscalefondatore"));
+
+        Timestamp tsInizio = rs.getTimestamp("datainiziocorso");
+        Timestamp tsFine = rs.getTimestamp("datafinecorso");
         if (tsInizio != null)
             corso.setDataInizioCorsoFromDB(tsInizio.toLocalDateTime());
         if (tsFine != null)
@@ -151,7 +167,7 @@ public class CorsoCucinaDAO {
     }
 
     public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
-        String sql = "SELECT COUNT(*) AS num_sessioni FROM sessione WHERE idCorsoCucina = ?";
+        String sql = "SELECT COUNT(*) AS num_sessioni FROM sessione WHERE idcorsocucina = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, idCorso);

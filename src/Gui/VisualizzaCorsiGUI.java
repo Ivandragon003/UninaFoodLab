@@ -28,6 +28,7 @@ import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 import model.CorsoCucina;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,6 +45,10 @@ public class VisualizzaCorsiGUI {
     private ProgressIndicator progressIndicator;
     private final PauseTransition filterPause = new PauseTransition(Duration.millis(350));
 
+    // ✅ FIX 3: Variabili per filtro stato corsi
+    private boolean mostraNonFiniti = true;
+    private boolean mostraFiniti = true;
+
     public VisualizzaCorsiGUI() {}
 
     
@@ -59,10 +64,7 @@ public class VisualizzaCorsiGUI {
         StackPane root = new StackPane();
         root.setMinSize(400, 400);
 
-        // Background con gradiente
         createBackground(root);
-
-        // Card principale
         VBox card = createMainCard(root);
         root.getChildren().add(card);
 
@@ -87,18 +89,15 @@ public class VisualizzaCorsiGUI {
         card.prefWidthProperty().bind(root.widthProperty());
         card.prefHeightProperty().bind(root.heightProperty());
 
-        // Effetti ombra
         DropShadow shadow = new DropShadow(12, Color.rgb(0, 0, 0, 0.12));
         shadow.setOffsetY(4);
         card.setEffect(shadow);
         card.setStyle("-fx-background-color: white; -fx-background-radius: 16; -fx-border-radius: 16; " +
                 "-fx-border-color: #FF9966; -fx-border-width: 2;");
 
-        // Sezione header con titolo e filtri
         VBox headerSection = createHeaderSection();
         card.getChildren().add(headerSection);
 
-        // Tabella corsi
         TableView<CorsoCucina> table = createOptimizedTable();
         table.prefHeightProperty().bind(card.heightProperty().multiply(0.55));
         table.prefWidthProperty().bind(card.widthProperty().multiply(0.95));
@@ -112,26 +111,26 @@ public class VisualizzaCorsiGUI {
         VBox.setVgrow(tableContainer, Priority.ALWAYS);
         card.getChildren().add(tableContainer);
 
-        // Pulsanti azione
         VBox buttonSection = createButtonSection();
         card.getChildren().add(buttonSection);
 
-        // Setup filtri e binding
+        // ✅ FIX 3: Aggiornato per includere MenuButton
         TextField nomeField = (TextField) ((HBox) headerSection.getChildren().get(1)).getChildren().get(0);
         TextField argomentoField = (TextField) ((HBox) headerSection.getChildren().get(1)).getChildren().get(1);
+        MenuButton filtroStatoBtn = (MenuButton) ((HBox) headerSection.getChildren().get(1)).getChildren().get(2);
         Button mostraTuttiBtn = (Button) ((HBox) buttonSection.getChildren().get(0)).getChildren().get(0);
         Button mieiBtn = (Button) ((HBox) buttonSection.getChildren().get(0)).getChildren().get(1);
 
         setupTableDataBinding(table);
-        setupFilters(nomeField, argomentoField, mostraTuttiBtn, mieiBtn);
+        setupFilters(nomeField, argomentoField, filtroStatoBtn, mostraTuttiBtn, mieiBtn);
         setupTableDoubleClick(table);
 
-        // Caricamento dati asincrono[web:7][web:10]
         loadDataAsync();
 
         return card;
     }
 
+    // ✅ FIX 3: Header aggiornato con MenuButton
     private VBox createHeaderSection() {
         VBox headerSection = new VBox(10);
         headerSection.setAlignment(Pos.CENTER);
@@ -142,12 +141,85 @@ public class VisualizzaCorsiGUI {
 
         HBox filters = new HBox(10);
         filters.setAlignment(Pos.CENTER);
+        
         TextField nomeField = createModernTextField("Cerca per nome...", "👨‍🍳");
         TextField argomentoField = createModernTextField("Cerca per argomento...", "📖");
-        filters.getChildren().addAll(nomeField, argomentoField);
+        
+        // ✅ FIX 3: NUOVO filtro stato corsi
+        MenuButton filtroStatoBtn = createFiltroStatoButton();
+        
+        filters.getChildren().addAll(nomeField, argomentoField, filtroStatoBtn);
 
         headerSection.getChildren().addAll(title, filters);
         return headerSection;
+    }
+
+    // ✅ FIX 3: NUOVO METODO per creare MenuButton filtro stato
+    private MenuButton createFiltroStatoButton() {
+        CheckBox mostraNonFinitiCheck = new CheckBox("  Corsi non finiti");
+        CheckBox mostraFinitiCheck = new CheckBox("  Corsi finiti");
+        
+        mostraNonFinitiCheck.setSelected(true);
+        mostraFinitiCheck.setSelected(true);
+        
+        // Stile checkboxes
+        String checkStyle = "-fx-font-size: 13px; -fx-text-fill: #333333;";
+        mostraNonFinitiCheck.setStyle(checkStyle);
+        mostraFinitiCheck.setStyle(checkStyle);
+        
+        CustomMenuItem item1 = new CustomMenuItem(mostraNonFinitiCheck);
+        CustomMenuItem item2 = new CustomMenuItem(mostraFinitiCheck);
+        item1.setHideOnClick(false);
+        item2.setHideOnClick(false);
+        
+        MenuButton menuBtn = new MenuButton("🔍 Filtra Stato");
+        menuBtn.setPrefHeight(35);
+        menuBtn.setPrefWidth(160);
+        menuBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+        menuBtn.setStyle(
+            "-fx-background-color: #FF6600;" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 18;" +
+            "-fx-cursor: hand;" +
+            "-fx-border-radius: 18;"
+        );
+        
+        menuBtn.getItems().addAll(item1, item2);
+        
+        // ✅ FIX 3: Listener per applicare filtri
+        mostraNonFinitiCheck.selectedProperty().addListener((obs, old, val) -> {
+            mostraNonFiniti = val;
+            applicaFiltriConStato();
+        });
+        
+        mostraFinitiCheck.selectedProperty().addListener((obs, old, val) -> {
+            mostraFiniti = val;
+            applicaFiltriConStato();
+        });
+        
+        return menuBtn;
+    }
+
+    // ✅ FIX 3: NUOVO METODO per applicare filtri con stato
+    private void applicaFiltriConStato() {
+        if (filteredCorsi == null) return;
+        
+        filteredCorsi.setPredicate(corso -> {
+            if (corso == null) return false;
+            
+            // Controlla se il corso è finito
+            LocalDateTime ora = LocalDateTime.now();
+            boolean isFinito = corso.getDataFineCorso() != null && 
+                              corso.getDataFineCorso().isBefore(ora);
+            
+            // Logica di filtro per stato
+            if (!mostraNonFiniti && !mostraFiniti) return false;
+            if (mostraNonFiniti && mostraFiniti) return true;
+            if (mostraNonFiniti && !isFinito) return true;
+            if (mostraFiniti && isFinito) return true;
+            
+            return false;
+        });
     }
 
     private VBox createButtonSection() {
@@ -194,7 +266,6 @@ public class VisualizzaCorsiGUI {
                 "-fx-border-radius: 12; -fx-border-color: #dee2e6; -fx-border-width: 1; " +
                 "-fx-table-header-border-color: #FF9966;");
 
-        // Colonne ottimizzate
         TableColumn<CorsoCucina, Integer> idCol = createIdColumn();
         TableColumn<CorsoCucina, String> nomeCol = createNomeColumn();
         TableColumn<CorsoCucina, String> argomentoCol = createArgomentoColumn();
@@ -209,7 +280,6 @@ public class VisualizzaCorsiGUI {
                 sessioniCol, freqCol, postiCol, inizioCol, fineCol);
         table.getSortOrder().add(nomeCol);
 
-        // Responsive column sizing
         setupResponsiveColumns(table, idCol, nomeCol, argomentoCol, prezzoCol, 
                 sessioniCol, freqCol, postiCol, inizioCol, fineCol);
 
@@ -384,7 +454,6 @@ public class VisualizzaCorsiGUI {
     }
 
     private void loadAndShowDettagli(CorsoCucina corso) {
-        // Caricamento asincrono dei dettagli completi[web:7]
         Task<CorsoCucina> loadDetailsTask = new Task<>() {
             @Override
             protected CorsoCucina call() throws Exception {
@@ -421,14 +490,12 @@ public class VisualizzaCorsiGUI {
             dettagliGUI.setController(gestioneCorsoController);
             dettagliGUI.setCorso(corso);
 
-            // Callback per tornare alla lista[web:26]
             dettagliGUI.setOnChiudiCallback(() -> {
                 VisualizzaCorsiGUI nuovaListaCorsi = new VisualizzaCorsiGUI();
                 nuovaListaCorsi.setControllers(visualizzaController, gestioneCorsoController, contentRoot);
                 contentRoot.getChildren().setAll(nuovaListaCorsi.getRoot());
             });
 
-            // Navigazione al dettaglio[web:24][web:29]
             contentRoot.getChildren().setAll(dettagliGUI.getRoot());
             
         } catch (Exception ex) {
@@ -444,7 +511,6 @@ public class VisualizzaCorsiGUI {
             return;
         }
 
-        // Task asincrono per non bloccare la UI[web:7][web:10]
         Task<List<CorsoCucina>> loadTask = new Task<>() {
             @Override
             protected List<CorsoCucina> call() throws Exception {
@@ -461,6 +527,7 @@ public class VisualizzaCorsiGUI {
                 Platform.runLater(() -> {
                     corsiData.setAll(getValue());
                     progressIndicator.setVisible(false);
+                    applicaFiltriConStato();  // ✅ FIX 3: Applica filtro iniziale
                 });
             }
 
@@ -478,9 +545,11 @@ public class VisualizzaCorsiGUI {
         new Thread(loadTask, "LoadCorsiThread").start();
     }
 
+    // ✅ FIX 3: Aggiornato per includere MenuButton
     private void setupFilters(TextField nomeField, TextField argomentoField, 
+                             MenuButton filtroStatoBtn,
                              Button mostraTuttiBtn, Button mieiBtn) {
-        // Debounce per evitare troppi aggiornamenti[web:7]
+        
         nomeField.textProperty().addListener((obs, oldValue, newValue) -> {
             filterPause.setOnFinished(event -> 
                     applicaFiltriLocali(nomeField.getText(), argomentoField.getText(), false));
@@ -496,7 +565,9 @@ public class VisualizzaCorsiGUI {
         mostraTuttiBtn.setOnAction(e -> {
             nomeField.clear();
             argomentoField.clear();
-            filteredCorsi.setPredicate(c -> true);
+            mostraNonFiniti = true;
+            mostraFiniti = true;
+            applicaFiltriConStato();
         });
 
         mieiBtn.setOnAction(e -> 
@@ -508,7 +579,6 @@ public class VisualizzaCorsiGUI {
         
         progressIndicator.setVisible(true);
         
-        // Task asincrono per filtri pesanti[web:7]
         Task<Void> filterTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
@@ -528,6 +598,20 @@ public class VisualizzaCorsiGUI {
                     filteredCorsi.setPredicate(c -> {
                         if (c == null) return false;
                         
+                        // ✅ FIX 3: Integra filtro stato corsi
+                        LocalDateTime ora = LocalDateTime.now();
+                        boolean isFinito = c.getDataFineCorso() != null && 
+                                          c.getDataFineCorso().isBefore(ora);
+                        
+                        // Filtro stato
+                        boolean passaFiltroStato = false;
+                        if (mostraNonFiniti && mostraFiniti) passaFiltroStato = true;
+                        else if (mostraNonFiniti && !isFinito) passaFiltroStato = true;
+                        else if (mostraFiniti && isFinito) passaFiltroStato = true;
+                        
+                        if (!passaFiltroStato) return false;
+                        
+                        // Filtro nome/argomento
                         boolean matchNome = nomeLower.isEmpty() || 
                                 (c.getNomeCorso() != null && c.getNomeCorso().toLowerCase().contains(nomeLower));
                         boolean matchArgomento = argomentoLower.isEmpty() || 

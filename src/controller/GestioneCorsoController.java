@@ -33,9 +33,23 @@ public class GestioneCorsoController {
         return chefService.getAll();
     }
 
+    // ✅ MODIFICATO: Imposta automaticamente il fondatore
     public void creaCorso(CorsoCucina corso) throws ValidationException {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
+        
+        // ✅ NUOVO: Imposta automaticamente chef loggato come fondatore
+        if (chefLoggato == null) {
+            throw new ValidationException("Nessun chef loggato. Impossibile creare il corso.");
+        }
+        
+        corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
+        
         corsiService.creaCorso(corso);
+        
+        System.out.println("[GestioneCorsoController] ✅ Corso creato");
+        System.out.println("[GestioneCorsoController] 👑 Fondatore: " + 
+                         chefLoggato.getNome() + " " + chefLoggato.getCognome() +
+                         " (CF: " + chefLoggato.getCodFiscale() + ")");
     }
 
     public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException {
@@ -48,7 +62,6 @@ public class GestioneCorsoController {
 
         corsiService.rimuoviChefDaCorso(chef, corso);
     }
-
 
     public void eliminaCorso(int idCorso) {
         corsiService.cancellaCorso(idCorso);
