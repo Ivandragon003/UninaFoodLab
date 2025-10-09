@@ -42,14 +42,26 @@ public class CreaSessioniGUI extends Stage {
 	private ListView<Ricetta> ricetteListView;
 	private List<Ricetta> ricetteSelezionate = new ArrayList<>();
 
-	public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso,
-			Set<LocalDate> dateOccupate, RicettaController ricettaController) {
-		this(corsoInizio, corsoFine, frequenzaCorso, dateOccupate, ricettaController, null);
-	}
-
+	// COSTRUTTORE PRINCIPALE - Richiede entrambi i controller
 	public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso,
 			Set<LocalDate> dateOccupate, RicettaController ricettaController,
 			IngredienteController ingredienteController) {
+
+		// VALIDAZIONE PARAMETRI CRITICI
+		if (corsoInizio == null || corsoFine == null) {
+			throw new IllegalArgumentException("Le date di inizio e fine corso non possono essere null");
+		}
+		if (frequenzaCorso == null) {
+			throw new IllegalArgumentException("La frequenza del corso non può essere null");
+		}
+		if (ricettaController == null) {
+			throw new IllegalArgumentException("RicettaController non può essere null");
+		}
+		if (ingredienteController == null) {
+			throw new IllegalArgumentException(
+					"IngredienteController non può essere null - necessario per gestire le ricette");
+		}
+
 		this.corsoInizio = corsoInizio;
 		this.corsoFine = corsoFine;
 		this.frequenzaCorso = frequenzaCorso;
@@ -263,25 +275,17 @@ public class CreaSessioniGUI extends Stage {
 		selezionaRicetteBtn = StyleHelper.createPrimaryButton("📚 Seleziona Ricette");
 		selezionaRicetteBtn.setOnAction(e -> apriDialogRicette());
 
-		// Disabilita il pulsante se ingredienteController è null
-		if (ingredienteController == null) {
-			selezionaRicetteBtn.setDisable(true);
-			selezionaRicetteBtn.setTooltip(
-					new Tooltip("IngredienteController non disponibile.\n" + "Impossibile gestire le ricette."));
-		} else {
-			selezionaRicetteBtn.setDisable(true);
-		}
+		// PULSANTE SEMPRE DISPONIBILE (disabilitato solo per sessioni online)
+		selezionaRicetteBtn.setDisable(true);
 
 		ricetteLabel = StyleHelper.createLabel("⚠️ Nessuna ricetta selezionata");
 		ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
 
-		// ListView per visualizzare ricette selezionate
 		ricetteListView = new ListView<>();
 		ricetteListView.setPrefHeight(150);
 		ricetteListView.setStyle("-fx-background-color: #f8f9fa;" + "-fx-background-radius: 12;"
 				+ "-fx-border-color: #28a745;" + "-fx-border-width: 2;" + "-fx-border-radius: 12;");
 
-		// Personalizza le celle per mostrare ricette con pulsante rimuovi
 		ricetteListView.setCellFactory(lv -> new ListCell<Ricetta>() {
 			@Override
 			protected void updateItem(Ricetta ricetta, boolean empty) {
@@ -291,37 +295,50 @@ public class CreaSessioniGUI extends Stage {
 					setGraphic(null);
 					setText(null);
 				} else {
-					HBox cellContent = new HBox(10);
-					cellContent.setAlignment(Pos.CENTER_LEFT);
-					cellContent.setPadding(new Insets(8));
-					cellContent.setStyle("-fx-background-color: white;" + "-fx-background-radius: 8;"
-							+ "-fx-border-color: #28a745;" + "-fx-border-width: 1;" + "-fx-border-radius: 8;");
+					try {
+						HBox cellContent = new HBox(10);
+						cellContent.setAlignment(Pos.CENTER_LEFT);
+						cellContent.setPadding(new Insets(8));
+						cellContent.setStyle("-fx-background-color: white;" + "-fx-background-radius: 8;"
+								+ "-fx-border-color: #28a745;" + "-fx-border-width: 1;" + "-fx-border-radius: 8;");
 
-					Label iconLabel = new Label("🍽️");
-					iconLabel.setStyle("-fx-font-size: 16px;");
+						Label iconLabel = new Label("🍽️");
+						iconLabel.setStyle("-fx-font-size: 16px;");
 
-					VBox infoBox = new VBox(3);
-					Label nameLabel = new Label(ricetta.getNome());
-					nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-					Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min");
-					timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
-					infoBox.getChildren().addAll(nameLabel, timeLabel);
+						VBox infoBox = new VBox(3);
+						Label nameLabel = new Label(ricetta.getNome());
+						nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+						Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 "
+								+ ricetta.getNumeroIngredienti() + " ingredienti");
+						timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
+						infoBox.getChildren().addAll(nameLabel, timeLabel);
 
-					Region spacer = new Region();
-					HBox.setHgrow(spacer, Priority.ALWAYS);
+						Region spacer = new Region();
+						HBox.setHgrow(spacer, Priority.ALWAYS);
 
-					Button rimuoviBtn = new Button("❌");
-					rimuoviBtn.setStyle("-fx-background-color: #dc3545;" + "-fx-text-fill: white;"
-							+ "-fx-padding: 5 10;" + "-fx-border-radius: 5;" + "-fx-cursor: hand;");
-					rimuoviBtn.setOnAction(e -> {
-						ricetteSelezionate.remove(ricetta);
-						aggiornaListaRicette();
-					});
+						Button rimuoviBtn = new Button("❌");
+						rimuoviBtn.setStyle(
+								"-fx-background-color: #dc3545;" + "-fx-text-fill: white;" + "-fx-padding: 5 10;"
+										+ "-fx-border-radius: 5;" + "-fx-cursor: hand;" + "-fx-font-size: 12px;");
+						rimuoviBtn.setTooltip(new Tooltip("Rimuovi ricetta dalla selezione"));
+						rimuoviBtn.setOnAction(e -> {
+							try {
+								ricetteSelezionate.remove(ricetta);
+								aggiornaListaRicette();
+							} catch (Exception ex) {
+								StyleHelper.showErrorDialog("Errore",
+										"Errore nella rimozione ricetta: " + ex.getMessage());
+							}
+						});
 
-					cellContent.getChildren().addAll(iconLabel, infoBox, spacer, rimuoviBtn);
-					setGraphic(cellContent);
-					setText(null);
-					setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+						cellContent.getChildren().addAll(iconLabel, infoBox, spacer, rimuoviBtn);
+						setGraphic(cellContent);
+						setText(null);
+						setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+					} catch (Exception e) {
+						setText("Errore nel caricamento ricetta");
+						setGraphic(null);
+					}
 				}
 			}
 		});
@@ -330,16 +347,7 @@ public class CreaSessioniGUI extends Stage {
 		infoLabel.setStyle(
 				"-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; -fx-padding: 8; -fx-background-radius: 5;");
 
-		// Aggiungi avviso se ingredienteController è null
-		if (ingredienteController == null) {
-			Label warningLabel = new Label("⚠️ Funzionalità ricette non disponibile: IngredienteController mancante");
-			warningLabel.setStyle(
-					"-fx-text-fill: #e74c3c; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-color: #ffebee; -fx-padding: 8; -fx-background-radius: 5;");
-			box.getChildren().addAll(ricetteTitle, warningLabel, selezionaRicetteBtn, ricetteLabel, ricetteListView,
-					infoLabel);
-		} else {
-			box.getChildren().addAll(ricetteTitle, selezionaRicetteBtn, ricetteLabel, ricetteListView, infoLabel);
-		}
+		box.getChildren().addAll(ricetteTitle, selezionaRicetteBtn, ricetteLabel, ricetteListView, infoLabel);
 
 		box.setVisible(false);
 		box.setManaged(false);
@@ -348,44 +356,37 @@ public class CreaSessioniGUI extends Stage {
 	}
 
 	private void aggiornaListaRicette() {
-		ricetteListView.getItems().clear();
-		ricetteListView.getItems().addAll(ricetteSelezionate);
+		try {
+			ricetteListView.getItems().clear();
+			ricetteListView.getItems().addAll(ricetteSelezionate);
 
-		if (ricetteSelezionate.isEmpty()) {
-			ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
+			if (ricetteSelezionate.isEmpty()) {
+				ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
+				ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
+			} else {
+				ricetteLabel.setText("✅ " + ricetteSelezionate.size() + " ricette selezionate");
+				ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px; -fx-font-weight: bold;");
+			}
+		} catch (Exception e) {
+			ricetteLabel.setText("❌ Errore nell'aggiornamento");
 			ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
-		} else {
-			ricetteLabel.setText("✅ " + ricetteSelezionate.size() + " ricette selezionate");
-			ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px; -fx-font-weight: bold;");
 		}
 	}
 
 	private void apriDialogRicette() {
 		try {
-			// CONTROLLO CRITICO: Verifica che entrambi i controller siano disponibili
-			if (ricettaController == null) {
-				StyleHelper.showErrorDialog("Errore Configurazione", "RicettaController non disponibile.\n\n"
-						+ "Impossibile aprire il dialog di selezione ricette.");
-				return;
-			}
-
-			if (ingredienteController == null) {
-				StyleHelper.showErrorDialog("Errore Configurazione",
-						"IngredienteController non disponibile.\n\n"
-								+ "Per creare sessioni in presenza con ricette è necessario\n"
-								+ "che l'IngredienteController sia inizializzato.\n\n"
-								+ "⚠️ Contatta l'amministratore del sistema.");
-				return;
-			}
-
+			// CREAZIONE DIALOG CON ENTRAMBI I CONTROLLER VALIDATI
 			VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(ricettaController, ingredienteController);
 
-			// FONDAMENTALE: Imposta questo Stage come owner del dialog
+			// Imposta questo Stage come owner del dialog
 			dialog.initOwner(this);
 
 			// Pre-seleziona ricette già selezionate
-			dialog.preSelezionaRicette(ricetteSelezionate);
+			if (!ricetteSelezionate.isEmpty()) {
+				dialog.preSelezionaRicette(ricetteSelezionate);
+			}
 
+			// Apertura e gestione risultato
 			List<Ricetta> ricetteScelte = dialog.showAndReturn();
 
 			if (ricetteScelte != null && !ricetteScelte.isEmpty()) {
@@ -393,14 +394,19 @@ public class CreaSessioniGUI extends Stage {
 				ricetteSelezionate.addAll(ricetteScelte);
 				aggiornaListaRicette();
 
-				StyleHelper.showSuccessDialog("Successo",
-						String.format("Selezionate %d ricette per la sessione!", ricetteSelezionate.size()));
+				String messaggioSuccesso = String.format("✅ Selezionate %d ricette per la sessione!",
+						ricetteSelezionate.size());
+
+				StyleHelper.showSuccessDialog("Successo", messaggioSuccesso);
+
+			} else if (ricetteScelte != null) {
+				ricetteSelezionate.clear();
+				aggiornaListaRicette();
 			}
-		} catch (IllegalArgumentException e) {
-			StyleHelper.showErrorDialog("Errore Configurazione", e.getMessage());
-			e.printStackTrace();
+
 		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", "Errore nell'apertura dialog ricette: " + e.getMessage());
+			String messaggio = "❌ Errore nell'apertura del dialog ricette: " + e.getMessage();
+			StyleHelper.showErrorDialog("Errore", messaggio);
 			e.printStackTrace();
 		}
 	}
@@ -438,54 +444,55 @@ public class CreaSessioniGUI extends Stage {
 			ricetteBox.setVisible(!isOnline);
 			ricetteBox.setManaged(!isOnline);
 
-			// Disabilita il pulsante se online OPPURE se ingredienteController è null
-			selezionaRicetteBtn.setDisable(isOnline || ingredienteController == null);
+			// Abilita/disabilita pulsante ricette
+			selezionaRicetteBtn.setDisable(isOnline);
 
 			if (isOnline) {
 				ricetteSelezionate.clear();
-				ricetteLabel.setText("⚠️ Non applicabile per sessioni online");
+				ricetteLabel.setText("ℹ️ Non applicabile per sessioni online");
 				ricetteLabel.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 12px;");
 				aggiornaListaRicette();
 			} else {
-				if (ingredienteController == null) {
-					ricetteLabel.setText("⚠️ Funzionalità non disponibile");
-					ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
-				} else {
-					ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
-					ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
-				}
+				ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
+				ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
 			}
 		}
 	}
 
 	private void salvaSessione() {
 		try {
+			// VALIDAZIONE DATA
 			if (datePicker.getValue() == null) {
-				StyleHelper.showValidationDialog("Validazione", "Seleziona una data per la sessione");
+				StyleHelper.showValidationDialog("Validazione", "⚠️ Seleziona una data per la sessione");
 				return;
 			}
 
+			// VALIDAZIONE ORARI
 			LocalTime oraInizio = LocalTime.of(oraInizioBox.getValue(), minutiInizioBox.getValue());
 			LocalTime oraFine = LocalTime.of(oraFineBox.getValue(), minutiFineBox.getValue());
 
 			if (!oraFine.isAfter(oraInizio)) {
-				StyleHelper.showValidationDialog("Validazione", "L'ora di fine deve essere dopo l'ora di inizio");
+				StyleHelper.showValidationDialog("Validazione", "⚠️ L'ora di fine deve essere dopo l'ora di inizio");
 				return;
 			}
 
 			LocalDateTime dataInizio = LocalDateTime.of(datePicker.getValue(), oraInizio);
 			LocalDateTime dataFine = LocalDateTime.of(datePicker.getValue(), oraFine);
 
+			// CREAZIONE SESSIONE ONLINE
 			if ("Online".equals(tipoCombo.getValue())) {
 				String piattaforma = piattaformaField.getText().trim();
 				if (piattaforma.isEmpty()) {
-					StyleHelper.showValidationDialog("Validazione", "Inserisci la piattaforma di streaming");
+					StyleHelper.showValidationDialog("Validazione", "⚠️ Inserisci la piattaforma di streaming");
 					return;
 				}
 
 				sessioneCreata = new Online(dataInizio, dataFine, piattaforma);
 
 			} else {
+				// CREAZIONE SESSIONE IN PRESENZA
+
+				// Verifica ricette per sessioni in presenza
 				if (ricetteSelezionate.isEmpty()) {
 					StyleHelper.showValidationDialog("Validazione",
 							"❌ Le sessioni in presenza richiedono almeno una ricetta.\n\n"
@@ -493,6 +500,7 @@ public class CreaSessioniGUI extends Stage {
 					return;
 				}
 
+				// Validazione campi obbligatori
 				String via = viaField.getText().trim();
 				String citta = cittaField.getText().trim();
 				String postiStr = postiField.getText().trim();
@@ -500,25 +508,47 @@ public class CreaSessioniGUI extends Stage {
 
 				if (via.isEmpty() || citta.isEmpty() || postiStr.isEmpty() || capStr.isEmpty()) {
 					StyleHelper.showValidationDialog("Validazione",
-							"Compila tutti i campi obbligatori per la sessione in presenza");
+							"⚠️ Compila tutti i campi obbligatori per la sessione in presenza");
 					return;
 				}
 
-				int posti = Integer.parseInt(postiStr);
-				int cap = Integer.parseInt(capStr);
-
-				if (posti <= 0) {
-					StyleHelper.showValidationDialog("Validazione", "Il numero di posti deve essere maggiore di zero");
+				// Validazione numero posti
+				int posti;
+				try {
+					posti = Integer.parseInt(postiStr);
+					if (posti <= 0) {
+						StyleHelper.showValidationDialog("Validazione",
+								"⚠️ Il numero di posti deve essere maggiore di zero");
+						return;
+					}
+					if (posti > 1000) {
+						StyleHelper.showValidationDialog("Validazione",
+								"⚠️ Il numero di posti sembra eccessivo (massimo 1000)");
+						return;
+					}
+				} catch (NumberFormatException e) {
+					StyleHelper.showValidationDialog("Validazione",
+							"⚠️ Il numero di posti deve essere un numero intero valido");
 					return;
 				}
 
-				if (cap < 10000 || cap > 99999) {
-					StyleHelper.showValidationDialog("Validazione", "CAP non valido (deve essere di 5 cifre)");
+				// Validazione CAP
+				int cap;
+				try {
+					cap = Integer.parseInt(capStr);
+					if (cap < 10000 || cap > 99999) {
+						StyleHelper.showValidationDialog("Validazione", "⚠️ CAP non valido (deve essere di 5 cifre)");
+						return;
+					}
+				} catch (NumberFormatException e) {
+					StyleHelper.showValidationDialog("Validazione", "⚠️ Il CAP deve essere un numero di 5 cifre");
 					return;
 				}
 
+				// Creazione sessione in presenza
 				InPresenza sessionePresenza = new InPresenza(dataInizio, dataFine, via, citta, posti, cap);
 
+				// Aggiunta ricette
 				for (Ricetta ricetta : ricetteSelezionate) {
 					sessionePresenza.getRicette().add(ricetta);
 				}
@@ -529,9 +559,10 @@ public class CreaSessioniGUI extends Stage {
 			close();
 
 		} catch (NumberFormatException e) {
-			StyleHelper.showValidationDialog("Validazione", "Formato numero non valido nei campi numerici");
+			StyleHelper.showValidationDialog("Validazione", "⚠️ Formato numero non valido nei campi numerici");
 		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", "Errore durante la creazione della sessione: " + e.getMessage());
+			String messaggioErrore = "❌ Errore durante la creazione della sessione: " + e.getMessage();
+			StyleHelper.showErrorDialog("Errore", messaggioErrore);
 			e.printStackTrace();
 		}
 	}

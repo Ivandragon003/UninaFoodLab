@@ -18,22 +18,18 @@ public class DialogFactory {
         this.parentStage = parentStage;
     }
 
-    // Mostra un dialogo di successo
     public void showSuccess(String message) {
         showDialog("Operazione completata", message, StyleHelper.SUCCESS_GREEN);
     }
 
-    // Mostra un dialogo di errore
     public void showError(String message) {
         showDialog("Errore", message, StyleHelper.ERROR_RED);
     }
 
-    // Mostra un dialogo di avviso
     public void showWarning(String message) {
         showDialog("Attenzione", message, StyleHelper.SECONDARY_BEIGE);
     }
 
-    // Dialogo riutilizzabile
     private void showDialog(String title, String message, String color) {
         Stage dialog = new Stage(StageStyle.UTILITY);
         dialog.initModality(Modality.APPLICATION_MODAL);
