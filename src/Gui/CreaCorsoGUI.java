@@ -134,7 +134,10 @@ public class CreaCorsoGUI {
             }
         });
 
+        // CORREZIONE: Frequenza ora precaricata con tutte le opzioni
         frequenzaBox = createFrequenzaComboBox();
+        frequenzaBox.getItems().setAll(Frequenza.values());
+        frequenzaBox.setOnAction(e -> aggiornaNumeroSessioni());
 
         // Grid layout
         GridPane grid = createGrid(15, 15);
