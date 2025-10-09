@@ -16,12 +16,12 @@ public class FrequenzaHelper {
         List<Frequenza> disponibili = new ArrayList<>();
 
         if (dataInizio == null || dataFine == null) {
-            return List.of(Frequenza.UNICA);
+            return List.of(Frequenza.unica);
         }
 
         // Gestisci date inverse o uguali
         if (dataInizio.isAfter(dataFine)) {
-            return List.of(Frequenza.UNICA);
+            return List.of(Frequenza.unica);
         }
 
         long giorniDurata = ChronoUnit.DAYS.between(dataInizio, dataFine);
@@ -32,7 +32,7 @@ public class FrequenzaHelper {
             }
         }
 
-        return disponibili.isEmpty() ? List.of(Frequenza.UNICA) : disponibili;
+        return disponibili.isEmpty() ? List.of(Frequenza.unica) : disponibili;
     }
 
   
@@ -52,15 +52,15 @@ public class FrequenzaHelper {
         long giorniTotali = ChronoUnit.DAYS.between(dataInizio, dataFine);
 
         return switch (frequenza) {
-            case UNICA -> 1;
+            case unica -> 1;
             
-            case GIORNALIERO -> (int) giorniTotali + 1;
+            case giornaliero -> (int) giorniTotali + 1;
             
-            case OGNI_DUE_GIORNI -> (int) Math.ceil((giorniTotali + 1) / 2.0);
+            case ogniDueGiorni -> (int) Math.ceil((giorniTotali + 1) / 2.0);
             
-            case SETTIMANALE -> (int) Math.ceil((giorniTotali + 1) / 7.0);
+            case settimanale -> (int) Math.ceil((giorniTotali + 1) / 7.0);
             
-            case MENSILE -> (int) Math.ceil((giorniTotali + 1) / 30.0);
+            case mensile -> (int) Math.ceil((giorniTotali + 1) / 30.0);
         };
     }
 
@@ -103,18 +103,18 @@ public static boolean isDataDisponibile(LocalDate data, Frequenza frequenza, Set
     if (frequenza == null || data == null || dateOccupate == null) return false;
 
     switch (frequenza) {
-        case UNICA:
+        case unica:
             return dateOccupate.isEmpty();
 
-        case GIORNALIERO:
+        case giornaliero:
             return !dateOccupate.contains(data);
 
-        case OGNI_DUE_GIORNI:
+        case ogniDueGiorni:
             LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
             long giorniDiff = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
             return giorniDiff >= 2 && giorniDiff % 2 == 0;
 
-        case SETTIMANALE:
+        case settimanale:
             int settimanaData = data.get(WeekFields.ISO.weekOfWeekBasedYear());
             int annoData = data.getYear();
             for (LocalDate d : dateOccupate) {
@@ -124,7 +124,7 @@ public static boolean isDataDisponibile(LocalDate data, Frequenza frequenza, Set
             }
             return true;
 
-        case MENSILE:
+        case mensile:
             int meseData = data.getMonthValue();
             annoData = data.getYear();
             for (LocalDate d : dateOccupate) {
