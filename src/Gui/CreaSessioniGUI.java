@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import model.*;
 import guihelper.StyleHelper;
 import controller.RicettaController;
+import controller.IngredienteController;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class CreaSessioniGUI extends Stage {
     private final Frequenza frequenzaCorso;
     private Set<LocalDate> dateOccupate;
     private final RicettaController ricettaController;
+    private final IngredienteController ingredienteController;
     
     private DatePicker datePicker;
     private ComboBox<Integer> oraInizioBox, minutiInizioBox, oraFineBox, minutiFineBox;
@@ -36,15 +38,23 @@ public class CreaSessioniGUI extends Stage {
     private TextField viaField, cittaField, postiField, capField;
     private Button selezionaRicetteBtn;
     private Label ricetteLabel;
+    private VBox listaRicetteContainer;
     private List<Ricetta> ricetteSelezionate = new ArrayList<>();
 
     public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso, 
                           Set<LocalDate> dateOccupate, RicettaController ricettaController) {
+        this(corsoInizio, corsoFine, frequenzaCorso, dateOccupate, ricettaController, null);
+    }
+
+    public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso, 
+                          Set<LocalDate> dateOccupate, RicettaController ricettaController,
+                          IngredienteController ingredienteController) {
         this.corsoInizio = corsoInizio;
         this.corsoFine = corsoFine;
         this.frequenzaCorso = frequenzaCorso;
         this.dateOccupate = dateOccupate != null ? dateOccupate : new HashSet<>();
         this.ricettaController = ricettaController;
+        this.ingredienteController = ingredienteController;
         
         initializeDialog();
     }
@@ -117,23 +127,27 @@ public class CreaSessioniGUI extends Stage {
                 
                 if (d.isBefore(corsoInizio) || d.isAfter(corsoFine)) {
                     setDisable(true);
-                    setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white;");
+                    setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+                    setTooltip(new Tooltip("Fuori dal periodo del corso"));
                     return;
                 }
                 
                 if (!isDataValidaPerFrequenza(d)) {
                     setDisable(true);
-                    setStyle("-fx-background-color: #ff6b6b; -fx-text-fill: white;"); // rosso icona
+                    setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+                    setTooltip(new Tooltip("Data non compatibile con la frequenza " + frequenzaCorso.getDescrizione()));
                     return;
                 }
 
                 if (dateOccupate.contains(d)) {
                     setDisable(true);
-                    setStyle("-fx-background-color: #ffd93d; -fx-text-fill: #333;"); // giallo
+                    setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #f57f17;");
+                    setTooltip(new Tooltip("Data già occupata da altra sessione"));
                     return;
                 }
                 
-                setStyle("-fx-background-color: #d4edda; -fx-text-fill: #155724;"); // verde
+                setStyle("-fx-background-color: #c8e6c9; -fx-text-fill: #2e7d32;");
+                setTooltip(new Tooltip("Data disponibile"));
             }
         });
         
@@ -172,7 +186,7 @@ public class CreaSessioniGUI extends Stage {
                 int annoData = data.getYear();
                 for (LocalDate d : dateOccupate) {
                     if (d.getYear() == annoData && d.get(WeekFields.ISO.weekOfWeekBasedYear()) == settimanaData) {
-                        return false; // settimana occupata
+                        return false;
                     }
                 }
                 return true;
@@ -182,7 +196,7 @@ public class CreaSessioniGUI extends Stage {
                 annoData = data.getYear();
                 for (LocalDate d : dateOccupate) {
                     if (d.getYear() == annoData && d.getMonthValue() == meseData) {
-                        return false; // mese occupato
+                        return false;
                     }
                 }
                 return true;
@@ -256,10 +270,10 @@ public class CreaSessioniGUI extends Stage {
         selezionaRicetteBtn.setDisable(true);
         
         ricetteLabel = StyleHelper.createLabel("⚠️ Nessuna ricetta selezionata");
-        ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px;");
+        ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
         
         Label infoLabel = StyleHelper.createLabel("💡 Le sessioni in presenza richiedono almeno una ricetta");
-        infoLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; -fx-padding: 5; -fx-background-radius: 3;");
+        infoLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; -fx-padding: 8; -fx-background-radius: 5;");
         
         box.getChildren().addAll(ricetteTitle, selezionaRicetteBtn, ricetteLabel, infoLabel);
         box.setVisible(false);
@@ -270,7 +284,11 @@ public class CreaSessioniGUI extends Stage {
 
     private void apriDialogRicette() {
         try {
-            VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(ricettaController);
+            // CORREZIONE: Passa anche IngredienteController per permettere la creazione di ricette
+            VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(
+                ricettaController, 
+                ingredienteController
+            );
             List<Ricetta> ricetteScelte = dialog.showAndReturn();
             
             if (ricetteScelte != null && !ricetteScelte.isEmpty()) {
@@ -278,13 +296,19 @@ public class CreaSessioniGUI extends Stage {
                 ricetteSelezionate.addAll(ricetteScelte);
                 
                 ricetteLabel.setText("✅ " + ricetteSelezionate.size() + " ricette selezionate");
-                ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px;");
+                ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px; -fx-font-weight: bold;");
                 
                 StyleHelper.showSuccessDialog("Successo", 
-                    "Selezionate " + ricetteSelezionate.size() + " ricette per la sessione!");
+                    String.format(
+                        "Selezionate %d ricette per la sessione!\n\n" +
+                        "Le ricette saranno associate alla sessione in presenza.",
+                        ricetteSelezionate.size()
+                    )
+                );
             }
         } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore", "Errore nell'apertura dialog ricette: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -298,7 +322,7 @@ public class CreaSessioniGUI extends Stage {
             close();
         });
         
-        Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva");
+        Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva Sessione");
         salvaBtn.setOnAction(e -> salvaSessione());
         
         hb.getChildren().addAll(annullaBtn, salvaBtn);
@@ -328,7 +352,7 @@ public class CreaSessioniGUI extends Stage {
                 ricetteLabel.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 12px;");
             } else {
                 ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
-                ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px;");
+                ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
             }
         }
     }
@@ -336,7 +360,7 @@ public class CreaSessioniGUI extends Stage {
     private void salvaSessione() {
         try {
             if (datePicker.getValue() == null) {
-                StyleHelper.showValidationDialog("Validazione", "Seleziona una data");
+                StyleHelper.showValidationDialog("Validazione", "Seleziona una data per la sessione");
                 return;
             }
 
@@ -354,7 +378,7 @@ public class CreaSessioniGUI extends Stage {
             if ("Online".equals(tipoCombo.getValue())) {
                 String piattaforma = piattaformaField.getText().trim();
                 if (piattaforma.isEmpty()) {
-                    StyleHelper.showValidationDialog("Validazione", "Inserisci la piattaforma");
+                    StyleHelper.showValidationDialog("Validazione", "Inserisci la piattaforma di streaming");
                     return;
                 }
 
@@ -363,8 +387,8 @@ public class CreaSessioniGUI extends Stage {
             } else {
                 if (ricetteSelezionate.isEmpty()) {
                     StyleHelper.showValidationDialog("Validazione", 
-                        "Le sessioni in presenza richiedono almeno una ricetta.\n" +
-                        "Usa il pulsante 'Seleziona Ricette' per aggiungerne una.");
+                        "❌ Le sessioni in presenza richiedono almeno una ricetta.\n\n" +
+                        "Usa il pulsante '📚 Seleziona Ricette' per aggiungerne una.");
                     return;
                 }
                 
@@ -374,7 +398,7 @@ public class CreaSessioniGUI extends Stage {
                 String capStr = capField.getText().trim();
 
                 if (via.isEmpty() || citta.isEmpty() || postiStr.isEmpty() || capStr.isEmpty()) {
-                    StyleHelper.showValidationDialog("Validazione", "Compila tutti i campi obbligatori");
+                    StyleHelper.showValidationDialog("Validazione", "Compila tutti i campi obbligatori per la sessione in presenza");
                     return;
                 }
 
@@ -382,12 +406,12 @@ public class CreaSessioniGUI extends Stage {
                 int cap = Integer.parseInt(capStr);
 
                 if (posti <= 0) {
-                    StyleHelper.showValidationDialog("Validazione", "Il numero di posti deve essere positivo");
+                    StyleHelper.showValidationDialog("Validazione", "Il numero di posti deve essere maggiore di zero");
                     return;
                 }
 
                 if (cap < 10000 || cap > 99999) {
-                    StyleHelper.showValidationDialog("Validazione", "CAP non valido (5 cifre)");
+                    StyleHelper.showValidationDialog("Validazione", "CAP non valido (deve essere di 5 cifre)");
                     return;
                 }
 
@@ -403,9 +427,9 @@ public class CreaSessioniGUI extends Stage {
             close();
 
         } catch (NumberFormatException e) {
-            StyleHelper.showValidationDialog("Validazione", "Formato numero non valido");
+            StyleHelper.showValidationDialog("Validazione", "Formato numero non valido nei campi numerici");
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Errore durante la creazione: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore durante la creazione della sessione: " + e.getMessage());
             e.printStackTrace();
         }
     }
