@@ -168,20 +168,20 @@ public class CreaSessioniGUI extends Stage {
     }
 
     private boolean isDataValidaPerFrequenza(LocalDate data) {
-        if (frequenzaCorso == Frequenza.UNICA) {
+        if (frequenzaCorso == Frequenza.unica) {
             return dateOccupate.isEmpty();
         }
 
         switch (frequenzaCorso) {
-            case GIORNALIERO:
+            case giornaliero:
                 return !dateOccupate.contains(data);
 
-            case OGNI_DUE_GIORNI:
+            case ogniDueGiorni:
                 LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
                 long giorniDifferenza = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
                 return giorniDifferenza >= 2 && giorniDifferenza % 2 == 0;
 
-            case SETTIMANALE:
+            case settimanale:
                 int settimanaData = data.get(WeekFields.ISO.weekOfWeekBasedYear());
                 int annoData = data.getYear();
                 for (LocalDate d : dateOccupate) {
@@ -191,7 +191,7 @@ public class CreaSessioniGUI extends Stage {
                 }
                 return true;
 
-            case MENSILE:
+            case mensile:
                 int meseData = data.getMonthValue();
                 annoData = data.getYear();
                 for (LocalDate d : dateOccupate) {

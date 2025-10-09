@@ -325,7 +325,7 @@ public class DettagliCorsoGUI {
     private void onDataInizioChange() {
         LocalDate inizio = dataInizioPicker.getValue();
         
-        if (frequenzaCombo.getValue() == Frequenza.UNICA && inizio != null) {
+        if (frequenzaCombo.getValue() == Frequenza.unica && inizio != null) {
             dataFinePicker.setValue(inizio);
         }
     }
@@ -335,7 +335,7 @@ public class DettagliCorsoGUI {
         
         Frequenza selezionata = frequenzaCombo.getValue();
         
-        if (selezionata == Frequenza.UNICA) {
+        if (selezionata == Frequenza.unica) {
             if (dataInizioPicker.getValue() != null) {
                 dataFinePicker.setValue(dataInizioPicker.getValue());
             }
@@ -368,7 +368,7 @@ public class DettagliCorsoGUI {
     }
 
     private void aggiornaStatoDataFine() {
-        if (corso.getFrequenzaCorso() == Frequenza.UNICA) {
+        if (corso.getFrequenzaCorso() == Frequenza.unica) {
             dataFinePicker.setDisable(!editable);
             if (!editable) {
                 dataFinePicker.setStyle("-fx-opacity: 0.6;");
@@ -613,7 +613,7 @@ public class DettagliCorsoGUI {
         
         dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
         
-        if (edit && frequenzaCombo.getValue() == Frequenza.UNICA) {
+        if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
             dataFinePicker.setDisable(true);
         } else {
             dataFinePicker.setDisable(!edit);
