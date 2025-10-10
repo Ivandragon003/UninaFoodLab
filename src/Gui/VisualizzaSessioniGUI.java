@@ -386,7 +386,7 @@ private void confermaEliminaSessione(Sessione sessione) {
         chiudiBtn.setStyle("-fx-pref-width: 150; -fx-pref-height: 45; -fx-font-size: 14px; " +
                 "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 10;");
         chiudiBtn.setOnAction(e -> {
-            if (root.getScene() != null) {
+            if (root.getScene() != null && root.getScene().getWindow() != null) {
                 root.getScene().getWindow().hide();
             }
         });

@@ -16,7 +16,6 @@ public class CorsoCucina {
 	private LocalDateTime dataInizioCorso;
 	private LocalDateTime dataFineCorso;
 	
-	// ✅ NUOVO: Codice fiscale del chef fondatore
 	private String codfiscaleFondatore;
 
 	private List<Chef> chef = new ArrayList<>();
@@ -115,7 +114,6 @@ public class CorsoCucina {
 	    this.numeroSessioni = numeroSessioni;
 	}
 
-	// ✅ NUOVO: Getter e Setter per fondatore
 	public String getCodfiscaleFondatore() {
 		return codfiscaleFondatore;
 	}

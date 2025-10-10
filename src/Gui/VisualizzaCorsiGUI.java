@@ -45,7 +45,6 @@ public class VisualizzaCorsiGUI {
     private ProgressIndicator progressIndicator;
     private final PauseTransition filterPause = new PauseTransition(Duration.millis(350));
 
-    // ✅ FIX 3: Variabili per filtro stato corsi
     private boolean mostraNonFiniti = true;
     private boolean mostraFiniti = true;
 
@@ -114,7 +113,6 @@ public class VisualizzaCorsiGUI {
         VBox buttonSection = createButtonSection();
         card.getChildren().add(buttonSection);
 
-        // ✅ FIX 3: Aggiornato per includere MenuButton
         TextField nomeField = (TextField) ((HBox) headerSection.getChildren().get(1)).getChildren().get(0);
         TextField argomentoField = (TextField) ((HBox) headerSection.getChildren().get(1)).getChildren().get(1);
         MenuButton filtroStatoBtn = (MenuButton) ((HBox) headerSection.getChildren().get(1)).getChildren().get(2);
@@ -130,7 +128,6 @@ public class VisualizzaCorsiGUI {
         return card;
     }
 
-    // ✅ FIX 3: Header aggiornato con MenuButton
     private VBox createHeaderSection() {
         VBox headerSection = new VBox(10);
         headerSection.setAlignment(Pos.CENTER);
@@ -145,7 +142,6 @@ public class VisualizzaCorsiGUI {
         TextField nomeField = createModernTextField("Cerca per nome...", "👨‍🍳");
         TextField argomentoField = createModernTextField("Cerca per argomento...", "📖");
         
-        // ✅ FIX 3: NUOVO filtro stato corsi
         MenuButton filtroStatoBtn = createFiltroStatoButton();
         
         filters.getChildren().addAll(nomeField, argomentoField, filtroStatoBtn);
@@ -154,7 +150,6 @@ public class VisualizzaCorsiGUI {
         return headerSection;
     }
 
-    // ✅ FIX 3: NUOVO METODO per creare MenuButton filtro stato
     private MenuButton createFiltroStatoButton() {
         CheckBox mostraNonFinitiCheck = new CheckBox("  Corsi non finiti");
         CheckBox mostraFinitiCheck = new CheckBox("  Corsi finiti");
@@ -162,7 +157,6 @@ public class VisualizzaCorsiGUI {
         mostraNonFinitiCheck.setSelected(true);
         mostraFinitiCheck.setSelected(true);
         
-        // Stile checkboxes
         String checkStyle = "-fx-font-size: 13px; -fx-text-fill: #333333;";
         mostraNonFinitiCheck.setStyle(checkStyle);
         mostraFinitiCheck.setStyle(checkStyle);
@@ -186,7 +180,6 @@ public class VisualizzaCorsiGUI {
         
         menuBtn.getItems().addAll(item1, item2);
         
-        // ✅ FIX 3: Listener per applicare filtri
         mostraNonFinitiCheck.selectedProperty().addListener((obs, old, val) -> {
             mostraNonFiniti = val;
             applicaFiltriConStato();
@@ -200,19 +193,16 @@ public class VisualizzaCorsiGUI {
         return menuBtn;
     }
 
-    // ✅ FIX 3: NUOVO METODO per applicare filtri con stato
     private void applicaFiltriConStato() {
         if (filteredCorsi == null) return;
         
         filteredCorsi.setPredicate(corso -> {
             if (corso == null) return false;
             
-            // Controlla se il corso è finito
             LocalDateTime ora = LocalDateTime.now();
             boolean isFinito = corso.getDataFineCorso() != null && 
                               corso.getDataFineCorso().isBefore(ora);
             
-            // Logica di filtro per stato
             if (!mostraNonFiniti && !mostraFiniti) return false;
             if (mostraNonFiniti && mostraFiniti) return true;
             if (mostraNonFiniti && !isFinito) return true;
@@ -527,7 +517,7 @@ public class VisualizzaCorsiGUI {
                 Platform.runLater(() -> {
                     corsiData.setAll(getValue());
                     progressIndicator.setVisible(false);
-                    applicaFiltriConStato();  // ✅ FIX 3: Applica filtro iniziale
+                    applicaFiltriConStato();
                 });
             }
 
@@ -545,7 +535,6 @@ public class VisualizzaCorsiGUI {
         new Thread(loadTask, "LoadCorsiThread").start();
     }
 
-    // ✅ FIX 3: Aggiornato per includere MenuButton
     private void setupFilters(TextField nomeField, TextField argomentoField, 
                              MenuButton filtroStatoBtn,
                              Button mostraTuttiBtn, Button mieiBtn) {
@@ -582,9 +571,12 @@ public class VisualizzaCorsiGUI {
         Task<Void> filterTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                if (soloChefLoggato && cachedCorsiChef == null && visualizzaController != null) {
+                if (soloChefLoggato && visualizzaController != null) {
                     List<CorsoCucina> corsiChef = visualizzaController.getCorsiChefLoggato();
                     cachedCorsiChef = (corsiChef == null) ? Collections.emptyList() : corsiChef;
+                    
+                    System.out.println("[DEBUG] Corsi dello chef loggato: " + 
+                        (cachedCorsiChef == null ? "NULL" : cachedCorsiChef.size()));
                 }
                 return null;
             }
@@ -598,12 +590,10 @@ public class VisualizzaCorsiGUI {
                     filteredCorsi.setPredicate(c -> {
                         if (c == null) return false;
                         
-                        // ✅ FIX 3: Integra filtro stato corsi
                         LocalDateTime ora = LocalDateTime.now();
                         boolean isFinito = c.getDataFineCorso() != null && 
                                           c.getDataFineCorso().isBefore(ora);
                         
-                        // Filtro stato
                         boolean passaFiltroStato = false;
                         if (mostraNonFiniti && mostraFiniti) passaFiltroStato = true;
                         else if (mostraNonFiniti && !isFinito) passaFiltroStato = true;
@@ -611,7 +601,6 @@ public class VisualizzaCorsiGUI {
                         
                         if (!passaFiltroStato) return false;
                         
-                        // Filtro nome/argomento
                         boolean matchNome = nomeLower.isEmpty() || 
                                 (c.getNomeCorso() != null && c.getNomeCorso().toLowerCase().contains(nomeLower));
                         boolean matchArgomento = argomentoLower.isEmpty() || 
@@ -619,16 +608,105 @@ public class VisualizzaCorsiGUI {
                         boolean match = matchNome && matchArgomento;
 
                         if (soloChefLoggato) {
-                            return match && (cachedCorsiChef != null && cachedCorsiChef.contains(c));
+                            if (cachedCorsiChef == null || cachedCorsiChef.isEmpty()) {
+                                return false; 
+                            }
+                            
+                            boolean isChefCorso = cachedCorsiChef.stream()
+                                .anyMatch(corsoChef -> corsoChef.getIdCorso() == c.getIdCorso());
+                            
+                            return match && isChefCorso;
                         }
+                        
                         return match;
                     });
 
                     progressIndicator.setVisible(false);
+                    
+                    if (soloChefLoggato && filteredCorsi.isEmpty()) {
+                        showStyledInfoDialog("ℹ️ Nessun Corso Trovato",
+                            "Non ci sono corsi assegnati a questo chef.\n\n" +
+                            "Verifica di essere loggato come chef\ne di avere corsi assegnati.");
+                    }
+                });
+            }
+
+            @Override
+            protected void failed() {
+                Platform.runLater(() -> {
+                    progressIndicator.setVisible(false);
+                    StyleHelper.showErrorDialog("❌ Errore", 
+                        "Errore durante il filtraggio:\n" + getException().getMessage());
                 });
             }
         };
 
         new Thread(filterTask, "FilterThread").start();
     }
+
+    // ✅ METODO DIALOG STILE MODERNO - Alla fine della classe
+    private void showStyledInfoDialog(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(null);
+        
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getStyleClass().remove("alert");
+        
+        dialogPane.setStyle(
+            "-fx-background-color: #FFF3E0;" +
+            "-fx-border-color: #FF9966;" +
+            "-fx-border-width: 2px;" +
+            "-fx-border-radius: 10px;" +
+            "-fx-background-radius: 10px;" +
+            "-fx-padding: 25px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+        );
+        
+        VBox content = new VBox(15);
+        content.setAlignment(Pos.CENTER);
+        
+        Label iconLabel = new Label("ℹ️");
+        iconLabel.setStyle("-fx-font-size: 48px;");
+        
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle(
+            "-fx-font-size: 18px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-text-fill: #E65100;" +
+            "-fx-wrap-text: true;" +
+            "-fx-text-alignment: center;"
+        );
+        titleLabel.setMaxWidth(400);
+        titleLabel.setWrapText(true);
+        
+        Label messageLabel = new Label(message);
+        messageLabel.setStyle(
+            "-fx-font-size: 14px;" +
+            "-fx-text-fill: #4E342E;" +
+            "-fx-wrap-text: true;" +
+            "-fx-text-alignment: center;"
+        );
+        messageLabel.setMaxWidth(400);
+        messageLabel.setWrapText(true);
+        
+        content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+        dialogPane.setContent(content);
+        
+        Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+        okButton.setText("OK");
+        okButton.setStyle(
+            "-fx-background-color: #FF9966;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-size: 14px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-padding: 12 40 12 40;" +
+            "-fx-background-radius: 8px;" +
+            "-fx-cursor: hand;"
+        );
+        
+        alert.showAndWait();
+    }
+
 }

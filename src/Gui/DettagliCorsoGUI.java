@@ -141,7 +141,7 @@ public class DettagliCorsoGUI {
     frequenzaCombo = StyleHelper.createComboBox();
     frequenzaCombo.getItems().setAll(Frequenza.values());
     frequenzaCombo.setValue(corso.getFrequenzaCorso());
-    frequenzaCombo.setDisable(true); // ✅ Disabilitata inizialmente
+    frequenzaCombo.setDisable(true); 
     frequenzaCombo.setOnAction(e -> onFrequenzaChange());
 
     numeroSessioniField = StyleHelper.createTextField(
@@ -155,14 +155,14 @@ public class DettagliCorsoGUI {
     dataInizioPicker.setValue(
             corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
     );
-    dataInizioPicker.setDisable(true); // ✅ Disabilitato inizialmente
+    dataInizioPicker.setDisable(true); 
     dataInizioPicker.setOnAction(e -> onDataInizioChange());
     
     dataFinePicker = StyleHelper.createDatePicker();
     dataFinePicker.setValue(
             corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
     );
-    dataFinePicker.setDisable(true); // ✅ Disabilitato inizialmente
+    dataFinePicker.setDisable(true); 
     dataFinePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
 
     chefListView = new ListView<>();
@@ -245,7 +245,7 @@ public class DettagliCorsoGUI {
 
     addChefCombo = StyleHelper.createComboBox();
     addChefCombo.setPrefWidth(300);
-    addChefCombo.setDisable(true); // ✅ Disabilitata inizialmente
+    addChefCombo.setDisable(true);
     
     addChefCombo.setCellFactory(lv -> new ListCell<>() {
         @Override
@@ -264,7 +264,7 @@ public class DettagliCorsoGUI {
     });
     
     addChefBtn = StyleHelper.createSuccessButton("➕ Aggiungi");
-    addChefBtn.setDisable(true); // ✅ Disabilitato inizialmente
+    addChefBtn.setDisable(true);
     addChefBtn.setOnAction(e -> {
         Chef toAdd = addChefCombo.getValue();
         if (toAdd == null) {
@@ -755,7 +755,7 @@ private void onFrequenzaChange() {
     private void apriVisualizzaSessioni() {
     try {
         VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
-        visualizzaSessioniGUI.setController(null); // temporaneo
+        visualizzaSessioniGUI.setController(null);
         visualizzaSessioniGUI.setCorso(corso);
         
         Stage sessioniStage = new Stage();
@@ -960,8 +960,7 @@ private void rimuoviChef(Chef chef) {
     }
 }
 
-
-    private void setEditable(boolean edit) {
+	private void setEditable(boolean edit) {
     if (isCorsoFinito()) {
         this.editable = false;
         return;
@@ -979,21 +978,35 @@ private void rimuoviChef(Chef chef) {
     boolean corsoGiaIniziato = dataInizio != null && dataInizio.isBefore(oggi);
     boolean corsoGiaFinito = dataFine != null && dataFine.isBefore(oggi);
     
-    // ✅ CRITICO: Imposta editable E focusTraversable insieme
     nomeField.setEditable(edit);
-    nomeField.setFocusTraversable(edit);
-    
     prezzoField.setEditable(edit);
-    prezzoField.setFocusTraversable(edit);
-    
     argomentoField.setEditable(edit);
-    argomentoField.setFocusTraversable(edit);
-    
     numeroPostiField.setEditable(edit);
-    numeroPostiField.setFocusTraversable(edit);
+    
+    if (!edit) {
+        nomeField.setFocusTraversable(false);
+        prezzoField.setFocusTraversable(false);
+        argomentoField.setFocusTraversable(false);
+        numeroPostiField.setFocusTraversable(false);
+        
+        nomeField.setMouseTransparent(true);
+        prezzoField.setMouseTransparent(true);
+        argomentoField.setMouseTransparent(true);
+        numeroPostiField.setMouseTransparent(true);
+    } else {
+        nomeField.setFocusTraversable(true);
+        prezzoField.setFocusTraversable(true);
+        argomentoField.setFocusTraversable(true);
+        numeroPostiField.setFocusTraversable(true);
+        
+        // ✅ Riabilita il click quando editabili
+        nomeField.setMouseTransparent(false);
+        prezzoField.setMouseTransparent(false);
+        argomentoField.setMouseTransparent(false);
+        numeroPostiField.setMouseTransparent(false);
+    }
     
     frequenzaCombo.setDisable(!edit);
-    
     dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
     
     if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
@@ -1005,28 +1018,26 @@ private void rimuoviChef(Chef chef) {
     addChefCombo.setDisable(!edit);
     addChefBtn.setDisable(!edit);
 
-    // ✅ CRITICO: Colore testo NERO sempre, solo bordo cambia
-    String textStyle = "-fx-text-fill: black; -fx-background-color: white;";
+    String textColor = "-fx-text-fill: black;";
+    String bgColor = "-fx-background-color: white;";
+    String opacity = edit ? "-fx-opacity: 1.0;" : "-fx-opacity: 0.7;"; // ✅ Leggera opacità quando non editabile
     String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
     
-    nomeField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
-        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
+    String fieldStyle = textColor + bgColor + opacity + 
+        "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;";
     
-    prezzoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
-        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
+    nomeField.setStyle(fieldStyle);
+    prezzoField.setStyle(fieldStyle);
+    argomentoField.setStyle(fieldStyle);
+    numeroPostiField.setStyle(fieldStyle);
     
-    argomentoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
-        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
-    
-    numeroPostiField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
-        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
-    
-    // ✅ Card border
     card.setStyle("-fx-background-color: white; -fx-background-radius: 16;" +
             "-fx-border-radius: 16; -fx-border-color: " + borderColor + "; -fx-border-width: 2;");
 
     refreshChefListView();
 }
+
 
 
     
@@ -1103,7 +1114,6 @@ private void rimuoviChef(Chef chef) {
     
     DialogPane dialogPane = alert.getDialogPane();
     
-    // ✅ RIMUOVI COMPLETAMENTE IL BORDO DI SISTEMA
     dialogPane.getStyleClass().remove("alert");
     
     dialogPane.setStyle(
@@ -1116,19 +1126,16 @@ private void rimuoviChef(Chef chef) {
         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
     );
     
-    // ✅ CREA UN VBOX PERSONALIZZATO PER IL CONTENUTO
     VBox content = new VBox(15);
     content.setAlignment(Pos.CENTER);
     content.setStyle("-fx-padding: 10;");
     
-    // ✅ Icona errore grande
     Label iconLabel = new Label("❌");
     iconLabel.setStyle(
         "-fx-font-size: 48px;" +
         "-fx-text-fill: #FF6B6B;"
     );
     
-    // ✅ Titolo
     Label titleLabel = new Label(title);
     titleLabel.setStyle(
         "-fx-font-size: 18px;" +
@@ -1140,7 +1147,7 @@ private void rimuoviChef(Chef chef) {
     titleLabel.setMaxWidth(450);
     titleLabel.setWrapText(true);
     
-    // ✅ Messaggio
+
     Label messageLabel = new Label(message);
     messageLabel.setStyle(
         "-fx-font-size: 14px;" +
