@@ -17,101 +17,83 @@ import java.util.List;
 
 public class GestioneSessioniController {
 
-    private final CorsoCucina corso;
-    private final GestioneSessioni gestioneSessioniService;
-    private final GestioneCucina gestioneCucinaService;
-    private final GestioneRicette gestioneRicetteService;
+	private final CorsoCucina corso;
+	private final GestioneSessioni gestioneSessioniService;
+	private final GestioneCucina gestioneCucinaService;
+	private final GestioneRicette gestioneRicetteService;
 
-    public GestioneSessioniController(CorsoCucina corso,
-                                      GestioneSessioni gestioneSessioniService,
-                                      GestioneCucina gestioneCucinaService,
-                                      GestioneRicette gestioneRicetteService) {
-        this.corso = corso;
-        this.gestioneSessioniService = gestioneSessioniService;
-        this.gestioneCucinaService = gestioneCucinaService;
-        this.gestioneRicetteService = gestioneRicetteService;
-    }
+	public GestioneSessioniController(CorsoCucina corso, GestioneSessioni gestioneSessioniService,
+			GestioneCucina gestioneCucinaService, GestioneRicette gestioneRicetteService) {
+		this.corso = corso;
+		this.gestioneSessioniService = gestioneSessioniService;
+		this.gestioneCucinaService = gestioneCucinaService;
+		this.gestioneRicetteService = gestioneRicetteService;
+	}
 
-    // --- SESSIONI ---
-    public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
-            throws ValidationException, DataAccessException {
+	// --- SESSIONI ---
+	public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
+			throws ValidationException, DataAccessException {
 
-        ValidationUtils.validateNotNull(sessione, "Sessione");
-        ValidationUtils.validateNotNull(corso, "Corso");
+		ValidationUtils.validateNotNull(sessione, "Sessione");
+		ValidationUtils.validateNotNull(corso, "Corso");
 
-        LocalDateTime now = LocalDateTime.now();
-        if (sessione.getDataInizioSessione().isBefore(now))
-            throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
+		LocalDateTime now = LocalDateTime.now();
+		if (sessione.getDataInizioSessione().isBefore(now))
+			throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
 
-        if (!sessione.getDataFineSessione().isAfter(sessione.getDataInizioSessione()))
-            throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
+		if (!sessione.getDataFineSessione().isAfter(sessione.getDataInizioSessione()))
+			throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
 
-        gestioneSessioniService.creaSessione(sessione);
-        corso.getSessioni().add(sessione);
+		gestioneSessioniService.creaSessione(sessione);
+		corso.getSessioni().add(sessione);
 
-        if (sessione instanceof InPresenza ip && ricette != null) {
-            for (Ricetta r : ricette) {
-                gestioneSessioniService.aggiungiRicettaASessione(ip, r);
-            }
-        }
-    }
+		if (sessione instanceof InPresenza ip && ricette != null) {
+			for (Ricetta r : ricette) {
 
-    public void aggiornaSessione(Sessione oldS, Sessione newS)
-            throws ValidationException, DataAccessException {
+				if (r.getIdRicetta() == 0) {
+					gestioneRicetteService.creaRicetta(r);
+				}
 
-        ValidationUtils.validateNotNull(oldS, "Sessione vecchia");
-        ValidationUtils.validateNotNull(newS, "Sessione nuova");
+				if (ip.getIdSessione() == 0) {
+					gestioneSessioniService.creaSessione(ip);
+				}
 
-        int idx = corso.getSessioni().indexOf(oldS);
-        if (idx < 0)
-            throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
+				gestioneCucinaService.aggiungiSessioneARicetta(r, ip);
+			}
+		}
 
-        LocalDateTime now = LocalDateTime.now();
-        if (newS.getDataInizioSessione().isBefore(now))
-            throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
-        if (!newS.getDataFineSessione().isAfter(newS.getDataInizioSessione()))
-            throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
+	}
 
-        gestioneSessioniService.creaSessione(newS);
-        gestioneSessioniService.rimuoviSessione(oldS);
-        corso.getSessioni().set(idx, newS);
-    }
+	public void aggiornaSessione(Sessione oldS, Sessione newS) throws ValidationException, DataAccessException {
 
-    public void eliminaSessione(Sessione sessione)
-            throws ValidationException, DataAccessException {
+		ValidationUtils.validateNotNull(oldS, "Sessione vecchia");
+		ValidationUtils.validateNotNull(newS, "Sessione nuova");
 
-        ValidationUtils.validateNotNull(sessione, "Sessione");
+		int idx = corso.getSessioni().indexOf(oldS);
+		if (idx < 0)
+			throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
 
-        if (corso.getSessioni().size() <= 1)
-            throw new ValidationException(
-                "Impossibile eliminare l'unica sessione del corso. Aggiungere almeno un'altra."
-            );
+		LocalDateTime now = LocalDateTime.now();
+		if (newS.getDataInizioSessione().isBefore(now))
+			throw new ValidationException(ErrorMessages.DATA_INIZIO_SESSIONE_PASSATA);
+		if (!newS.getDataFineSessione().isAfter(newS.getDataInizioSessione()))
+			throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
 
-        gestioneSessioniService.rimuoviSessione(sessione);
-        corso.getSessioni().remove(sessione);
-    }
+		gestioneSessioniService.creaSessione(newS);
+		gestioneSessioniService.rimuoviSessione(oldS);
+		corso.getSessioni().set(idx, newS);
+	}
 
-    // --- RICETTE ---
-    public void aggiungiRicettaASessione(Sessione sessione, Ricetta ricetta)
-            throws ValidationException, DataAccessException {
+	public void eliminaSessione(Sessione sessione) throws ValidationException, DataAccessException {
 
-        if (!(sessione instanceof InPresenza ip))
-            throw new ValidationException(ErrorMessages.SOLO_SESSIONI_IN_PRESENZA);
+		ValidationUtils.validateNotNull(sessione, "Sessione");
 
-        ValidationUtils.validateNotNull(ricetta, "Ricetta");
+		if (corso.getSessioni().size() <= 1)
+			throw new ValidationException(
+					"Impossibile eliminare l'unica sessione del corso. Aggiungere almeno un'altra.");
 
-        if (ricetta.getIdRicetta() == 0)
-            gestioneRicetteService.creaRicetta(ricetta);
+		gestioneSessioniService.rimuoviSessione(sessione);
+		corso.getSessioni().remove(sessione);
+	}
 
-        gestioneSessioniService.aggiungiRicettaASessione(ip, ricetta);
-    }
-
-    public void rimuoviRicettaDaSessione(InPresenza sessione, Ricetta ricetta)
-            throws ValidationException, DataAccessException {
-
-        ValidationUtils.validateNotNull(sessione, "Sessione");
-        ValidationUtils.validateNotNull(ricetta, "Ricetta");
-
-        gestioneSessioniService.rimuoviRicettaDaSessione(sessione, ricetta);
-    }
 }

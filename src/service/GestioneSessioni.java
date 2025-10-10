@@ -64,42 +64,6 @@ public class GestioneSessioni {
 		}
 	}
 
-	// --- ASSOCIAZIONI RICETTA - SESSIONE ---
-	public void aggiungiRicettaASessione(InPresenza sessione, Ricetta ricetta)
-			throws ValidationException, DataAccessException {
-		ValidationUtils.validateNotNull(sessione, ErrorMessages.SESSIONE_NULLA);
-		ValidationUtils.validateNotNull(ricetta, ErrorMessages.RICETTA_NULLA);
-
-		if (!sessione.getRicette().contains(ricetta)) {
-			try {
-				cucinaDAO.save(ricetta.getIdRicetta(), sessione.getIdSessione());
-				sessione.getRicette().add(ricetta);
-				ricetta.getSessioni().add(sessione);
-			} catch (SQLException e) {
-				throw new DataAccessException("Errore durante l'associazione ricetta-sessione", e);
-			}
-		} else {
-			throw new ValidationException("Questa ricetta è già associata alla sessione");
-		}
-	}
-
-	public void rimuoviRicettaDaSessione(InPresenza sessione, Ricetta ricetta)
-			throws ValidationException, DataAccessException {
-		ValidationUtils.validateNotNull(sessione, ErrorMessages.SESSIONE_NULLA);
-		ValidationUtils.validateNotNull(ricetta, ErrorMessages.RICETTA_NULLA);
-
-		if (sessione.getRicette().contains(ricetta)) {
-			try {
-				cucinaDAO.delete(ricetta.getIdRicetta(), sessione.getIdSessione());
-				sessione.getRicette().remove(ricetta);
-				ricetta.getSessioni().remove(sessione);
-			} catch (SQLException e) {
-				throw new DataAccessException("Errore durante la rimozione della ricetta dalla sessione", e);
-			}
-		} else {
-			throw new ValidationException(ErrorMessages.SESSIONE_NON_TROVATA);
-		}
-	}
 
 	public Map<Integer, Integer> getNumeroRicettePerSessioni(List<Integer> idSessioni) throws DataAccessException {
 		if (idSessioni == null || idSessioni.isEmpty())
