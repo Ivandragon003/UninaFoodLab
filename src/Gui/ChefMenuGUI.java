@@ -101,20 +101,25 @@ public class ChefMenuGUI {
         this.cucinaDAO = new CucinaDAO();
     }
 
-    private void inizializzaServices() {
-        this.gestioneCorsiService = new GestioneCorsiCucina(
-            corsoDAO, chefDAO, tieneDAO, iscrizioneDAO, onlineDAO, inPresenzaDAO
-        );
+   private void inizializzaServices() {
+  
+    this.gestioneRicetteService = new GestioneRicette(ricettaDAO);
+    this.gestioneCucinaService = new GestioneCucina(cucinaDAO);
 
-        this.gestioneChefService = new GestioneChef(chefDAO, tieneDAO);
-        this.gestioneRicetteService = new GestioneRicette(ricettaDAO);
-        this.gestioneIngredienteService = new GestioneIngrediente(ingredienteDAO);
-        this.gestioneUsaService = new GestioneUsa(usaDAO, ingredienteDAO);
-        this.gestioneCucinaService = new GestioneCucina(cucinaDAO);
+    
+    this.gestioneCorsiService = new GestioneCorsiCucina(
+        corsoDAO, chefDAO, tieneDAO, iscrizioneDAO, onlineDAO, inPresenzaDAO,
+        gestioneRicetteService, gestioneCucinaService
+    );
 
-        // AGGIUNTO: gestione sessioni (richiede InPresenzaDAO, OnlineDAO, AdesioneDAO, CucinaDAO)
-        this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-    }
+    this.gestioneChefService = new GestioneChef(chefDAO, tieneDAO);
+    this.gestioneIngredienteService = new GestioneIngrediente(ingredienteDAO);
+    this.gestioneUsaService = new GestioneUsa(usaDAO, ingredienteDAO);
+
+  
+    this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
+}
+
 
     private void inizializzaControllers() {
         try {
