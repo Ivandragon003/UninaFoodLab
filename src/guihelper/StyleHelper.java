@@ -1,6 +1,5 @@
 package guihelper;
 
-
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -81,6 +80,18 @@ public final class StyleHelper {
 				+ "-fx-scale-y: 1.0;"));
 
 		return button;
+	}
+
+	public static void styleComboBox(ComboBox<?> comboBox) {
+		comboBox.setPrefHeight(35);
+		comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 8;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 1;" + "-fx-padding: 0 5 0 5;");
+
+		comboBox.setOnMouseEntered(e -> comboBox.setStyle("-fx-background-color: #f9f9f9;" + "-fx-background-radius: 8;"
+				+ "-fx-border-color: " + PRIMARY_ORANGE + ";" + "-fx-border-width: 1;" + "-fx-padding: 0 5 0 5;"));
+
+		comboBox.setOnMouseExited(e -> comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 8;"
+				+ "-fx-border-color: " + BORDER_LIGHT + ";" + "-fx-border-width: 1;" + "-fx-padding: 0 5 0 5;"));
 	}
 
 	// ETICHETTE E TEXTFIELD

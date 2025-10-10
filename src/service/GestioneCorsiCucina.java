@@ -8,6 +8,7 @@ import exceptions.ValidationUtils;
 import model.*;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -172,6 +173,34 @@ public class GestioneCorsiCucina {
             return corsoDAO.getNumeroSessioniPerCorso(idCorso);
         } catch (SQLException e) {
             throw new DataAccessException(ErrorMessages.ERRORE_LETTURA, e);
+        }
+    }
+    
+    public List<CorsoCucina> getCorsiByChef(Chef chef) throws DataAccessException {
+        try {
+            return tieneDAO.getCorsiByChef(chef.getCodFiscale());
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore recupero corsi per chef", e);
+        }
+    }
+
+    public List<Sessione> getSessioniPerCorsoInPeriodo(
+            int idCorso,
+            LocalDate inizio,
+            LocalDate fine
+    ) throws DataAccessException {
+        try {
+            List<Sessione> sessioni = new ArrayList<>();
+            sessioni.addAll(onlineDAO.getByCorso(idCorso));
+            sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
+            return sessioni.stream()
+                    .filter(s -> {
+                        LocalDate d = s.getDataInizioSessione().toLocalDate();
+                        return !d.isBefore(inizio) && !d.isAfter(fine);
+                    })
+                    .toList();
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore recupero sessioni per corso", e);
         }
     }
 }
