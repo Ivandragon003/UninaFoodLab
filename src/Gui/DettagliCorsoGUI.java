@@ -329,7 +329,7 @@ public class DettagliCorsoGUI {
     Button visualizzaSessioniBtn = StyleHelper.createPrimaryButton("👁️ Sessioni");
     visualizzaSessioniBtn.setPrefWidth(160);
     
-    Button chiudiBtn = StyleHelper.createStyledButton("❌ Chiudi", StyleHelper.NEUTRAL_GRAY);
+    Button chiudiBtn = StyleHelper.createSecondaryButton("❌ Chiudi");     
     chiudiBtn.setPrefWidth(160);
 
     modificaBtn.setOnAction(e -> {
@@ -776,42 +776,6 @@ private void onFrequenzaChange() {
         showStyledErrorDialog("❌ Errore", 
             "Impossibile aprire la gestione sessioni:\n" + ex.getMessage());
     }
-}
-
-
-    
-    private GestioneSessioniController creaSessioniController() {
-        try {
-            OnlineDAO onlineDAO = new OnlineDAO();
-            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
-            RicettaDAO ricettaDAO = new RicettaDAO();
-            CucinaDAO cucinaDAO = new CucinaDAO();
-            AdesioneDAO adesioneDAO = new AdesioneDAO();
-            UsaDAO usaDAO = new UsaDAO();
-            IngredienteDAO ingredienteDAO = new IngredienteDAO();
-            
-            GestioneSessioni gestioneSessioni = new GestioneSessioni(
-                inPresenzaDAO,
-                onlineDAO,
-                adesioneDAO,
-                cucinaDAO
-            );
-            
-            GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
-            
-            return new GestioneSessioniController(
-                corso,
-                gestioneSessioni,
-                gestioneCucina,
-                gestioneRicette
-            );
-            
-        } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", "Impossibile creare il controller sessioni: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
     }
 
     private String safeString(String s) {
@@ -856,7 +820,7 @@ private void onFrequenzaChange() {
         });
     }
 
-private void rimuoviChef(Chef chef) {
+    private void rimuoviChef(Chef chef) {
     if (!editable || isCorsoFinito()) return;
     
     if (isChefLoggato(chef)) {
