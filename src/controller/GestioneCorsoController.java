@@ -6,6 +6,9 @@ import exceptions.ErrorMessages;
 import model.CorsoCucina;
 import model.Chef;
 import service.GestioneCorsiCucina;
+import service.GestioneCucina;
+import service.GestioneRicette;
+import service.GestioneSessioni;
 import service.GestioneChef;
 
 import java.util.List;
@@ -33,11 +36,9 @@ public class GestioneCorsoController {
         return chefService.getAll();
     }
 
-    // ✅ MODIFICATO: Imposta automaticamente il fondatore
     public void creaCorso(CorsoCucina corso) throws ValidationException {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         
-        // ✅ NUOVO: Imposta automaticamente chef loggato come fondatore
         if (chefLoggato == null) {
             throw new ValidationException("Nessun chef loggato. Impossibile creare il corso.");
         }
@@ -80,4 +81,5 @@ public class GestioneCorsoController {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         return corsiService.getCorsoCompleto(corso.getIdCorso());
     }
+    
 }

@@ -68,293 +68,312 @@ public class DettagliCorsoGUI {
     }
 
     public StackPane getRoot() {
-        if (gestioneController == null || corso == null) {
-            throw new IllegalStateException("Controller o corso non impostati!");
-        }
-
-        StackPane mainContainer = new StackPane();
-        mainContainer.setStyle("-fx-background-color: #F8F9FA;");
-
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: #F8F9FA;");
-        scrollPane.setPadding(new Insets(30));
-
-        card = new VBox(18);
-        card.setAlignment(Pos.TOP_CENTER);
-        card.setPadding(new Insets(30));
-        card.setMaxWidth(850);
-        card.setMinWidth(700);
-        card.setStyle("-fx-background-color: white;" +
-                "-fx-background-radius: 16;" +
-                "-fx-border-radius: 16;" +
-                "-fx-border-color: #FF9966;" +
-                "-fx-border-width: 2;");
-
-        DropShadow shadow = new DropShadow(12, Color.web("#000000", 0.15));
-        shadow.setOffsetY(4);
-        card.setEffect(shadow);
-
-        Label title = new Label("📋 Dettagli Corso");
-        title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
-        title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-
-        // ✅ NUOVO: Label fondatore
-        Label fondatoreLabel = createFondatoreLabel();
-
-        // Label avviso corso finito
-        avisoCorsoFinitoLabel = new Label("⚠️ CORSO TERMINATO - Solo visualizzazione");
-        avisoCorsoFinitoLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-        avisoCorsoFinitoLabel.setStyle(
-            "-fx-background-color: #FFF3CD;" +
-            "-fx-text-fill: #856404;" +
-            "-fx-padding: 12;" +
-            "-fx-background-radius: 8;" +
-            "-fx-border-color: #FFEAA7;" +
-            "-fx-border-width: 2;" +
-            "-fx-border-radius: 8;"
-        );
-        avisoCorsoFinitoLabel.setVisible(false);
-        avisoCorsoFinitoLabel.setManaged(false);
-
-        nomeField = StyleHelper.createTextField(safeString(corso.getNomeCorso()));
-        prezzoField = StyleHelper.createTextField(String.valueOf(corso.getPrezzo()));
-        argomentoField = StyleHelper.createTextField(safeString(corso.getArgomento()));
-
-        frequenzaCombo = StyleHelper.createComboBox();
-        frequenzaCombo.getItems().setAll(Frequenza.values());
-        frequenzaCombo.setValue(corso.getFrequenzaCorso());
-        frequenzaCombo.setOnAction(e -> onFrequenzaChange());
-
-        numeroPostiField = StyleHelper.createTextField(String.valueOf(corso.getNumeroPosti()));
-
-        numeroSessioniField = StyleHelper.createTextField(
-                corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
-        );
-        numeroSessioniField.setEditable(false);
-        numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF;");
-
-        dataInizioPicker = StyleHelper.createDatePicker();
-        dataInizioPicker.setValue(
-                corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
-        );
-        dataInizioPicker.setOnAction(e -> onDataInizioChange());
-        
-        dataFinePicker = StyleHelper.createDatePicker();
-        dataFinePicker.setValue(
-                corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
-        );
-        dataFinePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
-
-        chefListView = new ListView<>();
-        chefListView.setPrefHeight(150);
-        chefListView.setMinHeight(100);
-        chefListView.setMaxHeight(250);
-        chefListView.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
-            "-fx-border-radius: 8;" +
-            "-fx-background-radius: 8;" +
-            "-fx-border-width: 1;"
-        );
-        
-        chefListView.setCellFactory(lv -> new ListCell<>() {
-            private final HBox box = new HBox(8);
-            private final Label nameLabel = new Label();
-            private final Label meLabel = new Label(" (io)");
-            private final Label foundLabel = new Label(" 👑"); // ✅ AGGIUNTO
-            private final Button removeBtn = new Button("🗑️ Rimuovi");
-
-            {
-                meLabel.setStyle("-fx-text-fill: " + StyleHelper.PRIMARY_ORANGE + "; -fx-font-weight: bold;");
-                foundLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 16px;"); // ✅ AGGIUNTO
-                removeBtn.setStyle(
-                    "-fx-background-radius: 8;" +
-                    "-fx-background-color: " + StyleHelper.ERROR_RED + ";" +
-                    "-fx-text-fill: white;" +
-                    "-fx-cursor: hand;" +
-                    "-fx-font-size: 11px;" +
-                    "-fx-padding: 4 8 4 8;"
-                );
-                removeBtn.setOnAction(e -> {
-                    Chef it = getItem();
-                    if (it != null) rimuoviChef(it);
-                });
-                box.setAlignment(Pos.CENTER_LEFT);
-            }
-
-            @Override
-            protected void updateItem(Chef item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                } else {
-                    nameLabel.setText(item.getNome() + " " + item.getCognome());
-                    box.getChildren().clear();
-                    box.getChildren().add(nameLabel);
-                    
-                    // ✅ AGGIUNTO: Mostra corona fondatore
-                    if (isFondatore(item)) {
-                        box.getChildren().add(foundLabel);
-                    }
-                    
-                    if (isChefLoggato(item)) {
-                        box.getChildren().add(meLabel);
-                    }
-                    
-                    if (editable && !isCorsoFinito()) {
-                        removeBtn.setDisable(isChefLoggato(item));
-                        box.getChildren().add(removeBtn);
-                    }
-                    setGraphic(box);
-                }
-            }
-        });
-        
-
-        selezionatoLabel = new Label("Selezionato: nessuno");
-        selezionatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
-        chefListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
-            if (newV == null) {
-                selezionatoLabel.setText("Selezionato: nessuno");
-            } else {
-                String suffix = "";
-                if (isFondatore(newV)) suffix += " 👑";
-                if (isChefLoggato(newV)) suffix += " (io)";
-                selezionatoLabel.setText("Selezionato: " + newV.getNome() + " " + newV.getCognome() + suffix);
-            }
-        });
-
-        addChefCombo = StyleHelper.createComboBox();
-        addChefCombo.setPrefWidth(300);
-        
-        addChefCombo.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(Chef item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
-            }
-        });
-        
-        addChefCombo.setButtonCell(new ListCell<>() {
-            @Override
-            protected void updateItem(Chef item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
-            }
-        });
-        
-        addChefBtn = StyleHelper.createSuccessButton("➕ Aggiungi");
-        addChefBtn.setOnAction(e -> {
-            Chef toAdd = addChefCombo.getValue();
-            if (toAdd == null) {
-                StyleHelper.showValidationDialog("Attenzione", "Seleziona uno chef dalla lista");
-                return;
-            }
-            aggiungiChef(toAdd, null);
-        });
-
-        HBox addBox = new HBox(10, addChefCombo, addChefBtn);
-        addBox.setAlignment(Pos.CENTER_LEFT);
-
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(15);
-        grid.setAlignment(Pos.CENTER);
-
-        int row = 0;
-        grid.add(StyleHelper.createLabel("📚 Nome:"), 0, row);
-        grid.add(nomeField, 1, row++);
-
-        grid.add(StyleHelper.createLabel("💰 Prezzo (€):"), 0, row);
-        grid.add(prezzoField, 1, row++);
-
-        grid.add(StyleHelper.createLabel("📖 Argomento:"), 0, row);
-        grid.add(argomentoField, 1, row++);
-
-        grid.add(StyleHelper.createLabel("📅 Frequenza:"), 0, row);
-        grid.add(frequenzaCombo, 1, row++);
-
-        grid.add(StyleHelper.createLabel("🪑 Numero posti:"), 0, row);
-        grid.add(numeroPostiField, 1, row++);
-
-        grid.add(StyleHelper.createLabel("⏰ Numero sessioni:"), 0, row);
-        grid.add(numeroSessioniField, 1, row++);
-
-        grid.add(StyleHelper.createLabel("🕑 Data inizio:"), 0, row);
-        grid.add(dataInizioPicker, 1, row++);
-
-        grid.add(StyleHelper.createLabel("🏁 Data fine:"), 0, row);
-        grid.add(dataFinePicker, 1, row++);
-
-        ColumnConstraints c0 = new ColumnConstraints();
-        c0.setMinWidth(150);
-        c0.setPrefWidth(150);
-        ColumnConstraints c1 = new ColumnConstraints();
-        c1.setHgrow(Priority.ALWAYS);
-        c1.setMinWidth(350);
-        grid.getColumnConstraints().addAll(c0, c1);
-
-        HBox buttons = new HBox(15);
-        buttons.setAlignment(Pos.CENTER);
-        buttons.setPadding(new Insets(20, 0, 0, 0));
-
-        modificaBtn = StyleHelper.createInfoButton("✏️ Modifica");
-        modificaBtn.setPrefWidth(160);
-        
-        salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
-        salvaBtn.setPrefWidth(160);
-        salvaBtn.setDisable(true);
-        
-        Button visualizzaSessioniBtn = StyleHelper.createPrimaryButton("👁️ Sessioni");
-        visualizzaSessioniBtn.setPrefWidth(160);
-        
-        Button chiudiBtn = StyleHelper.createStyledButton("❌ Chiudi", StyleHelper.NEUTRAL_GRAY);
-        chiudiBtn.setPrefWidth(160);
-
-        modificaBtn.setOnAction(e -> {
-            setEditable(true);
-            salvaBtn.setDisable(false);
-            modificaBtn.setDisable(true);
-        });
-
-        salvaBtn.setOnAction(e -> salvaModifiche());
-        visualizzaSessioniBtn.setOnAction(e -> apriVisualizzaSessioni());
-        chiudiBtn.setOnAction(e -> tornaAllaListaCorsi());
-
-        buttons.getChildren().addAll(modificaBtn, salvaBtn, visualizzaSessioniBtn, chiudiBtn);
-
-        card.getChildren().addAll(
-                title,
-                fondatoreLabel,         // ✅ Label fondatore
-                avisoCorsoFinitoLabel,
-                new Separator(),
-                grid,
-                new Separator(),
-                StyleHelper.createLabel("👥 Chef assegnati al corso:"),
-                chefListView,
-                selezionatoLabel,
-                StyleHelper.createLabel("➕ Aggiungi uno chef dal sistema:"),
-                addBox,
-                buttons
-        );
-
-        setEditable(false);
-        applicaRestrizioniCorsoFinito();
-        refreshChefListView();
-        aggiornaStatoDataFine();
-
-        VBox wrapper = new VBox(card);
-        wrapper.setAlignment(Pos.TOP_CENTER);
-        wrapper.setPadding(new Insets(20));
-        scrollPane.setContent(wrapper);
-
-        mainContainer.getChildren().add(scrollPane);
-        return mainContainer;
+    if (gestioneController == null || corso == null) {
+        throw new IllegalStateException("Controller o corso non impostati!");
     }
 
-    // ✅ NUOVO: Metodo per creare label fondatore
+    StackPane mainContainer = new StackPane();
+    mainContainer.setStyle("-fx-background-color: #F8F9FA;");
+
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background-color: transparent; -fx-background: #F8F9FA;");
+    scrollPane.setPadding(new Insets(30));
+
+    card = new VBox(18);
+    card.setAlignment(Pos.TOP_CENTER);
+    card.setPadding(new Insets(30));
+    card.setMaxWidth(850);
+    card.setMinWidth(700);
+    card.setStyle("-fx-background-color: white;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-radius: 16;" +
+            "-fx-border-color: #FF9966;" +
+            "-fx-border-width: 2;");
+
+    DropShadow shadow = new DropShadow(12, Color.web("#000000", 0.15));
+    shadow.setOffsetY(4);
+    card.setEffect(shadow);
+
+    Label title = new Label("📋 Dettagli Corso");
+    title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
+    title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+
+    Label fondatoreLabel = createFondatoreLabel();
+
+    avisoCorsoFinitoLabel = new Label("⚠️ CORSO TERMINATO - Solo visualizzazione");
+    avisoCorsoFinitoLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+    avisoCorsoFinitoLabel.setStyle(
+        "-fx-background-color: #FFF3CD;" +
+        "-fx-text-fill: #856404;" +
+        "-fx-padding: 12;" +
+        "-fx-background-radius: 8;" +
+        "-fx-border-color: #FFEAA7;" +
+        "-fx-border-width: 2;" +
+        "-fx-border-radius: 8;"
+    );
+    avisoCorsoFinitoLabel.setVisible(false);
+    avisoCorsoFinitoLabel.setManaged(false);
+
+    // ✅ CREA CAMPI CON VALORI E STILE CORRETTO
+    nomeField = StyleHelper.createTextField(safeString(corso.getNomeCorso()));
+    prezzoField = StyleHelper.createTextField(String.valueOf(corso.getPrezzo()));
+    argomentoField = StyleHelper.createTextField(safeString(corso.getArgomento()));
+    numeroPostiField = StyleHelper.createTextField(String.valueOf(corso.getNumeroPosti()));
+
+    // ✅ FORZA COLORE NERO E NON EDITABILE INIZIALMENTE
+    String readOnlyStyle = "-fx-text-fill: black; -fx-background-color: white;";
+    nomeField.setStyle(readOnlyStyle);
+    prezzoField.setStyle(readOnlyStyle);
+    argomentoField.setStyle(readOnlyStyle);
+    numeroPostiField.setStyle(readOnlyStyle);
+    
+    // ✅ DISABILITA EDITING E FOCUS
+    nomeField.setEditable(false);
+    nomeField.setFocusTraversable(false);
+    prezzoField.setEditable(false);
+    prezzoField.setFocusTraversable(false);
+    argomentoField.setEditable(false);
+    argomentoField.setFocusTraversable(false);
+    numeroPostiField.setEditable(false);
+    numeroPostiField.setFocusTraversable(false);
+
+    frequenzaCombo = StyleHelper.createComboBox();
+    frequenzaCombo.getItems().setAll(Frequenza.values());
+    frequenzaCombo.setValue(corso.getFrequenzaCorso());
+    frequenzaCombo.setDisable(true); // ✅ Disabilitata inizialmente
+    frequenzaCombo.setOnAction(e -> onFrequenzaChange());
+
+    numeroSessioniField = StyleHelper.createTextField(
+            corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
+    );
+    numeroSessioniField.setEditable(false);
+    numeroSessioniField.setFocusTraversable(false);
+    numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF; -fx-text-fill: black;");
+
+    dataInizioPicker = StyleHelper.createDatePicker();
+    dataInizioPicker.setValue(
+            corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null
+    );
+    dataInizioPicker.setDisable(true); // ✅ Disabilitato inizialmente
+    dataInizioPicker.setOnAction(e -> onDataInizioChange());
+    
+    dataFinePicker = StyleHelper.createDatePicker();
+    dataFinePicker.setValue(
+            corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null
+    );
+    dataFinePicker.setDisable(true); // ✅ Disabilitato inizialmente
+    dataFinePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
+
+    chefListView = new ListView<>();
+    chefListView.setPrefHeight(150);
+    chefListView.setMinHeight(100);
+    chefListView.setMaxHeight(250);
+    chefListView.setStyle(
+        "-fx-background-color: white;" +
+        "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+        "-fx-border-radius: 8;" +
+        "-fx-background-radius: 8;" +
+        "-fx-border-width: 1;"
+    );
+    
+    chefListView.setCellFactory(lv -> new ListCell<>() {
+        private final HBox box = new HBox(8);
+        private final Label nameLabel = new Label();
+        private final Label meLabel = new Label(" (io)");
+        private final Label foundLabel = new Label(" 👑");
+        private final Button removeBtn = new Button("🗑️ Rimuovi");
+
+        {
+            meLabel.setStyle("-fx-text-fill: " + StyleHelper.PRIMARY_ORANGE + "; -fx-font-weight: bold;");
+            foundLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 16px;");
+            removeBtn.setStyle(
+                "-fx-background-radius: 8;" +
+                "-fx-background-color: " + StyleHelper.ERROR_RED + ";" +
+                "-fx-text-fill: white;" +
+                "-fx-cursor: hand;" +
+                "-fx-font-size: 11px;" +
+                "-fx-padding: 4 8 4 8;"
+            );
+            removeBtn.setOnAction(e -> {
+                Chef it = getItem();
+                if (it != null) rimuoviChef(it);
+            });
+            box.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        @Override
+        protected void updateItem(Chef item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else {
+                nameLabel.setText(item.getNome() + " " + item.getCognome());
+                box.getChildren().clear();
+                box.getChildren().add(nameLabel);
+                
+                if (isFondatore(item)) {
+                    box.getChildren().add(foundLabel);
+                }
+                
+                if (isChefLoggato(item)) {
+                    box.getChildren().add(meLabel);
+                }
+                
+                if (editable && !isCorsoFinito()) {
+                    removeBtn.setDisable(isChefLoggato(item));
+                    box.getChildren().add(removeBtn);
+                }
+                setGraphic(box);
+            }
+        }
+    });
+
+    selezionatoLabel = new Label("Selezionato: nessuno");
+    selezionatoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13;");
+    chefListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+        if (newV == null) {
+            selezionatoLabel.setText("Selezionato: nessuno");
+        } else {
+            String suffix = "";
+            if (isFondatore(newV)) suffix += " 👑";
+            if (isChefLoggato(newV)) suffix += " (io)";
+            selezionatoLabel.setText("Selezionato: " + newV.getNome() + " " + newV.getCognome() + suffix);
+        }
+    });
+
+    addChefCombo = StyleHelper.createComboBox();
+    addChefCombo.setPrefWidth(300);
+    addChefCombo.setDisable(true); // ✅ Disabilitata inizialmente
+    
+    addChefCombo.setCellFactory(lv -> new ListCell<>() {
+        @Override
+        protected void updateItem(Chef item, boolean empty) {
+            super.updateItem(item, empty);
+            setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
+        }
+    });
+    
+    addChefCombo.setButtonCell(new ListCell<>() {
+        @Override
+        protected void updateItem(Chef item, boolean empty) {
+            super.updateItem(item, empty);
+            setText(empty || item == null ? null : item.getNome() + " " + item.getCognome());
+        }
+    });
+    
+    addChefBtn = StyleHelper.createSuccessButton("➕ Aggiungi");
+    addChefBtn.setDisable(true); // ✅ Disabilitato inizialmente
+    addChefBtn.setOnAction(e -> {
+        Chef toAdd = addChefCombo.getValue();
+        if (toAdd == null) {
+            showStyledValidationDialog("⚠️ Attenzione", "Seleziona uno chef dalla lista");
+            return;
+        }
+        aggiungiChef(toAdd, null);
+    });
+
+    HBox addBox = new HBox(10, addChefCombo, addChefBtn);
+    addBox.setAlignment(Pos.CENTER_LEFT);
+
+    GridPane grid = new GridPane();
+    grid.setHgap(15);
+    grid.setVgap(15);
+    grid.setAlignment(Pos.CENTER);
+
+    int row = 0;
+    grid.add(StyleHelper.createLabel("📚 Nome:"), 0, row);
+    grid.add(nomeField, 1, row++);
+
+    grid.add(StyleHelper.createLabel("💰 Prezzo (€):"), 0, row);
+    grid.add(prezzoField, 1, row++);
+
+    grid.add(StyleHelper.createLabel("📖 Argomento:"), 0, row);
+    grid.add(argomentoField, 1, row++);
+
+    grid.add(StyleHelper.createLabel("📅 Frequenza:"), 0, row);
+    grid.add(frequenzaCombo, 1, row++);
+
+    grid.add(StyleHelper.createLabel("🪑 Numero posti:"), 0, row);
+    grid.add(numeroPostiField, 1, row++);
+
+    grid.add(StyleHelper.createLabel("⏰ Numero sessioni:"), 0, row);
+    grid.add(numeroSessioniField, 1, row++);
+
+    grid.add(StyleHelper.createLabel("🕑 Data inizio:"), 0, row);
+    grid.add(dataInizioPicker, 1, row++);
+
+    grid.add(StyleHelper.createLabel("🏁 Data fine:"), 0, row);
+    grid.add(dataFinePicker, 1, row++);
+
+    ColumnConstraints c0 = new ColumnConstraints();
+    c0.setMinWidth(150);
+    c0.setPrefWidth(150);
+    ColumnConstraints c1 = new ColumnConstraints();
+    c1.setHgrow(Priority.ALWAYS);
+    c1.setMinWidth(350);
+    grid.getColumnConstraints().addAll(c0, c1);
+
+    HBox buttons = new HBox(15);
+    buttons.setAlignment(Pos.CENTER);
+    buttons.setPadding(new Insets(20, 0, 0, 0));
+
+    modificaBtn = StyleHelper.createInfoButton("✏️ Modifica");
+    modificaBtn.setPrefWidth(160);
+    
+    salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
+    salvaBtn.setPrefWidth(160);
+    salvaBtn.setDisable(true);
+    
+    Button visualizzaSessioniBtn = StyleHelper.createPrimaryButton("👁️ Sessioni");
+    visualizzaSessioniBtn.setPrefWidth(160);
+    
+    Button chiudiBtn = StyleHelper.createStyledButton("❌ Chiudi", StyleHelper.NEUTRAL_GRAY);
+    chiudiBtn.setPrefWidth(160);
+
+    modificaBtn.setOnAction(e -> {
+        setEditable(true);
+        salvaBtn.setDisable(false);
+        modificaBtn.setDisable(true);
+    });
+
+    salvaBtn.setOnAction(e -> salvaModifiche());
+    visualizzaSessioniBtn.setOnAction(e -> apriVisualizzaSessioni());
+    chiudiBtn.setOnAction(e -> tornaAllaListaCorsi());
+
+    buttons.getChildren().addAll(modificaBtn, salvaBtn, visualizzaSessioniBtn, chiudiBtn);
+
+    card.getChildren().addAll(
+            title,
+            fondatoreLabel,
+            avisoCorsoFinitoLabel,
+            new Separator(),
+            grid,
+            new Separator(),
+            StyleHelper.createLabel("👥 Chef assegnati al corso:"),
+            chefListView,
+            selezionatoLabel,
+            StyleHelper.createLabel("➕ Aggiungi uno chef dal sistema:"),
+            addBox,
+            buttons
+    );
+
+    setEditable(false);
+    applicaRestrizioniCorsoFinito();
+    refreshChefListView();
+    aggiornaStatoDataFine();
+
+    VBox wrapper = new VBox(card);
+    wrapper.setAlignment(Pos.TOP_CENTER);
+    wrapper.setPadding(new Insets(20));
+    scrollPane.setContent(wrapper);
+
+    mainContainer.getChildren().add(scrollPane);
+    return mainContainer;
+}
+
+
     private Label createFondatoreLabel() {
         String nomeFondatore = getNomeFondatore();
         Chef chefLoggato = gestioneController.getChefLoggato();
@@ -443,49 +462,66 @@ public class DettagliCorsoGUI {
     }
 
     private void onDataInizioChange() {
-        LocalDate inizio = dataInizioPicker.getValue();
+        LocalDate dataInizio = dataInizioPicker.getValue();
+        if (dataInizio == null) return;
         
-        if (frequenzaCombo.getValue() == Frequenza.unica && inizio != null) {
-            dataFinePicker.setValue(inizio);
+        if (dataFinePicker.getValue() != null && dataFinePicker.getValue().isBefore(dataInizio)) {
+            dataFinePicker.setValue(dataInizio.plusDays(1));
         }
+        
+        if (frequenzaCombo.getValue() == Frequenza.unica) {
+            dataFinePicker.setValue(dataInizio);
+        }
+        
+        aggiornaFrequenzeDisponibili();
     }
 
-    private void onFrequenzaChange() {
-        if (!editable) return;
-        
-        Frequenza selezionata = frequenzaCombo.getValue();
-        
-        if (selezionata == Frequenza.unica) {
-            if (dataInizioPicker.getValue() != null) {
-                dataFinePicker.setValue(dataInizioPicker.getValue());
-            }
-            dataFinePicker.setDisable(true);
-            dataFinePicker.setStyle("-fx-opacity: 0.6;");
-        } else {
-            dataFinePicker.setDisable(false);
-            dataFinePicker.setStyle("");
-        }
-    }
 
-    private void aggiornaFrequenzeDisponibili() {
-        if (!editable) return;
-        
-        LocalDate inizio = dataInizioPicker.getValue();
-        LocalDate fine = dataFinePicker.getValue();
-        
-        if (inizio != null && fine != null) {
-            List<Frequenza> disponibili = FrequenzaHelper.getFrequenzeDisponibili(inizio, fine);
-            
-            Frequenza attuale = frequenzaCombo.getValue();
-            frequenzaCombo.getItems().setAll(disponibili);
-            
-            if (disponibili.contains(attuale)) {
-                frequenzaCombo.setValue(attuale);
-            } else if (!disponibili.isEmpty()) {
-                frequenzaCombo.setValue(disponibili.get(0));
-            }
+private void onFrequenzaChange() {
+    Frequenza nuovaFreq = frequenzaCombo.getValue();
+    if (nuovaFreq == null) return;
+    
+    if (nuovaFreq == Frequenza.unica) {
+        dataFinePicker.setDisable(true);
+        dataFinePicker.setValue(dataInizioPicker.getValue());
+    } else {
+        dataFinePicker.setDisable(false);
+        if (dataFinePicker.getValue() == null && dataInizioPicker.getValue() != null) {
+            dataFinePicker.setValue(dataInizioPicker.getValue().plusDays(1));
         }
     }
+}
+
+
+	private void aggiornaFrequenzeDisponibili() {
+    LocalDate dataInizio = dataInizioPicker.getValue();
+    LocalDate dataFine = dataFinePicker.getValue();
+    
+    if (dataInizio == null || dataFine == null) {
+        frequenzaCombo.getItems().setAll(Frequenza.values());
+        return;
+    }
+    
+    long giorniDurata = java.time.temporal.ChronoUnit.DAYS.between(dataInizio, dataFine);
+    
+    List<Frequenza> frequenzeValide = new ArrayList<>();
+    
+    for (Frequenza freq : Frequenza.values()) {
+        if (FrequenzaHelper.isFrequenzaValida(dataInizio, dataFine, freq)) {
+            frequenzeValide.add(freq);
+        }
+    }
+    
+    Frequenza freqAttuale = frequenzaCombo.getValue();
+    frequenzaCombo.getItems().setAll(frequenzeValide);
+    
+    if (frequenzeValide.contains(freqAttuale)) {
+        frequenzaCombo.setValue(freqAttuale);
+    } else if (!frequenzeValide.isEmpty()) {
+        frequenzaCombo.setValue(frequenzeValide.get(0));
+    }
+}
+
 
     private void aggiornaStatoDataFine() {
         if (corso.getFrequenzaCorso() == Frequenza.unica) {
@@ -507,7 +543,6 @@ public class DettagliCorsoGUI {
     
     private void salvaModifiche() {
     try {
-        // ✅ VALIDAZIONE 1: Nome corso obbligatorio
         String nomeCorsoInput = nomeField.getText().trim();
         if (nomeCorsoInput.isEmpty()) {
             showStyledValidationDialog(
@@ -518,7 +553,6 @@ public class DettagliCorsoGUI {
             return;
         }
         
-        // ✅ VALIDAZIONE 2: Argomento obbligatorio
         String argomentoInput = argomentoField.getText().trim();
         if (argomentoInput.isEmpty()) {
             showStyledValidationDialog(
@@ -528,8 +562,7 @@ public class DettagliCorsoGUI {
             argomentoField.requestFocus();
             return;
         }
-        
-        // ✅ VALIDAZIONE 3: Prezzo obbligatorio e valido
+
         String prezzoInput = prezzoField.getText().trim();
         if (prezzoInput.isEmpty()) {
             showStyledValidationDialog(
@@ -592,8 +625,10 @@ public class DettagliCorsoGUI {
         }
 
         // ✅ VALIDAZIONE 5: Date
-        if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null &&
-                dataInizioPicker.getValue().isAfter(dataFinePicker.getValue())) {
+        LocalDate dataInizio = dataInizioPicker.getValue();
+        LocalDate dataFine = dataFinePicker.getValue();
+        
+        if (dataInizio != null && dataFine != null && dataInizio.isAfter(dataFine)) {
             showStyledValidationDialog(
                 "⚠️ Date Non Valide", 
                 "La data di inizio deve precedere la data di fine.\n\nVerificare le date inserite."
@@ -601,22 +636,34 @@ public class DettagliCorsoGUI {
             return;
         }
 
-        // ✅ VALIDAZIONE 6: Frequenza compatibile con date
+        // ✅ VALIDAZIONE 6: Frequenza selezionata
         Frequenza freqSelezionata = frequenzaCombo.getValue();
-        if (dataInizioPicker.getValue() != null && dataFinePicker.getValue() != null && 
-            freqSelezionata != null) {
-            if (!FrequenzaHelper.isFrequenzaValida(
-                    dataInizioPicker.getValue(), 
-                    dataFinePicker.getValue(), 
-                    freqSelezionata)) {
+        if (freqSelezionata == null) {
+            showStyledValidationDialog(
+                "⚠️ Campo Obbligatorio", 
+                "Selezionare una frequenza per il corso."
+            );
+            return;
+        }
+
+        // ✅ VALIDAZIONE 7: Frequenza compatibile con durata corso
+        if (dataInizio != null && dataFine != null) {
+            if (!FrequenzaHelper.isFrequenzaValida(dataInizio, dataFine, freqSelezionata)) {
                 showStyledValidationDialog(
                     "⚠️ Frequenza Non Valida", 
-                    FrequenzaHelper.getMessaggioErroreFrequenza(
-                        dataInizioPicker.getValue(), 
-                        dataFinePicker.getValue(), 
-                        freqSelezionata
-                    )
+                    FrequenzaHelper.getMessaggioErroreFrequenza(dataInizio, dataFine, freqSelezionata)
                 );
+                return;
+            }
+        }
+
+        // ✅ VALIDAZIONE 8: Controllo numero sessioni vs frequenza
+        int numeroSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
+        
+        if (numeroSessioni > 0 && dataInizio != null && dataFine != null) {
+            String erroreSessioni = validaNumeroSessioni(freqSelezionata, dataInizio, dataFine, numeroSessioni);
+            if (erroreSessioni != null) {
+                showStyledValidationDialog("⚠️ Errore Frequenza", erroreSessioni);
                 return;
             }
         }
@@ -625,18 +672,18 @@ public class DettagliCorsoGUI {
         corso.setNomeCorso(nomeCorsoInput);
         corso.setPrezzo(prezzo);
         corso.setArgomento(argomentoInput);
-        corso.setFrequenzaCorso(frequenzaCombo.getValue());
+        corso.setFrequenzaCorso(freqSelezionata);
         corso.setNumeroPosti(posti);
 
-        if (dataInizioPicker.getValue() != null)
-            corso.setDataInizioCorso(dataInizioPicker.getValue().atStartOfDay());
-        if (dataFinePicker.getValue() != null)
-            corso.setDataFineCorso(dataFinePicker.getValue().atStartOfDay());
+        if (dataInizio != null)
+            corso.setDataInizioCorso(dataInizio.atStartOfDay());
+        if (dataFine != null)
+            corso.setDataFineCorso(dataFine.atStartOfDay());
 
         gestioneController.modificaCorso(corso);
 
-        corso.setNumeroSessioni(corso.getSessioni() != null ? corso.getSessioni().size() : 0);
-        numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
+        corso.setNumeroSessioni(numeroSessioni);
+        numeroSessioniField.setText(String.valueOf(numeroSessioni));
 
         showStyledSuccessDialog("✅ Successo", "Il corso è stato modificato correttamente!");
         
@@ -652,40 +699,86 @@ public class DettagliCorsoGUI {
     } catch (Exception ex) {
         showStyledErrorDialog("❌ Errore", "Errore nel salvataggio: " + ex.getMessage());
     }
+    }
+    
+    
+    private String validaNumeroSessioni(Frequenza freq, LocalDate inizio, LocalDate fine, int numSessioni) {
+        if (freq == null || inizio == null || fine == null) return null;
+        
+        switch (freq) {
+            case unica:
+                if (numSessioni != 1) {
+                    return "❌ Frequenza 'Sessione Unica' richiede esattamente 1 sessione.\n\n" +
+                           "📊 Sessioni attuali: " + numSessioni + "\n\n" +
+                           "💡 Elimina le sessioni in eccesso oppure cambia frequenza.";
+                }
+                break;
+                
+            case giornaliero:
+                long giorniCorso = java.time.temporal.ChronoUnit.DAYS.between(inizio, fine) + 1;
+                if (numSessioni < giorniCorso) {
+                    return "❌ Frequenza 'Giornaliero' richiede almeno " + giorniCorso + " sessioni.\n\n" +
+                           "📊 Sessioni attuali: " + numSessioni + "\n" +
+                           "📅 Durata corso: " + giorniCorso + " giorni (" + inizio + " → " + fine + ")\n\n" +
+                           "💡 Aggiungi " + (giorniCorso - numSessioni) + " sessioni oppure cambia frequenza.";
+                }
+                break;
+                
+            case settimanale:
+                long settimaneCorso = java.time.temporal.ChronoUnit.WEEKS.between(inizio, fine) + 1;
+                if (numSessioni < settimaneCorso) {
+                    return "❌ Frequenza 'Settimanale' richiede almeno " + settimaneCorso + " sessioni.\n\n" +
+                           "📊 Sessioni attuali: " + numSessioni + "\n" +
+                           "📅 Durata corso: " + settimaneCorso + " settimane\n\n" +
+                           "💡 Aggiungi " + (settimaneCorso - numSessioni) + " sessioni oppure cambia frequenza.";
+                }
+                break;
+                
+            case mensile:
+                long mesiCorso = java.time.temporal.ChronoUnit.MONTHS.between(
+                    inizio.withDayOfMonth(1), 
+                    fine.withDayOfMonth(1)
+                ) + 1;
+                if (numSessioni < mesiCorso) {
+                    return "❌ Frequenza 'Mensile' richiede almeno " + mesiCorso + " sessioni.\n\n" +
+                           "📊 Sessioni attuali: " + numSessioni + "\n" +
+                           "📅 Durata corso: " + mesiCorso + " mesi\n\n" +
+                           "💡 Aggiungi " + (mesiCorso - numSessioni) + " sessioni oppure cambia frequenza.";
+                }
+                break;
+        }
+        
+        return null;
+    }
+
+    
+    private void apriVisualizzaSessioni() {
+    try {
+        VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
+        visualizzaSessioniGUI.setController(null); // temporaneo
+        visualizzaSessioniGUI.setCorso(corso);
+        
+        Stage sessioniStage = new Stage();
+        sessioniStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        sessioniStage.setTitle("📅 Gestione Sessioni - " + corso.getNomeCorso());
+        
+        Scene scene = new Scene(visualizzaSessioniGUI.getRoot(), 900, 700);
+        sessioniStage.setScene(scene);
+        
+        sessioniStage.setOnHidden(e -> {
+            int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
+            numeroSessioniField.setText(String.valueOf(numSessioni));
+        });
+        
+        sessioniStage.showAndWait();
+        
+    } catch (Exception ex) {
+        showStyledErrorDialog("❌ Errore", 
+            "Impossibile aprire la gestione sessioni:\n" + ex.getMessage());
+    }
 }
 
 
-    private void apriVisualizzaSessioni() {
-        try {
-            CorsoCucina corsoCompleto = gestioneController.getCorsoCompleto(corso.getIdCorso());
-            if (corsoCompleto != null && corsoCompleto.getSessioni() != null) {
-                corso.setSessioni(corsoCompleto.getSessioni());
-            }
-            
-            GestioneSessioniController sessioniController = creaSessioniController();
-            
-            VisualizzaSessioniGUI sessioniGUI = new VisualizzaSessioniGUI();
-            sessioniGUI.setCorso(corso);
-            sessioniGUI.setController(sessioniController);
-            
-            Stage stage = new Stage();
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("📅 Sessioni - " + safeString(corso.getNomeCorso()));
-            stage.setScene(new Scene(sessioniGUI.getRoot(), 1000, 750));
-            stage.showAndWait();
-
-            CorsoCucina corsoAggiornato = gestioneController.getCorsoCompleto(corso.getIdCorso());
-            if (corsoAggiornato != null && corsoAggiornato.getSessioni() != null) {
-                corso.setSessioni(corsoAggiornato.getSessioni());
-                corso.setNumeroSessioni(corsoAggiornato.getSessioni().size());
-                numeroSessioniField.setText(String.valueOf(corso.getNumeroSessioni()));
-            }
-            
-        } catch (Exception ex) {
-            StyleHelper.showErrorDialog("Errore", "Impossibile aprire gestione sessioni: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
     
     private GestioneSessioniController creaSessioniController() {
         try {
@@ -828,24 +921,45 @@ private void rimuoviChef(Chef chef) {
 
 
 
-    private void aggiungiChef(Chef chef, String password) {
-        if (!editable || isCorsoFinito()) return;
-        
-        try {
-            gestioneController.aggiungiChefACorso(corso, chef, password);
-            if (corso.getChef() == null) corso.setChef(new ArrayList<>());
-            if (!corso.getChef().contains(chef)) corso.getChef().add(chef);
-            refreshChefListView();
-            StyleHelper.showSuccessDialog("Chef Aggiunto", 
-                chef.getNome() + " " + chef.getCognome() + " è stato aggiunto al corso");
-        } catch (ValidationException ex) {
-            StyleHelper.showValidationDialog("Errore Validazione", ex.getMessage());
-        } catch (DataAccessException ex) {
-            StyleHelper.showErrorDialog("Errore Database", ex.getMessage());
-        } catch (Exception ex) {
-            StyleHelper.showErrorDialog("Errore", ex.getMessage());
-        }
+	private void aggiungiChef(Chef chef, String password) {
+    if (!editable || isCorsoFinito()) return;
+    
+    if (corso.getChef() != null && corso.getChef().contains(chef)) {
+        showStyledValidationDialog(
+            "⚠️ Chef già Presente", 
+            chef.getNome() + " " + chef.getCognome() + " è già assegnato a questo corso."
+        );
+        return;
     }
+
+    try {
+        gestioneController.aggiungiChefACorso(corso, chef, password);
+        
+        if (corso.getChef() == null) {
+            corso.setChef(new ArrayList<>());
+        }
+        corso.getChef().add(chef);
+        
+        refreshChefListView();
+        addChefCombo.setValue(null);
+        
+        // ✅ DIALOG MIGLIORATA
+        showStyledSuccessDialog(
+            "✅ Chef Aggiunto", 
+            chef.getNome() + " " + chef.getCognome() + " è stato aggiunto al corso con successo!"
+        );
+        
+    } catch (ValidationException ex) {
+        showStyledValidationDialog("⚠️ Errore Validazione", ex.getMessage());
+    } catch (DataAccessException ex) {
+        showStyledErrorDialog("❌ Errore Database", 
+            "Impossibile aggiungere lo chef al database:\n" + ex.getMessage());
+    } catch (Exception ex) {
+        showStyledErrorDialog("❌ Errore", 
+            "Errore durante l'aggiunta dello chef:\n" + ex.getMessage());
+    }
+}
+
 
     private void setEditable(boolean edit) {
     if (isCorsoFinito()) {
@@ -865,7 +979,7 @@ private void rimuoviChef(Chef chef) {
     boolean corsoGiaIniziato = dataInizio != null && dataInizio.isBefore(oggi);
     boolean corsoGiaFinito = dataFine != null && dataFine.isBefore(oggi);
     
-    // ✅ FIX: Imposta editable E focusTraversable insieme
+    // ✅ CRITICO: Imposta editable E focusTraversable insieme
     nomeField.setEditable(edit);
     nomeField.setFocusTraversable(edit);
     
@@ -875,10 +989,10 @@ private void rimuoviChef(Chef chef) {
     argomentoField.setEditable(edit);
     argomentoField.setFocusTraversable(edit);
     
-    frequenzaCombo.setDisable(!edit);
-    
     numeroPostiField.setEditable(edit);
     numeroPostiField.setFocusTraversable(edit);
+    
+    frequenzaCombo.setDisable(!edit);
     
     dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
     
@@ -891,14 +1005,21 @@ private void rimuoviChef(Chef chef) {
     addChefCombo.setDisable(!edit);
     addChefBtn.setDisable(!edit);
 
-    // ✅ FIX: Colore testo NERO sempre, solo bordo cambia
-    String textStyle = "-fx-text-fill: black;"; // Testo sempre nero
+    // ✅ CRITICO: Colore testo NERO sempre, solo bordo cambia
+    String textStyle = "-fx-text-fill: black; -fx-background-color: white;";
     String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
     
-    nomeField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";");
-    prezzoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";");
-    argomentoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";");
-    numeroPostiField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";");
+    nomeField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
+    
+    prezzoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
+    
+    argomentoField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
+    
+    numeroPostiField.setStyle(textStyle + "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;");
     
     // ✅ Card border
     card.setStyle("-fx-background-color: white; -fx-background-radius: 16;" +
@@ -907,134 +1028,234 @@ private void rimuoviChef(Chef chef) {
     refreshChefListView();
 }
 
+
     
     private void showStyledValidationDialog(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        
-        // Styling del dialog
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setStyle(
-            "-fx-background-color: #FFF3CD;" +
-            "-fx-border-color: #FFB84D;" +
-            "-fx-border-width: 3px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-padding: 20px;"
-        );
-        
-        // Styling del testo
-        Label contentLabel = (Label) dialogPane.lookup(".content");
-        if (contentLabel != null) {
-            contentLabel.setStyle(
-                "-fx-font-size: 14px;" +
-                "-fx-text-fill: #856404;" +
-                "-fx-font-weight: normal;" +
-                "-fx-wrap-text: true;"
-            );
-        }
-        
-        // Styling del bottone OK
-        dialogPane.lookupButton(ButtonType.OK).setStyle(
-            "-fx-background-color: #FF9966;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 10 30 10 30;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-cursor: hand;"
-        );
-        
-        alert.showAndWait();
-    }
+    Alert alert = new Alert(Alert.AlertType.WARNING);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    alert.setContentText(null);
+    
+    DialogPane dialogPane = alert.getDialogPane();
+    dialogPane.getStyleClass().remove("alert");
+    
+    dialogPane.setStyle(
+        "-fx-background-color: #FFF3CD;" +
+        "-fx-border-color: #FFB84D;" +
+        "-fx-border-width: 2px;" +
+        "-fx-border-radius: 10px;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-padding: 25px;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+    );
+    
+    VBox content = new VBox(15);
+    content.setAlignment(Pos.CENTER);
+    
+    Label iconLabel = new Label("⚠️");
+    iconLabel.setStyle("-fx-font-size: 48px;");
+    
+    Label titleLabel = new Label(title);
+    titleLabel.setStyle(
+        "-fx-font-size: 18px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-text-fill: #856404;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    titleLabel.setMaxWidth(450);
+    titleLabel.setWrapText(true);
+    
+    Label messageLabel = new Label(message);
+    messageLabel.setStyle(
+        "-fx-font-size: 14px;" +
+        "-fx-text-fill: #856404;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    messageLabel.setMaxWidth(450);
+    messageLabel.setWrapText(true);
+    
+    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+    dialogPane.setContent(content);
+    
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    okButton.setText("OK");
+    okButton.setStyle(
+        "-fx-background-color: #FF9966;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 40 12 40;" +
+        "-fx-background-radius: 8px;" +
+        "-fx-cursor: hand;"
+    );
+    
+    alert.showAndWait();
+}
 
-    // ✅ NUOVO: Dialog di errore con grafica migliorata
+
     private void showStyledErrorDialog(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        
-        // Styling del dialog
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setStyle(
-            "-fx-background-color: #FFE5E5;" +
-            "-fx-border-color: #FF6B6B;" +
-            "-fx-border-width: 3px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-padding: 20px;"
-        );
-        
-        // Styling del testo
-        Label contentLabel = (Label) dialogPane.lookup(".content");
-        if (contentLabel != null) {
-            contentLabel.setStyle(
-                "-fx-font-size: 14px;" +
-                "-fx-text-fill: #C92A2A;" +
-                "-fx-font-weight: normal;" +
-                "-fx-wrap-text: true;"
-            );
-        }
-        
-        // Styling del bottone OK
-        dialogPane.lookupButton(ButtonType.OK).setStyle(
-            "-fx-background-color: #FF6B6B;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 10 30 10 30;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-cursor: hand;"
-        );
-        
-        alert.showAndWait();
-    }
+    Alert alert = new Alert(Alert.AlertType.ERROR);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    alert.setContentText(null); // ✅ Rimuoviamo contentText default
+    
+    DialogPane dialogPane = alert.getDialogPane();
+    
+    // ✅ RIMUOVI COMPLETAMENTE IL BORDO DI SISTEMA
+    dialogPane.getStyleClass().remove("alert");
+    
+    dialogPane.setStyle(
+        "-fx-background-color: #FFE5E5;" +
+        "-fx-border-color: #FF6B6B;" +
+        "-fx-border-width: 2px;" +
+        "-fx-border-radius: 10px;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-padding: 25px;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+    );
+    
+    // ✅ CREA UN VBOX PERSONALIZZATO PER IL CONTENUTO
+    VBox content = new VBox(15);
+    content.setAlignment(Pos.CENTER);
+    content.setStyle("-fx-padding: 10;");
+    
+    // ✅ Icona errore grande
+    Label iconLabel = new Label("❌");
+    iconLabel.setStyle(
+        "-fx-font-size: 48px;" +
+        "-fx-text-fill: #FF6B6B;"
+    );
+    
+    // ✅ Titolo
+    Label titleLabel = new Label(title);
+    titleLabel.setStyle(
+        "-fx-font-size: 18px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-text-fill: #721c24;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    titleLabel.setMaxWidth(450);
+    titleLabel.setWrapText(true);
+    
+    // ✅ Messaggio
+    Label messageLabel = new Label(message);
+    messageLabel.setStyle(
+        "-fx-font-size: 14px;" +
+        "-fx-text-fill: #721c24;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;" +
+        "-fx-line-spacing: 3px;"
+    );
+    messageLabel.setMaxWidth(450);
+    messageLabel.setWrapText(true);
+    
+    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+    dialogPane.setContent(content);
+    
+    // ✅ Bottone OK personalizzato
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    okButton.setText("OK");
+    okButton.setStyle(
+        "-fx-background-color: #FF6B6B;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 40 12 40;" +
+        "-fx-background-radius: 8px;" +
+        "-fx-cursor: hand;"
+    );
+    
+    okButton.setOnMouseEntered(e -> okButton.setStyle(
+        "-fx-background-color: #E63946;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 40 12 40;" +
+        "-fx-background-radius: 8px;" +
+        "-fx-cursor: hand;"
+    ));
+    
+    okButton.setOnMouseExited(e -> okButton.setStyle(
+        "-fx-background-color: #FF6B6B;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 40 12 40;" +
+        "-fx-background-radius: 8px;" +
+        "-fx-cursor: hand;"
+    ));
+    
+    alert.showAndWait();
+}
 
-    // ✅ NUOVO: Dialog di successo con grafica migliorata
+
     private void showStyledSuccessDialog(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        
-        // Styling del dialog
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setStyle(
-            "-fx-background-color: #D4EDDA;" +
-            "-fx-border-color: #28A745;" +
-            "-fx-border-width: 3px;" +
-            "-fx-border-radius: 12px;" +
-            "-fx-background-radius: 12px;" +
-            "-fx-padding: 20px;"
-        );
-        
-        // Styling del testo
-        Label contentLabel = (Label) dialogPane.lookup(".content");
-        if (contentLabel != null) {
-            contentLabel.setStyle(
-                "-fx-font-size: 14px;" +
-                "-fx-text-fill: #155724;" +
-                "-fx-font-weight: normal;" +
-                "-fx-wrap-text: true;"
-            );
-        }
-        
-        // Styling del bottone OK
-        dialogPane.lookupButton(ButtonType.OK).setStyle(
-            "-fx-background-color: #28A745;" +
-            "-fx-text-fill: white;" +
-            "-fx-font-size: 14px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-padding: 10 30 10 30;" +
-            "-fx-background-radius: 8px;" +
-            "-fx-cursor: hand;"
-        );
-        
-        alert.showAndWait();
-    }
+    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    alert.setContentText(null);
+    
+    DialogPane dialogPane = alert.getDialogPane();
+    dialogPane.getStyleClass().remove("alert");
+    
+    dialogPane.setStyle(
+        "-fx-background-color: #D4EDDA;" +
+        "-fx-border-color: #28A745;" +
+        "-fx-border-width: 2px;" +
+        "-fx-border-radius: 10px;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-padding: 25px;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+    );
+    
+    VBox content = new VBox(15);
+    content.setAlignment(Pos.CENTER);
+    
+    Label iconLabel = new Label("✅");
+    iconLabel.setStyle("-fx-font-size: 48px;");
+    
+    Label titleLabel = new Label(title);
+    titleLabel.setStyle(
+        "-fx-font-size: 18px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-text-fill: #155724;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    titleLabel.setMaxWidth(450);
+    titleLabel.setWrapText(true);
+    
+    Label messageLabel = new Label(message);
+    messageLabel.setStyle(
+        "-fx-font-size: 14px;" +
+        "-fx-text-fill: #155724;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    messageLabel.setMaxWidth(450);
+    messageLabel.setWrapText(true);
+    
+    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+    dialogPane.setContent(content);
+    
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    okButton.setText("OK");
+    okButton.setStyle(
+        "-fx-background-color: #28A745;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 40 12 40;" +
+        "-fx-background-radius: 8px;" +
+        "-fx-cursor: hand;"
+    );
+    
+    alert.showAndWait();
+}
+
 
 }
 

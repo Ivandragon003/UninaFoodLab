@@ -240,49 +240,114 @@ public class VisualizzaSessioniGUI {
         }
     }
 
-    private void confermaEliminaSessione(Sessione sessione) {
-        Alert conferma = new Alert(Alert.AlertType.CONFIRMATION);
-        conferma.setTitle("⚠️ Conferma Eliminazione");
-        conferma.setHeaderText("Eliminare questa sessione?");
-        
-        String tipo = (sessione instanceof Online) ? "Online" : "In Presenza";
-        String dettagli = "Tipo: " + tipo + "\n" +
+private void confermaEliminaSessione(Sessione sessione) {
+    if (sessione == null) return;
+    
+    Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+    confirmAlert.setTitle("⚠️ Conferma Eliminazione");
+    confirmAlert.setHeaderText(null);
+    confirmAlert.setContentText(null);
+    
+    DialogPane dialogPane = confirmAlert.getDialogPane();
+    dialogPane.getStyleClass().remove("alert");
+    
+    dialogPane.setStyle(
+        "-fx-background-color: #FFF3CD;" +
+        "-fx-border-color: #FFB84D;" +
+        "-fx-border-width: 2px;" +
+        "-fx-border-radius: 10px;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-padding: 25px;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+    );
+    
+    VBox content = new VBox(15);
+    content.setAlignment(Pos.CENTER);
+    
+    Label iconLabel = new Label("⚠️");
+    iconLabel.setStyle("-fx-font-size: 48px;");
+    
+    Label titleLabel = new Label("Conferma Eliminazione");
+    titleLabel.setStyle(
+        "-fx-font-size: 18px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-text-fill: #856404;" +
+        "-fx-wrap-text: true;"
+    );
+    
+    String tipo = (sessione instanceof Online) ? "Online" : "In Presenza";
+    String sessioneInfo = "Tipo: " + tipo + "\n" +
                          "Inizio: " + sessione.getDataInizioSessione().toLocalDate() + "\n" +
                          "Fine: " + sessione.getDataFineSessione().toLocalDate();
-        
-        conferma.setContentText(dettagli + "\n\n⚠️ Questa operazione non può essere annullata!");
-        
-        ButtonType btnConferma = new ButtonType("✅ Conferma", ButtonBar.ButtonData.OK_DONE);
-        ButtonType btnAnnulla = new ButtonType("❌ Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
-        
-        conferma.getButtonTypes().setAll(btnConferma, btnAnnulla);
-        
-        conferma.showAndWait().ifPresent(response -> {
-            if (response == btnConferma) {
-                try {
-                    if (controller != null) {
-                        controller.eliminaSessione(sessione);
-                    }
-                    
-                    // Rimuovi dalla lista locale
-                    if (corso.getSessioni() != null) {
-                        corso.getSessioni().remove(sessione);
-                    }
-                    
-                    aggiornaLista();
-                    showInfo("✅ Successo", "Sessione eliminata correttamente.");
-                    
-                } catch (IllegalStateException ex) {
-                    // ✅ Cattura il vincolo (non dovrebbe succedere con bottone disabilitato)
-                    showError("⚠️ Impossibile Eliminare", ex.getMessage());
-                    
-                } catch (Exception ex) {
-                    showError("❌ Errore", "Errore durante l'eliminazione: " + ex.getMessage());
-                    ex.printStackTrace();
+    
+    Label messageLabel = new Label(
+        "Sei sicuro di voler eliminare questa sessione?\n\n" +
+        sessioneInfo + "\n\n" +
+        "⚠️ Questa operazione è irreversibile!"
+    );
+    messageLabel.setStyle(
+        "-fx-font-size: 14px;" +
+        "-fx-text-fill: #856404;" +
+        "-fx-wrap-text: true;" +
+        "-fx-text-alignment: center;"
+    );
+    messageLabel.setMaxWidth(450);
+    messageLabel.setWrapText(true);
+    
+    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+    dialogPane.setContent(content);
+    
+    // ✅ Stile bottoni
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    okButton.setText("Elimina");
+    okButton.setStyle(
+        "-fx-background-color: #FF6B6B;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 30 12 30;" +
+        "-fx-background-radius: 8px;"
+    );
+    
+    Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+    cancelButton.setText("Annulla");
+    cancelButton.setStyle(
+        "-fx-background-color: #6C757D;" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 30 12 30;" +
+        "-fx-background-radius: 8px;"
+    );
+    
+    confirmAlert.showAndWait().ifPresent(response -> {
+        if (response == ButtonType.OK) {
+            try {
+                if (controller != null) {
+                    controller.eliminaSessione(sessione);
                 }
+                
+                if (corso.getSessioni() != null) {
+                    corso.getSessioni().remove(sessione);
+                }
+                
+                aggiornaLista();
+                
+                showStyledSuccessDialog(
+                    "✅ Sessione Eliminata", 
+                    "La sessione è stata eliminata con successo!"
+                );
+                
+            } catch (IllegalStateException ex) {
+                showStyledValidationDialog("⚠️ Impossibile Eliminare", ex.getMessage());
+            } catch (Exception ex) {
+                showStyledErrorDialog("❌ Errore", 
+                    "Errore durante l'eliminazione:\n" + ex.getMessage());
             }
-        });
-    }
+        }
+    });
+}
+
 
     private HBox createPulsantiPrincipali() {
         HBox pulsantiPrincipali = new HBox(15);
@@ -389,4 +454,198 @@ public class VisualizzaSessioniGUI {
         alert.setContentText(message);
         alert.showAndWait();
     }
+    
+ private void showStyledSuccessDialog(String title, String message) {
+     Alert alert = new Alert(Alert.AlertType.INFORMATION);
+     alert.setTitle(title);
+     alert.setHeaderText(null);
+     alert.setContentText(null);
+     
+     DialogPane dialogPane = alert.getDialogPane();
+     dialogPane.getStyleClass().remove("alert");
+     
+     dialogPane.setStyle(
+         "-fx-background-color: #D4EDDA;" +
+         "-fx-border-color: #28A745;" +
+         "-fx-border-width: 2px;" +
+         "-fx-border-radius: 10px;" +
+         "-fx-background-radius: 10px;" +
+         "-fx-padding: 25px;" +
+         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+     );
+     
+     VBox content = new VBox(15);
+     content.setAlignment(Pos.CENTER);
+     
+     Label iconLabel = new Label("✅");
+     iconLabel.setStyle("-fx-font-size: 48px;");
+     
+     Label titleLabel = new Label(title);
+     titleLabel.setStyle(
+         "-fx-font-size: 18px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-text-fill: #155724;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     titleLabel.setMaxWidth(450);
+     titleLabel.setWrapText(true);
+     
+     Label messageLabel = new Label(message);
+     messageLabel.setStyle(
+         "-fx-font-size: 14px;" +
+         "-fx-text-fill: #155724;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     messageLabel.setMaxWidth(450);
+     messageLabel.setWrapText(true);
+     
+     content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+     dialogPane.setContent(content);
+     
+     Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+     okButton.setText("OK");
+     okButton.setStyle(
+         "-fx-background-color: #28A745;" +
+         "-fx-text-fill: white;" +
+         "-fx-font-size: 14px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-padding: 12 40 12 40;" +
+         "-fx-background-radius: 8px;" +
+         "-fx-cursor: hand;"
+     );
+     
+     alert.showAndWait();
+ }
+
+
+ private void showStyledErrorDialog(String title, String message) {
+     Alert alert = new Alert(Alert.AlertType.ERROR);
+     alert.setTitle(title);
+     alert.setHeaderText(null);
+     alert.setContentText(null);
+     
+     DialogPane dialogPane = alert.getDialogPane();
+     dialogPane.getStyleClass().remove("alert");
+     
+     dialogPane.setStyle(
+         "-fx-background-color: #FFE5E5;" +
+         "-fx-border-color: #FF6B6B;" +
+         "-fx-border-width: 2px;" +
+         "-fx-border-radius: 10px;" +
+         "-fx-background-radius: 10px;" +
+         "-fx-padding: 25px;" +
+         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+     );
+     
+     VBox content = new VBox(15);
+     content.setAlignment(Pos.CENTER);
+     
+     Label iconLabel = new Label("❌");
+     iconLabel.setStyle("-fx-font-size: 48px;");
+     
+     Label titleLabel = new Label(title);
+     titleLabel.setStyle(
+         "-fx-font-size: 18px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-text-fill: #721c24;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     titleLabel.setMaxWidth(450);
+     titleLabel.setWrapText(true);
+     
+     Label messageLabel = new Label(message);
+     messageLabel.setStyle(
+         "-fx-font-size: 14px;" +
+         "-fx-text-fill: #721c24;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     messageLabel.setMaxWidth(450);
+     messageLabel.setWrapText(true);
+     
+     content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+     dialogPane.setContent(content);
+     
+     Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+     okButton.setText("OK");
+     okButton.setStyle(
+         "-fx-background-color: #FF6B6B;" +
+         "-fx-text-fill: white;" +
+         "-fx-font-size: 14px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-padding: 12 40 12 40;" +
+         "-fx-background-radius: 8px;" +
+         "-fx-cursor: hand;"
+     );
+     
+     alert.showAndWait();
+ }
+
+ private void showStyledValidationDialog(String title, String message) {
+     Alert alert = new Alert(Alert.AlertType.WARNING);
+     alert.setTitle(title);
+     alert.setHeaderText(null);
+     alert.setContentText(null);
+     
+     DialogPane dialogPane = alert.getDialogPane();
+     dialogPane.getStyleClass().remove("alert");
+     
+     dialogPane.setStyle(
+         "-fx-background-color: #FFF3CD;" +
+         "-fx-border-color: #FFB84D;" +
+         "-fx-border-width: 2px;" +
+         "-fx-border-radius: 10px;" +
+         "-fx-background-radius: 10px;" +
+         "-fx-padding: 25px;" +
+         "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 3);"
+     );
+     
+     VBox content = new VBox(15);
+     content.setAlignment(Pos.CENTER);
+     
+     Label iconLabel = new Label("⚠️");
+     iconLabel.setStyle("-fx-font-size: 48px;");
+     
+     Label titleLabel = new Label(title);
+     titleLabel.setStyle(
+         "-fx-font-size: 18px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-text-fill: #856404;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     titleLabel.setMaxWidth(450);
+     titleLabel.setWrapText(true);
+     
+     Label messageLabel = new Label(message);
+     messageLabel.setStyle(
+         "-fx-font-size: 14px;" +
+         "-fx-text-fill: #856404;" +
+         "-fx-wrap-text: true;" +
+         "-fx-text-alignment: center;"
+     );
+     messageLabel.setMaxWidth(450);
+     messageLabel.setWrapText(true);
+     
+     content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+     dialogPane.setContent(content);
+     
+     Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+     okButton.setText("OK");
+     okButton.setStyle(
+         "-fx-background-color: #FF9966;" +
+         "-fx-text-fill: white;" +
+         "-fx-font-size: 14px;" +
+         "-fx-font-weight: bold;" +
+         "-fx-padding: 12 40 12 40;" +
+         "-fx-background-radius: 8px;" +
+         "-fx-cursor: hand;"
+     );
+     
+     alert.showAndWait();
+ }
+
 }
