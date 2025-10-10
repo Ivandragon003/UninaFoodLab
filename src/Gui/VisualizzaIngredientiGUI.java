@@ -301,8 +301,8 @@ public class VisualizzaIngredientiGUI extends Stage {
         buttonBox.setPadding(new Insets(15, 0, 0, 0));
 
         if (modalitaSelezione) {
-            // ✅ Usa StyleHelper.createStyledButton() con NEUTRAL_GRAY
-            Button annullaBtn = StyleHelper.createStyledButton("❌ Annulla", StyleHelper.NEUTRAL_GRAY);
+         
+            Button annullaBtn = StyleHelper.createStyledButton("❌ Annulla", StyleHelper.NEUTRAL_GRAY, "#FFFFFF");
             annullaBtn.setPrefWidth(130);
             annullaBtn.setPrefHeight(40);
             annullaBtn.setOnAction(e -> {

@@ -219,12 +219,9 @@ public class CreaRicettaGUI {
         return box;
     }
 
-    /**
-     * ✅ MIGLIORATO: Apre VisualizzaIngredientiGUI che gestisce tutto (selezione + creazione)
-     */
+  
     private void apriSelezionaIngrediente() {
         try {
-            System.out.println("DEBUG: Apertura VisualizzaIngredientiGUI in modalità selezione...");
             
             VisualizzaIngredientiGUI visualizzaGUI = new VisualizzaIngredientiGUI(ingredienteController);
             visualizzaGUI.setModalitaSelezione(true);
@@ -233,9 +230,8 @@ public class CreaRicettaGUI {
             Ingrediente selezionato = visualizzaGUI.showAndReturn();
             
             if (selezionato != null) {
-                System.out.println("DEBUG: Ingrediente selezionato: " + selezionato.getNome());
                 
-                // Verifica se già presente
+             
                 if (ingredientiMap.containsKey(selezionato)) {
                     StyleHelper.showValidationDialog("Attenzione", 
                         "L'ingrediente '" + selezionato.getNome() + "' è già stato aggiunto alla ricetta");
@@ -246,7 +242,7 @@ public class CreaRicettaGUI {
                 aggiungiIngredienteConQuantita(selezionato);
                 
             } else {
-                System.out.println("DEBUG: Selezione ingrediente annullata");
+      
             }
             
         } catch (Exception e) {
@@ -366,7 +362,7 @@ public class CreaRicettaGUI {
         
         aggiornaContatore();
 
-        System.out.println("DEBUG: Aggiunto ingrediente: " + displayText);
+   
     }
 
     private void rimuoviIngrediente() {
@@ -386,7 +382,7 @@ public class CreaRicettaGUI {
 
         ingredientiData.remove(selectedIndex);
         aggiornaContatore();
-        System.out.println("DEBUG: Rimosso ingrediente: " + displayText);
+     
     }
 
     private void aggiornaContatore() {
@@ -439,7 +435,6 @@ public class CreaRicettaGUI {
                 return;
             }
 
-            System.out.println("DEBUG: Creazione ricetta - Nome: " + nome.trim() + ", Tempo: " + tempo + ", Ingredienti: " + ingredientiMap.size());
 
             ricettaCreata = ricettaController.creaRicetta(nome.trim(), tempo, ingredientiMap);
             mostraConfermaCreazione(nome.trim(), tempo);

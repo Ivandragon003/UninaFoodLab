@@ -32,15 +32,71 @@ public class ReportMensileController {
 		int totaleRicette = 0;
 		int minRicette = Integer.MAX_VALUE;
 		int maxRicette = 0;
-		int conteggioSessioniConRicette = 0;
 
 		List<CorsoCucina> corsiDelChef = corsiService.getCorsiByChef(chefLoggato);
 		if (corsiDelChef == null || corsiDelChef.isEmpty()) {
 			return new DatiReportMensile(inizio, fine, 0, 0, 0, 0.0, 0, 0);
 		}
 
-		// Conta tutti i corsi dello chef
 		numeroCorsi = corsiDelChef.size();
+		List<Integer> sessioniInPresenzaIds = new ArrayList<>();
+
+		for (CorsoCucina corso : corsiDelChef) {
+			if (corso == null)
+				continue;
+
+			List<Sessione> sessioniNelPeriodo = corsiService.getSessioniPerCorsoInPeriodo(corso.getIdCorso(), inizio,
+					fine);
+			if (sessioniNelPeriodo == null || sessioniNelPeriodo.isEmpty())
+				continue;
+
+			for (Sessione s : sessioniNelPeriodo) {
+				if (s == null)
+					continue;
+
+				if (s instanceof Online) {
+					sessioniOnline++;
+				} else if (s instanceof InPresenza ip) {
+					sessioniPratiche++;
+					sessioniInPresenzaIds.add(ip.getIdSessione());
+				}
+			}
+		}
+
+		if (!sessioniInPresenzaIds.isEmpty()) {
+			Map<Integer, Integer> ricettePerSessione = sessioniService
+					.getNumeroRicettePerSessioni(sessioniInPresenzaIds);
+
+			for (Integer idSessione : sessioniInPresenzaIds) {
+				int numRicette = ricettePerSessione.getOrDefault(idSessione, 0);
+				totaleRicette += numRicette;
+				minRicette = Math.min(minRicette, numRicette);
+				maxRicette = Math.max(maxRicette, numRicette);
+			}
+
+			if (minRicette == Integer.MAX_VALUE)
+				minRicette = 0; // tutte le sessioni hanno 0 ricette
+		} else {
+			minRicette = 0;
+		}
+
+		double mediaRicette = !sessioniInPresenzaIds.isEmpty() ? (double) totaleRicette / sessioniInPresenzaIds.size()
+				: 0.0;
+
+		return new DatiReportMensile(inizio, fine, numeroCorsi, sessioniOnline, sessioniPratiche, mediaRicette,
+				minRicette, maxRicette);
+	}
+
+	public Map<LocalDate, Integer> getRicettePerGiorno(LocalDate inizio, LocalDate fine) throws DataAccessException {
+		Map<LocalDate, Integer> result = new TreeMap<>();
+		List<CorsoCucina> corsiDelChef = corsiService.getCorsiByChef(chefLoggato);
+
+		if (corsiDelChef == null || corsiDelChef.isEmpty()) {
+			return result;
+		}
+
+		List<Integer> sessioniIds = new ArrayList<>();
+		Map<Integer, LocalDate> sessioneToDate = new HashMap<>();
 
 		for (CorsoCucina corso : corsiDelChef) {
 			if (corso == null)
@@ -53,74 +109,31 @@ public class ReportMensileController {
 				continue;
 
 			for (Sessione s : sessioniNelPeriodo) {
-				if (s == null)
-					continue;
+				if (s instanceof InPresenza ip) {
+					sessioniIds.add(ip.getIdSessione());
+					sessioneToDate.put(ip.getIdSessione(), ip.getDataInizioSessione().toLocalDate());
+				}
+			}
+		}
 
-				if (s instanceof Online) {
-					sessioniOnline++;
-				} else if (s instanceof InPresenza ip) {
-					sessioniPratiche++;
+		if (!sessioniIds.isEmpty()) {
+			Map<Integer, Integer> ricettePerSessione = sessioniService.getNumeroRicettePerSessioni(sessioniIds);
 
-					int numRicette;
-					try {
-						numRicette = sessioniService.getNumeroRicettePerSessione(ip.getIdSessione());
-					} catch (Exception ex) {
-						numRicette = (ip.getRicette() != null) ? ip.getRicette().size() : 0;
-					}
+			if (ricettePerSessione != null && !ricettePerSessione.isEmpty()) {
+				for (Map.Entry<Integer, Integer> entry : ricettePerSessione.entrySet()) {
+					int idSessione = entry.getKey();
+					Integer numRicette = entry.getValue();
 
-					if (numRicette > 0) {
-						totaleRicette += numRicette;
-						conteggioSessioniConRicette++;
-						minRicette = Math.min(minRicette, numRicette);
-						maxRicette = Math.max(maxRicette, numRicette);
+					if (numRicette != null && numRicette > 0) {
+						LocalDate giorno = sessioneToDate.get(idSessione);
+						if (giorno != null) {
+							result.put(giorno, result.getOrDefault(giorno, 0) + numRicette);
+						}
 					}
 				}
 			}
 		}
 
-		double mediaRicette = (conteggioSessioniConRicette > 0) ? (double) totaleRicette / conteggioSessioniConRicette
-				: 0.0;
-
-		if (conteggioSessioniConRicette == 0)
-			minRicette = 0;
-
-		return new DatiReportMensile(inizio, fine, numeroCorsi, sessioniOnline, sessioniPratiche, mediaRicette,
-				minRicette, maxRicette);
-	}
-
-	public Map<LocalDate, Integer> getRicettePerGiorno(LocalDate inizio, LocalDate fine) throws DataAccessException {
-		Map<LocalDate, Integer> result = new TreeMap<>();
-		List<CorsoCucina> corsiDelChef = corsiService.getCorsiByChef(chefLoggato);
-		if (corsiDelChef == null || corsiDelChef.isEmpty())
-			return result;
-
-		for (CorsoCucina corso : corsiDelChef) {
-			if (corso == null)
-				continue;
-			int idCorso = corso.getIdCorso();
-			List<Sessione> sessioniNelPeriodo = corsiService.getSessioniPerCorsoInPeriodo(idCorso, inizio, fine);
-			if (sessioniNelPeriodo == null || sessioniNelPeriodo.isEmpty())
-				continue;
-
-			for (Sessione s : sessioniNelPeriodo) {
-				if (!(s instanceof InPresenza))
-					continue;
-				InPresenza ip = (InPresenza) s;
-				int numRicette = 0;
-				try {
-					numRicette = sessioniService.getNumeroRicettePerSessione(ip.getIdSessione());
-				} catch (Exception ex) {
-					if (ip.getRicette() != null)
-						numRicette = ip.getRicette().size();
-					else
-						numRicette = 0;
-				}
-				if (numRicette <= 0)
-					continue;
-				LocalDate giorno = ip.getDataInizioSessione().toLocalDate();
-				result.put(giorno, result.getOrDefault(giorno, 0) + numRicette);
-			}
-		}
 		return result;
 	}
 
@@ -129,7 +142,7 @@ public class ReportMensileController {
 	}
 
 	public static class DatiReportMensile {
-		private final LocalDate inizio;
+		private final LocalDate iwnizio;
 		private final LocalDate fine;
 		private final int numeroCorsi;
 		private final int sessioniOnline;

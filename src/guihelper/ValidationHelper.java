@@ -127,7 +127,7 @@ public final class ValidationHelper {
                     """);
                 }
             }
-        } catch (Exception ignored) { /* non rompere la UI */ }
+        } catch (Exception ignored) { }
     }
 
     private static void resetContainerStyleSafe(VBox container) {
@@ -146,14 +146,14 @@ public final class ValidationHelper {
                     """);
                 }
             }
-        } catch (Exception ignored) { /* non rompere la UI */ }
+        } catch (Exception ignored) {  }
     }
 
     private static void runOnUiThread(Runnable r) {
         if (Platform.isFxApplicationThread()) r.run(); else Platform.runLater(r);
     }
 
-    // se vuoi un reset esplicito
+   
     public static void resetStyle(TextInputControl field) {
         if (field != null) field.setStyle(NORMAL_STYLE);
     }

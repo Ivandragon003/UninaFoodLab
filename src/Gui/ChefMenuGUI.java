@@ -47,8 +47,7 @@ public class ChefMenuGUI {
     private IngredienteDAO ingredienteDAO;
     private UsaDAO usaDAO;
     private CucinaDAO cucinaDAO;
-    // AGGIUNTO: AdesioneDAO (usato da GestioneSessioni)
-    private AdesioneDAO adesioneDAO;
+   
 
     private GestioneCorsiCucina gestioneCorsiService;
     private GestioneChef gestioneChefService;
@@ -64,7 +63,7 @@ public class ChefMenuGUI {
     private RicettaController ricettaController;
     private IngredienteController ingredienteController;
     private ChefController chefController;
-    // Controller per il report mensile (ora richiede GestioneSessioni)
+  
     private controller.ReportMensileController reportMensileController;
 
     private StackPane menuRoot;
@@ -78,7 +77,7 @@ public class ChefMenuGUI {
     private double yOffset = 0;
 
     public ChefMenuGUI() {
-        // inizializzazione ritardata tramite setChefLoggato()
+        
     }
 
     public void setChefLoggato(Chef chef) {
@@ -100,8 +99,6 @@ public class ChefMenuGUI {
         this.ingredienteDAO = new IngredienteDAO();
         this.usaDAO = new UsaDAO();
         this.cucinaDAO = new CucinaDAO();
-        // istanzia AdesioneDAO (assumo esista nella tua codebase)
-        this.adesioneDAO = new AdesioneDAO();
     }
 
     private void inizializzaServices() {
@@ -116,7 +113,7 @@ public class ChefMenuGUI {
         this.gestioneCucinaService = new GestioneCucina(cucinaDAO);
 
         // AGGIUNTO: gestione sessioni (richiede InPresenzaDAO, OnlineDAO, AdesioneDAO, CucinaDAO)
-        this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, adesioneDAO, cucinaDAO);
+        this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
     }
 
     private void inizializzaControllers() {
