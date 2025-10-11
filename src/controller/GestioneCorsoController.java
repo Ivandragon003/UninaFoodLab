@@ -6,15 +6,10 @@ import exceptions.ErrorMessages;
 import model.CorsoCucina;
 import model.Chef;
 import service.GestioneCorsiCucina;
-import service.GestioneCucina;
-import service.GestioneRicette;
-import service.GestioneSessioni;
 import service.GestioneChef;
-
 import java.util.List;
 
 public class GestioneCorsoController {
-
     private final GestioneCorsiCucina corsiService;
     private final GestioneChef chefService;
     private Chef chefLoggato;
@@ -36,50 +31,42 @@ public class GestioneCorsoController {
         return chefService.getAll();
     }
 
-    public void creaCorso(CorsoCucina corso) throws ValidationException {
+    public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        
+
         if (chefLoggato == null) {
             throw new ValidationException("Nessun chef loggato. Impossibile creare il corso.");
         }
-        
+
         corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
-        
         corsiService.creaCorso(corso);
-        
-        System.out.println("[GestioneCorsoController] ✅ Corso creato");
-        System.out.println("[GestioneCorsoController] 👑 Fondatore: " + 
-                         chefLoggato.getNome() + " " + chefLoggato.getCognome() +
-                         " (CF: " + chefLoggato.getCodFiscale() + ")");
     }
 
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException {
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException, DataAccessException {
         corsiService.aggiungiChefACorso(corso, chef, password);
     }
 
     public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
         if (chef == null) throw new ValidationException(ErrorMessages.CHEF_NULLO);
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-
         corsiService.rimuoviChefDaCorso(chef, corso);
     }
 
-    public void eliminaCorso(int idCorso) {
+    public void eliminaCorso(int idCorso) throws DataAccessException {
         corsiService.cancellaCorso(idCorso);
     }
 
-    public void modificaCorso(CorsoCucina corsoAggiornato) throws ValidationException {
+    public void modificaCorso(CorsoCucina corsoAggiornato) throws ValidationException, DataAccessException {
         if (corsoAggiornato == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         corsiService.aggiornaCorso(corsoAggiornato);
     }
 
-    public CorsoCucina getCorsoCompleto(int idCorso) {
+    public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
         return corsiService.getCorsoCompleto(idCorso);
     }
 
-    public CorsoCucina getDettagliCorso(CorsoCucina corso) throws ValidationException {
+    public CorsoCucina getDettagliCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         return corsiService.getCorsoCompleto(corso.getIdCorso());
     }
-    
 }
