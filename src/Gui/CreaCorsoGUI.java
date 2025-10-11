@@ -6,7 +6,6 @@ import controller.RicettaController;
 import controller.IngredienteController;
 import exceptions.ValidationException;
 import guihelper.StyleHelper;
-import util.FrequenzaHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -48,6 +47,7 @@ public class CreaCorsoGUI {
     private ComboBox<Frequenza> frequenzaBox;
     private DatePicker startDatePicker;
     private DatePicker endDatePicker;
+    private TextField numeroSessioniField;
     private ComboBox<Integer> startHour;
     private ComboBox<Integer> startMinute;
     private ComboBox<Integer> endHour;
@@ -65,13 +65,12 @@ public class CreaCorsoGUI {
     // ========== BOTTONI ==========
     private Button aggiungiSessioneBtn;
 
-    // ========== COSTRUTTORE AGGIORNATO ==========
+    // ========== COSTRUTTORE ==========
     public CreaCorsoGUI(GestioneCorsoController corsoController, 
                         ChefController chefController,
                         RicettaController ricettaController,
                         IngredienteController ingredienteController) {
         
-        // Validazione parametri
         if (corsoController == null) {
             throw new IllegalArgumentException("GestioneCorsoController non può essere null");
         }
@@ -105,7 +104,7 @@ public class CreaCorsoGUI {
         container.setPadding(new Insets(20));
         StyleHelper.applyBackgroundGradient(container);
 
-        Label titleLabel = StyleHelper.createTitleLabel("✨ Crea Nuovo Corso di Cucina");
+        Label titleLabel = StyleHelper.createTitleLabel("Crea Nuovo Corso di Cucina");
         titleLabel.setTextFill(Color.WHITE);
         titleLabel.setAlignment(Pos.CENTER);
 
@@ -140,39 +139,29 @@ public class CreaCorsoGUI {
     private VBox createInfoSection() {
         VBox section = StyleHelper.createSection();
 
-        // Creazione campi
         nomeField = StyleHelper.createTextField("Es. Corso Base di Pasta Italiana");
         prezzoField = StyleHelper.createTextField("Es. 150.00");
         argomentoField = StyleHelper.createTextField("Es. Pasta fresca e condimenti");
         postiField = StyleHelper.createTextField("Es. 12");
 
-        // Validazione solo numeri per posti
         postiField.textProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal.matches("\\d*")) {
                 postiField.setText(newVal.replaceAll("[^\\d]", ""));
             }
         });
 
-        // Frequenza precaricata con tutte le opzioni
-        frequenzaBox = createFrequenzaComboBox();
-        frequenzaBox.getItems().setAll(Frequenza.values());
-        frequenzaBox.setOnAction(e -> aggiornaNumeroSessioni());
-
-        // Grid layout
         GridPane grid = createGrid(15, 15);
         grid.add(StyleHelper.createLabel("Nome Corso:"), 0, 0);
         grid.add(nomeField, 1, 0);
-        grid.add(StyleHelper.createLabel("Prezzo (€):"), 2, 0);
+        grid.add(StyleHelper.createLabel("Prezzo (EUR):"), 2, 0);
         grid.add(prezzoField, 3, 0);
         grid.add(StyleHelper.createLabel("Argomento:"), 0, 1);
         grid.add(argomentoField, 1, 1);
         grid.add(StyleHelper.createLabel("Numero Posti:"), 2, 1);
         grid.add(postiField, 3, 1);
-        grid.add(StyleHelper.createLabel("Frequenza:"), 0, 2);
-        grid.add(frequenzaBox, 1, 2);
 
         section.getChildren().addAll(
-            createSectionTitle("📋 Informazioni Corso"), 
+            createSectionTitle("Informazioni Corso"), 
             grid
         );
         return section;
@@ -182,44 +171,54 @@ public class CreaCorsoGUI {
     private VBox createDateTimeSection() {
         VBox section = StyleHelper.createSection();
 
-        // Date pickers
         startDatePicker = StyleHelper.createDatePicker();
         endDatePicker = StyleHelper.createDatePicker();
         startDatePicker.setPromptText("Data inizio");
-        endDatePicker.setPromptText("Data fine");
+        endDatePicker.setPromptText("Data fine (calcolata automaticamente)");
+        endDatePicker.setDisable(true);
 
-        // Listener per aggiornamento frequenze
-        startDatePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
-        endDatePicker.setOnAction(e -> aggiornaFrequenzeDisponibili());
+        numeroSessioniField = StyleHelper.createTextField("Es. 12");
+        numeroSessioniField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal.matches("\\d*")) {
+                numeroSessioniField.setText(newVal.replaceAll("[^\\d]", ""));
+            }
+            calcolaDataFine();
+        });
 
-        // Time pickers
+        frequenzaBox = createFrequenzaComboBox();
+        frequenzaBox.getItems().setAll(Frequenza.values());
+        frequenzaBox.setOnAction(e -> calcolaDataFine());
+
+        startDatePicker.setOnAction(e -> calcolaDataFine());
+
         startHour = createTimeComboBox(24, DEFAULT_START_HOUR);
         startMinute = createTimeComboBox(60, DEFAULT_START_MINUTE, 15);
         endHour = createTimeComboBox(24, DEFAULT_END_HOUR);
         endMinute = createTimeComboBox(60, DEFAULT_END_MINUTE, 15);
 
-        // Grid layout
         GridPane grid = createGrid(15, 15);
         grid.add(StyleHelper.createLabel("Data Inizio:"), 0, 0);
         grid.add(startDatePicker, 1, 0);
         grid.add(StyleHelper.createLabel("Ora Inizio:"), 2, 0);
         grid.add(createTimeBox(startHour, startMinute), 3, 0);
+        
         grid.add(StyleHelper.createLabel("Data Fine:"), 0, 1);
         grid.add(endDatePicker, 1, 1);
         grid.add(StyleHelper.createLabel("Ora Fine:"), 2, 1);
         grid.add(createTimeBox(endHour, endMinute), 3, 1);
+        
+        grid.add(StyleHelper.createLabel("Frequenza:"), 0, 2);
+        grid.add(frequenzaBox, 1, 2);
+        grid.add(StyleHelper.createLabel("Numero Sessioni:"), 2, 2);
+        grid.add(numeroSessioniField, 3, 2);
 
-        // Label contatore sessioni
         numeroSessioniLabel = createInfoLabel(
-            "📊 Sessioni: Seleziona date e frequenza", 
+            "Seleziona data inizio, frequenza e numero sessioni", 
             "#e74c3c"
         );
 
-        // Listener per aggiornamento contatore
-        frequenzaBox.setOnAction(e -> aggiornaNumeroSessioni());
-
         section.getChildren().addAll(
-            createSectionTitle("📅 Date e Orari - OBBLIGATORIO"), 
+            createSectionTitle("Date e Orari - OBBLIGATORIO"), 
             grid, 
             numeroSessioniLabel
         );
@@ -227,21 +226,69 @@ public class CreaCorsoGUI {
         return section;
     }
 
+    // ========== CALCOLO DATA FINE AUTOMATICO ==========
+    private void calcolaDataFine() {
+        try {
+            LocalDate inizio = startDatePicker.getValue();
+            Frequenza freq = frequenzaBox.getValue();
+            String numSessioniStr = numeroSessioniField.getText().trim();
+
+            if (inizio == null || freq == null || numSessioniStr.isEmpty()) {
+                endDatePicker.setValue(null);
+                numeroSessioniLabel.setText("Seleziona data inizio, frequenza e numero sessioni");
+                numeroSessioniLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 13px;");
+                return;
+            }
+
+            int numeroSessioni = Integer.parseInt(numSessioniStr);
+            if (numeroSessioni <= 0) {
+                endDatePicker.setValue(null);
+                numeroSessioniLabel.setText("Il numero di sessioni deve essere maggiore di 0");
+                numeroSessioniLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 13px;");
+                return;
+            }
+
+            LocalDate dataFine = calcolaDataFineFromFrequenza(inizio, numeroSessioni, freq);
+            endDatePicker.setValue(dataFine);
+
+            numeroSessioniLabel.setText(String.format(
+                "Sessioni: %d | Periodo: %s -> %s",
+                numeroSessioni, inizio, dataFine
+            ));
+            numeroSessioniLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 13px; -fx-font-weight: bold;");
+
+        } catch (NumberFormatException e) {
+            endDatePicker.setValue(null);
+            numeroSessioniLabel.setText("Numero sessioni non valido");
+            numeroSessioniLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 13px;");
+        }
+    }
+
+    // ========== METODO AUSILIARIO CALCOLO DATA FINE ==========
+    private LocalDate calcolaDataFineFromFrequenza(LocalDate inizio, int numeroSessioni, Frequenza frequenza) {
+        return switch (frequenza) {
+            case unica -> inizio;
+            case giornaliero -> inizio.plusDays(numeroSessioni - 1);
+            case ogniDueGiorni -> inizio.plusDays((numeroSessioni - 1) * 2);
+            case settimanale -> inizio.plusWeeks(numeroSessioni - 1);
+            case mensile -> inizio.plusMonths(numeroSessioni - 1);
+        };
+    }
+
     // ========== SEZIONE CHEF ==========
     private VBox createChefSection() {
         VBox section = StyleHelper.createSection();
 
-        Button selezionaChefBtn = StyleHelper.createPrimaryButton("+ Seleziona Chef");
+        Button selezionaChefBtn = StyleHelper.createPrimaryButton("Seleziona Chef");
         selezionaChefBtn.setOnAction(e -> apriDialogSelezionaChef());
 
         listaChefContainer = createListContainer();
         
-        // Listener per aggiornamento display
         chefSelezionati.addListener((ListChangeListener<Chef>) c -> updateChefDisplay());
         updateChefDisplay();
 
         section.getChildren().addAll(
-            createSectionTitle("👨‍🍳 Selezione Chef"), 
+            createSectionTitle("Selezione Chef"), 
             selezionaChefBtn,
             StyleHelper.createLabel("Chef Selezionati:"), 
             listaChefContainer
@@ -254,17 +301,16 @@ public class CreaCorsoGUI {
     private VBox createSessionSection() {
         VBox section = StyleHelper.createSection();
 
-        aggiungiSessioneBtn = StyleHelper.createSuccessButton("+ Aggiungi Sessione");
+        aggiungiSessioneBtn = StyleHelper.createSuccessButton("Aggiungi Sessione");
         aggiungiSessioneBtn.setOnAction(e -> aggiungiSessione());
         
         listaSessioniContainer = createListContainer();
         
-        // Listener per aggiornamento display
         corsoSessioni.addListener((ListChangeListener<Sessione>) c -> updateSessioniDisplay());
         updateSessioniDisplay();
 
         section.getChildren().addAll(
-            createSectionTitle("🎯 Sessioni del Corso"), 
+            createSectionTitle("Sessioni del Corso"), 
             aggiungiSessioneBtn,
             StyleHelper.createLabel("Sessioni aggiunte:"), 
             listaSessioniContainer
@@ -275,11 +321,11 @@ public class CreaCorsoGUI {
 
     // ========== SEZIONE BOTTONI ==========
     private HBox createButtonSection() {
-        Button resetBtn = StyleHelper.createSecondaryButton("🔄 Reset Form");
+        Button resetBtn = StyleHelper.createSecondaryButton("Reset Form");
         resetBtn.setPrefWidth(150);
         resetBtn.setOnAction(e -> clearForm());
 
-        Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva Corso");
+        Button salvaBtn = StyleHelper.createPrimaryButton("Salva Corso");
         salvaBtn.setPrefWidth(150);
         salvaBtn.setOnAction(e -> salvaCorso());
 
@@ -368,116 +414,6 @@ public class CreaCorsoGUI {
         return grid;
     }
 
-    // ========== LOGICA FREQUENZE ==========
-    private void aggiornaFrequenzeDisponibili() {
-        LocalDate inizio = startDatePicker.getValue();
-        LocalDate fine = endDatePicker.getValue();
-        List<Frequenza> disponibili = FrequenzaHelper.getFrequenzeDisponibili(inizio, fine);
-
-        Frequenza selezionataAttuale = frequenzaBox.getValue();
-        frequenzaBox.getItems().setAll(disponibili);
-
-        if (selezionataAttuale != null && disponibili.contains(selezionataAttuale)) {
-            frequenzaBox.setValue(selezionataAttuale);
-        } else if (!disponibili.isEmpty()) {
-            frequenzaBox.setValue(disponibili.get(0));
-        }
-
-        aggiornaNumeroSessioni();
-    }
-
-    private void aggiornaNumeroSessioni() {
-        if (numeroSessioniLabel == null) return;
-
-        int numSessioniAggiunte = corsoSessioni.size();
-
-        if (startDatePicker.getValue() != null && 
-            endDatePicker.getValue() != null && 
-            frequenzaBox.getValue() != null) {
-            
-            try {
-                int sessioniPreviste = FrequenzaHelper.calcolaNumeroSessioni(
-                    startDatePicker.getValue(), 
-                    endDatePicker.getValue(), 
-                    frequenzaBox.getValue()
-                );
-                
-                double percentuale = (sessioniPreviste > 0) 
-                    ? (double) numSessioniAggiunte / sessioniPreviste * 100 
-                    : 0;
-
-                aggiornaLabelSessioni(numSessioniAggiunte, sessioniPreviste, percentuale);
-
-            } catch (IllegalArgumentException e) {
-                numeroSessioniLabel.setText(String.format(
-                    "📊 Sessioni: %d aggiunte (⚠️ Date non valide)", 
-                    numSessioniAggiunte
-                ));
-                numeroSessioniLabel.setStyle(
-                    "-fx-text-fill: #6c757d; -fx-font-size: 13px;"
-                );
-            }
-
-        } else {
-            aggiornaLabelSessioniSenzaDate(numSessioniAggiunte);
-        }
-    }
-
-    private void aggiornaLabelSessioni(int aggiunte, int previste, double percentuale) {
-        if (aggiunte == 0) {
-            numeroSessioniLabel.setText(String.format(
-                "📊 Sessioni: 0/%d previste (0%%)", 
-                previste
-            ));
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #e74c3c; -fx-font-size: 13px; -fx-font-weight: bold;"
-            );
-        } else if (aggiunte < previste) {
-            numeroSessioniLabel.setText(String.format(
-                "📊 Sessioni: %d/%d previste (%.0f%%) ⚠️", 
-                aggiunte, previste, percentuale
-            ));
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #f39c12; -fx-font-size: 13px; -fx-font-weight: bold;"
-            );
-        } else if (aggiunte == previste) {
-            numeroSessioniLabel.setText(String.format(
-                "📊 Sessioni: %d/%d completate ✅", 
-                aggiunte, previste
-            ));
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #28a745; -fx-font-size: 13px; -fx-font-weight: bold;"
-            );
-        } else {
-            numeroSessioniLabel.setText(String.format(
-                "📊 Sessioni: %d aggiunte (previste: %d) ⚡", 
-                aggiunte, previste
-            ));
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #17a2b8; -fx-font-size: 13px; -fx-font-weight: bold;"
-            );
-        }
-    }
-
-    private void aggiornaLabelSessioniSenzaDate(int aggiunte) {
-        if (aggiunte == 0) {
-            numeroSessioniLabel.setText(
-                "📊 Sessioni: Non aggiunte (seleziona date e frequenza)"
-            );
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #e74c3c; -fx-font-size: 13px;"
-            );
-        } else {
-            numeroSessioniLabel.setText(String.format(
-                "📊 Sessioni: %d aggiunte (seleziona date e frequenza per calcolo)", 
-                aggiunte
-            ));
-            numeroSessioniLabel.setStyle(
-                "-fx-text-fill: #f39c12; -fx-font-size: 13px;"
-            );
-        }
-    }
-
     // ========== AZIONI ==========
     private void apriDialogSelezionaChef() {
         try {
@@ -503,33 +439,30 @@ public class CreaCorsoGUI {
         }
     }
 
-    // ========== METODO CORRETTO CON INGREDIENTECONTROLLER ==========
     private void aggiungiSessione() {
         try {
             LocalDate inizio = startDatePicker.getValue();
             LocalDate fine = endDatePicker.getValue();
             Frequenza freq = frequenzaBox.getValue();
 
-            // Validazioni
             if (inizio == null || fine == null) {
                 throw new ValidationException(
-                    "Seleziona le date di inizio e fine del corso prima di aggiungere sessioni ❌"
+                    "Seleziona le date di inizio e fine del corso prima di aggiungere sessioni"
                 );
             }
 
             if (freq == null) {
                 throw new ValidationException(
-                    "Seleziona la frequenza del corso prima di aggiungere sessioni ❌"
+                    "Seleziona la frequenza del corso prima di aggiungere sessioni"
                 );
             }
 
             if (!fine.isAfter(inizio)) {
                 throw new ValidationException(
-                    "La data di fine corso deve essere dopo quella di inizio ❌"
+                    "La data di fine corso deve essere dopo quella di inizio"
                 );
             }
 
-            // Raccogli date occupate
             Set<LocalDate> dateOccupate = new HashSet<>();
             for (Sessione s : corsoSessioni) {
                 if (s.getDataInizioSessione() != null) {
@@ -537,14 +470,13 @@ public class CreaCorsoGUI {
                 }
             }
 
-            // CORREZIONE: Passa TUTTI E SEI i parametri richiesti da CreaSessioniGUI
             CreaSessioniGUI dialog = new CreaSessioniGUI(
                 inizio, 
                 fine, 
                 freq, 
                 dateOccupate, 
                 ricettaController,
-                ingredienteController  // PARAMETRO MANCANTE AGGIUNTO
+                ingredienteController
             );
             
             Sessione nuovaSessione = dialog.showDialog();
@@ -553,9 +485,8 @@ public class CreaCorsoGUI {
                 corsoSessioni.add(nuovaSessione);
                 StyleHelper.showSuccessDialog(
                     "Successo", 
-                    "Sessione aggiunta alla lista del corso ✅"
+                    "Sessione aggiunta alla lista del corso"
                 );
-                aggiornaNumeroSessioni();
             }
 
         } catch (ValidationException ve) {
@@ -571,17 +502,16 @@ public class CreaCorsoGUI {
 
     private void salvaCorso() {
         try {
-            // Validazioni base
             if (nomeField.getText().trim().isEmpty()) {
-                throw new ValidationException("Inserisci il nome del corso ❌");
+                throw new ValidationException("Inserisci il nome del corso");
             }
 
             if (chefSelezionati.isEmpty()) {
-                throw new ValidationException("Seleziona almeno uno chef per il corso ❌");
+                throw new ValidationException("Seleziona almeno uno chef per il corso");
             }
 
             if (corsoSessioni.isEmpty()) {
-                throw new ValidationException("Aggiungi almeno una sessione al corso ❌");
+                throw new ValidationException("Aggiungi almeno una sessione al corso");
             }
 
             LocalDate inizio = startDatePicker.getValue();
@@ -589,31 +519,9 @@ public class CreaCorsoGUI {
             Frequenza freq = frequenzaBox.getValue();
 
             if (inizio == null || fine == null) {
-                throw new ValidationException("Seleziona le date di inizio e fine del corso ❌");
+                throw new ValidationException("Seleziona le date di inizio e fine del corso");
             }
 
-            // Verifica completezza sessioni
-            if (freq != null) {
-                int sessioniPreviste = FrequenzaHelper.calcolaNumeroSessioni(inizio, fine, freq);
-                int sessioniAggiunte = corsoSessioni.size();
-
-                if (sessioniAggiunte < sessioniPreviste) {
-                    final boolean[] conferma = {false};
-                    StyleHelper.showConfirmationDialog(
-                        "Attenzione",
-                        String.format(
-                            "Hai aggiunto solo %d sessioni su %d previste per la frequenza '%s'.\n\n" +
-                            "Vuoi salvare il corso comunque?",
-                            sessioniAggiunte, sessioniPreviste, freq.getDescrizione()
-                        ),
-                        () -> conferma[0] = true
-                    );
-
-                    if (!conferma[0]) return;
-                }
-            }
-
-            // Salvataggio tramite ChefController
             chefController.saveCorsoFromForm(
                 nomeField.getText(), 
                 prezzoField.getText(), 
@@ -630,7 +538,7 @@ public class CreaCorsoGUI {
                 new ArrayList<>(corsoSessioni)
             );
 
-            StyleHelper.showSuccessDialog("Successo", "Corso creato con successo ✅");
+            StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
             clearForm();
 
         } catch (ValidationException ve) {
@@ -651,8 +559,10 @@ public class CreaCorsoGUI {
         postiField.clear();
         frequenzaBox.setValue(null);
         frequenzaBox.getItems().clear();
+        frequenzaBox.getItems().setAll(Frequenza.values());
         startDatePicker.setValue(null);
         endDatePicker.setValue(null);
+        numeroSessioniField.clear();
         startHour.setValue(DEFAULT_START_HOUR);
         startMinute.setValue(DEFAULT_START_MINUTE);
         endHour.setValue(DEFAULT_END_HOUR);
@@ -661,7 +571,8 @@ public class CreaCorsoGUI {
         corsoSessioni.clear();
         updateChefDisplay();
         updateSessioniDisplay();
-        aggiornaNumeroSessioni();
+        numeroSessioniLabel.setText("Seleziona data inizio, frequenza e numero sessioni");
+        numeroSessioniLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 13px;");
     }
 
     // ========== DISPLAY UPDATES ==========
@@ -670,13 +581,11 @@ public class CreaCorsoGUI {
         
         if (chefSelezionati.isEmpty()) {
             listaChefContainer.getChildren().add(
-                createEmptyLabel("Nessuno chef selezionato ❌")
+                createEmptyLabel("Nessuno chef selezionato")
             );
         } else {
             chefSelezionati.forEach(c -> {
-                listaChefContainer.getChildren().add(
-                    createChefBox(c)
-                );
+                listaChefContainer.getChildren().add(createChefBox(c));
             });
         }
     }
@@ -693,15 +602,14 @@ public class CreaCorsoGUI {
             "-fx-border-width: 1.5;"
         );
 
-        String disponibilita = Boolean.TRUE.equals(chef.getDisponibilita()) ? "✅" : "❌";
-        Label chefLabel = new Label(String.format("%s %s %s", 
-            disponibilita, chef.getNome(), chef.getCognome()));
+        Label chefLabel = new Label(String.format(" %s %s", 
+             chef.getNome(), chef.getCognome()));
         chefLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button rimuoviBtn = new Button("✖");
+        Button rimuoviBtn = new Button("X");
         rimuoviBtn.setStyle(
             "-fx-background-color: #e74c3c;" +
             "-fx-text-fill: white;" +
@@ -728,17 +636,13 @@ public class CreaCorsoGUI {
         
         if (corsoSessioni.isEmpty()) {
             listaSessioniContainer.getChildren().add(
-                createEmptyLabel("Nessuna sessione aggiunta ❌")
+                createEmptyLabel("Nessuna sessione aggiunta")
             );
         } else {
             for (Sessione s : corsoSessioni) {
-                listaSessioniContainer.getChildren().add(
-                    createSessioneBox(s)
-                );
+                listaSessioniContainer.getChildren().add(createSessioneBox(s));
             }
         }
-        
-        aggiornaNumeroSessioni();
     }
 
     private HBox createSessioneBox(Sessione s) {
@@ -762,7 +666,7 @@ public class CreaCorsoGUI {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button rimuoviBtn = new Button("🗑️");
+        Button rimuoviBtn = new Button("Rimuovi");
         rimuoviBtn.setStyle(
             "-fx-background-color: #dc3545;" +
             "-fx-text-fill: white;" +
@@ -771,17 +675,14 @@ public class CreaCorsoGUI {
             "-fx-min-width: 30;" +
             "-fx-min-height: 30;"
         );
-        rimuoviBtn.setOnAction(e -> {
-            corsoSessioni.remove(s);
-            aggiornaNumeroSessioni();
-        });
+        rimuoviBtn.setOnAction(e -> corsoSessioni.remove(s));
 
         sessioneBox.getChildren().addAll(numeroLabel, infoLabel, spacer, rimuoviBtn);
         return sessioneBox;
     }
 
     private String formatSessioneDettagliata(Sessione s) {
-        String tipo = s instanceof Online ? "🌐 Online" : "🏢 In Presenza";
+        String tipo = s instanceof Online ? "Online" : "In Presenza";
         String data = s.getDataInizioSessione() != null 
             ? s.getDataInizioSessione().toLocalDate().toString() 
             : "Data non specificata";
@@ -791,7 +692,7 @@ public class CreaCorsoGUI {
 
         if (s instanceof InPresenza ip) {
             int numRicette = ip.getRicette() != null ? ip.getRicette().size() : 0;
-            return tipo + " | " + data + " " + orario + " | 🍽️ " + numRicette + " ricette";
+            return tipo + " | " + data + " " + orario + " | Ricette: " + numRicette;
         } else if (s instanceof Online on) {
             return tipo + " (" + on.getPiattaformaStreaming() + ") | " + data + " " + orario;
         }

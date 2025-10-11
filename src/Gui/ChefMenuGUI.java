@@ -136,7 +136,6 @@ public class ChefMenuGUI {
             this.chefController = new ChefController(gestioneChefService);
             this.chefController.setGestioneCorsoController(gestioneCorsoController);
 
-            // INIZIALIZZO il controller del report utilizzando entrambi i service
             this.reportMensileController = new controller.ReportMensileController(
                 gestioneCorsiService, gestioneSessioniService, chefLoggato
             );

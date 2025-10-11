@@ -38,8 +38,8 @@ public class ReportMensileController {
             return new DatiReportMensile(inizio, fine, 0, 0, 0, 0.0, 0, 0);
         }
 
-        numeroCorsi = corsiDelChef.size();
         List<Integer> sessioniInPresenzaIds = new ArrayList<>();
+        Set<Integer> corsiNelPeriodo = new HashSet<>();
 
         for (CorsoCucina corso : corsiDelChef) {
             if (corso == null) continue;
@@ -47,6 +47,9 @@ public class ReportMensileController {
             List<Sessione> sessioniNelPeriodo = corsiService.getSessioniPerCorsoInPeriodo(
                     corso.getIdCorso(), inizio, fine);
             if (sessioniNelPeriodo == null || sessioniNelPeriodo.isEmpty()) continue;
+
+            // Conta il corso solo se ha sessioni nel periodo
+            corsiNelPeriodo.add(corso.getIdCorso());
 
             for (Sessione s : sessioniNelPeriodo) {
                 if (s == null) continue;
@@ -60,6 +63,10 @@ public class ReportMensileController {
             }
         }
 
+        // Conta i corsi nel periodo
+        numeroCorsi = corsiNelPeriodo.size();
+
+        // MODIFICA: Calcolo ricette SOLO per sessioni in presenza
         if (!sessioniInPresenzaIds.isEmpty()) {
             Map<Integer, Integer> ricettePerSessione = sessioniService.getNumeroRicettePerSessioni(sessioniInPresenzaIds);
 
@@ -75,8 +82,9 @@ public class ReportMensileController {
             minRicette = 0;
         }
 
-        double mediaRicette = !sessioniInPresenzaIds.isEmpty() ? 
-                (double) totaleRicette / sessioniInPresenzaIds.size() : 0.0;
+        // MODIFICA: Media ricette calcolata SOLO dalle sessioni in presenza
+        double mediaRicette = (sessioniPratiche > 0) ? 
+                (double) totaleRicette / sessioniPratiche : 0.0;
 
         return new DatiReportMensile(inizio, fine, numeroCorsi, sessioniOnline, sessioniPratiche,
                 mediaRicette, minRicette, maxRicette);

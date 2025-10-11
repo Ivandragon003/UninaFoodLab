@@ -41,13 +41,9 @@ public class ReportMensileGUI {
         root = new VBox(0);
         root.setStyle("-fx-background-color: " + StyleHelper.BG_LIGHT + ";");
 
-        // Header con gradiente e animazione
         VBox header = createModernHeader();
-
-        // Pannello controlli con design card
         VBox controlsCard = createControlsPanel();
 
-        // Container report scrollabile
         scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle(
@@ -61,7 +57,6 @@ public class ReportMensileGUI {
         reportContainer.setAlignment(Pos.TOP_CENTER);
         reportContainer.setStyle("-fx-background-color: transparent;");
         
-        // Messaggio iniziale
         VBox emptyState = createEmptyState();
         reportContainer.getChildren().add(emptyState);
         
@@ -76,7 +71,6 @@ public class ReportMensileGUI {
         header.setPadding(new Insets(35, 40, 35, 40));
         header.setAlignment(Pos.CENTER_LEFT);
         
-        // Gradiente moderno con effetto diagonale
         StyleHelper.applyBackgroundGradient(header);
         
         DropShadow shadow = new DropShadow();
@@ -116,7 +110,7 @@ public class ReportMensileGUI {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0.0, 0.0, 5.0);"
         );
 
-        Label sectionTitle = new Label("⚙️ Configurazione Periodo");
+        Label sectionTitle = new Label("Configurazione Periodo");
         sectionTitle.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 18));
         sectionTitle.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
 
@@ -131,14 +125,14 @@ public class ReportMensileGUI {
         endDatePicker.setValue(LocalDate.now());
         endDatePicker.setPrefWidth(200);
 
-        Button generaBtn = StyleHelper.createPrimaryButton("📈 Genera Report");
+        Button generaBtn = StyleHelper.createPrimaryButton("Genera Report");
         generaBtn.setPrefWidth(180);
         generaBtn.setPrefHeight(45);
         generaBtn.setOnAction(e -> generaReport());
 
         controls.getChildren().addAll(
-            creaDatePickerBox("📅 Data Inizio", startDatePicker),
-            creaDatePickerBox("📅 Data Fine", endDatePicker),
+            creaDatePickerBox("Data Inizio", startDatePicker),
+            creaDatePickerBox("Data Fine", endDatePicker),
             createSpacer(),
             generaBtn
         );
@@ -226,21 +220,13 @@ public class ReportMensileGUI {
     private void mostraReport(DatiReportMensile d, Map<LocalDate, Integer> ricPerGiorno) {
         reportContainer.getChildren().clear();
 
-        // Header del report con animazione
         VBox reportHeader = createReportHeader(d);
-        
-        // Tiles statistiche principali
         HBox tilesBox = createStatisticsTiles(d);
-        
-        // Grafici
         HBox chartsBox = createChartsSection(d, ricPerGiorno);
-        
-        // Riepilogo testuale
         VBox summaryBox = createSummarySection(d);
 
         reportContainer.getChildren().addAll(reportHeader, tilesBox, chartsBox, summaryBox);
         
-        // Animazione fade-in
         animateFadeIn(reportContainer);
     }
 
@@ -277,18 +263,18 @@ public class ReportMensileGUI {
         tiles.setPadding(new Insets(10, 0, 10, 0));
 
         tiles.getChildren().addAll(
-            creaTileModerna("📚", "Corsi Totali", String.valueOf(d.getNumeroCorsi()), 
+            creaTileModerna("Corsi Totali", String.valueOf(d.getNumeroCorsi()), 
                 StyleHelper.PRIMARY_ORANGE, "#FFE8D6"),
-            creaTileModerna("💻", "Sessioni Online", String.valueOf(d.getSessioniOnline()), 
+            creaTileModerna("Sessioni Online", String.valueOf(d.getSessioniOnline()), 
                 StyleHelper.INFO_BLUE, "#E6F9F8"),
-            creaTileModerna("🍳", "Sessioni Pratiche", String.valueOf(d.getSessioniPratiche()), 
+            creaTileModerna("Sessioni Pratiche", String.valueOf(d.getSessioniPratiche()), 
                 StyleHelper.SUCCESS_GREEN, "#E8FFF5")
         );
 
         return tiles;
     }
 
-    private VBox creaTileModerna(String emoji, String titolo, String valore, String colorAccent, String bgColor) {
+    private VBox creaTileModerna(String titolo, String valore, String colorAccent, String bgColor) {
         VBox tile = new VBox(12);
         tile.setAlignment(Pos.CENTER);
         tile.setPadding(new Insets(25, 35, 25, 35));
@@ -302,7 +288,6 @@ public class ReportMensileGUI {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
         );
 
-        // Hover effect
         tile.setOnMouseEntered(e -> {
             ScaleTransition st = new ScaleTransition(Duration.millis(200), tile);
             st.setToX(1.05);
@@ -317,19 +302,16 @@ public class ReportMensileGUI {
             st.play();
         });
 
-        Label iconLabel = new Label(emoji);
-        iconLabel.setStyle("-fx-font-size: 42px;");
-
         Label titleLabel = new Label(titolo);
         titleLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 13));
         titleLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
         titleLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
         Label valueLabel = new Label(valore);
-        valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 36));
+        valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 48));
         valueLabel.setTextFill(Color.web(colorAccent));
 
-        tile.getChildren().addAll(iconLabel, titleLabel, valueLabel);
+        tile.getChildren().addAll(titleLabel, valueLabel);
         return tile;
     }
 
@@ -342,17 +324,13 @@ public class ReportMensileGUI {
         leftColumn.setAlignment(Pos.TOP_CENTER);
         leftColumn.setPrefWidth(450);
 
-        // PieChart moderno
         VBox pieCard = createPieChartCard(d);
-        
-        // Statistiche ricette
         VBox statsCard = creaStatisticheRicetteCard(d);
 
         leftColumn.getChildren().addAll(pieCard, statsCard);
 
-        // BarChart moderno
         VBox barCard = createBarChartCard(ricPerGiorno);
-        barCard.setPrefWidth(550);
+        barCard.setPrefWidth(600);
 
         chartsBox.getChildren().addAll(leftColumn, barCard);
         return chartsBox;
@@ -368,7 +346,7 @@ public class ReportMensileGUI {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
         );
 
-        Label title = new Label("📊 Distribuzione Sessioni");
+        Label title = new Label("Distribuzione Sessioni");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
         title.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
 
@@ -381,8 +359,8 @@ public class ReportMensileGUI {
         pie.setLegendVisible(true);
         pie.setPrefSize(400, 300);
         pie.setStyle("-fx-font-size: 12px;");
+        pie.setAnimated(true);
 
-        // Colori personalizzati
         pie.getData().get(0).getNode().setStyle("-fx-pie-color: " + StyleHelper.INFO_BLUE + ";");
         pie.getData().get(1).getNode().setStyle("-fx-pie-color: " + StyleHelper.SUCCESS_GREEN + ";");
 
@@ -390,59 +368,114 @@ public class ReportMensileGUI {
         return card;
     }
 
-    private VBox createBarChartCard(Map<LocalDate, Integer> ricPerGiorno) {
-        VBox card = new VBox(15);
-        card.setPadding(new Insets(25));
-        card.setAlignment(Pos.TOP_CENTER);
-        card.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
-        );
+   private VBox createBarChartCard(Map<LocalDate, Integer> ricPerGiorno) {
+    VBox card = new VBox(15);
+    card.setPadding(new Insets(25));
+    card.setAlignment(Pos.TOP_CENTER);
+    card.setStyle(
+        "-fx-background-color: white;" +
+        "-fx-background-radius: 20;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
+    );
 
-        Label title = new Label("📈 Ricette per Giorno");
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-        title.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+    Label title = new Label("Ricette per Giorno");
+    title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
+    title.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
 
-        CategoryAxis xAxis = new CategoryAxis();
-        xAxis.setLabel("Giorno del Mese");
-        NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Numero Ricette");
-        
-        BarChart<String, Number> bar = new BarChart<>(xAxis, yAxis);
-        bar.setLegendVisible(false);
-        bar.setPrefSize(500, 350);
-        bar.setStyle("-fx-bar-fill: " + StyleHelper.PRIMARY_ORANGE + ";");
+    CategoryAxis xAxis = new CategoryAxis();
+    xAxis.setLabel("Giorno del Mese");
+    xAxis.setStyle("-fx-font-size: 13px; -fx-label-padding: 15;");
+    xAxis.setTickLabelGap(10);
+    
+    NumberAxis yAxis = new NumberAxis();
+    yAxis.setLabel("Numero Ricette");
+    yAxis.setStyle("-fx-font-size: 13px;");
+    yAxis.setAutoRanging(true);
+    yAxis.setMinorTickVisible(false);
+    
+    BarChart<String, Number> bar = new BarChart<>(xAxis, yAxis);
+    bar.setLegendVisible(false);
+    bar.setPrefSize(600, 400);
+    bar.setBarGap(8);
+    bar.setCategoryGap(25);
+    bar.setStyle(
+        "-fx-font-size: 13px;" +
+        "-fx-padding: 25;" +
+        "-fx-background-color: #FAFAFA;" +
+        "-fx-background-radius: 10;"
+    );
+    bar.setAnimated(true);
 
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Ricette");
+    XYChart.Series<String, Number> series = new XYChart.Series<>();
+    series.setName("Ricette");
 
-        if (ricPerGiorno != null && !ricPerGiorno.isEmpty()) {
-            ricPerGiorno.forEach((giorno, count) -> {
-                XYChart.Data<String, Number> data = new XYChart.Data<>(
-                    String.valueOf(giorno.getDayOfMonth()), count
-                );
-                series.getData().add(data);
-            });
-        } else {
-            series.getData().add(new XYChart.Data<>("N/A", 0));
-        }
-
-        bar.getData().add(series);
-
-        // Tooltip personalizzati
-        for (XYChart.Data<String, Number> data : series.getData()) {
-            Tooltip tooltip = new Tooltip("Giorno " + data.getXValue() + ": " + data.getYValue() + " ricette");
-            tooltip.setStyle("-fx-font-size: 12px; -fx-background-color: " + StyleHelper.TEXT_BLACK + "; -fx-text-fill: white;");
-            Tooltip.install(data.getNode(), tooltip);
-            
-            // Colore barra
-            data.getNode().setStyle("-fx-bar-fill: " + StyleHelper.PRIMARY_ORANGE + ";");
-        }
-
-        card.getChildren().addAll(title, bar);
-        return card;
+    if (ricPerGiorno != null && !ricPerGiorno.isEmpty()) {
+        ricPerGiorno.forEach((giorno, count) -> {
+            String giornoStr = String.format("%02d", giorno.getDayOfMonth());
+            XYChart.Data<String, Number> data = new XYChart.Data<>(giornoStr, count);
+            series.getData().add(data);
+        });
+    } else {
+        series.getData().add(new XYChart.Data<>("N/A", 0));
     }
+
+    bar.getData().add(series);
+
+    // Stilizzazione barre con effetti avanzati
+    for (XYChart.Data<String, Number> data : series.getData()) {
+        if (data.getNode() != null) {
+            String barColor = StyleHelper.PRIMARY_ORANGE;
+            
+            data.getNode().setStyle(
+                "-fx-bar-fill: " + barColor + ";" +
+                "-fx-padding: 0;" +
+                "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.4), 8, 0.0, 0.0, 3.0);"
+            );
+            
+            // Hover effect su barre con scale e shadow
+            data.getNode().setOnMouseEntered(e -> {
+                data.getNode().setStyle(
+                    "-fx-bar-fill: " + StyleHelper.PRIMARY_LIGHT + ";" +
+                    "-fx-padding: 0;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.8), 15, 0.0, 0.0, 7.0);"
+                );
+                
+                ScaleTransition st = new ScaleTransition(Duration.millis(200), data.getNode());
+                st.setToY(1.12);
+                st.setCycleCount(1);
+                st.play();
+            });
+            
+            data.getNode().setOnMouseExited(e -> {
+                data.getNode().setStyle(
+                    "-fx-bar-fill: " + barColor + ";" +
+                    "-fx-padding: 0;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.4), 8, 0.0, 0.0, 3.0);"
+                );
+                
+                ScaleTransition st = new ScaleTransition(Duration.millis(200), data.getNode());
+                st.setToY(1.0);
+                st.setCycleCount(1);
+                st.play();
+            });
+            
+            Tooltip tooltip = new Tooltip();
+            tooltip.setText("Giorno " + data.getXValue() + ": " + data.getYValue() + " ricette");
+            tooltip.setStyle(
+                "-fx-font-size: 13px; " +
+                "-fx-background-color: rgba(43,45,66,0.95); " +
+                "-fx-text-fill: white; " +
+                "-fx-padding: 10;" +
+                "-fx-background-radius: 8;"
+            );
+            tooltip.setShowDelay(Duration.millis(200));
+            Tooltip.install(data.getNode(), tooltip);
+        }
+    }
+
+    card.getChildren().addAll(title, bar);
+    return card;
+}
 
     private VBox creaStatisticheRicetteCard(DatiReportMensile d) {
         VBox card = new VBox(15);
@@ -454,32 +487,39 @@ public class ReportMensileGUI {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
         );
 
-        Label title = new Label("📖 Statistiche Ricette");
+        Label title = new Label("Statistiche Ricette");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
         title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+
+        Label sottotitolo = new Label("(Solo Sessioni in Presenza)");
+        sottotitolo.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
+        sottotitolo.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+
+        VBox titleBox = new VBox(3);
+        titleBox.getChildren().addAll(title, sottotitolo);
 
         if (d.getSessioniPratiche() > 0) {
             HBox statsRow = new HBox(15);
             statsRow.setAlignment(Pos.CENTER);
             
             statsRow.getChildren().addAll(
-                creaStatMiniCard("📊", "Media", String.format("%.1f", d.getMediaRicette()), StyleHelper.INFO_BLUE),
-                creaStatMiniCard("📉", "Minimo", String.valueOf(d.getMinRicette()), StyleHelper.SECONDARY_BEIGE),
-                creaStatMiniCard("📈", "Massimo", String.valueOf(d.getMaxRicette()), StyleHelper.SUCCESS_GREEN)
+                creaStatMiniCard("Media", String.format("%.1f", d.getMediaRicette()), StyleHelper.INFO_BLUE),
+                creaStatMiniCard("Minimo", String.valueOf(d.getMinRicette()), StyleHelper.SECONDARY_BEIGE),
+                creaStatMiniCard("Massimo", String.valueOf(d.getMaxRicette()), StyleHelper.SUCCESS_GREEN)
             );
             
-            card.getChildren().addAll(title, statsRow);
+            card.getChildren().addAll(titleBox, statsRow);
         } else {
             Label noData = new Label("Nessuna sessione pratica nel periodo");
             noData.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 13));
             noData.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
-            card.getChildren().addAll(title, noData);
+            card.getChildren().addAll(titleBox, noData);
         }
 
         return card;
     }
 
-    private VBox creaStatMiniCard(String emoji, String label, String value, String color) {
+    private VBox creaStatMiniCard(String label, String value, String color) {
         VBox miniCard = new VBox(8);
         miniCard.setAlignment(Pos.CENTER);
         miniCard.setPadding(new Insets(15));
@@ -492,18 +532,15 @@ public class ReportMensileGUI {
             "-fx-border-radius: 15;"
         );
 
-        Label emojiLabel = new Label(emoji);
-        emojiLabel.setStyle("-fx-font-size: 24px;");
-
         Label labelText = new Label(label);
         labelText.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 11));
         labelText.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
 
         Label valueText = new Label(value);
-        valueText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
+        valueText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         valueText.setTextFill(Color.web(color));
 
-        miniCard.getChildren().addAll(emojiLabel, labelText, valueText);
+        miniCard.getChildren().addAll(labelText, valueText);
         return miniCard;
     }
 
@@ -521,9 +558,6 @@ public class ReportMensileGUI {
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
         );
 
-        Label icon = new Label("💡");
-        icon.setStyle("-fx-font-size: 32px;");
-
         Label summaryTitle = new Label("Riepilogo Periodo");
         summaryTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
         summaryTitle.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
@@ -534,7 +568,7 @@ public class ReportMensileGUI {
         summaryText.setWrapText(true);
         summaryText.setMaxWidth(900);
 
-        summaryCard.getChildren().addAll(icon, summaryTitle, summaryText);
+        summaryCard.getChildren().addAll(summaryTitle, summaryText);
         return summaryCard;
     }
 
@@ -545,7 +579,6 @@ public class ReportMensileGUI {
             sb.append("Nel periodo selezionato non sono stati tenuti corsi. ");
             sb.append("Considera di pianificare nuove sessioni per aumentare l'attività didattica.");
         } else {
-            sb.append("Ottimo lavoro! ");
             sb.append("Nel periodo analizzato hai gestito ");
             sb.append(d.getNumeroCorsi()).append(d.getNumeroCorsi() == 1 ? " corso" : " corsi");
             sb.append(", per un totale di ");
@@ -561,7 +594,10 @@ public class ReportMensileGUI {
                 sb.append("Nelle sessioni pratiche hai insegnato in media ");
                 sb.append(String.format("%.1f", d.getMediaRicette())).append(" ricette, ");
                 sb.append("con un minimo di ").append(d.getMinRicette());
-                sb.append(" e un massimo di ").append(d.getMaxRicette()).append(" ricette.");
+                sb.append(" e un massimo di ").append(d.getMaxRicette()).append(" ricette. ");
+                sb.append("(Le sessioni online non sono conteggiate nel calcolo della media).");
+            } else if (d.getSessioniOnline() > 0) {
+                sb.append("Tutte le sessioni del periodo sono state online, quindi non ci sono dati sulle ricette.");
             }
         }
         
