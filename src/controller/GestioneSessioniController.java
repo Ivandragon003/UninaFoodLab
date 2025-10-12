@@ -30,7 +30,6 @@ public class GestioneSessioniController {
 		this.gestioneRicetteService = gestioneRicetteService;
 	}
 
-	// --- SESSIONI ---
 	public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
 			throws ValidationException, DataAccessException {
 
