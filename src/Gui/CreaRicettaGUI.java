@@ -132,7 +132,7 @@ public class CreaRicettaGUI {
 
         Label sectionTitle = createSectionTitle("🥕 Ingredienti");
         
-        // ✅ SOLO pulsante per selezionare ingredienti
+       
         HBox actionButtonsBox = createActionButtonsBox();
         
         // Contatore ingredienti
@@ -154,11 +154,9 @@ public class CreaRicettaGUI {
         return section;
     }
 
-    /**
-     * ✅ SEMPLIFICATO: Solo pulsante per selezionare ingredienti
-     */
+   
     private HBox createActionButtonsBox() {
-        Button selezionaIngredienteBtn = StyleHelper.createPrimaryButton("🔍 Seleziona Ingredienti");
+    	Button selezionaIngredienteBtn = StyleHelper.createInfoButton("🔍 Seleziona Ingredienti");
         selezionaIngredienteBtn.setPrefWidth(220);
         selezionaIngredienteBtn.setPrefHeight(45);
         selezionaIngredienteBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
@@ -201,7 +199,7 @@ public class CreaRicettaGUI {
     }
 
     private HBox createButtonBar() {
-        Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
+    	Button annullaBtn = StyleHelper.createStyledButton("❌ Annulla", "#FFFFFF", StyleHelper.ERROR_RED);
         annullaBtn.setPrefWidth(130);
         annullaBtn.setOnAction(e -> {
             if (stage != null) {
