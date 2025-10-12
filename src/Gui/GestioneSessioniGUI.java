@@ -6,12 +6,9 @@ import guihelper.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.ErrorMessages;
 import exceptions.ValidationUtils;
-import exceptions.DataAccessException;
-
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -29,7 +26,6 @@ public class GestioneSessioniGUI {
     private Stage primaryStage;
     private Sessione sessione;
     private boolean modalitaAggiunta = false;
-    private InPresenza sessioneTemporanea;
 
     private ComboBox<String> tipoCombo;
     private DatePicker dataInizioPicker, dataFinePicker;
@@ -50,7 +46,6 @@ public class GestioneSessioniGUI {
     public void setModalitaAggiunta(boolean modalitaAggiunta) {
         this.modalitaAggiunta = modalitaAggiunta;
         this.sessione = null;
-        this.sessioneTemporanea = null;
     }
 
     public VBox getRoot() {
@@ -67,7 +62,7 @@ public class GestioneSessioniGUI {
 
     public void start(Stage stage) {
         this.primaryStage = stage;
-        stage.setScene(new Scene(getRoot(), 650, 750));
+        stage.setScene(new javafx.scene.Scene(getRoot(), 650, 750));
         stage.setTitle("Gestione Sessione");
         stage.show();
     }
@@ -92,7 +87,6 @@ public class GestioneSessioniGUI {
         form.setPadding(new Insets(20));
         form.setStyle("-fx-background:white;-fx-border-color:#E0E0E0;-fx-border-radius:8;-fx-background-radius:8;");
 
-        // Tipo
         HBox tipoBox = new HBox(10);
         tipoBox.setAlignment(Pos.CENTER_LEFT);
         Label tipoLbl = new Label("Tipo Sessione:");
@@ -102,13 +96,13 @@ public class GestioneSessioniGUI {
         tipoCombo.setOnAction(e -> aggiornaVisibilitaCampi());
         tipoBox.getChildren().addAll(tipoLbl, tipoCombo);
 
-        // Date e orari
         GridPane dateGrid = new GridPane();
-        dateGrid.setHgap(15); dateGrid.setVgap(10);
-        dataInizioPicker = new DatePicker();
-        dataFinePicker   = new DatePicker();
-        oraInizioField   = new TextField(); oraInizioField.setPromptText("HH:MM");
-        oraFineField     = new TextField(); oraFineField.setPromptText("HH:MM");
+        dateGrid.setHgap(15); 
+        dateGrid.setVgap(10);
+        dataInizioPicker = StyleHelper.createDatePicker();
+        dataFinePicker = StyleHelper.createDatePicker();
+        oraInizioField = StyleHelper.createTextField("HH:MM");
+        oraFineField = StyleHelper.createTextField("HH:MM");
 
         dateGrid.add(new Label("Data Inizio:"),0,0);
         dateGrid.add(dataInizioPicker,1,0);
@@ -119,22 +113,27 @@ public class GestioneSessioniGUI {
         dateGrid.add(new Label("Ora Fine:"),2,1);
         dateGrid.add(oraFineField,3,1);
 
-        // Online fields
         campiOnlineBox = new VBox(10);
-        piattaformaField = new TextField(); piattaformaField.setPromptText("Zoom, Teams...");
+        piattaformaField = StyleHelper.createTextField("Zoom, Teams...");
         campiOnlineBox.getChildren().add(new HBox(10,new Label("Piattaforma:"),piattaformaField));
 
-        // Presenza fields
         campiPresenzaBox = new VBox(10);
         GridPane presGrid = new GridPane();
-        presGrid.setHgap(15); presGrid.setVgap(10);
-        viaField = new TextField(); cittaField = new TextField();
-        postiField = new TextField(); capField = new TextField();
+        presGrid.setHgap(15); 
+        presGrid.setVgap(10);
+        viaField = StyleHelper.createTextField("Via...");
+        cittaField = StyleHelper.createTextField("Città...");
+        postiField = StyleHelper.createTextField("Numero posti");
+        capField = StyleHelper.createTextField("CAP");
 
-        presGrid.add(new Label("Via:"),0,0); presGrid.add(viaField,1,0);
-        presGrid.add(new Label("Città:"),2,0);presGrid.add(cittaField,3,0);
-        presGrid.add(new Label("Posti:"),0,1);presGrid.add(postiField,1,1);
-        presGrid.add(new Label("CAP:"),2,1); presGrid.add(capField,3,1);
+        presGrid.add(new Label("Via:"),0,0); 
+        presGrid.add(viaField,1,0);
+        presGrid.add(new Label("Città:"),2,0);
+        presGrid.add(cittaField,3,0);
+        presGrid.add(new Label("Posti:"),0,1);
+        presGrid.add(postiField,1,1);
+        presGrid.add(new Label("CAP:"),2,1); 
+        presGrid.add(capField,3,1);
 
         campiPresenzaBox.getChildren().add(presGrid);
 
@@ -147,24 +146,25 @@ public class GestioneSessioniGUI {
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(20,0,0,0));
 
-        // ✅ CORRETTO: Usa Platform.runLater e close() invece di hide()
         annullaBtn = new Button("❌ Annulla");
-        annullaBtn.setOnAction(e -> {
-            Platform.runLater(() -> {
-                if (primaryStage != null) {
-                    primaryStage.close();
-                } else {
-                    ((Stage) annullaBtn.getScene().getWindow()).close();
-                }
-            });
-        });
+        annullaBtn.setOnAction(e -> chiudiFinestra());
 
         salvaBtn = new Button(modalitaAggiunta?"💾 Salva":"💾 Aggiorna");
         salvaBtn.setStyle("-fx-background-color:#4CAF50;-fx-text-fill:white;");
-        salvaBtn.setOnAction(e->salvaSessione());
+        salvaBtn.setOnAction(e -> salvaSessione());
 
         box.getChildren().addAll(annullaBtn, salvaBtn);
         return box;
+    }
+
+    private void chiudiFinestra() {
+        Platform.runLater(() -> {
+            if (primaryStage != null) {
+                primaryStage.close();
+            } else if (salvaBtn != null && salvaBtn.getScene() != null) {
+                ((Stage) salvaBtn.getScene().getWindow()).close();
+            }
+        });
     }
 
     private void aggiornaVisibilitaCampi() {
@@ -194,115 +194,99 @@ public class GestioneSessioniGUI {
     }
 
     private void salvaSessione() {
-    try {
-        // Validazione campi base
-        ValidationUtils.validateNotNull(dataInizioPicker.getValue(),"Data inizio");
-        ValidationUtils.validateNotNull(dataFinePicker.getValue(),"Data fine");
-        
-        String oraInizioText = oraInizioField.getText().trim();
-        String oraFineText = oraFineField.getText().trim();
-        
-        if (oraInizioText.isEmpty() || oraFineText.isEmpty()) {
-            StyleHelper.showValidationDialog("Validazione", "Inserisci ora inizio e fine");
-            return;
-        }
-        
-        LocalTime ti = LocalTime.parse(oraInizioText);
-        LocalTime tf = LocalTime.parse(oraFineText);
-        
-        if (!tf.isAfter(ti)) {
-            throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
-        }
-
-        LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(), ti);
-        LocalDateTime fine = LocalDateTime.of(dataFinePicker.getValue(), tf);
-
-        // ✅ VALIDAZIONE DATE RISPETTO AL CORSO (PRIMA di creare oggetti)
-        if (corso != null && corso.getDataInizioCorso() != null && corso.getDataFineCorso() != null) {
-            LocalDate corsoInizio = corso.getDataInizioCorso().toLocalDate();
-            LocalDate corsoFine = corso.getDataFineCorso().toLocalDate();
-
-            if (dataInizioPicker.getValue().isBefore(corsoInizio)) {
-                StyleHelper.showValidationDialog("Validazione", 
-                    String.format("La sessione deve iniziare dopo l'inizio del corso.\n\n" +
-                        "Inizio corso: %s\n" +
-                        "Data sessione: %s", 
-                        corsoInizio, dataInizioPicker.getValue()));
-                return;  // ✅ IMPORTANTE: blocca qui
+        try {
+            ValidationUtils.validateNotNull(dataInizioPicker.getValue(),"Data inizio");
+            ValidationUtils.validateNotNull(dataFinePicker.getValue(),"Data fine");
+            
+            String oraInizioText = oraInizioField.getText().trim();
+            String oraFineText = oraFineField.getText().trim();
+            
+            if (oraInizioText.isEmpty() || oraFineText.isEmpty()) {
+                StyleHelper.showValidationDialog("Validazione", "Inserisci ora inizio e fine");
+                return;
+            }
+            
+            LocalTime ti = LocalTime.parse(oraInizioText);
+            LocalTime tf = LocalTime.parse(oraFineText);
+            
+            if (!tf.isAfter(ti)) {
+                throw new ValidationException(ErrorMessages.DATA_FINE_SESSIONE_PRECEDENTE);
             }
 
-            if (dataFinePicker.getValue().isAfter(corsoFine)) {
-                StyleHelper.showValidationDialog("Validazione", 
-                    String.format("La sessione deve finire prima della fine del corso.\n\n" +
-                        "Fine corso: %s\n" +
-                        "Data sessione: %s", 
-                        corsoFine, dataFinePicker.getValue()));
-                return;  // ✅ IMPORTANTE: blocca qui
+            LocalDateTime inizio = LocalDateTime.of(dataInizioPicker.getValue(), ti);
+            LocalDateTime fine = LocalDateTime.of(dataFinePicker.getValue(), tf);
+
+            if (corso != null && corso.getDataInizioCorso() != null && corso.getDataFineCorso() != null) {
+                LocalDate corsoInizio = corso.getDataInizioCorso().toLocalDate();
+                LocalDate corsoFine = corso.getDataFineCorso().toLocalDate();
+
+                if (dataInizioPicker.getValue().isBefore(corsoInizio)) {
+                    StyleHelper.showValidationDialog("Validazione", 
+                        String.format("La sessione deve iniziare dopo l'inizio del corso.\n\nInizio corso: %s\nData sessione: %s", 
+                            corsoInizio, dataInizioPicker.getValue()));
+                    return;
+                }
+
+                if (dataFinePicker.getValue().isAfter(corsoFine)) {
+                    StyleHelper.showValidationDialog("Validazione", 
+                        String.format("La sessione deve finire prima della fine del corso.\n\nFine corso: %s\nData sessione: %s", 
+                            corsoFine, dataFinePicker.getValue()));
+                    return;
+                }
             }
-        }
 
-        if ("Online".equals(tipoCombo.getValue())) {
-            String p = piattaformaField.getText().trim();
-            ValidationUtils.validateNotEmpty(p, ErrorMessages.PIATTAFORMA_MANCANTE);
-            
-            Online o = modalitaAggiunta
-                ? new Online(inizio, fine, p)
-                : (Online) sessione;
+            if ("Online".equals(tipoCombo.getValue())) {
+                String p = piattaformaField.getText().trim();
+                ValidationUtils.validateNotEmpty(p, ErrorMessages.PIATTAFORMA_MANCANTE);
                 
-            o.setDataInizioSessione(inizio);
-            o.setDataFineSessione(fine);
-            o.setPiattaformaStreaming(p);
-            o.setCorsoCucina(corso);
+                Online o = modalitaAggiunta
+                    ? new Online(inizio, fine, p)
+                    : (Online) sessione;
+                    
+                o.setDataInizioSessione(inizio);
+                o.setDataFineSessione(fine);
+                o.setPiattaformaStreaming(p);
+                o.setCorsoCucina(corso);
 
-            if (modalitaAggiunta) controller.aggiungiSessione(o, new ArrayList<>());
-            else controller.aggiornaSessione(sessione, o);
+                if (modalitaAggiunta) controller.aggiungiSessione(o, new ArrayList<>());
+                else controller.aggiornaSessione(sessione, o);
 
-        } else {
-            String via = viaField.getText().trim(), cit = cittaField.getText().trim();
-            ValidationUtils.validateNotEmpty(via, ErrorMessages.VIA_MANCANTE);
-            ValidationUtils.validateNotEmpty(cit, ErrorMessages.CITTA_MANCANTE);
-            
-            int posti = Integer.parseInt(postiField.getText().trim());
-            if (posti <= 0) throw new ValidationException(ErrorMessages.POSTI_NON_VALIDI);
-            
-            int cap = Integer.parseInt(capField.getText().trim());
-            if (cap < 10000 || cap > 99999) throw new ValidationException(ErrorMessages.CAP_NON_VALIDO);
-
-            InPresenza ip = modalitaAggiunta
-                ? new InPresenza(inizio, fine, via, cit, posti, cap)
-                : (InPresenza) sessione;
-                
-            ip.setDataInizioSessione(inizio);
-            ip.setDataFineSessione(fine);
-            ip.setVia(via);
-            ip.setCitta(cit);
-            ip.setNumeroPosti(posti);
-            ip.setCAP(cap);
-            ip.setCorsoCucina(corso);
-
-            if (modalitaAggiunta) controller.aggiungiSessione(ip, new ArrayList<>(ip.getRicette()));
-            else controller.aggiornaSessione(sessione, ip);
-        }
-
-        StyleHelper.showSuccessDialog("Successo", "Sessione salvata correttamente");
-        
-        Platform.runLater(() -> {
-            if (primaryStage != null) {
-                primaryStage.close();
             } else {
-                ((Stage) salvaBtn.getScene().getWindow()).close();
+                String via = viaField.getText().trim(), cit = cittaField.getText().trim();
+                ValidationUtils.validateNotEmpty(via, ErrorMessages.VIA_MANCANTE);
+                ValidationUtils.validateNotEmpty(cit, ErrorMessages.CITTA_MANCANTE);
+                
+                int posti = Integer.parseInt(postiField.getText().trim());
+                if (posti <= 0) throw new ValidationException(ErrorMessages.POSTI_NON_VALIDI);
+                
+                int cap = Integer.parseInt(capField.getText().trim());
+                if (cap < 10000 || cap > 99999) throw new ValidationException(ErrorMessages.CAP_NON_VALIDO);
+
+                InPresenza ip = modalitaAggiunta
+                    ? new InPresenza(inizio, fine, via, cit, posti, cap)
+                    : (InPresenza) sessione;
+                    
+                ip.setDataInizioSessione(inizio);
+                ip.setDataFineSessione(fine);
+                ip.setVia(via);
+                ip.setCitta(cit);
+                ip.setNumeroPosti(posti);
+                ip.setCAP(cap);
+                ip.setCorsoCucina(corso);
+
+                if (modalitaAggiunta) controller.aggiungiSessione(ip, new ArrayList<>(ip.getRicette()));
+                else controller.aggiornaSessione(sessione, ip);
             }
-        });
 
-    } catch (ValidationException ve) {
-        StyleHelper.showValidationDialog("Validazione", ve.getMessage());
-    } catch (DataAccessException dae) {
-        StyleHelper.showErrorDialog("Errore DB", dae.getMessage());
-    } catch (Exception e) {
-        StyleHelper.showErrorDialog("Errore", e.getMessage());
-        e.printStackTrace();
+            StyleHelper.showSuccessDialog("Successo", "Sessione salvata correttamente");
+            
+            chiudiFinestra();
+
+        } catch (ValidationException ve) {
+            StyleHelper.showValidationDialog("Validazione", ve.getMessage());
+        } catch (Exception e) {
+            StyleHelper.showErrorDialog("Errore", e.getMessage());
+            e.printStackTrace();
+        }
     }
-}
-
-
 }
