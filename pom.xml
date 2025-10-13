@@ -28,19 +28,13 @@
 <artifactId>jfreechart</artifactId>
 <version>1.5.3</version>
 </dependency>
-<!-- JFreeChart FX Integration -->
-<dependency>
-<groupId>org.jfree</groupId>
-<artifactId>jfreechart-fx</artifactId>
-<version>1.5.3</version>
-</dependency>
 </dependencies>
 <build>
 <sourceDirectory>src</sourceDirectory>
 <plugins>
 <plugin>
 <artifactId>maven-compiler-plugin</artifactId>
-<version>13.0.0</version>
+<version>3.13.0</version>
 <configuration>
 <release>21</release>
 </configuration>
