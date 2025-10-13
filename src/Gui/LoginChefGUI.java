@@ -4,14 +4,16 @@ import controller.ChefController;
 import controller.GestioneCorsoController;
 import controller.RicettaController;
 import controller.VisualizzaCorsiController;
-
+import dao.CucinaDAO;
 import dao.IngredienteDAO;
 import dao.RicettaDAO;
 import dao.UsaDAO;
 
 import service.GestioneCorsiCucina;
+import service.GestioneCucina;
+import service.GestioneIngrediente;
 import service.GestioneRicette;
-
+import service.GestioneUsa;
 import util.DBConnection;
 
 import guihelper.StyleHelper;
@@ -266,19 +268,39 @@ public class LoginChefGUI extends Application {
 	}
 
 	private void aprireMenuChef(Chef chef) {
-		try {
-			ChefMenuGUI menu = new ChefMenuGUI();
-			menu.setChefLoggato(chef);
+    try {
+        RicettaDAO ricettaDAO = new RicettaDAO();
+        IngredienteDAO ingredienteDAO = new IngredienteDAO();
+        UsaDAO usaDAO = new UsaDAO();
+        
+        GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
+        
+        GestioneUsa gestioneUsa = new GestioneUsa(usaDAO, ingredienteDAO);
+        CucinaDAO cucinaDAO = new CucinaDAO();
+        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+        
+        RicettaController ricettaController = new RicettaController(gestioneRicette, gestioneUsa, gestioneCucina);
+        
+        GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
+        controller.IngredienteController ingredienteController = new controller.IngredienteController(gestioneIngrediente);
+        
+        ChefMenuGUI menu = new ChefMenuGUI();
+        menu.setChefLoggato(chef);
+        
+        menu.setRicettaController(ricettaController);
+        menu.setIngredienteController(ingredienteController);
 
-			Stage menuStage = new Stage();
-			menu.start(menuStage);
+        Stage menuStage = new Stage();
+        menu.start(menuStage);
 
-			((Stage) contentPane.getScene().getWindow()).close();
-		} catch (Exception ex) {
-			ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
-			ex.printStackTrace();
-		}
-	}
+        ((Stage) contentPane.getScene().getWindow()).close();
+    } catch (Exception ex) {
+        ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
+
+
 
 	private void handleRegister() {
 		errorLabel.setVisible(false);

@@ -9,10 +9,7 @@ import model.Ricetta;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * Servizio dedicato esclusivamente alla gestione delle ricette.
- * CRUD, ricerca e filtraggio semplice.
- */
+
 public class GestioneRicette {
 
     private final RicettaDAO ricettaDAO;
@@ -21,10 +18,8 @@ public class GestioneRicette {
         this.ricettaDAO = ricettaDAO;
     }
 
-    // ==================== CRUD ====================
 
     public void creaRicetta(Ricetta ricetta) throws ValidationException, DataAccessException {
-        // assumiamo che il model assicuri campi non-null; qui restano le validazioni di business
         validateRicetta(ricetta);
 
         try {
@@ -68,8 +63,6 @@ public class GestioneRicette {
         }
     }
 
-    // ==================== QUERY ====================
-
     public List<Ricetta> getAllRicette() throws DataAccessException {
         try {
             return ricettaDAO.getAll();
@@ -85,8 +78,6 @@ public class GestioneRicette {
             throw new DataAccessException("Errore durante la ricerca per nome", e);
         }
     }
-
-    // ==================== FILTRI ====================
 
     public List<Ricetta> cercaPerNome(String nome, List<Ricetta> tutteRicette) {
         if (nome == null || nome.trim().isEmpty()) return tutteRicette;
@@ -109,10 +100,7 @@ public class GestioneRicette {
                 .toList();
     }
 
-    // ==================== VALIDAZIONI PRIVATE ====================
-
     private void validateRicetta(Ricetta ricetta) throws ValidationException {
-        // tolta la validateNotNull(ricetta, "Ricetta") per evitare ridondanza col model
         ValidationUtils.validateNomeRicetta(ricetta.getNome());
         ValidationUtils.validateTempoPreparazione(ricetta.getTempoPreparazione());
     }

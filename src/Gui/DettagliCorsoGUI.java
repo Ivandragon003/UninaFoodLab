@@ -1,6 +1,16 @@
 package Gui;
 
+import dao.InPresenzaDAO;
+import dao.OnlineDAO;
+import dao.CucinaDAO;
+import dao.CucinaDAO;
+import service.GestioneCucina;
+import service.GestioneRicette;
+import service.GestioneSessioni;
+import controller.GestioneSessioniController;
 import controller.GestioneCorsoController;
+import controller.IngredienteController;
+import controller.RicettaController;
 import controller.ChefController;
 import model.CorsoCucina;
 import model.Frequenza;
@@ -32,10 +42,14 @@ import java.util.List;
 public class DettagliCorsoGUI {
 	private GestioneCorsoController gestioneController;
 	private ChefController chefController;
+	private RicettaController ricettaController;
+    private IngredienteController ingredienteController;
 	private CorsoCucina corso;
 	private VBox card;
 	private boolean editable = false;
 	private Runnable onChiudiCallback;
+
+    private boolean hasUnsavedChanges = false;
 
 	private TextField nomeField, prezzoField, argomentoField, numeroPostiField, numeroSessioniField;
 	private ComboBox<Frequenza> frequenzaCombo;
@@ -58,6 +72,14 @@ public class DettagliCorsoGUI {
 
 	public void setOnChiudiCallback(Runnable callback) {
 		this.onChiudiCallback = callback;
+	}
+
+	public void setRicettaController(RicettaController ricettaController) {
+	    this.ricettaController = ricettaController;
+	}
+
+	public void setIngredienteController(IngredienteController ingredienteController) {
+	    this.ingredienteController = ingredienteController;
 	}
 
 	public StackPane getRoot() {
@@ -132,44 +154,69 @@ public class DettagliCorsoGUI {
 	}
 
 	private void createFormFields() {
-		nomeField = StyleHelper.createTextField(safeString(corso.getNomeCorso()));
-		prezzoField = StyleHelper.createTextField(String.valueOf(corso.getPrezzo()));
-		argomentoField = StyleHelper.createTextField(safeString(corso.getArgomento()));
-		numeroPostiField = StyleHelper.createTextField(String.valueOf(corso.getNumeroPosti()));
+    nomeField = new TextField(safeString(corso.getNomeCorso()));
+    prezzoField = new TextField(String.valueOf(corso.getPrezzo()));
+    argomentoField = new TextField(safeString(corso.getArgomento()));
+    numeroPostiField = new TextField(String.valueOf(corso.getNumeroPosti()));
 
-		setReadOnlyStyle(nomeField, prezzoField, argomentoField, numeroPostiField);
+    String readOnlyStyle = 
+        "-fx-text-fill: #000000;" +
+        "-fx-background-color: white;" +
+        "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+        "-fx-border-width: 2;" +
+        "-fx-border-radius: 12;" +
+        "-fx-background-radius: 12;" +
+        "-fx-padding: 10 15;" +
+        "-fx-font-size: 14px;";
+    
+    nomeField.setStyle(readOnlyStyle);
+    prezzoField.setStyle(readOnlyStyle);
+    argomentoField.setStyle(readOnlyStyle);
+    numeroPostiField.setStyle(readOnlyStyle);
+    
+    nomeField.setEditable(false);
+    prezzoField.setEditable(false);
+    argomentoField.setEditable(false);
+    numeroPostiField.setEditable(false);
+    
+    nomeField.setFocusTraversable(false);
+    prezzoField.setFocusTraversable(false);
+    argomentoField.setFocusTraversable(false);
+    numeroPostiField.setFocusTraversable(false);
 
-		frequenzaCombo = StyleHelper.createComboBox();
-		frequenzaCombo.getItems().setAll(Frequenza.values());
-		frequenzaCombo.setValue(corso.getFrequenzaCorso());
-		frequenzaCombo.setDisable(true);
-		frequenzaCombo.setOnAction(e -> onFrequenzaChange());
+    frequenzaCombo = StyleHelper.createComboBox();
+    frequenzaCombo.getItems().setAll(Frequenza.values());
+    frequenzaCombo.setValue(corso.getFrequenzaCorso());
+    frequenzaCombo.setDisable(true);
+    frequenzaCombo.setOnAction(e -> onFrequenzaChange());
 
-		numeroSessioniField = StyleHelper
-				.createTextField(corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0");
-		numeroSessioniField.setEditable(false);
-		numeroSessioniField.setFocusTraversable(false);
-		numeroSessioniField.setStyle("-fx-control-inner-background: #E9ECEF; -fx-text-fill: black;");
+    numeroSessioniField = new TextField(
+        corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0"
+    );
+    numeroSessioniField.setEditable(false);
+    numeroSessioniField.setFocusTraversable(false);
+    numeroSessioniField.setMouseTransparent(true);  // Non cliccabile
+    numeroSessioniField.setStyle(
+        "-fx-text-fill: #000000;" +
+        "-fx-control-inner-background: #E9ECEF;" +
+        "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+        "-fx-border-width: 2;" +
+        "-fx-border-radius: 12;" +
+        "-fx-background-radius: 12;" +
+        "-fx-padding: 10 15;" +
+        "-fx-font-size: 14px;"
+    );
 
-		dataInizioPicker = StyleHelper.createDatePicker();
-		dataInizioPicker.setValue(corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null);
-		dataInizioPicker.setDisable(true);
-		dataInizioPicker.setOnAction(e -> onDataInizioChange());
+    dataInizioPicker = StyleHelper.createDatePicker();
+    dataInizioPicker.setValue(corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null);
+    dataInizioPicker.setDisable(true);
+    dataInizioPicker.setOnAction(e -> onDataInizioChange());
 
-		dataFinePicker = StyleHelper.createDatePicker();
-		dataFinePicker.setValue(corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null);
-		dataFinePicker.setDisable(true);
-		dataFinePicker.setOnAction(e -> onDataFineChange());
-	}
-
-	private void setReadOnlyStyle(TextInputControl... fields) {
-		String readOnlyStyle = "-fx-text-fill: black; -fx-background-color: white;";
-		for (TextInputControl field : fields) {
-			field.setStyle(readOnlyStyle);
-			field.setEditable(false);
-			field.setFocusTraversable(false);
-		}
-	}
+    dataFinePicker = StyleHelper.createDatePicker();
+    dataFinePicker.setValue(corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null);
+    dataFinePicker.setDisable(true);
+    dataFinePicker.setOnAction(e -> onDataFineChange());
+}
 
 	private ListView<Chef> createChefListView() {
 		ListView<Chef> list = new ListView<>();
@@ -324,8 +371,13 @@ public class DettagliCorsoGUI {
 
 		Button chiudiBtn = StyleHelper.createSecondaryButton("❌ Chiudi");
 		chiudiBtn.setPrefWidth(140);
-		chiudiBtn.setOnAction(e -> tornaAllaListaCorsi());
-
+		chiudiBtn.setOnAction(e -> {
+		    if (editable && hasUnsavedChanges) {
+		        mostraDialogModificheNonSalvate();
+		    } else {
+		        tornaAllaListaCorsi();
+		    }
+		});
 		buttons.getChildren().addAll(modificaBtn, salvaBtn, visualizzaSessioniBtn, eliminaCorsoBtn, chiudiBtn);
 		return buttons;
 	}
@@ -663,11 +715,47 @@ public class DettagliCorsoGUI {
 
 		gestioneController.modificaCorso(corso);
 		StyleHelper.showSuccessDialog("✅ Successo", "Il corso è stato modificato correttamente!");
+		
+	    hasUnsavedChanges = false;
+	    
 		setEditable(false);
 		salvaBtn.setDisable(true);
 		modificaBtn.setDisable(false);
 		refreshChefListView();
 	}
+	
+	private void mostraDialogModificheNonSalvate() {
+	    StyleHelper.showUnsavedChangesDialog(
+	        "⚠️ Modifiche Non Salvate",
+	        "Hai effettuato delle modifiche che non sono state salvate.\n\n" +
+	        "Cosa desideri fare?",
+	        
+	        () -> {
+	            salvaModifiche();
+	            if (!hasUnsavedChanges) {
+	                tornaAllaListaCorsi();
+	            }
+	        },
+	        
+	        () -> {
+	            hasUnsavedChanges = false;
+	            tornaAllaListaCorsi();
+	        }
+	    );
+	}
+
+	
+	private void addChangeListeners() {
+	    nomeField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    prezzoField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    argomentoField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    numeroPostiField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    frequenzaCombo.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    dataInizioPicker.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	    dataFinePicker.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
+	}
+
+
 
 	private String validaNumeroSessioni(Frequenza freq, LocalDate inizio, LocalDate fine, int numSessioni) {
 		if (freq == null || inizio == null || fine == null)
@@ -691,24 +779,57 @@ public class DettagliCorsoGUI {
 	}
 
 	private void apriVisualizzaSessioni() {
-		VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
-		visualizzaSessioniGUI.setCorso(corso);
+    if (ricettaController == null || ingredienteController == null) {
+        StyleHelper.showErrorDialog("Errore", 
+            "Controller non inizializzati.\n\n" +
+            "Impossibile aprire la gestione sessioni.");
+        return;
+    }
+    
+    try {
+        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
+        OnlineDAO onlineDAO = new OnlineDAO();
+        CucinaDAO cucinaDAO = new CucinaDAO();
+        
+        GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
+        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+        
+        GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
+        
+        GestioneSessioniController sessioniController = new GestioneSessioniController(
+            corso,
+            gestioneSessioni,
+            gestioneCucina,
+            gestioneRicette
+        );
+        
+        VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
+        visualizzaSessioniGUI.setCorso(corso);
+        visualizzaSessioniGUI.setController(sessioniController);
+        visualizzaSessioniGUI.setRicettaController(ricettaController);
+        visualizzaSessioniGUI.setIngredienteController(ingredienteController);
 
-		Stage sessioniStage = new Stage();
-		sessioniStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-		sessioniStage.setTitle("📅 Gestione Sessioni - " + corso.getNomeCorso());
+        Stage sessioniStage = new Stage();
+        sessioniStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        sessioniStage.setTitle("📅 Gestione Sessioni - " + corso.getNomeCorso());
 
-		javafx.scene.Scene scene = new javafx.scene.Scene(visualizzaSessioniGUI.getRoot(), 900, 700);
-		sessioniStage.setScene(scene);
+        javafx.scene.Scene scene = new javafx.scene.Scene(visualizzaSessioniGUI.getRoot(), 900, 700);
+        sessioniStage.setScene(scene);
 
-		sessioniStage.setOnHidden(e -> {
-			int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
-			numeroSessioniField.setText(String.valueOf(numSessioni));
-			aggiornaDataFineFromSessioni();
-		});
+        sessioniStage.setOnHidden(e -> {
+            int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
+            numeroSessioniField.setText(String.valueOf(numSessioni));
+            aggiornaDataFineFromSessioni();
+        });
 
-		sessioniStage.showAndWait();
-	}
+        sessioniStage.showAndWait();
+        
+    } catch (Exception ex) {
+        StyleHelper.showErrorDialog("Errore", 
+            "Impossibile inizializzare la gestione sessioni: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
 
 	private void aggiornaDataFineFromSessioni() {
 		if (corso.getSessioni() == null || corso.getSessioni().isEmpty())
@@ -721,73 +842,83 @@ public class DettagliCorsoGUI {
 	}
 
 	private void setEditable(boolean edit) {
-		if (isCorsoFinito()) {
-			this.editable = false;
-			return;
-		}
-		
-		this.editable = edit;
-		LocalDate oggi = LocalDate.now();
-		LocalDate dataInizio = corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null;
-		LocalDate dataFine = corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null;
+    if (isCorsoFinito()) {
+        this.editable = false;
+        return;
+    }
+    
+    this.editable = edit;
+    
+    if (edit) {
+        addChangeListeners();
+    } else {
+        hasUnsavedChanges = false;
+    }
+    
+    LocalDate oggi = LocalDate.now();
+    LocalDate dataInizio = corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null;
+    LocalDate dataFine = corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null;
 
-		boolean corsoGiaIniziato = dataInizio != null && !dataInizio.isAfter(oggi);
-		boolean corsoGiaFinito = dataFine != null && dataFine.isBefore(oggi);
+    boolean corsoGiaIniziato = dataInizio != null && !dataInizio.isAfter(oggi);
 
-		nomeField.setEditable(edit);
-		prezzoField.setEditable(edit);
-		argomentoField.setEditable(edit);
-		numeroPostiField.setEditable(edit);
+    nomeField.setEditable(edit);
+    prezzoField.setEditable(edit);
+    argomentoField.setEditable(edit);
+    numeroPostiField.setEditable(edit);
 
-		if (!edit) {
-			nomeField.setFocusTraversable(false);
-			prezzoField.setFocusTraversable(false);
-			argomentoField.setFocusTraversable(false);
-			numeroPostiField.setFocusTraversable(false);
-			nomeField.setMouseTransparent(true);
-			prezzoField.setMouseTransparent(true);
-			argomentoField.setMouseTransparent(true);
-			numeroPostiField.setMouseTransparent(true);
-		} else {
-			nomeField.setFocusTraversable(true);
-			prezzoField.setFocusTraversable(true);
-			argomentoField.setFocusTraversable(true);
-			numeroPostiField.setFocusTraversable(true);
-			nomeField.setMouseTransparent(false);
-			prezzoField.setMouseTransparent(false);
-			argomentoField.setMouseTransparent(false);
-			numeroPostiField.setMouseTransparent(false);
-		}
+    if (!edit) {
+        nomeField.setFocusTraversable(false);
+        prezzoField.setFocusTraversable(false);
+        argomentoField.setFocusTraversable(false);
+        numeroPostiField.setFocusTraversable(false);
+        nomeField.setMouseTransparent(true);
+        prezzoField.setMouseTransparent(true);
+        argomentoField.setMouseTransparent(true);
+        numeroPostiField.setMouseTransparent(true);
+    } else {
+        nomeField.setFocusTraversable(true);
+        prezzoField.setFocusTraversable(true);
+        argomentoField.setFocusTraversable(true);
+        numeroPostiField.setFocusTraversable(true);
+        nomeField.setMouseTransparent(false);
+        prezzoField.setMouseTransparent(false);
+        argomentoField.setMouseTransparent(false);
+        numeroPostiField.setMouseTransparent(false);
+    }
 
-		frequenzaCombo.setDisable(!edit);
-		dataInizioPicker.setDisable(!edit || corsoGiaIniziato); 
+    frequenzaCombo.setDisable(!edit);
+    dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
 
-		if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
-			dataFinePicker.setDisable(true);
-		} else {
-			dataFinePicker.setDisable(!edit); 
-		}
+    if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
+        dataFinePicker.setDisable(true);
+    } else {
+        dataFinePicker.setDisable(!edit);
+    }
 
-		addChefBtn.setDisable(!edit);
+    addChefBtn.setDisable(!edit);
 
-		String textColor = "-fx-text-fill: black;";
-		String bgColor = "-fx-background-color: white;";
-		String opacity = edit ? "-fx-opacity: 1.0;" : "-fx-opacity: 0.7;";
-		String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
+    // ⚠️ FIX: Testo SEMPRE NERO (#000000)
+    String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
 
-		String fieldStyle = textColor + bgColor + opacity + "-fx-border-color: " + borderColor + ";"
-				+ "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;";
+    String fieldStyle = 
+        "-fx-text-fill: #000000;" +  // SEMPRE NERO
+        "-fx-background-color: white;" +
+        "-fx-opacity: 1.0;" +  // SEMPRE VISIBILE
+        "-fx-border-color: " + borderColor + ";" +
+        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 8;";
 
-		nomeField.setStyle(fieldStyle);
-		prezzoField.setStyle(fieldStyle);
-		argomentoField.setStyle(fieldStyle);
-		numeroPostiField.setStyle(fieldStyle);
+    nomeField.setStyle(fieldStyle);
+    prezzoField.setStyle(fieldStyle);
+    argomentoField.setStyle(fieldStyle);
+    numeroPostiField.setStyle(fieldStyle);
 
-		card.setStyle("-fx-background-color: white; -fx-background-radius: 16;"
-				+ "-fx-border-radius: 16; -fx-border-color: " + borderColor + "; -fx-border-width: 2;");
+    card.setStyle("-fx-background-color: white; -fx-background-radius: 16;"
+            + "-fx-border-radius: 16; -fx-border-color: " + borderColor + "; -fx-border-width: 2;");
 
-		refreshChefListView();
-	}
+    refreshChefListView();
+}
+
+
 
 	private void refreshChefListView() {
 		Platform.runLater(() -> {

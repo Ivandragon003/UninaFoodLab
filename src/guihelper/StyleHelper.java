@@ -26,7 +26,6 @@ public final class StyleHelper {
 		throw new AssertionError("Classe di utilità non istanziabile");
 	}
 
-	// COLORI PRINCIPALI (palette moderna e armoniosa)
 	public static final String PRIMARY_ORANGE = "#FF6B35";
 	public static final String PRIMARY_LIGHT = "#FF8C61";
 	public static final String SUCCESS_GREEN = "#06D6A0";
@@ -45,7 +44,6 @@ public final class StyleHelper {
 	public static final String ACCENT_PURPLE = "#9D4EDD";
 	public static final String ACCENT_YELLOW = "#FFD60A";
 
-	// PULSANTI con animazioni fluide
 	public static Button createPrimaryButton(String text) {
 		return createStyledButton(text, PRIMARY_ORANGE, "#FFFFFF");
 	}
@@ -83,7 +81,6 @@ public final class StyleHelper {
 			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.0, 0.0, 4.0);"
 		);
 
-		// Animazione hover con scala e ombra
 		button.setOnMouseEntered(e -> {
 			button.setStyle(
 				"-fx-background-color: derive(" + color + ", -15%);" +
@@ -155,7 +152,6 @@ public final class StyleHelper {
 		));
 	}
 
-	// ETICHETTE E TEXTFIELD con design moderno
 	public static Label createTitleLabel(String text) {
 		Label label = new Label(text);
 		label.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
@@ -313,7 +309,6 @@ public final class StyleHelper {
 		region.setBackground(new Background(new BackgroundFill(gradient, CornerRadii.EMPTY, Insets.EMPTY)));
 	}
 
-	// DIALOG moderni con animazioni
 	public static void showSuccessDialog(String title, String message) {
 		showCustomDialog(title, message, "✅", SUCCESS_GREEN, "#E8FFF5");
 	}
@@ -393,69 +388,176 @@ public final class StyleHelper {
 	}
 
 	public static void showConfirmationDialog(String title, String message, Runnable onConfirm) {
-		Stage dialogStage = new Stage();
-		dialogStage.initModality(Modality.APPLICATION_MODAL);
-		dialogStage.initStyle(StageStyle.TRANSPARENT);
-		dialogStage.setResizable(false);
+    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+    alert.setTitle(title);
+    alert.setHeaderText(null);
+    alert.setContentText(null);
+    
+    DialogPane dialogPane = alert.getDialogPane();
+    dialogPane.getStyleClass().remove("alert");
+    
+    dialogPane.setStyle(
+        "-fx-background-color: " + BG_WHITE + ";" +
+        "-fx-border-color: " + PRIMARY_ORANGE + ";" +
+        "-fx-border-width: 3px;" +
+        "-fx-border-radius: 12px;" +
+        "-fx-background-radius: 12px;" +
+        "-fx-padding: 30px;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);"
+    );
+    
+    dialogPane.setMinWidth(500);
+    dialogPane.setMinHeight(280);
+    
+    VBox content = new VBox(18);
+    content.setAlignment(Pos.CENTER);
+    
+    Label iconLabel = new Label("❓");
+    iconLabel.setStyle("-fx-font-size: 50px;");
+    
+    Label titleLabel = new Label(title);
+    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+    titleLabel.setTextFill(Color.web(TEXT_BLACK));
+    titleLabel.setAlignment(Pos.CENTER);
+    titleLabel.setMaxWidth(450);
+    titleLabel.setWrapText(true);
+    
+    Label messageLabel = new Label(message);
+    messageLabel.setWrapText(true);
+    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
+    messageLabel.setTextFill(Color.web(TEXT_GRAY));
+    messageLabel.setAlignment(Pos.CENTER);
+    messageLabel.setMaxWidth(450);
+    
+    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+    dialogPane.setContent(content);
+    
+    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+    okButton.setText("Sì");
+    okButton.setStyle(
+        "-fx-background-color: " + SUCCESS_GREEN + ";" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 30 12 30;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-cursor: hand;"
+    );
+    
+    Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+    cancelButton.setText("No");
+    cancelButton.setStyle(
+        "-fx-background-color: " + ERROR_RED + ";" +
+        "-fx-text-fill: white;" +
+        "-fx-font-size: 14px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 12 30 12 30;" +
+        "-fx-background-radius: 10px;" +
+        "-fx-cursor: hand;"
+    );
+    
+    alert.showAndWait().ifPresent(response -> {
+        if (response == ButtonType.OK && onConfirm != null) {
+            onConfirm.run();
+        }
+    });
+}
 
-		VBox content = new VBox(20);
-		content.setPadding(new Insets(30));
-		content.setAlignment(Pos.CENTER);
-		content.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-background-radius: 20;" +
-			"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-			"-fx-border-width: 3;" +
-			"-fx-border-radius: 20;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0.0, 0.0, 8.0);"
-		);
-
-		Label iconLabel = new Label("❓");
-		iconLabel.setStyle("-fx-font-size: 48px;");
-
-		Label titleLabel = new Label(title);
-		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
-		titleLabel.setTextFill(Color.web(TEXT_BLACK));
-		titleLabel.setAlignment(Pos.CENTER);
-
-		Label messageLabel = new Label(message);
-		messageLabel.setWrapText(true);
-		messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
-		messageLabel.setTextFill(Color.web(TEXT_GRAY));
-		messageLabel.setAlignment(Pos.CENTER);
-		messageLabel.setMaxWidth(javafx.stage.Screen.getPrimary().getVisualBounds().getWidth() * 0.4);
-
-		HBox buttonsBox = new HBox(15);
-		buttonsBox.setAlignment(Pos.CENTER);
-
-		Button yesBtn = createSuccessButton("Sì");
-		yesBtn.setPrefWidth(120);
-		yesBtn.setOnAction(e -> {
-			dialogStage.close();
-			if (onConfirm != null) onConfirm.run();
-		});
-
-		Button noBtn = createDangerButton("No");
-		noBtn.setPrefWidth(120);
-		noBtn.setOnAction(e -> dialogStage.close());
-
-		buttonsBox.getChildren().addAll(yesBtn, noBtn);
-		content.getChildren().addAll(iconLabel, titleLabel, messageLabel, buttonsBox);
-
-		StackPane root = new StackPane(content);
-		root.setStyle("-fx-background-color: transparent;");
-		Scene scene = new Scene(root);
-		scene.setFill(Color.TRANSPARENT);
-		dialogStage.setScene(scene);
-
-		content.setOpacity(0);
-		FadeTransition fadeIn = new FadeTransition(Duration.millis(300), content);
-		fadeIn.setFromValue(0.0);
-		fadeIn.setToValue(1.0);
-		fadeIn.play();
-
-		dialogStage.showAndWait();
+	public static void showUnsavedChangesDialog(String title, String message, 
+	                                           Runnable onSaveAndClose, 
+	                                           Runnable onCloseWithoutSaving) {
+	    Alert alert = new Alert(Alert.AlertType.WARNING);
+	    alert.setTitle(title);
+	    alert.setHeaderText(null);
+	    alert.setContentText(null);
+	    
+	    DialogPane dialogPane = alert.getDialogPane();
+	    dialogPane.getStyleClass().remove("alert");
+	    
+	    dialogPane.setStyle(
+	        "-fx-background-color: " + BG_WHITE + ";" +
+	        "-fx-border-color: #FFA500;" + 
+	        "-fx-border-width: 3px;" +
+	        "-fx-border-radius: 12px;" +
+	        "-fx-background-radius: 12px;" +
+	        "-fx-padding: 30px;" +
+	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);"
+	    );
+	    
+	    dialogPane.setMinWidth(550);
+	    dialogPane.setMinHeight(300);
+	    
+	    VBox content = new VBox(18);
+	    content.setAlignment(Pos.CENTER);
+	    
+	    Label iconLabel = new Label("⚠️");
+	    iconLabel.setStyle("-fx-font-size: 50px;");
+	    
+	    Label titleLabel = new Label(title);
+	    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+	    titleLabel.setTextFill(Color.web(TEXT_BLACK));
+	    titleLabel.setAlignment(Pos.CENTER);
+	    titleLabel.setMaxWidth(500);
+	    titleLabel.setWrapText(true);
+	    
+	    Label messageLabel = new Label(message);
+	    messageLabel.setWrapText(true);
+	    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
+	    messageLabel.setTextFill(Color.web(TEXT_GRAY));
+	    messageLabel.setAlignment(Pos.CENTER);
+	    messageLabel.setMaxWidth(500);
+	    
+	    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+	    dialogPane.setContent(content);
+	    
+	    ButtonType saveAndCloseBtn = new ButtonType("💾 Salva e Chiudi", ButtonBar.ButtonData.OK_DONE);
+	    ButtonType closeWithoutSavingBtn = new ButtonType("🚪 Chiudi Senza Salvare", ButtonBar.ButtonData.NO);
+	    ButtonType cancelBtn = new ButtonType("Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
+	    
+	    dialogPane.getButtonTypes().setAll(saveAndCloseBtn, closeWithoutSavingBtn, cancelBtn);
+	    
+	    Button saveButton = (Button) dialogPane.lookupButton(saveAndCloseBtn);
+	    saveButton.setStyle(
+	        "-fx-background-color: " + SUCCESS_GREEN + ";" +
+	        "-fx-text-fill: white;" +
+	        "-fx-font-size: 14px;" +
+	        "-fx-font-weight: bold;" +
+	        "-fx-padding: 12 20 12 20;" +
+	        "-fx-background-radius: 10px;" +
+	        "-fx-cursor: hand;"
+	    );
+	    
+	    Button closeButton = (Button) dialogPane.lookupButton(closeWithoutSavingBtn);
+	    closeButton.setStyle(
+	        "-fx-background-color: " + ERROR_RED + ";" +
+	        "-fx-text-fill: white;" +
+	        "-fx-font-size: 14px;" +
+	        "-fx-font-weight: bold;" +
+	        "-fx-padding: 12 20 12 20;" +
+	        "-fx-background-radius: 10px;" +
+	        "-fx-cursor: hand;"
+	    );
+	    
+	    Button cancelButton = (Button) dialogPane.lookupButton(cancelBtn);
+	    cancelButton.setStyle(
+	        "-fx-background-color: #6C757D;" + 
+	        "-fx-text-fill: white;" +
+	        "-fx-font-size: 14px;" +
+	        "-fx-font-weight: bold;" +
+	        "-fx-padding: 12 20 12 20;" +
+	        "-fx-background-radius: 10px;" +
+	        "-fx-cursor: hand;"
+	    );
+	    
+	    alert.showAndWait().ifPresent(response -> {
+	        if (response == saveAndCloseBtn && onSaveAndClose != null) {
+	            onSaveAndClose.run();
+	        } else if (response == closeWithoutSavingBtn && onCloseWithoutSaving != null) {
+	            onCloseWithoutSaving.run();
+	        }
+	    });
 	}
+
 
 	public static DatePicker createDatePicker() {
 		DatePicker dp = new DatePicker();

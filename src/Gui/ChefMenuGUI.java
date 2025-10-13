@@ -53,7 +53,6 @@ public class ChefMenuGUI {
 	private GestioneIngrediente gestioneIngredienteService;
 	private GestioneUsa gestioneUsaService;
 	private GestioneCucina gestioneCucinaService;
-	// AGGIUNTO: service per sessioni
 	private GestioneSessioni gestioneSessioniService;
 
 	private VisualizzaCorsiController corsiController;
@@ -86,6 +85,15 @@ public class ChefMenuGUI {
 		inizializzaServices();
 		inizializzaControllers();
 	}
+	
+	public void setRicettaController(RicettaController ricettaController) {
+	    this.ricettaController = ricettaController;
+	}
+
+	public void setIngredienteController(IngredienteController ingredienteController) {
+	    this.ingredienteController = ingredienteController;
+	}
+
 
 	private void inizializzaDAO() {
 		this.corsoDAO = new CorsoCucinaDAO();
@@ -116,27 +124,25 @@ public class ChefMenuGUI {
 	}
 
 	private void inizializzaControllers() {
-		try {
-			this.corsiController = new VisualizzaCorsiController(gestioneCorsiService, chefLoggato);
+    try {
+        this.corsiController = new VisualizzaCorsiController(gestioneCorsiService, chefLoggato);
 
-			this.gestioneCorsoController = new GestioneCorsoController(gestioneCorsiService, gestioneChefService);
-			this.gestioneCorsoController.setChefLoggato(chefLoggato);
+        this.gestioneCorsoController = new GestioneCorsoController(gestioneCorsiService, gestioneChefService);
+        this.gestioneCorsoController.setChefLoggato(chefLoggato);
 
-			this.ricettaController = new RicettaController(gestioneRicetteService, gestioneUsaService,
-					gestioneCucinaService);
+        this.chefController = new ChefController(gestioneChefService);
+        this.chefController.setGestioneCorsoController(gestioneCorsoController);
 
-			this.ingredienteController = new IngredienteController(gestioneIngredienteService);
-			this.chefController = new ChefController(gestioneChefService);
-			this.chefController.setGestioneCorsoController(gestioneCorsoController);
+        this.reportMensileController = new controller.ReportMensileController(gestioneCorsiService,
+                gestioneSessioniService, chefLoggato);
 
-			this.reportMensileController = new controller.ReportMensileController(gestioneCorsiService,
-					gestioneSessioniService, chefLoggato);
+    } catch (Exception e) {
+        StyleHelper.showErrorDialog("Errore", "Impossibile inizializzare i controller: " + e.getMessage());
+        throw new RuntimeException("Errore inizializzazione controller", e);
+    }
+}
 
-		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", "Impossibile inizializzare i controller: " + e.getMessage());
-			throw new RuntimeException("Errore inizializzazione controller", e);
-		}
-	}
+
 
 	public void start(Stage stage) {
 		if (chefLoggato == null)
@@ -315,10 +321,23 @@ public class ChefMenuGUI {
 	}
 
 	private void apriVisualizzaCorsi() {
-		VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
-		corsiGUI.setControllers(corsiController, gestioneCorsoController, contentPane);
-		showInContentPane(corsiGUI.getRoot());
-	}
+    if (ricettaController == null || ingredienteController == null) {
+        StyleHelper.showErrorDialog("Errore", 
+            "Controller non inizializzati.\n\n" +
+            "Impossibile aprire la visualizzazione corsi.");
+        return;
+    }
+    
+    VisualizzaCorsiGUI corsiGUI = new VisualizzaCorsiGUI();
+    
+    corsiGUI.setControllers(corsiController, gestioneCorsoController, chefController, contentPane);
+    corsiGUI.setRicettaController(ricettaController);
+    corsiGUI.setIngredienteController(ingredienteController);
+    
+    showInContentPane(corsiGUI.getRoot());
+}
+
+
 
 	private void apriCreaCorso() {
 		CreaCorsoGUI gui = new CreaCorsoGUI(gestioneCorsoController, chefController, ricettaController,

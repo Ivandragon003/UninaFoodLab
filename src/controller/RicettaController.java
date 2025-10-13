@@ -12,10 +12,7 @@ import exceptions.DataAccessException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Controller per la gestione delle ricette
- * Coordina le operazioni tra GUI e Service, gestisce la cache
- */
+
 public class RicettaController {
 
     private final GestioneRicette gestioneRicette;

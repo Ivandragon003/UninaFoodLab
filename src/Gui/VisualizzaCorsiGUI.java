@@ -1,6 +1,9 @@
 package Gui;
 
+import controller.ChefController;
 import controller.GestioneCorsoController;
+import controller.IngredienteController;
+import controller.RicettaController;
 import controller.VisualizzaCorsiController;
 import guihelper.StyleHelper;
 import javafx.animation.PauseTransition;
@@ -36,6 +39,9 @@ public class VisualizzaCorsiGUI {
 
     private VisualizzaCorsiController visualizzaController;
     private GestioneCorsoController gestioneCorsoController;
+    private ChefController chefController;
+    private RicettaController ricettaController;
+    private IngredienteController ingredienteController;
     private StackPane contentRoot;
 
     private final ObservableList<CorsoCucina> corsiData = FXCollections.observableArrayList();
@@ -52,11 +58,21 @@ public class VisualizzaCorsiGUI {
 
     
     public void setControllers(VisualizzaCorsiController visualizzaController,
-                              GestioneCorsoController gestioneCorsoController,
-                              StackPane contentRoot) {
-        this.visualizzaController = visualizzaController;
-        this.gestioneCorsoController = gestioneCorsoController;
-        this.contentRoot = contentRoot;
+            GestioneCorsoController gestioneCorsoController,
+            ChefController chefController,
+            StackPane contentRoot) {
+    		this.visualizzaController = visualizzaController;
+    		this.gestioneCorsoController = gestioneCorsoController;
+    		this.chefController = chefController;
+    		this.contentRoot = contentRoot;
+    }
+    
+    public void setRicettaController(RicettaController ricettaController) {
+        this.ricettaController = ricettaController;
+    }
+    
+    public void setIngredienteController(IngredienteController ingredienteController) {
+        this.ingredienteController = ingredienteController;
     }
 
     public StackPane getRoot() {
@@ -470,29 +486,48 @@ public class VisualizzaCorsiGUI {
     }
 
     private void apriDettagliCorso(CorsoCucina corso) {
-        if (contentRoot == null) {
-            StyleHelper.showErrorDialog("Errore", "Navigazione non disponibile");
+    if (contentRoot == null) {
+        StyleHelper.showErrorDialog("Errore", "Navigazione non disponibile");
+        return;
+    }
+
+    try {
+        if (ricettaController == null || ingredienteController == null) {
+            StyleHelper.showErrorDialog("Errore", 
+                "Controller non inizializzati.\n\n" +
+                "Impossibile aprire i dettagli del corso.");
             return;
         }
+        
+        DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
+        dettagliGUI.setController(gestioneCorsoController);
+        dettagliGUI.setChefController(chefController);
+        
+        dettagliGUI.setRicettaController(ricettaController);
+        dettagliGUI.setIngredienteController(ingredienteController);
+        
+        dettagliGUI.setCorso(corso);
 
-        try {
-            DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
-            dettagliGUI.setController(gestioneCorsoController);
-            dettagliGUI.setCorso(corso);
-
-            dettagliGUI.setOnChiudiCallback(() -> {
-                VisualizzaCorsiGUI nuovaListaCorsi = new VisualizzaCorsiGUI();
-                nuovaListaCorsi.setControllers(visualizzaController, gestioneCorsoController, contentRoot);
-                contentRoot.getChildren().setAll(nuovaListaCorsi.getRoot());
-            });
-
-            contentRoot.getChildren().setAll(dettagliGUI.getRoot());
+        dettagliGUI.setOnChiudiCallback(() -> {
+            VisualizzaCorsiGUI nuovaListaCorsi = new VisualizzaCorsiGUI();
+            nuovaListaCorsi.setControllers(visualizzaController, gestioneCorsoController, chefController, contentRoot);
             
-        } catch (Exception ex) {
-            StyleHelper.showErrorDialog("Errore", "Errore apertura dettagli: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+            nuovaListaCorsi.setRicettaController(ricettaController);
+            nuovaListaCorsi.setIngredienteController(ingredienteController);
+            
+            contentRoot.getChildren().setAll(nuovaListaCorsi.getRoot());
+        });
+
+        contentRoot.getChildren().setAll(dettagliGUI.getRoot());
+        
+    } catch (Exception ex) {
+        StyleHelper.showErrorDialog("Errore", "Errore apertura dettagli: " + ex.getMessage());
+        ex.printStackTrace();
     }
+}
+
+
+
 
     private void loadDataAsync() {
         if (visualizzaController == null) {
