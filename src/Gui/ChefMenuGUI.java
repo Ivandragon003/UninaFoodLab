@@ -71,6 +71,7 @@ public class ChefMenuGUI {
 	private Button hamburgerBtn;
 	private Stage currentStage;
 	private Region background;
+	private HBox mainLayout;
 
 	private boolean sidebarVisible = true;
 	private double xOffset = 0;
@@ -180,7 +181,7 @@ public class ChefMenuGUI {
 	}
 
 	private HBox createMainLayout(Stage stage) {
-		HBox mainLayout = new HBox();
+		mainLayout = new HBox(); // Salva il riferimento
 		mainLayout.setSpacing(0);
 
 		sidebar = createSidebar(stage);
@@ -276,36 +277,36 @@ public class ChefMenuGUI {
 
 	private void toggleSidebar() {
 		TranslateTransition sidebarTransition = new TranslateTransition(Duration.millis(ANIMATION_DURATION), sidebar);
-		TranslateTransition contentTransition = new TranslateTransition(Duration.millis(ANIMATION_DURATION),
-				contentPane);
 
 		if (sidebarVisible) {
-			// Chiudi sidebar
-			sidebarTransition.setToX(-sidebar.getWidth());
-			// Sposta il contentPane a sinistra per occupare lo spazio della sidebar
-			contentTransition.setToX(-SIDEBAR_WIDTH);
 
-			// Cambia background a bianco
+			sidebarTransition.setToX(-SIDEBAR_WIDTH);
+
 			background.setBackground(new Background(new BackgroundFill(Color.WHITE, null, null)));
 
+			sidebarTransition.setOnFinished(e -> {
+				mainLayout.getChildren().remove(sidebar);
+				sidebar.setTranslateX(0);
+			});
+
+			sidebarTransition.play();
 			sidebarVisible = false;
 		} else {
-			// Apri sidebar
-			sidebarTransition.setToX(0);
-			// Riporta il contentPane alla posizione originale
-			contentTransition.setToX(0);
 
-			// Ripristina gradiente arancione
+			mainLayout.getChildren().add(0, sidebar);
+
+			sidebar.setTranslateX(-SIDEBAR_WIDTH);
+
+			sidebarTransition.setToX(0);
+
 			LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
 					new Stop(0, Color.web(StyleHelper.BG_ORANGE_START)),
 					new Stop(1, Color.web(StyleHelper.BG_ORANGE_LIGHT)));
 			background.setBackground(new Background(new BackgroundFill(gradient, null, null)));
 
+			sidebarTransition.play();
 			sidebarVisible = true;
 		}
-
-		ParallelTransition parallelTransition = new ParallelTransition(sidebarTransition, contentTransition);
-		parallelTransition.play();
 	}
 
 	private HBox createWindowButtons(Stage stage) {
@@ -375,18 +376,49 @@ public class ChefMenuGUI {
 	}
 
 	private void apriCreaRicetta() {
-		try {
-			CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
-			Ricetta nuovaRicetta = creaGUI.showAndReturn();
-			if (nuovaRicetta != null) {
-				StyleHelper.showSuccessDialog("Successo",
-						"Ricetta '" + nuovaRicetta.getNome() + "' creata con successo");
-			}
-		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", "Errore durante la creazione della ricetta: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
+    try {
+       
+        CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
+        
+       
+        creaGUI.setOnRicettaCreata(nuovaRicetta -> {
+            System.out.println("DEBUG: Ricetta creata: " + nuovaRicetta.getNome());
+            
+          
+            StyleHelper.showSuccessDialog("Successo",
+                    String.format("✅ Ricetta '%s' creata con successo!\n\n" 
+                            + "⏱️ Tempo preparazione: %d minuti\n"
+                            + "🥕 Ingredienti: %d",
+                            nuovaRicetta.getNome(), 
+                            nuovaRicetta.getTempoPreparazione(),
+                            nuovaRicetta.getNumeroIngredienti()));
+            
+          
+            mostraBenvenutoIniziale();
+            
+          
+        });
+        
+      
+        creaGUI.setOnAnnulla(() -> {
+            System.out.println("DEBUG: Creazione ricetta annullata dall'utente");
+            
+           
+            mostraBenvenutoIniziale();
+        });
+        
+       
+        VBox contenuto = creaGUI.getContent();
+        showInContentPane(contenuto);
+        
+    } catch (Exception e) {
+        System.err.println("ERROR: Errore durante la creazione della ricetta: " + e.getMessage());
+        e.printStackTrace();
+        StyleHelper.showErrorDialog("Errore", 
+            "Errore durante l'apertura della schermata crea ricetta:\n" + e.getMessage());
+    }
+}
+
 
 	private void apriReportMensile() {
 		try {
