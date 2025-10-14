@@ -10,6 +10,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
@@ -55,201 +56,175 @@ public class VisualizzaSessioniGUI {
             throw new IllegalStateException("Corso non impostato!");
         }
 
-        root = new VBox(15);
-        root.setPadding(new Insets(20));
-        root.setStyle("-fx-background-color: #FAFAFA;");
+        root = new VBox(20);
+        root.setPadding(new Insets(30));
+        
+        // SFONDO ARANCIONE COME NELLA FOTO
+        StyleHelper.applyBackgroundGradient(root);
 
-        Label titolo = new Label("📅 Sessioni del Corso: " + corso.getNomeCorso());
-        titolo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #FF6600;");
+        // Header
+        Label titolo = StyleHelper.createTitleLabel("Sessioni del Corso: " + corso.getNomeCorso());
+        titolo.setTextFill(Color.WHITE); // Testo bianco su sfondo arancione
 
+        // Sezione filtri
+        VBox sezioneSessioni = StyleHelper.createSection();
+        
         HBox filtriBox = createFiltriBox();
-
-        numeroSessioniLabel = new Label();
-        numeroSessioniLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #666;");
-
+        numeroSessioniLabel = StyleHelper.createLabel("");
+        
         sessioniList = new ListView<>();
         sessioniList.setPrefHeight(400);
         setupSessioniListConElimina();
         VBox.setVgrow(sessioniList, Priority.ALWAYS);
+        
+        sezioneSessioni.getChildren().addAll(filtriBox, numeroSessioniLabel, sessioniList);
 
-        HBox pulsantiPrincipali = createPulsantiPrincipali();
+        // Pulsanti
+        HBox pulsantiBox = createPulsantiBox();
 
-        root.getChildren().addAll(titolo, filtriBox, numeroSessioniLabel, sessioniList, pulsantiPrincipali);
-
+        root.getChildren().addAll(titolo, sezioneSessioni, pulsantiBox);
         aggiornaLista();
 
         return root;
     }
 
     private HBox createFiltriBox() {
-        HBox filtriBox = new HBox(15);
+        HBox filtriBox = new HBox(12);
         filtriBox.setAlignment(Pos.CENTER_LEFT);
-        filtriBox.setPadding(new Insets(10));
-        filtriBox.setStyle("-fx-background-color: #F5F5F5; -fx-background-radius: 8; -fx-border-color: #E0E0E0; -fx-border-width: 1; -fx-border-radius: 8;");
+        filtriBox.setPadding(new Insets(15));
+        filtriBox.setStyle(
+            "-fx-background-color: " + StyleHelper.BG_WHITE + ";" +
+            "-fx-background-radius: 12;" +
+            "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 12;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
+        );
 
-        Label filtroLabel = new Label("🔍 Filtri:");
-        filtroLabel.setStyle("-fx-font-weight: bold;");
+        Label filtroLabel = StyleHelper.createLabel("Filtri:");
+        filtroLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        filtroTipo = new ComboBox<>();
+        filtroTipo = StyleHelper.createComboBox();
         filtroTipo.getItems().addAll("Tutti", "Online", "In Presenza");
         filtroTipo.setValue("Tutti");
+        filtroTipo.setPrefWidth(140);
         filtroTipo.setOnAction(e -> applicaFiltri());
 
-        Label ricetteLabel = new Label("Min. Ricette:");
-        filtroRicette = new TextField();
-        filtroRicette.setPrefWidth(80);
-        filtroRicette.setPromptText("0");
+        Label ricetteLabel = StyleHelper.createLabel("Min. Ricette:");
+        filtroRicette = StyleHelper.createTextField("0");
+        filtroRicette.setPrefWidth(70);
         filtroRicette.setOnKeyReleased(e -> applicaFiltri());
 
-        Button resetFiltriBtn = new Button("🔄 Reset");
-        resetFiltriBtn.setStyle("-fx-cursor: hand;");
-        resetFiltriBtn.setOnAction(e -> {
+        Button resetBtn = StyleHelper.createInfoButton("Reset");
+        resetBtn.setPrefWidth(100);
+        resetBtn.setOnAction(e -> {
             filtroTipo.setValue("Tutti");
             filtroRicette.clear();
             applicaFiltri();
         });
 
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Separator sep = new Separator();
+        sep.setStyle("-fx-padding: 0 10;");
+        
         filtriBox.getChildren().addAll(
-                filtroLabel,
-                new Label("Tipo:"), filtroTipo,
-                new Separator(),
-                ricetteLabel, filtroRicette,
-                new Separator(),
-                resetFiltriBtn
+            filtroLabel, filtroTipo,
+            sep,
+            ricetteLabel, filtroRicette,
+            spacer, resetBtn
         );
 
         return filtriBox;
     }
 
     private void setupSessioniListConElimina() {
-    sessioniList.setCellFactory(lv -> new ListCell<Sessione>() {
-        private final HBox container = new HBox(15);
-        private final VBox infoBox = new VBox(5);
-        private final Button eliminaBtn = new Button("🗑️ Elimina");
-        private final Region spacer = new Region();
+        sessioniList.setCellFactory(lv -> new ListCell<Sessione>() {
+            private final HBox container = new HBox(15);
+            private final VBox infoBox = new VBox(6);
+            private final Button eliminaBtn = StyleHelper.createDangerButton("Elimina");
 
-        {
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-            
-            eliminaBtn.setStyle("-fx-background-color: #FF4444; -fx-text-fill: white; " +
-                    "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                    "-fx-padding: 8 15;");
-            eliminaBtn.setOnMouseEntered(e -> {
-                if (!eliminaBtn.isDisabled()) {
-                    eliminaBtn.setStyle(
-                        "-fx-background-color: #CC0000; -fx-text-fill: white; " +
-                        "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                        "-fx-padding: 8 15;");
-                }
-            });
-            eliminaBtn.setOnMouseExited(e -> {
-                if (!eliminaBtn.isDisabled()) {
-                    eliminaBtn.setStyle(
-                        "-fx-background-color: #FF4444; -fx-text-fill: white; " +
-                        "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                        "-fx-padding: 8 15;");
-                }
-            });
-            
-            eliminaBtn.setOnAction(e -> {
-                Sessione s = getItem();
-                if (s != null) {
-                    confermaEliminaSessione(s);
-                }
-            });
-
-            container.setAlignment(Pos.CENTER_LEFT);
-            container.setPadding(new Insets(10));
-        }
-
-        @Override
-        protected void updateItem(Sessione s, boolean empty) {
-            super.updateItem(s, empty);
-            if (empty || s == null) {
-                setText(null);
-                setGraphic(null);
-                setStyle("");
-            } else {
-                infoBox.getChildren().clear();
+            {
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
                 
-                String tipo = (s instanceof Online) ? "🌐 Online" : "🏛️ In Presenza";
-                String inizio = s.getDataInizioSessione().toLocalDate() + " alle " + 
-                               s.getDataInizioSessione().toLocalTime().toString();
-                String fine = s.getDataFineSessione().toLocalDate() + " alle " + 
-                             s.getDataFineSessione().toLocalTime().toString();
-                
-                Label tipoLabel = new Label(tipo);
-                tipoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-                
-                Label inizioLabel = new Label("📅 Inizio: " + inizio);
-                Label fineLabel = new Label("🏁 Fine: " + fine);
-                
-                infoBox.getChildren().addAll(tipoLabel, inizioLabel, fineLabel);
-                
-                if (s instanceof Online) {
-                    Online online = (Online) s;
-                    Label piattaformaLabel = new Label("💻 Piattaforma: " + online.getPiattaformaStreaming());
-                    piattaformaLabel.setStyle("-fx-text-fill: #666;");
-                    infoBox.getChildren().add(piattaformaLabel);
-                } else if (s instanceof InPresenza) {
-                    InPresenza ip = (InPresenza) s;
-                    
-                    System.out.println("\n========== DEBUG SESSIONE IN PRESENZA ==========");
-                    System.out.println("ID Sessione: " + ip.getIdSessione());
-                    System.out.println("Data Inizio: " + ip.getDataInizioSessione());
-                    System.out.println("Luogo: " + ip.getVia() + ", " + ip.getCitta());
-                    System.out.println("getRicette() = " + ip.getRicette());
-                    System.out.println("getRicette() == null? " + (ip.getRicette() == null));
-                    
-                    if (ip.getRicette() != null) {
-                        System.out.println("getRicette().size() = " + ip.getRicette().size());
-                        System.out.println("getRicette().isEmpty() = " + ip.getRicette().isEmpty());
-                        
-                        if (!ip.getRicette().isEmpty()) {
-                            System.out.println("Ricette trovate:");
-                            for (Ricetta r : ip.getRicette()) {
-                                System.out.println("  - ID: " + r.getIdRicetta() + " | Nome: " + r.getNome());
-                            }
-                        } else {
-                            System.out.println("⚠️ Set<Ricetta> NON è null ma è VUOTO!");
-                        }
-                    } else {
-                        System.out.println("⚠️ Set<Ricetta> è NULL!");
+                eliminaBtn.setPrefWidth(110);
+                eliminaBtn.setOnAction(e -> {
+                    Sessione s = getItem();
+                    if (s != null) {
+                        confermaEliminaSessione(s);
                     }
-                    System.out.println("================================================\n");
-                    
-                    Label luogoLabel = new Label("📍 Luogo: " + ip.getVia() + ", " + ip.getCitta() + " (" + ip.getCAP() + ")");
-                    luogoLabel.setStyle("-fx-text-fill: #666;");
-                    Label postiLabel = new Label("🪑 Posti: " + ip.getNumeroPosti());
-                    postiLabel.setStyle("-fx-text-fill: #666;");
-                    
-                    int ricette = ip.getRicette() != null ? ip.getRicette().size() : 0;
-                    
-                    Label ricetteLabel = new Label("🍝 Ricette associate: " + ricette);
-                    ricetteLabel.setStyle("-fx-text-fill: #666;");
-                    infoBox.getChildren().addAll(luogoLabel, postiLabel, ricetteLabel);
-                }
+                });
 
-                aggiornaStatoBottoneElimina(eliminaBtn);
+                container.setAlignment(Pos.CENTER_LEFT);
+                container.setPadding(new Insets(12));
+                container.setStyle(
+                    "-fx-background-color: " + StyleHelper.BG_WHITE + ";" +
+                    "-fx-background-radius: 10;"
+                );
+            }
 
-                container.getChildren().clear();
-                container.getChildren().addAll(infoBox, spacer, eliminaBtn);
-                
-                setGraphic(container);
-                setText(null);
-                
-                if (s instanceof Online) {
-                    setStyle("-fx-background-color: #E3F2FD; -fx-border-color: #2196F3; " +
-                            "-fx-border-width: 0 0 0 4; -fx-background-radius: 5; -fx-border-radius: 5;");
+            @Override
+            protected void updateItem(Sessione s, boolean empty) {
+                super.updateItem(s, empty);
+                if (empty || s == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
                 } else {
-                    setStyle("-fx-background-color: #E8F5E9; -fx-border-color: #4CAF50; " +
-                            "-fx-border-width: 0 0 0 4; -fx-background-radius: 5; -fx-border-radius: 5;");
+                    infoBox.getChildren().clear();
+                    
+                    String tipo = (s instanceof Online) ? "Online" : "In Presenza";
+                    String inizio = s.getDataInizioSessione().toLocalDate() + " ore " + 
+                                   s.getDataInizioSessione().toLocalTime().toString();
+                    
+                    Label tipoLabel = new Label(tipo);
+                    tipoLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 15px; -fx-text-fill: " + StyleHelper.TEXT_BLACK + ";");
+                    
+                    Label inizioLabel = StyleHelper.createLabel("Inizio: " + inizio);
+                    
+                    infoBox.getChildren().addAll(tipoLabel, inizioLabel);
+                    
+                    if (s instanceof Online) {
+                        Online online = (Online) s;
+                        Label piattaformaLabel = StyleHelper.createCaptionLabel("Piattaforma: " + online.getPiattaformaStreaming());
+                        infoBox.getChildren().add(piattaformaLabel);
+                    } else if (s instanceof InPresenza) {
+                        InPresenza ip = (InPresenza) s;
+                        
+                        Label luogoLabel = StyleHelper.createCaptionLabel("Luogo: " + ip.getVia() + ", " + ip.getCitta());
+                        Label postiLabel = StyleHelper.createCaptionLabel("Posti: " + ip.getNumeroPosti());
+                        
+                        int ricette = ip.getRicette() != null ? ip.getRicette().size() : 0;
+                        Label ricetteLabel = StyleHelper.createCaptionLabel("Ricette: " + ricette);
+                        
+                        infoBox.getChildren().addAll(luogoLabel, postiLabel, ricetteLabel);
+                    }
+
+                    aggiornaStatoBottoneElimina(eliminaBtn);
+
+                    container.getChildren().clear();
+                    
+                    Region spacer = new Region();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+                    
+                    container.getChildren().addAll(infoBox, spacer, eliminaBtn);
+                    
+                    setGraphic(container);
+                    setText(null);
+                    
+                    String borderColor = (s instanceof Online) ? StyleHelper.INFO_BLUE : StyleHelper.SUCCESS_GREEN;
+                    setStyle(
+                        "-fx-background-color: transparent; " +
+                        "-fx-border-color: " + borderColor + "; " +
+                        "-fx-border-width: 0 0 1 0; " +
+                        "-fx-padding: 8 0;"
+                    );
                 }
             }
-        }
-    });
-}
-
+        });
+    }
 
     private void aggiornaStatoBottoneElimina(Button eliminaBtn) {
         boolean isUltimaSessione = corso.getSessioni() != null && corso.getSessioni().size() <= 1;
@@ -257,103 +232,69 @@ public class VisualizzaSessioniGUI {
         eliminaBtn.setDisable(isUltimaSessione);
         
         if (isUltimaSessione) {
-            eliminaBtn.setStyle(
-                "-fx-background-color: #CCCCCC; -fx-text-fill: #666666; " +
-                "-fx-font-weight: bold; -fx-background-radius: 8; " +
-                "-fx-padding: 8 15; -fx-opacity: 0.6;"
-            );
-            
-            Tooltip tooltip = new Tooltip(
-                "⚠️ Impossibile eliminare l'unica sessione del corso.\n" +
-                "Aggiungi un'altra sessione prima di eliminare questa."
-            );
-            tooltip.setStyle("-fx-font-size: 12px;");
+            Tooltip tooltip = new Tooltip("Non puoi eliminare l'unica sessione del corso");
             eliminaBtn.setTooltip(tooltip);
-        } else {
-            eliminaBtn.setStyle(
-                "-fx-background-color: #FF4444; -fx-text-fill: white; " +
-                "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 8; " +
-                "-fx-padding: 8 15;"
-            );
-            eliminaBtn.setTooltip(null);
         }
     }
 
     private void confermaEliminaSessione(Sessione sessione) {
-    if (sessione == null) return;
-    
-    String tipo = (sessione instanceof Online) ? "Online" : "In Presenza";
-    String sessioneInfo = "Tipo: " + tipo + "\n" +
-                         "Inizio: " + sessione.getDataInizioSessione().toLocalDate() + "\n" +
-                         "Fine: " + sessione.getDataFineSessione().toLocalDate();
-    
-    StyleHelper.showConfirmationDialog(
-        "⚠️ Conferma Eliminazione",
-        "Sei sicuro di voler eliminare questa sessione?\n\n" +
-        sessioneInfo + "\n\n" +
-        "⚠️ Questa operazione è irreversibile!",
-        () -> {
-            try {
-                if (controller != null) {
-                    controller.eliminaSessione(sessione);
-                }
-                
-                if (corso.getSessioni() != null) {
-                    corso.getSessioni().remove(sessione);
-                }
-                
-                aggiornaLista();
-                
-                StyleHelper.showSuccessDialog(
-                    "✅ Sessione Eliminata", 
-                    "La sessione è stata eliminata con successo!"
-                );
-                
-            } catch (IllegalStateException ex) {
-                StyleHelper.showValidationDialog("⚠️ Impossibile Eliminare", ex.getMessage());
-            } catch (Exception ex) {
-                StyleHelper.showErrorDialog("❌ Errore", 
-                    "Errore durante l'eliminazione:\n" + ex.getMessage());
-            }
-        }
-    );
-}
-
-
-    private HBox createPulsantiPrincipali() {
-        HBox pulsantiPrincipali = new HBox(15);
-        pulsantiPrincipali.setAlignment(Pos.CENTER);
-        pulsantiPrincipali.setPadding(new Insets(15, 0, 0, 0));
-
-        Button creaSessioneBtn = new Button("➕ Crea Sessione");
-        creaSessioneBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; " +
-                "-fx-pref-width: 180; -fx-pref-height: 45; -fx-font-size: 14px; " +
-                "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 10;");
+        if (sessione == null) return;
         
-        creaSessioneBtn.setOnAction(e -> apriCreaSessioni());
+        String tipo = (sessione instanceof Online) ? "Online" : "In Presenza";
+        String sessioneInfo = "Tipo: " + tipo + "\n" +
+                             "Inizio: " + sessione.getDataInizioSessione().toLocalDate();
+        
+        StyleHelper.showConfirmationDialog(
+            "Conferma Eliminazione",
+            "Sei sicuro di voler eliminare questa sessione?\n\n" + sessioneInfo,
+            () -> {
+                try {
+                    if (controller != null) {
+                        controller.eliminaSessione(sessione);
+                    }
+                    
+                    if (corso.getSessioni() != null) {
+                        corso.getSessioni().remove(sessione);
+                    }
+                    
+                    aggiornaLista();
+                    StyleHelper.showSuccessDialog("Sessione Eliminata", "Eliminazione completata!");
+                    
+                } catch (IllegalStateException ex) {
+                    StyleHelper.showValidationDialog("Errore", ex.getMessage());
+                } catch (Exception ex) {
+                    StyleHelper.showErrorDialog("Errore", "Errore durante l'eliminazione");
+                }
+            }
+        );
+    }
 
-        Button chiudiBtn = new Button("❌ Chiudi");
-        chiudiBtn.setStyle("-fx-pref-width: 150; -fx-pref-height: 45; -fx-font-size: 14px; " +
-                "-fx-font-weight: bold; -fx-cursor: hand; -fx-background-radius: 10;");
+    private HBox createPulsantiBox() {
+        HBox pulsantiBox = new HBox(12);
+        pulsantiBox.setAlignment(Pos.CENTER);
+        pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
+
+        Button creaBtn = StyleHelper.createSuccessButton("Crea Sessione");
+        creaBtn.setPrefWidth(180);
+        creaBtn.setOnAction(e -> apriCreaSessioni());
+
+        Button chiudiBtn = StyleHelper.createPrimaryButton("Chiudi");
+        chiudiBtn.setPrefWidth(150);
         chiudiBtn.setOnAction(e -> {
             if (root.getScene() != null && root.getScene().getWindow() != null) {
                 root.getScene().getWindow().hide();
             }
         });
 
-        pulsantiPrincipali.getChildren().addAll(creaSessioneBtn, chiudiBtn);
-
-        return pulsantiPrincipali;
+        pulsantiBox.getChildren().addAll(creaBtn, chiudiBtn);
+        return pulsantiBox;
     }
     
     private void apriCreaSessioni() {
         try {
             if (ricettaController == null || ingredienteController == null) {
                 StyleHelper.showErrorDialog("Errore", 
-                    "Controller non inizializzati.\n\n" +
-                    "Assicurati di chiamare:\n" +
-                    "- setRicettaController()\n" +
-                    "- setIngredienteController()");
+                    "Controller non inizializzati");
                 return;
             }
             
@@ -365,6 +306,7 @@ public class VisualizzaSessioniGUI {
                     }
                 }
             }
+            
             CreaSessioniGUI creaGUI = new CreaSessioniGUI(
                 corso.getDataInizioCorso().toLocalDate(), 
                 corso.getDataFineCorso().toLocalDate(),
@@ -387,15 +329,11 @@ public class VisualizzaSessioniGUI {
                 
                 controller.aggiungiSessione(nuovaSessione, ricette);
                 aggiornaLista();
-                
-                StyleHelper.showSuccessDialog("✅ Successo", 
-                    "Sessione creata con successo!");
+                StyleHelper.showSuccessDialog("Successo", "Sessione creata!");
             }
             
         } catch (Exception ex) {
-            StyleHelper.showErrorDialog("❌ Errore", 
-                "Errore durante la creazione sessione:\n" + ex.getMessage());
-            ex.printStackTrace();
+            StyleHelper.showErrorDialog("Errore", ex.getMessage());
         }
     }
 
@@ -406,7 +344,7 @@ public class VisualizzaSessioniGUI {
 
         if (corso.getSessioni() == null || corso.getSessioni().isEmpty()) {
             sessioniList.setItems(sessioniFiltrate);
-            numeroSessioniLabel.setText("❌ Nessuna sessione disponibile");
+            numeroSessioniLabel.setText("Nessuna sessione disponibile");
             return;
         }
 
@@ -434,19 +372,11 @@ public class VisualizzaSessioniGUI {
 
         sessioniFiltrate.sort(Comparator.comparing(Sessione::getDataInizioSessione));
         sessioniList.setItems(sessioniFiltrate);
-        numeroSessioniLabel.setText(String.format("📊 Sessioni visualizzate: %d di %d totali", 
+        numeroSessioniLabel.setText(String.format("Sessioni visualizzate: %d di %d", 
                 sessioniFiltrate.size(), corso.getSessioni().size()));
     }
 
     public void aggiornaLista() {
         applicaFiltri();
-    }
-
-    private void showError(String title, String message) {
-        StyleHelper.showErrorDialog(title, message);
-    }
-
-    private void showInfo(String title, String message) {
-        StyleHelper.showInfoDialog(title, message);
     }
 }
