@@ -377,27 +377,39 @@ public class RegistrazioneChefGUI extends VBox {
     } catch (DataAccessException ex) {
         String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
         
-        if (msg.contains("unique") && msg.contains("username")) {
-            mostraErrore("❌ Username già in uso. Scegline un altro");
-            usernameField.requestFocus();
-            usernameField.selectAll();
-        } else if (msg.contains("unique") && msg.contains("email")) {
-            mostraErrore("❌ Email già registrata. Effettua il login");
-            emailField.requestFocus();
-            emailField.selectAll();
-        } else if (msg.contains("unique") && msg.contains("codice")) {
-            mostraErrore("❌ Codice Fiscale già registrato");
-            codFiscaleField.requestFocus();
-            codFiscaleField.selectAll();
+        if (msg.contains("duplicate key") || msg.contains("unique constraint") || msg.contains("unique")) {
+            
+            if (msg.contains("username") || msg.contains("chef_username") || msg.contains("utente_username")) {
+                mostraErrore("❌ Username già in uso. Scegline un altro");
+                usernameField.requestFocus();
+                usernameField.selectAll();
+                
+            } else if (msg.contains("email") || msg.contains("chef_email") || msg.contains("persona_email")) {
+                mostraErrore("❌ Email già registrata. Effettua il login");
+                emailField.requestFocus();
+                emailField.selectAll();
+                
+            } else if (msg.contains("codice") || msg.contains("codfiscale") || msg.contains("chef_cod") || msg.contains("persona_cod")) {
+                mostraErrore("❌ Codice Fiscale già registrato");
+                codFiscaleField.requestFocus();
+                codFiscaleField.selectAll();
+                
+            } else {
+                mostraErrore("❌ Valore duplicato. Controlla i dati inseriti");
+            }
+            
         } else {
             mostraErrore("❌ Errore di connessione al database");
         }
+        
+        ex.printStackTrace();
 
     } catch (Exception ex) {
         mostraErrore("❌ Errore imprevisto. Riprovare");
         ex.printStackTrace();
     }
 }
+
 
 
 

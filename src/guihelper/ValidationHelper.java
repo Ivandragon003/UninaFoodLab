@@ -12,7 +12,7 @@ import javafx.scene.layout.VBox;
 
 public final class ValidationHelper {
 
-    private ValidationHelper() { throw new AssertionError("Non instanziabile"); }
+    private ValidationHelper() { throw new AssertionError("Classe di utilità non istanziabile"); }
 
   
     private static final String NORMAL_STYLE = """
@@ -182,5 +182,7 @@ public final class ValidationHelper {
         String domain = email.substring(email.indexOf('@') + 1, email.lastIndexOf('.'));
         return !domain.matches("\\d+");
     }
+    
+    
 
 }
