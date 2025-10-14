@@ -219,7 +219,7 @@ public class ChefMenuGUI {
 		Button btnCreaCorso = StyleHelper.createSuccessButton("➕ Crea Corso");
 		Button btnGestisciRicette = StyleHelper.createCyanButton("📖 Gestisci Ricette");
 		Button btnCreaRicetta = StyleHelper.createSecondaryButton("✨ Crea Ricetta");
-		Button btnReportMensile = StyleHelper.createStyledButton("📊 Report Mensile", StyleHelper.ACCENT_YELLOW,
+		Button btnReportMensile = StyleHelper.createStyledButton("📊 Report", StyleHelper.ACCENT_YELLOW,
 				"#000000");
 		Button btnEliminaAccount = StyleHelper.createDangerButton("🗑️ Elimina Account");
 		Button btnLogout = StyleHelper.createStyledButton("🚪 Logout", StyleHelper.NEUTRAL_GRAY, "#FFFFFF");

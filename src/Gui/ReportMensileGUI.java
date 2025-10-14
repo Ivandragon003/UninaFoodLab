@@ -13,26 +13,19 @@ import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
-
-// JFreeChart imports
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.fx.ChartViewer;
-import org.jfree.chart.plot.PiePlot;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
 import org.jfree.data.general.DefaultPieDataset;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.chart.ui.RectangleInsets;
-
-// Java AWT imports (per JFreeChart)
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.BasicStroke;
 import java.awt.GradientPaint;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -369,12 +362,10 @@ public class ReportMensileGUI {
     dataset.setValue("Online", d.getSessioniOnline());
     dataset.setValue("In Presenza", d.getSessioniPratiche());
 
-    // CREA PIE CHART 3D
     JFreeChart pieChart = ChartFactory.createPieChart3D(
         null, dataset, true, true, false
     );
 
-    // PERSONALIZZA GRAFICO
     pieChart.setBackgroundPaint(null);
     pieChart.setBorderVisible(false);
     pieChart.setAntiAlias(true);
@@ -388,24 +379,20 @@ public class ReportMensileGUI {
     plot.setCircular(true);
     plot.setLabelGap(0.02);
     
-    // FONT PIÙ GRANDE E LEGGIBILE
     plot.setLabelFont(new Font("Segoe UI", Font.BOLD, 13));
     plot.setLabelBackgroundPaint(new Color(255, 255, 255, 200));
     plot.setLabelOutlinePaint(null);
     plot.setLabelShadowPaint(null);
     
-    // COLORI MODERNI
     plot.setSectionPaint("Online", new Color(33, 150, 243));
     plot.setSectionPaint("In Presenza", new Color(76, 175, 80));
     
-    // BORDI SEZIONI
     plot.setSectionOutlinesVisible(true);
     plot.setSectionOutlinePaint("Online", Color.WHITE);
     plot.setSectionOutlinePaint("In Presenza", Color.WHITE);
     plot.setSectionOutlineStroke("Online", new BasicStroke(3.0f));
     plot.setSectionOutlineStroke("In Presenza", new BasicStroke(3.0f));
     
-    // LEGENDA MODERNA
     org.jfree.chart.title.LegendTitle legend = pieChart.getLegend();
     legend.setFrame(org.jfree.chart.block.BlockBorder.NONE);
     legend.setBackgroundPaint(Color.WHITE);
@@ -413,17 +400,25 @@ public class ReportMensileGUI {
     legend.setPosition(org.jfree.chart.ui.RectangleEdge.BOTTOM);
     legend.setPadding(10, 10, 5, 10);
     
-    // ✅ CREA CHART VIEWER CON INTERATTIVITÀ DISABILITATA
     ChartViewer chartViewer = new ChartViewer(pieChart);
     chartViewer.setPrefSize(400, 350);
     
-    // ✅ DISABILITA TUTTE LE INTERAZIONI
-    chartViewer.setMouseWheelEnabled(false);        // Disabilita rotellina del mouse
-    chartViewer.setDomainZoomable(false);           // Disabilita zoom orizzontale
-    chartViewer.setRangeZoomable(false);            // Disabilita zoom verticale
-    chartViewer.getCanvas().setOnScroll(null);      // Blocca eventi scroll
-    chartViewer.getCanvas().setOnMousePressed(null); // Blocca drag
-    chartViewer.getCanvas().setOnMouseDragged(null); // Blocca drag
+    chartViewer.getCanvas().setOnScroll(scrollEvent -> {
+        scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(
+            javafx.scene.input.ScrollEvent.SCROLL,
+            scrollEvent.getX(), scrollEvent.getY(),
+            scrollEvent.getScreenX(), scrollEvent.getScreenY(),
+            scrollEvent.isShiftDown(), scrollEvent.isControlDown(),
+            scrollEvent.isAltDown(), scrollEvent.isMetaDown(),
+            scrollEvent.isDirect(), scrollEvent.isInertia(),
+            scrollEvent.getDeltaX(), scrollEvent.getDeltaY(),
+            scrollEvent.getTotalDeltaX(), scrollEvent.getTotalDeltaY(),
+            scrollEvent.getMultiplierX(), scrollEvent.getMultiplierY(),
+            scrollEvent.getTextDeltaXUnits(), scrollEvent.getTextDeltaX(),
+            scrollEvent.getTextDeltaYUnits(), scrollEvent.getTextDeltaY(),
+            scrollEvent.getTouchCount(), scrollEvent.getPickResult()
+        ));
+    });
 
     card.getChildren().addAll(title, chartViewer);
     return card;
@@ -457,14 +452,8 @@ public class ReportMensileGUI {
     }
 
     JFreeChart barChart = ChartFactory.createBarChart(
-        null, 
-        "Giorno del Mese", 
-        "Numero Ricette", 
-        dataset,
-        PlotOrientation.VERTICAL, 
-        false, 
-        true, 
-        false
+        null, "Giorno del Mese", "Numero Ricette", dataset,
+        PlotOrientation.VERTICAL, false, true, false
     );
 
     barChart.setBackgroundPaint(null);
@@ -478,34 +467,28 @@ public class ReportMensileGUI {
     plot.setRangeGridlinePaint(new Color(230, 230, 230));
     plot.setRangeGridlineStroke(new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
     plot.setDomainGridlinesVisible(false);
-    
     plot.setAxisOffset(new RectangleInsets(10, 10, 10, 10));
     
     BarRenderer renderer = (BarRenderer) plot.getRenderer();
-    
     GradientPaint gradient = new GradientPaint(
-        0.0f, 0.0f, new Color(255, 138, 101), 
+        0.0f, 0.0f, new Color(255, 138, 101),
         0.0f, 300.0f, new Color(255, 87, 34)
     );
     renderer.setSeriesPaint(0, gradient);
-    
     renderer.setBarPainter(new org.jfree.chart.renderer.category.StandardBarPainter());
     renderer.setDrawBarOutline(true);
     renderer.setSeriesOutlinePaint(0, new Color(230, 230, 230));
     renderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
-    
-    // ✅ OMBRA SOTTO LE BARRE
-//    renderer.setShadowVisible(true);
-//    renderer.setShadowPaint(new Color(0, 0, 0, 40));
-//    renderer.setShadowXOffset(4.0);
-//    renderer.setShadowYOffset(4.0);
-    
+    renderer.setShadowVisible(true);
+    renderer.setShadowPaint(new Color(0, 0, 0, 40));
+    renderer.setShadowXOffset(4.0);
+    renderer.setShadowYOffset(4.0);
     renderer.setItemMargin(0.15);
     renderer.setMaximumBarWidth(0.08);
     
     renderer.setDefaultToolTipGenerator(
         new org.jfree.chart.labels.StandardCategoryToolTipGenerator(
-            "<html><b>Giorno {1}</b><br>Ricette: <b>{2}</b></html>", 
+            "Giorno {1}: {2} ricette", 
             java.text.NumberFormat.getInstance()
         )
     );
@@ -532,10 +515,28 @@ public class ReportMensileGUI {
 
     ChartViewer chartViewer = new ChartViewer(barChart);
     chartViewer.setPrefSize(650, 420);
+    
+    chartViewer.getCanvas().setOnScroll(scrollEvent -> {
+        scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(
+            javafx.scene.input.ScrollEvent.SCROLL,
+            scrollEvent.getX(), scrollEvent.getY(),
+            scrollEvent.getScreenX(), scrollEvent.getScreenY(),
+            scrollEvent.isShiftDown(), scrollEvent.isControlDown(),
+            scrollEvent.isAltDown(), scrollEvent.isMetaDown(),
+            scrollEvent.isDirect(), scrollEvent.isInertia(),
+            scrollEvent.getDeltaX(), scrollEvent.getDeltaY(),
+            scrollEvent.getTotalDeltaX(), scrollEvent.getTotalDeltaY(),
+            scrollEvent.getMultiplierX(), scrollEvent.getMultiplierY(),
+            scrollEvent.getTextDeltaXUnits(), scrollEvent.getTextDeltaX(),
+            scrollEvent.getTextDeltaYUnits(), scrollEvent.getTextDeltaY(),
+            scrollEvent.getTouchCount(), scrollEvent.getPickResult()
+        ));
+    });
 
     card.getChildren().addAll(title, chartViewer);
     return card;
 }
+
 
 
     private VBox creaStatisticheRicetteCard(DatiReportMensile d) {
