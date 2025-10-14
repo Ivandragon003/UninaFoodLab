@@ -15,7 +15,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.scene.Scene;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.GaussianBlur;
 import javafx.animation.ScaleTransition;
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
@@ -31,7 +30,7 @@ public final class StyleHelper {
 	public static final String SUCCESS_GREEN = "#06D6A0";
 	public static final String SECONDARY_BEIGE = "#F4A261";
 	public static final String CYAN_REGISTER = "#118AB2";
-	public static final String ERROR_RED = "#EF476F";
+	public static final String ERROR_RED = "#DC3545";
 	public static final String INFO_BLUE = "#4ECDC4";
 	public static final String BORDER_LIGHT = "#E8E8E8";
 	public static final String TEXT_BLACK = "#2B2D42";
@@ -71,39 +70,21 @@ public final class StyleHelper {
 	public static Button createStyledButton(String text, String color, String textColor) {
 		Button button = new Button(text);
 		button.setPrefSize(140, 45);
-		button.setStyle(
-			"-fx-background-color: " + color + ";" +
-			"-fx-text-fill: " + textColor + ";" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.0, 0.0, 4.0);"
-		);
+		button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: " + textColor + ";"
+				+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0.4, 1.5, 3.5);");
 
 		button.setOnMouseEntered(e -> {
-			button.setStyle(
-				"-fx-background-color: derive(" + color + ", -15%);" +
-				"-fx-text-fill: " + textColor + ";" +
-				"-fx-font-weight: bold;" +
-				"-fx-font-size: 14px;" +
-				"-fx-background-radius: 25;" +
-				"-fx-cursor: hand;" +
-				"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 15, 0.0, 0.0, 6.0);"
-			);
+			button.setStyle("-fx-background-color: derive(" + color + ", -15%);" + "-fx-text-fill: " + textColor + ";"
+					+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+					+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 14, 0.5, 2.5, 5.0);");
 			animateScale(button, 1.0, 1.05, 150);
 		});
 
 		button.setOnMouseExited(e -> {
-			button.setStyle(
-				"-fx-background-color: " + color + ";" +
-				"-fx-text-fill: " + textColor + ";" +
-				"-fx-font-weight: bold;" +
-				"-fx-font-size: 14px;" +
-				"-fx-background-radius: 25;" +
-				"-fx-cursor: hand;" +
-				"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0.0, 0.0, 4.0);"
-			);
+			button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: " + textColor + ";"
+					+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+					+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0.4, 1.5, 3.5);");
 			animateScale(button, 1.05, 1.0, 150);
 		});
 
@@ -121,35 +102,18 @@ public final class StyleHelper {
 
 	public static void styleComboBox(ComboBox<?> comboBox) {
 		comboBox.setPrefHeight(40);
-		comboBox.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0.0, 0.0, 2.0);"
-		);
+		comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 8 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0.0, 0.0, 2.0);");
 
-		comboBox.setOnMouseEntered(e -> comboBox.setStyle(
-			"-fx-background-color: " + BG_LIGHT + ";" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.3), 8, 0.0, 0.0, 3.0);"
-		));
+		comboBox.setOnMouseEntered(e -> comboBox.setStyle("-fx-background-color: " + BG_LIGHT + ";"
+				+ "-fx-background-radius: 12;" + "-fx-border-color: " + PRIMARY_ORANGE + ";" + "-fx-border-width: 2;"
+				+ "-fx-border-radius: 12;" + "-fx-padding: 8 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.3), 8, 0.0, 0.0, 3.0);"));
 
-		comboBox.setOnMouseExited(e -> comboBox.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0.0, 0.0, 2.0);"
-		));
+		comboBox.setOnMouseExited(e -> comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;"
+				+ "-fx-border-color: " + BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+				+ "-fx-padding: 8 12;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 6, 0.0, 0.0, 2.0);"));
 	}
 
 	public static Label createTitleLabel(String text) {
@@ -188,43 +152,24 @@ public final class StyleHelper {
 		TextField field = new TextField();
 		field.setPromptText(promptText);
 		field.setPrefHeight(42);
-		field.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 10 15;" +
-			"-fx-font-size: 14px;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
-		);
-		
+		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+				+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);");
+
 		field.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
 			if (isNowFocused) {
-				field.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 10 15;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.25), 8, 0.0, 0.0, 3.0);"
-				);
+				field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+						+ "-fx-padding: 10 15;" + "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.25), 8, 0.0, 0.0, 3.0);");
 			} else {
-				field.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + BORDER_LIGHT + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 10 15;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
-				);
+				field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+						+ "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);");
 			}
 		});
-		
+
 		return field;
 	}
 
@@ -232,43 +177,24 @@ public final class StyleHelper {
 		TextArea area = new TextArea();
 		area.setPromptText(promptText);
 		area.setWrapText(true);
-		area.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 12;" +
-			"-fx-font-size: 14px;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
-		);
-		
+		area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+				+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);");
+
 		area.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
 			if (isNowFocused) {
-				area.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 12;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.25), 8, 0.0, 0.0, 3.0);"
-				);
+				area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+						+ "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.25), 8, 0.0, 0.0, 3.0);");
 			} else {
-				area.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + BORDER_LIGHT + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 12;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
-				);
+				area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+						+ "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);");
 			}
 		});
-		
+
 		return area;
 	}
 
@@ -276,14 +202,9 @@ public final class StyleHelper {
 		VBox section = new VBox();
 		section.setSpacing(18);
 		section.setPadding(new Insets(24));
-		section.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-background-radius: 16;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-radius: 16;" +
-			"-fx-border-width: 1;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0.0, 0.0, 4.0);"
-		);
+		section.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 16;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-radius: 16;" + "-fx-border-width: 1;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0.0, 0.0, 4.0);");
 		return section;
 	}
 
@@ -291,21 +212,15 @@ public final class StyleHelper {
 		VBox card = new VBox();
 		card.setSpacing(12);
 		card.setPadding(new Insets(20));
-		card.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-background-radius: 20;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0.0, 0.0, 5.0);"
-		);
+		card.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0.0, 0.0, 5.0);");
 		return card;
 	}
 
 	public static void applyBackgroundGradient(Region region) {
-		LinearGradient gradient = new LinearGradient(
-			0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-			new Stop(0, Color.web(BG_ORANGE_START)),
-			new Stop(0.5, Color.web(PRIMARY_LIGHT)),
-			new Stop(1, Color.web(BG_ORANGE_LIGHT))
-		);
+		LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+				new Stop(0, Color.web(BG_ORANGE_START)), new Stop(0.5, Color.web(PRIMARY_LIGHT)),
+				new Stop(1, Color.web(BG_ORANGE_LIGHT)));
 		region.setBackground(new Background(new BackgroundFill(gradient, CornerRadii.EMPTY, Insets.EMPTY)));
 	}
 
@@ -325,7 +240,8 @@ public final class StyleHelper {
 		showCustomDialog(title, message, "ℹ️", INFO_BLUE, "#E6F9F8");
 	}
 
-	private static void showCustomDialog(String title, String message, String icon, String accentColor, String bgColor) {
+	private static void showCustomDialog(String title, String message, String icon, String accentColor,
+			String bgColor) {
 		Stage dialogStage = new Stage();
 		dialogStage.initModality(Modality.APPLICATION_MODAL);
 		dialogStage.initStyle(StageStyle.TRANSPARENT);
@@ -334,14 +250,9 @@ public final class StyleHelper {
 		VBox content = new VBox(20);
 		content.setPadding(new Insets(30));
 		content.setAlignment(Pos.CENTER);
-		content.setStyle(
-			"-fx-background-color: " + bgColor + ";" +
-			"-fx-background-radius: 20;" +
-			"-fx-border-color: " + accentColor + ";" +
-			"-fx-border-width: 3;" +
-			"-fx-border-radius: 20;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0.0, 0.0, 8.0);"
-		);
+		content.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 20;" + "-fx-border-color: "
+				+ accentColor + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0.0, 0.0, 8.0);");
 
 		Label iconLabel = new Label(icon);
 		iconLabel.setStyle("-fx-font-size: 48px;");
@@ -388,188 +299,144 @@ public final class StyleHelper {
 	}
 
 	public static void showConfirmationDialog(String title, String message, Runnable onConfirm) {
-    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-    alert.setTitle(title);
-    alert.setHeaderText(null);
-    alert.setContentText(null);
-    
-    DialogPane dialogPane = alert.getDialogPane();
-    dialogPane.getStyleClass().remove("alert");
-    
-    dialogPane.setStyle(
-        "-fx-background-color: " + BG_WHITE + ";" +
-        "-fx-border-color: " + PRIMARY_ORANGE + ";" +
-        "-fx-border-width: 3px;" +
-        "-fx-border-radius: 12px;" +
-        "-fx-background-radius: 12px;" +
-        "-fx-padding: 30px;" +
-        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);"
-    );
-    
-    dialogPane.setMinWidth(500);
-    dialogPane.setMinHeight(280);
-    
-    VBox content = new VBox(18);
-    content.setAlignment(Pos.CENTER);
-    
-    Label iconLabel = new Label("❓");
-    iconLabel.setStyle("-fx-font-size: 50px;");
-    
-    Label titleLabel = new Label(title);
-    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-    titleLabel.setTextFill(Color.web(TEXT_BLACK));
-    titleLabel.setAlignment(Pos.CENTER);
-    titleLabel.setMaxWidth(450);
-    titleLabel.setWrapText(true);
-    
-    Label messageLabel = new Label(message);
-    messageLabel.setWrapText(true);
-    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-    messageLabel.setTextFill(Color.web(TEXT_GRAY));
-    messageLabel.setAlignment(Pos.CENTER);
-    messageLabel.setMaxWidth(450);
-    
-    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
-    dialogPane.setContent(content);
-    
-    Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-    okButton.setText("Sì");
-    okButton.setStyle(
-        "-fx-background-color: " + SUCCESS_GREEN + ";" +
-        "-fx-text-fill: white;" +
-        "-fx-font-size: 14px;" +
-        "-fx-font-weight: bold;" +
-        "-fx-padding: 12 30 12 30;" +
-        "-fx-background-radius: 10px;" +
-        "-fx-cursor: hand;"
-    );
-    
-    Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
-    cancelButton.setText("No");
-    cancelButton.setStyle(
-        "-fx-background-color: " + ERROR_RED + ";" +
-        "-fx-text-fill: white;" +
-        "-fx-font-size: 14px;" +
-        "-fx-font-weight: bold;" +
-        "-fx-padding: 12 30 12 30;" +
-        "-fx-background-radius: 10px;" +
-        "-fx-cursor: hand;"
-    );
-    
-    alert.showAndWait().ifPresent(response -> {
-        if (response == ButtonType.OK && onConfirm != null) {
-            onConfirm.run();
-        }
-    });
-}
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle(title);
+		alert.setHeaderText(null);
+		alert.setContentText(null);
 
-	public static void showUnsavedChangesDialog(String title, String message, 
-	                                           Runnable onSaveAndClose, 
-	                                           Runnable onCloseWithoutSaving) {
-	    Alert alert = new Alert(Alert.AlertType.WARNING);
-	    alert.setTitle(title);
-	    alert.setHeaderText(null);
-	    alert.setContentText(null);
-	    
-	    DialogPane dialogPane = alert.getDialogPane();
-	    dialogPane.getStyleClass().remove("alert");
-	    
-	    dialogPane.setStyle(
-	        "-fx-background-color: " + BG_WHITE + ";" +
-	        "-fx-border-color: #FFA500;" + 
-	        "-fx-border-width: 3px;" +
-	        "-fx-border-radius: 12px;" +
-	        "-fx-background-radius: 12px;" +
-	        "-fx-padding: 30px;" +
-	        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);"
-	    );
-	    
-	    dialogPane.setMinWidth(550);
-	    dialogPane.setMinHeight(300);
-	    
-	    VBox content = new VBox(18);
-	    content.setAlignment(Pos.CENTER);
-	    
-	    Label iconLabel = new Label("⚠️");
-	    iconLabel.setStyle("-fx-font-size: 50px;");
-	    
-	    Label titleLabel = new Label(title);
-	    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-	    titleLabel.setTextFill(Color.web(TEXT_BLACK));
-	    titleLabel.setAlignment(Pos.CENTER);
-	    titleLabel.setMaxWidth(500);
-	    titleLabel.setWrapText(true);
-	    
-	    Label messageLabel = new Label(message);
-	    messageLabel.setWrapText(true);
-	    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-	    messageLabel.setTextFill(Color.web(TEXT_GRAY));
-	    messageLabel.setAlignment(Pos.CENTER);
-	    messageLabel.setMaxWidth(500);
-	    
-	    content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
-	    dialogPane.setContent(content);
-	    
-	    ButtonType saveAndCloseBtn = new ButtonType("💾 Salva e Chiudi", ButtonBar.ButtonData.OK_DONE);
-	    ButtonType closeWithoutSavingBtn = new ButtonType("🚪 Chiudi Senza Salvare", ButtonBar.ButtonData.NO);
-	    ButtonType cancelBtn = new ButtonType("Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
-	    
-	    dialogPane.getButtonTypes().setAll(saveAndCloseBtn, closeWithoutSavingBtn, cancelBtn);
-	    
-	    Button saveButton = (Button) dialogPane.lookupButton(saveAndCloseBtn);
-	    saveButton.setStyle(
-	        "-fx-background-color: " + SUCCESS_GREEN + ";" +
-	        "-fx-text-fill: white;" +
-	        "-fx-font-size: 14px;" +
-	        "-fx-font-weight: bold;" +
-	        "-fx-padding: 12 20 12 20;" +
-	        "-fx-background-radius: 10px;" +
-	        "-fx-cursor: hand;"
-	    );
-	    
-	    Button closeButton = (Button) dialogPane.lookupButton(closeWithoutSavingBtn);
-	    closeButton.setStyle(
-	        "-fx-background-color: " + ERROR_RED + ";" +
-	        "-fx-text-fill: white;" +
-	        "-fx-font-size: 14px;" +
-	        "-fx-font-weight: bold;" +
-	        "-fx-padding: 12 20 12 20;" +
-	        "-fx-background-radius: 10px;" +
-	        "-fx-cursor: hand;"
-	    );
-	    
-	    Button cancelButton = (Button) dialogPane.lookupButton(cancelBtn);
-	    cancelButton.setStyle(
-	        "-fx-background-color: #6C757D;" + 
-	        "-fx-text-fill: white;" +
-	        "-fx-font-size: 14px;" +
-	        "-fx-font-weight: bold;" +
-	        "-fx-padding: 12 20 12 20;" +
-	        "-fx-background-radius: 10px;" +
-	        "-fx-cursor: hand;"
-	    );
-	    
-	    alert.showAndWait().ifPresent(response -> {
-	        if (response == saveAndCloseBtn && onSaveAndClose != null) {
-	            onSaveAndClose.run();
-	        } else if (response == closeWithoutSavingBtn && onCloseWithoutSaving != null) {
-	            onCloseWithoutSaving.run();
-	        }
-	    });
+		DialogPane dialogPane = alert.getDialogPane();
+		dialogPane.getStyleClass().remove("alert");
+
+		dialogPane.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-border-color: " + PRIMARY_ORANGE + ";"
+				+ "-fx-border-width: 3px;" + "-fx-border-radius: 12px;" + "-fx-background-radius: 12px;"
+				+ "-fx-padding: 30px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);");
+
+		dialogPane.setMinWidth(500);
+		dialogPane.setMinHeight(280);
+
+		VBox content = new VBox(18);
+		content.setAlignment(Pos.CENTER);
+
+		Label iconLabel = new Label("❓");
+		iconLabel.setStyle("-fx-font-size: 50px;");
+
+		Label titleLabel = new Label(title);
+		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+		titleLabel.setTextFill(Color.web(TEXT_BLACK));
+		titleLabel.setAlignment(Pos.CENTER);
+		titleLabel.setMaxWidth(450);
+		titleLabel.setWrapText(true);
+
+		Label messageLabel = new Label(message);
+		messageLabel.setWrapText(true);
+		messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
+		messageLabel.setTextFill(Color.web(TEXT_GRAY));
+		messageLabel.setAlignment(Pos.CENTER);
+		messageLabel.setMaxWidth(450);
+
+		content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+		dialogPane.setContent(content);
+
+		Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
+		okButton.setText("Sì");
+		okButton.setStyle("-fx-background-color: " + SUCCESS_GREEN + ";" + "-fx-text-fill: white;"
+				+ "-fx-font-size: 14px;" + "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;"
+				+ "-fx-background-radius: 10px;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 8, 0.4, 1.0, 3.0);");
+
+		Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
+		cancelButton.setText("No");
+		cancelButton.setStyle("-fx-background-color: " + ERROR_RED + ";" + "-fx-text-fill: white;"
+				+ "-fx-font-size: 14px;" + "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;"
+				+ "-fx-background-radius: 10px;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 8, 0.4, 1.0, 3.0);");
+
+		alert.showAndWait().ifPresent(response -> {
+			if (response == ButtonType.OK && onConfirm != null) {
+				onConfirm.run();
+			}
+		});
 	}
 
+	public static void showUnsavedChangesDialog(String title, String message, Runnable onSaveAndClose,
+			Runnable onCloseWithoutSaving) {
+		Alert alert = new Alert(Alert.AlertType.WARNING);
+		alert.setTitle(title);
+		alert.setHeaderText(null);
+		alert.setContentText(null);
+
+		DialogPane dialogPane = alert.getDialogPane();
+		dialogPane.getStyleClass().remove("alert");
+
+		dialogPane.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-border-color: #FFA500;"
+				+ "-fx-border-width: 3px;" + "-fx-border-radius: 12px;" + "-fx-background-radius: 12px;"
+				+ "-fx-padding: 30px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 15, 0, 0, 4);");
+
+		dialogPane.setMinWidth(550);
+		dialogPane.setMinHeight(300);
+
+		VBox content = new VBox(18);
+		content.setAlignment(Pos.CENTER);
+
+		Label iconLabel = new Label("⚠️");
+		iconLabel.setStyle("-fx-font-size: 50px;");
+
+		Label titleLabel = new Label(title);
+		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+		titleLabel.setTextFill(Color.web(TEXT_BLACK));
+		titleLabel.setAlignment(Pos.CENTER);
+		titleLabel.setMaxWidth(500);
+		titleLabel.setWrapText(true);
+
+		Label messageLabel = new Label(message);
+		messageLabel.setWrapText(true);
+		messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
+		messageLabel.setTextFill(Color.web(TEXT_GRAY));
+		messageLabel.setAlignment(Pos.CENTER);
+		messageLabel.setMaxWidth(500);
+
+		content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+		dialogPane.setContent(content);
+
+		ButtonType saveAndCloseBtn = new ButtonType("💾 Salva e Chiudi", ButtonBar.ButtonData.OK_DONE);
+		ButtonType closeWithoutSavingBtn = new ButtonType("🚪 Chiudi Senza Salvare", ButtonBar.ButtonData.NO);
+		ButtonType cancelBtn = new ButtonType("Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
+
+		dialogPane.getButtonTypes().setAll(saveAndCloseBtn, closeWithoutSavingBtn, cancelBtn);
+
+		Button saveButton = (Button) dialogPane.lookupButton(saveAndCloseBtn);
+		saveButton.setStyle("-fx-background-color: " + SUCCESS_GREEN + ";" + "-fx-text-fill: white;"
+				+ "-fx-font-size: 14px;" + "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;"
+				+ "-fx-background-radius: 10px;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 8, 0.4, 1.0, 3.0);");
+
+		Button closeButton = (Button) dialogPane.lookupButton(closeWithoutSavingBtn);
+		closeButton.setStyle("-fx-background-color: " + ERROR_RED + ";" + "-fx-text-fill: white;"
+				+ "-fx-font-size: 14px;" + "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;"
+				+ "-fx-background-radius: 10px;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 8, 0.4, 1.0, 3.0);");
+
+		Button cancelButton = (Button) dialogPane.lookupButton(cancelBtn);
+		cancelButton.setStyle("-fx-background-color: #6C757D;" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+				+ "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;" + "-fx-background-radius: 10px;"
+				+ "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 8, 0.4, 1.0, 3.0);");
+
+		alert.showAndWait().ifPresent(response -> {
+			if (response == saveAndCloseBtn && onSaveAndClose != null) {
+				onSaveAndClose.run();
+			} else if (response == closeWithoutSavingBtn && onCloseWithoutSaving != null) {
+				onCloseWithoutSaving.run();
+			}
+		});
+	}
 
 	public static DatePicker createDatePicker() {
 		DatePicker dp = new DatePicker();
 		dp.setPrefHeight(42);
-		dp.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
-		);
+		dp.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: " + BORDER_LIGHT
+				+ ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);");
 		return dp;
 	}
 
@@ -580,39 +447,52 @@ public final class StyleHelper {
 	}
 
 	public static void applyOrangeBackground(Region region) {
-		LinearGradient gradient = new LinearGradient(
-			0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-			new Stop(0, Color.web(PRIMARY_ORANGE)),
-			new Stop(1, Color.web(PRIMARY_LIGHT))
-		);
+		LinearGradient gradient = new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
+				new Stop(0, Color.web(PRIMARY_ORANGE)), new Stop(1, Color.web(PRIMARY_LIGHT)));
 		region.setBackground(new Background(new BackgroundFill(gradient, CornerRadii.EMPTY, Insets.EMPTY)));
 	}
 
-	public static Button createWindowButton(String text, Runnable action) {
+	public static Button createWindowButton(String text, Runnable action, String bgColor) {
 		Button btn = new Button(text);
 		btn.setPrefSize(35, 35);
 		btn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
 		btn.setTextFill(Color.WHITE);
-		btn.setStyle(
-			"-fx-background-color: rgba(255,107,53,0.8);" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0.0, 0.0, 2.0);"
-		);
+		btn.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 18;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 5, 0.4, 0.5, 2.0);");
 		btn.setFocusTraversable(false);
-		btn.setOnMouseEntered(e -> btn.setStyle(
-			"-fx-background-color: rgba(255,107,53,1.0);" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0.0, 0.0, 3.0);"
-		));
-		btn.setOnMouseExited(e -> btn.setStyle(
-			"-fx-background-color: rgba(255,107,53,0.8);" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0.0, 0.0, 2.0);"
-		));
+
+		btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: " + bgColor + ";"
+				+ "-fx-background-radius: 18;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 8, 0.5, 1.0, 3.0);"));
+		btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 18;"
+				+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 5, 0.4, 0.5, 2.0);"));
+
 		btn.setOnAction(e -> action.run());
 		return btn;
 	}
+
+	public static Button createStyledButtonWithWhiteBorder(String text, String color) {
+		Button button = new Button(text);
+		button.setPrefSize(140, 45);
+		button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;" + "-fx-font-weight: bold;"
+				+ "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0.4, 1.5, 3.5);");
+
+		button.setOnMouseEntered(e -> {
+			button.setStyle("-fx-background-color: derive(" + color + ", -15%);" + "-fx-text-fill: #FFFFFF;"
+					+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+					+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.28), 14, 0.5, 2.5, 5.0);");
+			animateScale(button, 1.0, 1.05, 150);
+		});
+
+		button.setOnMouseExited(e -> {
+			button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;"
+					+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+					+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0.4, 1.5, 3.5);");
+			animateScale(button, 1.05, 1.0, 150);
+		});
+
+		return button;
+	}
+
 }
