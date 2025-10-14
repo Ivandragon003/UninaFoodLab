@@ -69,4 +69,6 @@ public class GestioneCorsoController {
         if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
         return corsiService.getCorsoCompleto(corso.getIdCorso());
     }
+    
+    
 }

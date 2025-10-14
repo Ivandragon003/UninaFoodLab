@@ -117,14 +117,16 @@ public class CreaSessioniGUI extends Stage {
 		lbl.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
 		Label frequenzaInfo = new Label("📊 Frequenza corso: " + frequenzaCorso.getDescrizione());
-		frequenzaInfo.setStyle(
-				"-fx-font-size: 12px; -fx-text-fill: #666666; -fx-background-color: #f0f8ff; -fx-padding: 8; -fx-background-radius: 5;");
+		frequenzaInfo.setStyle("-fx-font-size: 12px; -fx-text-fill: #666666; -fx-background-color: #f0f8ff; "
+				+ "-fx-padding: 8; -fx-background-radius: 5;");
 
 		GridPane grid = new GridPane();
 		grid.setHgap(15);
 		grid.setVgap(15);
 
 		datePicker = StyleHelper.createDatePicker();
+
+		// ✅ LOGICA UNIFICATA: funziona per creazione E aggiunta
 		datePicker.setDayCellFactory(dp -> new DateCell() {
 			@Override
 			public void updateItem(LocalDate d, boolean empty) {
@@ -132,6 +134,7 @@ public class CreaSessioniGUI extends Stage {
 				if (empty || d == null)
 					return;
 
+				// 1. Fuori dal range del corso
 				if (d.isBefore(corsoInizio) || d.isAfter(corsoFine)) {
 					setDisable(true);
 					setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
@@ -139,13 +142,7 @@ public class CreaSessioniGUI extends Stage {
 					return;
 				}
 
-				if (!isDataValidaPerFrequenza(d)) {
-					setDisable(true);
-					setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
-					setTooltip(new Tooltip("Data non compatibile con la frequenza " + frequenzaCorso.getDescrizione()));
-					return;
-				}
-
+				// 2. Data già occupata
 				if (dateOccupate.contains(d)) {
 					setDisable(true);
 					setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #f57f17;");
@@ -153,6 +150,74 @@ public class CreaSessioniGUI extends Stage {
 					return;
 				}
 
+				// ✅ 3. SE CI SONO SESSIONI ESISTENTI
+				if (!dateOccupate.isEmpty()) {
+					LocalDate dataFineUltimaSessione = dateOccupate.stream().max(LocalDate::compareTo).orElse(null);
+
+					if (dataFineUltimaSessione != null) {
+						boolean isDisponibile = false;
+						String motivoRosso = "";
+
+						switch (frequenzaCorso) {
+						case unica:
+							setDisable(true);
+							setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+							setTooltip(new Tooltip("Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni"));
+							return;
+
+						case giornaliero:
+							isDisponibile = d.isAfter(dataFineUltimaSessione);
+							motivoRosso = "Deve essere almeno 1 giorno dopo il " + dataFineUltimaSessione;
+							break;
+
+						case ogniDueGiorni:
+							isDisponibile = d.isAfter(dataFineUltimaSessione.plusDays(1));
+							motivoRosso = "Deve essere almeno 2 giorni dopo il " + dataFineUltimaSessione;
+							break;
+
+						case settimanale:
+							// ✅ Deve essere nella settimana SUCCESSIVA (o oltre)
+							int settimanaUltima = dataFineUltimaSessione.get(WeekFields.ISO.weekOfWeekBasedYear());
+							int annoUltima = dataFineUltimaSessione.get(WeekFields.ISO.weekBasedYear());
+
+							int settimanaCorrente = d.get(WeekFields.ISO.weekOfWeekBasedYear());
+							int annoCorrente = d.get(WeekFields.ISO.weekBasedYear());
+
+							isDisponibile = (annoCorrente > annoUltima)
+									|| (annoCorrente == annoUltima && settimanaCorrente > settimanaUltima);
+
+							motivoRosso = "Deve essere nella settimana " + (settimanaUltima + 1) + " o successiva";
+							break;
+
+						case mensile:
+							// ✅ Deve essere nel mese SUCCESSIVO (o oltre)
+							int meseUltima = dataFineUltimaSessione.getMonthValue();
+							int annoMeseUltima = dataFineUltimaSessione.getYear();
+
+							int meseCorrente = d.getMonthValue();
+							int annoMeseCorrente = d.getYear();
+
+							isDisponibile = (annoMeseCorrente > annoMeseUltima)
+									|| (annoMeseCorrente == annoMeseUltima && meseCorrente > meseUltima);
+
+							motivoRosso = "Deve essere a " + dataFineUltimaSessione.plusMonths(1).getMonth()
+									+ " o oltre";
+							break;
+						}
+
+						if (isDisponibile) {
+							setStyle("-fx-background-color: #c8e6c9; -fx-text-fill: #2e7d32;");
+							setTooltip(new Tooltip("Data disponibile"));
+						} else {
+							setDisable(true);
+							setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+							setTooltip(new Tooltip(motivoRosso));
+						}
+						return;
+					}
+				}
+
+				// Prima sessione: tutte le date nel range sono disponibili
 				setStyle("-fx-background-color: #c8e6c9; -fx-text-fill: #2e7d32;");
 				setTooltip(new Tooltip("Data disponibile"));
 			}
@@ -172,45 +237,6 @@ public class CreaSessioniGUI extends Stage {
 
 		box.getChildren().addAll(lbl, frequenzaInfo, grid);
 		return box;
-	}
-
-	private boolean isDataValidaPerFrequenza(LocalDate data) {
-		if (frequenzaCorso == Frequenza.unica) {
-			return dateOccupate.isEmpty();
-		}
-
-		switch (frequenzaCorso) {
-		case giornaliero:
-			return !dateOccupate.contains(data);
-
-		case ogniDueGiorni:
-			LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
-			long giorniDifferenza = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
-			return giorniDifferenza >= 2 && giorniDifferenza % 2 == 0;
-
-		case settimanale:
-			int settimanaData = data.get(WeekFields.ISO.weekOfWeekBasedYear());
-			int annoData = data.getYear();
-			for (LocalDate d : dateOccupate) {
-				if (d.getYear() == annoData && d.get(WeekFields.ISO.weekOfWeekBasedYear()) == settimanaData) {
-					return false;
-				}
-			}
-			return true;
-
-		case mensile:
-			int meseData = data.getMonthValue();
-			annoData = data.getYear();
-			for (LocalDate d : dateOccupate) {
-				if (d.getYear() == annoData && d.getMonthValue() == meseData) {
-					return false;
-				}
-			}
-			return true;
-
-		default:
-			return true;
-		}
 	}
 
 	private ComboBox<Integer> createTimeBox(int max, int def, int step) {

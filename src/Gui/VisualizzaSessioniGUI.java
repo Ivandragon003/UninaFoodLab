@@ -34,6 +34,12 @@ public class VisualizzaSessioniGUI {
     private Label numeroSessioniLabel;
 
     private VBox root;
+    
+    // ✅ Riferimento al contentPane per navigazione
+    private StackPane contentPane;
+    
+    // ✅ Callback per tornare alla schermata precedente
+    private Runnable onChiudiCallback;
 
     public void setController(GestioneSessioniController controller) {
         this.controller = controller;
@@ -50,6 +56,16 @@ public class VisualizzaSessioniGUI {
     public void setCorso(CorsoCucina corso) {
         this.corso = corso;
     }
+    
+    // ✅ Setter per contentPane
+    public void setContentPane(StackPane contentPane) {
+        this.contentPane = contentPane;
+    }
+    
+    // ✅ Setter per il callback
+    public void setOnChiudiCallback(Runnable callback) {
+        this.onChiudiCallback = callback;
+    }
 
     public VBox getRoot() {
         if (corso == null) {
@@ -59,14 +75,11 @@ public class VisualizzaSessioniGUI {
         root = new VBox(20);
         root.setPadding(new Insets(30));
         
-        // SFONDO ARANCIONE COME NELLA FOTO
         StyleHelper.applyBackgroundGradient(root);
 
-        // Header
         Label titolo = StyleHelper.createTitleLabel("Sessioni del Corso: " + corso.getNomeCorso());
-        titolo.setTextFill(Color.WHITE); // Testo bianco su sfondo arancione
+        titolo.setTextFill(Color.WHITE);
 
-        // Sezione filtri
         VBox sezioneSessioni = StyleHelper.createSection();
         
         HBox filtriBox = createFiltriBox();
@@ -79,7 +92,6 @@ public class VisualizzaSessioniGUI {
         
         sezioneSessioni.getChildren().addAll(filtriBox, numeroSessioniLabel, sessioniList);
 
-        // Pulsanti
         HBox pulsantiBox = createPulsantiBox();
 
         root.getChildren().addAll(titolo, sezioneSessioni, pulsantiBox);
@@ -274,44 +286,76 @@ public class VisualizzaSessioniGUI {
         pulsantiBox.setAlignment(Pos.CENTER);
         pulsantiBox.setPadding(new Insets(20, 0, 0, 0));
 
-        Button creaBtn = StyleHelper.createSuccessButton("Crea Sessione");
+        Button creaBtn = StyleHelper.createSuccessButton("➕ Crea Sessione");
         creaBtn.setPrefWidth(180);
         creaBtn.setOnAction(e -> apriCreaSessioni());
 
-        Button chiudiBtn = StyleHelper.createPrimaryButton("Chiudi");
-        chiudiBtn.setPrefWidth(150);
-        chiudiBtn.setOnAction(e -> {
-            if (root.getScene() != null && root.getScene().getWindow() != null) {
-                root.getScene().getWindow().hide();
+        Button indietroBtn = StyleHelper.createPrimaryButton("⬅️ Indietro");
+        indietroBtn.setPrefWidth(150);
+        indietroBtn.setOnAction(e -> {
+            // ✅ Usa il callback per tornare indietro
+            if (onChiudiCallback != null) {
+                onChiudiCallback.run();
+            } else {
+                // Fallback: chiudi lo stage se esiste
+                if (root.getScene() != null && root.getScene().getWindow() != null) {
+                    root.getScene().getWindow().hide();
+                }
             }
         });
 
-        pulsantiBox.getChildren().addAll(creaBtn, chiudiBtn);
+        pulsantiBox.getChildren().addAll(creaBtn, indietroBtn);
         return pulsantiBox;
     }
     
     private void apriCreaSessioni() {
         try {
             if (ricettaController == null || ingredienteController == null) {
-                StyleHelper.showErrorDialog("Errore", 
-                    "Controller non inizializzati");
+                StyleHelper.showErrorDialog("Errore", "Controller non inizializzati");
                 return;
             }
             
-            Set<LocalDate> dateOccupate = new HashSet<>();
-            if (corso.getSessioni() != null) {
+            Set<LocalDate> dateFineSessioni = new HashSet<>();
+            LocalDate dataFineUltimaSessione = null;
+            
+            if (corso.getSessioni() != null && !corso.getSessioni().isEmpty()) {
                 for (Sessione s : corso.getSessioni()) {
-                    if (s.getDataInizioSessione() != null) {
-                        dateOccupate.add(s.getDataInizioSessione().toLocalDate());
+                    if (s.getDataFineSessione() != null) {
+                        LocalDate dataFine = s.getDataFineSessione().toLocalDate();
+                        dateFineSessioni.add(dataFine);
+                        
+                        if (dataFineUltimaSessione == null || dataFine.isAfter(dataFineUltimaSessione)) {
+                            dataFineUltimaSessione = dataFine;
+                        }
                     }
                 }
             }
             
+            LocalDate dataFineCorsoAttuale = corso.getDataFineCorso().toLocalDate();
+            LocalDate nuovaDataFineCorso = dataFineCorsoAttuale;
+            
+            if (dataFineUltimaSessione != null) {
+                LocalDate prossimaDataPossibile = switch (corso.getFrequenzaCorso()) {
+                    case unica -> dataFineUltimaSessione;
+                    case giornaliero -> dataFineUltimaSessione.plusDays(1);
+                    case ogniDueGiorni -> dataFineUltimaSessione.plusDays(2);
+                    case settimanale -> dataFineUltimaSessione.plusWeeks(1);
+                    case mensile -> dataFineUltimaSessione.plusMonths(1);
+                };
+                
+                if (dataFineCorsoAttuale.isBefore(prossimaDataPossibile)) {
+                    nuovaDataFineCorso = prossimaDataPossibile;
+                    corso.setDataFineCorso(nuovaDataFineCorso.atStartOfDay());
+                }
+            } else {
+                nuovaDataFineCorso = corso.getDataInizioCorso().toLocalDate();
+            }
+            
             CreaSessioniGUI creaGUI = new CreaSessioniGUI(
                 corso.getDataInizioCorso().toLocalDate(), 
-                corso.getDataFineCorso().toLocalDate(),
+                nuovaDataFineCorso,
                 corso.getFrequenzaCorso(),
-                dateOccupate,
+                dateFineSessioni,
                 ricettaController,
                 ingredienteController
             );
@@ -334,6 +378,7 @@ public class VisualizzaSessioniGUI {
             
         } catch (Exception ex) {
             StyleHelper.showErrorDialog("Errore", ex.getMessage());
+            ex.printStackTrace();
         }
     }
 

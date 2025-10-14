@@ -88,17 +88,8 @@ public class CreaCorsoGUI {
 
 	private ScrollPane createScrollPane() {
 		VBox content = new VBox(15);
-		content.getChildren().addAll(
-			createInfoSection(), 
-			new Separator(),
-			createDateTimeSection(), 
-			new Separator(),
-			createChefSection(), 
-			new Separator(),
-			createSessionSection(), 
-			new Separator(),
-			createButtonSection()
-		);
+		content.getChildren().addAll(createInfoSection(), new Separator(), createDateTimeSection(), new Separator(),
+				createChefSection(), new Separator(), createSessionSection(), new Separator(), createButtonSection());
 
 		ScrollPane scrollPane = new ScrollPane(content);
 		scrollPane.setFitToWidth(true);
@@ -206,7 +197,8 @@ public class CreaCorsoGUI {
 			LocalDate dataFine = calcolaDataFineFromFrequenza(inizio, numeroSessioni, freq);
 			endDatePicker.setValue(dataFine);
 
-			numeroSessioniLabel.setText(String.format("Sessioni: %d | Periodo: %s -> %s", numeroSessioni, inizio, dataFine));
+			numeroSessioniLabel
+					.setText(String.format("Sessioni: %d | Periodo: %s -> %s", numeroSessioni, inizio, dataFine));
 			numeroSessioniLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 13px; -fx-font-weight: bold;");
 
 		} catch (NumberFormatException e) {
@@ -236,12 +228,8 @@ public class CreaCorsoGUI {
 		chefSelezionati.addListener((ListChangeListener<Chef>) c -> updateChefDisplay());
 		updateChefDisplay();
 
-		section.getChildren().addAll(
-			createSectionTitle("Selezione Chef"), 
-			selezionaChefBtn,
-			StyleHelper.createLabel("Chef Selezionati:"), 
-			listaChefContainer
-		);
+		section.getChildren().addAll(createSectionTitle("Selezione Chef"), selezionaChefBtn,
+				StyleHelper.createLabel("Chef Selezionati:"), listaChefContainer);
 		return section;
 	}
 
@@ -255,12 +243,8 @@ public class CreaCorsoGUI {
 		corsoSessioni.addListener((ListChangeListener<Sessione>) c -> updateSessioniDisplay());
 		updateSessioniDisplay();
 
-		section.getChildren().addAll(
-			createSectionTitle("Sessioni del Corso"), 
-			aggiungiSessioneBtn,
-			StyleHelper.createLabel("Sessioni aggiunte:"), 
-			listaSessioniContainer
-		);
+		section.getChildren().addAll(createSectionTitle("Sessioni del Corso"), aggiungiSessioneBtn,
+				StyleHelper.createLabel("Sessioni aggiunte:"), listaSessioniContainer);
 		return section;
 	}
 
@@ -290,7 +274,8 @@ public class CreaCorsoGUI {
 
 			@Override
 			public Frequenza fromString(String string) {
-				return combo.getItems().stream().filter(f -> f.getDescrizione().equals(string)).findFirst().orElse(null);
+				return combo.getItems().stream().filter(f -> f.getDescrizione().equals(string)).findFirst()
+						.orElse(null);
 			}
 		});
 		return combo;
@@ -318,7 +303,8 @@ public class CreaCorsoGUI {
 	private VBox createListContainer() {
 		VBox box = new VBox(10);
 		box.setPadding(new Insets(10));
-		box.setStyle("-fx-background-color: #f5f5f5; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 8;");
+		box.setStyle(
+				"-fx-background-color: #f5f5f5; -fx-background-radius: 8; -fx-border-color: #ddd; -fx-border-width: 1; -fx-border-radius: 8;");
 		return box;
 	}
 
@@ -361,7 +347,8 @@ public class CreaCorsoGUI {
 				if (!chefSelezionati.contains(scelto)) {
 					chefSelezionati.add(scelto);
 				} else {
-					StyleHelper.showValidationDialog("Chef già selezionato", "Questo chef è già stato aggiunto al corso");
+					StyleHelper.showValidationDialog("Chef già selezionato",
+							"Questo chef è già stato aggiunto al corso");
 				}
 			}
 		} catch (Exception e) {
@@ -383,14 +370,17 @@ public class CreaCorsoGUI {
 				throw new ValidationException("Seleziona la frequenza del corso");
 			}
 
-			Set<LocalDate> dateOccupate = new HashSet<>();
+			
+			Set<LocalDate> dateFineOccupate = new HashSet<>();
 			for (Sessione s : corsoSessioni) {
-				if (s.getDataInizioSessione() != null) {
-					dateOccupate.add(s.getDataInizioSessione().toLocalDate());
+				if (s.getDataFineSessione() != null) {
+					dateFineOccupate.add(s.getDataFineSessione().toLocalDate());
 				}
 			}
 
-			CreaSessioniGUI dialog = new CreaSessioniGUI(inizio, fine, freq, dateOccupate, ricettaController, ingredienteController);
+			CreaSessioniGUI dialog = new CreaSessioniGUI(inizio, fine, freq, dateFineOccupate, // ✅ Passa date FINE
+					ricettaController, ingredienteController);
+
 			Sessione nuovaSessione = dialog.showDialog();
 
 			if (nuovaSessione != null) {
@@ -439,22 +429,22 @@ public class CreaCorsoGUI {
 
 			if (numeroSessioniAggiunte < numeroSessioniPreviste) {
 				throw new ValidationException(String.format(
-					"Sessioni incomplete!\nHai aggiunto %d sessioni ma ne sono previste %d.\nMancano %d sessioni.",
-					numeroSessioniAggiunte, numeroSessioniPreviste, numeroSessioniPreviste - numeroSessioniAggiunte));
+						"Sessioni incomplete!\nHai aggiunto %d sessioni ma ne sono previste %d.\nMancano %d sessioni.",
+						numeroSessioniAggiunte, numeroSessioniPreviste,
+						numeroSessioniPreviste - numeroSessioniAggiunte));
 			}
 
 			if (numeroSessioniAggiunte > numeroSessioniPreviste) {
 				throw new ValidationException(String.format(
-					"Troppo sessioni!\nHai aggiunto %d sessioni ma ne sono previste %d.\nRimuovi %d sessioni.",
-					numeroSessioniAggiunte, numeroSessioniPreviste, numeroSessioniAggiunte - numeroSessioniPreviste));
+						"Troppo sessioni!\nHai aggiunto %d sessioni ma ne sono previste %d.\nRimuovi %d sessioni.",
+						numeroSessioniAggiunte, numeroSessioniPreviste,
+						numeroSessioniAggiunte - numeroSessioniPreviste));
 			}
 
-			chefController.saveCorsoFromForm(
-				nomeField.getText(), prezzoField.getText(), argomentoField.getText(), postiField.getText(), 
-				freq, inizio, startHour.getValue(), startMinute.getValue(), fine,
-				endHour.getValue(), endMinute.getValue(), 
-				new ArrayList<>(chefSelezionati), new ArrayList<>(corsoSessioni)
-			);
+			chefController.saveCorsoFromForm(nomeField.getText(), prezzoField.getText(), argomentoField.getText(),
+					postiField.getText(), freq, inizio, startHour.getValue(), startMinute.getValue(), fine,
+					endHour.getValue(), endMinute.getValue(), new ArrayList<>(chefSelezionati),
+					new ArrayList<>(corsoSessioni));
 
 			StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
 			clearForm();
@@ -483,7 +473,8 @@ public class CreaCorsoGUI {
 		HBox chefBox = new HBox(10);
 		chefBox.setAlignment(Pos.CENTER_LEFT);
 		chefBox.setPadding(new Insets(8));
-		chefBox.setStyle("-fx-background-color: white; -fx-background-radius: 6; -fx-border-color: #FF6600; -fx-border-radius: 6; -fx-border-width: 1.5;");
+		chefBox.setStyle(
+				"-fx-background-color: white; -fx-background-radius: 6; -fx-border-color: #FF6600; -fx-border-radius: 6; -fx-border-width: 1.5;");
 
 		Label chefLabel = new Label(String.format("%s %s", chef.getNome(), chef.getCognome()));
 		chefLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
@@ -492,7 +483,8 @@ public class CreaCorsoGUI {
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		Button rimuoviBtn = new Button("X");
-		rimuoviBtn.setStyle("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand; -fx-min-width: 25; -fx-min-height: 25; -fx-max-width: 25; -fx-max-height: 25; -fx-font-size: 11px;");
+		rimuoviBtn.setStyle(
+				"-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 15; -fx-cursor: hand; -fx-min-width: 25; -fx-min-height: 25; -fx-max-width: 25; -fx-max-height: 25; -fx-font-size: 11px;");
 		rimuoviBtn.setOnAction(e -> {
 			chefSelezionati.remove(chef);
 			updateChefDisplay();
@@ -523,7 +515,8 @@ public class CreaCorsoGUI {
 					numeroSessioniLabel.setText(String.format("Sessioni: %d/%d completate", aggiunte, previste));
 					numeroSessioniLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 13px; -fx-font-weight: bold;");
 				} else if (aggiunte < previste) {
-					numeroSessioniLabel.setText(String.format("Sessioni: %d/%d (mancano %d)", aggiunte, previste, previste - aggiunte));
+					numeroSessioniLabel.setText(
+							String.format("Sessioni: %d/%d (mancano %d)", aggiunte, previste, previste - aggiunte));
 					numeroSessioniLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 13px; -fx-font-weight: bold;");
 				} else {
 					numeroSessioniLabel.setText(String.format("Sessioni: %d (previste %d)", aggiunte, previste));
@@ -539,7 +532,8 @@ public class CreaCorsoGUI {
 		HBox sessioneBox = new HBox(10);
 		sessioneBox.setAlignment(Pos.CENTER_LEFT);
 		sessioneBox.setPadding(new Insets(8));
-		sessioneBox.setStyle("-fx-background-color: white; -fx-background-radius: 6; -fx-border-color: #28a745; -fx-border-radius: 6; -fx-border-width: 1.5;");
+		sessioneBox.setStyle(
+				"-fx-background-color: white; -fx-background-radius: 6; -fx-border-color: #28a745; -fx-border-radius: 6; -fx-border-width: 1.5;");
 
 		Label numeroLabel = new Label((corsoSessioni.indexOf(s) + 1) + ".");
 		numeroLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #FF6600; -fx-font-size: 13px;");
@@ -551,7 +545,8 @@ public class CreaCorsoGUI {
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		Button rimuoviBtn = new Button("Rimuovi");
-		rimuoviBtn.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-min-width: 30; -fx-min-height: 30;");
+		rimuoviBtn.setStyle(
+				"-fx-background-color: #dc3545; -fx-text-fill: white; -fx-background-radius: 15; -fx-cursor: hand; -fx-min-width: 30; -fx-min-height: 30;");
 		rimuoviBtn.setOnAction(e -> {
 			corsoSessioni.remove(s);
 			updateSessioniDisplay();
@@ -563,10 +558,11 @@ public class CreaCorsoGUI {
 
 	private String formatSessioneDettagliata(Sessione s) {
 		String tipo = s instanceof Online ? "Online" : "In Presenza";
-		String data = s.getDataInizioSessione() != null ? s.getDataInizioSessione().toLocalDate().toString() : "Data non specificata";
+		String data = s.getDataInizioSessione() != null ? s.getDataInizioSessione().toLocalDate().toString()
+				: "Data non specificata";
 		String orario = s.getDataInizioSessione() != null && s.getDataFineSessione() != null
-			? s.getDataInizioSessione().toLocalTime() + " - " + s.getDataFineSessione().toLocalTime()
-			: "";
+				? s.getDataInizioSessione().toLocalTime() + " - " + s.getDataFineSessione().toLocalTime()
+				: "";
 
 		if (s instanceof InPresenza ip) {
 			int numRicette = ip.getRicette() != null ? ip.getRicette().size() : 0;

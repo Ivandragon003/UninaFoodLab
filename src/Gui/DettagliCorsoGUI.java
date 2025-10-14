@@ -3,7 +3,6 @@ package Gui;
 import dao.InPresenzaDAO;
 import dao.OnlineDAO;
 import dao.CucinaDAO;
-import dao.CucinaDAO;
 import service.GestioneCucina;
 import service.GestioneRicette;
 import service.GestioneSessioni;
@@ -15,8 +14,6 @@ import controller.ChefController;
 import model.CorsoCucina;
 import model.Frequenza;
 import model.Chef;
-import model.Sessione;
-import util.FrequenzaHelper;
 import guihelper.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.DataAccessException;
@@ -25,16 +22,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -144,7 +138,6 @@ public class DettagliCorsoGUI {
 		setEditable(false);
 		applicaRestrizioniCorsoFinito();
 		refreshChefListView();
-		aggiornaStatoDataFine();
 
 		VBox wrapper = new VBox(card);
 		wrapper.setAlignment(Pos.TOP_CENTER);
@@ -185,27 +178,32 @@ public class DettagliCorsoGUI {
 		frequenzaCombo.getItems().setAll(Frequenza.values());
 		frequenzaCombo.setValue(corso.getFrequenzaCorso());
 		frequenzaCombo.setDisable(true);
-		frequenzaCombo.setOnAction(e -> onFrequenzaChange());
 
 		numeroSessioniField = new TextField(
 				corso.getSessioni() != null ? String.valueOf(corso.getSessioni().size()) : "0");
 		numeroSessioniField.setEditable(false);
 		numeroSessioniField.setFocusTraversable(false);
-		numeroSessioniField.setMouseTransparent(true); // Non cliccabile
+		numeroSessioniField.setMouseTransparent(true);
 		numeroSessioniField
 				.setStyle("-fx-text-fill: #000000;" + "-fx-control-inner-background: #E9ECEF;" + "-fx-border-color: "
 						+ StyleHelper.BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
 						+ "-fx-background-radius: 12;" + "-fx-padding: 10 15;" + "-fx-font-size: 14px;");
 
+		// ✅ DATA INIZIO: SEMPRE NON MODIFICABILE
 		dataInizioPicker = StyleHelper.createDatePicker();
 		dataInizioPicker.setValue(corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null);
 		dataInizioPicker.setDisable(true);
-		dataInizioPicker.setOnAction(e -> onDataInizioChange());
+		dataInizioPicker.setEditable(false);
+		dataInizioPicker.setMouseTransparent(true);
+		dataInizioPicker.setStyle("-fx-opacity: 1.0;" + "-fx-control-inner-background: #E9ECEF;");
 
+		// ✅ DATA FINE: AUTOMATICA (solo lettura)
 		dataFinePicker = StyleHelper.createDatePicker();
 		dataFinePicker.setValue(corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null);
 		dataFinePicker.setDisable(true);
-		dataFinePicker.setOnAction(e -> onDataFineChange());
+		dataFinePicker.setEditable(false);
+		dataFinePicker.setMouseTransparent(true);
+		dataFinePicker.setStyle("-fx-opacity: 1.0;" + "-fx-control-inner-background: #E9ECEF;");
 	}
 
 	private ListView<Chef> createChefListView() {
@@ -442,176 +440,6 @@ public class DettagliCorsoGUI {
 		eliminaCorsoBtn.setDisable(!canDeleteCourse());
 	}
 
-	private void onDataInizioChange() {
-		LocalDate dataInizio = dataInizioPicker.getValue();
-		if (dataInizio == null)
-			return;
-
-		LocalDate oggi = LocalDate.now();
-
-		if (dataInizio.isBefore(oggi)) {
-			StyleHelper.showValidationDialog("Data non valida", "La data inizio non può essere nel passato");
-			dataInizioPicker.setValue(corso.getDataInizioCorso().toLocalDate());
-			return;
-		}
-
-		if (dataFinePicker.getValue() != null && dataFinePicker.getValue().isBefore(dataInizio)) {
-			dataFinePicker.setValue(dataInizio.plusDays(1));
-		}
-
-		if (frequenzaCombo.getValue() == Frequenza.unica) {
-			dataFinePicker.setValue(dataInizio);
-		}
-
-		if (dataFinePicker.getValue() != null) {
-			validateFrequenzaCompatibility(dataInizio, dataFinePicker.getValue());
-		}
-
-		aggiornaFrequenzeDisponibili();
-	}
-
-	private void onDataFineChange() {
-		LocalDate dataFine = dataFinePicker.getValue();
-		if (dataFine == null)
-			return;
-
-		LocalDate dataInizio = dataInizioPicker.getValue();
-		if (dataInizio == null) {
-			StyleHelper.showValidationDialog("Errore", "Seleziona prima la data inizio");
-			dataFinePicker.setValue(corso.getDataFineCorso().toLocalDate());
-			return;
-		}
-
-		LocalDate oggi = LocalDate.now();
-
-		if (corso.getDataInizioCorso() != null && !corso.getDataInizioCorso().toLocalDate().isAfter(oggi)
-				&& dataFine.isBefore(oggi)) {
-			StyleHelper.showValidationDialog("Data non valida",
-					"La data fine non può essere nel passato per un corso già iniziato");
-			dataFinePicker.setValue(corso.getDataFineCorso().toLocalDate());
-			return;
-		}
-
-		if (!validateFrequenzaCompatibility(dataInizio, dataFine)) {
-			dataFinePicker.setValue(corso.getDataFineCorso().toLocalDate());
-			return;
-		}
-
-		if (!validateDataFineConSessioni(dataFine)) {
-			dataFinePicker.setValue(corso.getDataFineCorso().toLocalDate());
-		}
-
-		aggiornaFrequenzeDisponibili();
-	}
-
-	private boolean validateFrequenzaCompatibility(LocalDate inizio, LocalDate fine) {
-		if (inizio == null || fine == null)
-			return false;
-
-		Frequenza freq = corso.getFrequenzaCorso();
-		if (freq == null)
-			return true;
-
-		long giorni = ChronoUnit.DAYS.between(inizio, fine);
-		int numeroSessioni = getNumeroSessioniDelCorso();
-
-		if (numeroSessioni == 0)
-			return true;
-
-		int giorniMinimi = calcolaGiorniMinimiPerFrequenza(freq, numeroSessioni);
-
-		if (giorni < giorniMinimi) {
-			StyleHelper.showValidationDialog("Frequenza Non Compatibile",
-					String.format(
-							"Per la frequenza '%s' con %d sessioni servono almeno %d giorni.\n"
-									+ "Il periodo selezionato è di solo %d giorni.\n\n"
-									+ "Modifica le date o riduci il numero di sessioni.",
-							freq.name(), numeroSessioni, giorniMinimi, (int) giorni));
-			return false;
-		}
-
-		return true;
-	}
-
-	private int calcolaGiorniMinimiPerFrequenza(Frequenza freq, int numeroSessioni) {
-		if (numeroSessioni <= 0)
-			return 0;
-
-		return switch (freq) {
-		case unica -> 1;
-		case giornaliero -> numeroSessioni;
-		case ogniDueGiorni -> (numeroSessioni - 1) * 2 + 1;
-		case settimanale -> (numeroSessioni - 1) * 7 + 1;
-		case mensile -> (numeroSessioni - 1) * 30 + 1;
-		};
-	}
-
-	private int getNumeroSessioniDelCorso() {
-		if (corso.getSessioni() == null)
-			return 0;
-		return corso.getSessioni().size();
-	}
-
-	private boolean validateDataFineConSessioni(LocalDate nuovaDataFine) {
-		if (corso.getSessioni() == null || corso.getSessioni().isEmpty()) {
-			return true;
-		}
-
-		for (Sessione s : corso.getSessioni()) {
-			if (s.getDataInizioSessione() != null) {
-				LocalDate dataSessione = s.getDataInizioSessione().toLocalDate();
-				if (dataSessione.isAfter(nuovaDataFine)) {
-					StyleHelper.showValidationDialog("Conflitto Sessioni",
-							"La data fine non può essere precedente alla sessione del " + dataSessione
-									+ "\n\nModifica prima le sessioni o scegli una data fine successiva.");
-					return false;
-				}
-			}
-		}
-		return true;
-	}
-
-	private void onFrequenzaChange() {
-		Frequenza nuovaFreq = frequenzaCombo.getValue();
-		if (nuovaFreq == null)
-			return;
-		dataFinePicker.setDisable(nuovaFreq == Frequenza.unica);
-		if (nuovaFreq == Frequenza.unica) {
-			dataFinePicker.setValue(dataInizioPicker.getValue());
-		}
-	}
-
-	private void aggiornaFrequenzeDisponibili() {
-		LocalDate dataInizio = dataInizioPicker.getValue();
-		LocalDate dataFine = dataFinePicker.getValue();
-		if (dataInizio == null || dataFine == null) {
-			frequenzaCombo.getItems().setAll(Frequenza.values());
-			return;
-		}
-		List<Frequenza> frequenzeValide = new ArrayList<>();
-		for (Frequenza freq : Frequenza.values()) {
-			if (FrequenzaHelper.isFrequenzaValida(dataInizio, dataFine, freq)) {
-				frequenzeValide.add(freq);
-			}
-		}
-		Frequenza freqAttuale = frequenzaCombo.getValue();
-		frequenzaCombo.getItems().setAll(frequenzeValide);
-		if (frequenzeValide.contains(freqAttuale)) {
-			frequenzaCombo.setValue(freqAttuale);
-		} else if (!frequenzeValide.isEmpty()) {
-			frequenzaCombo.setValue(frequenzeValide.get(0));
-		}
-	}
-
-	private void aggiornaStatoDataFine() {
-		if (corso.getFrequenzaCorso() == Frequenza.unica) {
-			dataFinePicker.setDisable(!editable);
-			if (!editable) {
-				dataFinePicker.setStyle("-fx-opacity: 0.6;");
-			}
-		}
-	}
-
 	private void tornaAllaListaCorsi() {
 		if (onChiudiCallback != null) {
 			onChiudiCallback.run();
@@ -677,36 +505,10 @@ public class DettagliCorsoGUI {
 			throw new ValidationException("Il numero di posti deve essere un numero intero.");
 		}
 
-		LocalDate dataInizio = dataInizioPicker.getValue();
-		LocalDate dataFine = dataFinePicker.getValue();
-		if (dataInizio != null && dataFine != null && dataInizio.isAfter(dataFine)) {
-			throw new ValidationException("La data di inizio deve precedere la data di fine.");
-		}
-
-		Frequenza freq = frequenzaCombo.getValue();
-		if (freq == null)
-			throw new ValidationException("Selezionare una frequenza.");
-
-		if (dataInizio != null && dataFine != null && !FrequenzaHelper.isFrequenzaValida(dataInizio, dataFine, freq)) {
-			throw new ValidationException(FrequenzaHelper.getMessaggioErroreFrequenza(dataInizio, dataFine, freq));
-		}
-
-		int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
-		if (numSessioni > 0 && dataInizio != null && dataFine != null) {
-			String errore = validaNumeroSessioni(freq, dataInizio, dataFine, numSessioni);
-			if (errore != null)
-				throw new ValidationException(errore);
-		}
-
 		corso.setNomeCorso(nome);
 		corso.setPrezzo(prezzo);
 		corso.setArgomento(argomento);
-		corso.setFrequenzaCorso(freq);
 		corso.setNumeroPosti(posti);
-		if (dataInizio != null)
-			corso.setDataInizioCorso(dataInizio.atStartOfDay());
-		if (dataFine != null)
-			corso.setDataFineCorso(dataFine.atStartOfDay());
 
 		gestioneController.modificaCorso(corso);
 		StyleHelper.showSuccessDialog("✅ Successo", "Il corso è stato modificato correttamente!");
@@ -741,86 +543,108 @@ public class DettagliCorsoGUI {
 		prezzoField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
 		argomentoField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
 		numeroPostiField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
-		frequenzaCombo.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
-		dataInizioPicker.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
-		dataFinePicker.valueProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
-	}
-
-	private String validaNumeroSessioni(Frequenza freq, LocalDate inizio, LocalDate fine, int numSessioni) {
-		if (freq == null || inizio == null || fine == null)
-			return null;
-		switch (freq) {
-		case unica:
-			return numSessioni == 1 ? null : "Frequenza 'Sessione Unica' richiede esattamente 1 sessione.";
-		case giornaliero:
-			long giorni = ChronoUnit.DAYS.between(inizio, fine) + 1;
-			return numSessioni >= giorni ? null : "Frequenza 'Giornaliero' richiede almeno " + giorni + " sessioni.";
-		case settimanale:
-			long settimane = ChronoUnit.WEEKS.between(inizio, fine) + 1;
-			return numSessioni >= settimane ? null
-					: "Frequenza 'Settimanale' richiede almeno " + settimane + " sessioni.";
-		case mensile:
-			long mesi = ChronoUnit.MONTHS.between(inizio.withDayOfMonth(1), fine.withDayOfMonth(1)) + 1;
-			return numSessioni >= mesi ? null : "Frequenza 'Mensile' richiede almeno " + mesi + " sessioni.";
-		default:
-			return null;
-		}
 	}
 
 	private void apriVisualizzaSessioni() {
-		if (ricettaController == null || ingredienteController == null) {
-			StyleHelper.showErrorDialog("Errore",
-					"Controller non inizializzati.\n\n" + "Impossibile aprire la gestione sessioni.");
-			return;
-		}
+    if (ricettaController == null || ingredienteController == null) {
+        StyleHelper.showErrorDialog("Errore",
+                "Controller non inizializzati.\n\n" + "Impossibile aprire la gestione sessioni.");
+        return;
+    }
 
-		try {
-			CucinaDAO cucinaDAO = new CucinaDAO();
-			InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
-			OnlineDAO onlineDAO = new OnlineDAO();
+    try {
+        CucinaDAO cucinaDAO = new CucinaDAO();
+        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
+        OnlineDAO onlineDAO = new OnlineDAO();
 
-			GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-			GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+        GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
+        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+        GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
 
-			GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
+        GestioneSessioniController sessioniController = new GestioneSessioniController(corso, gestioneSessioni,
+                gestioneCucina, gestioneRicette);
 
-			GestioneSessioniController sessioniController = new GestioneSessioniController(corso, gestioneSessioni,
-					gestioneCucina, gestioneRicette);
+        VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
+        visualizzaSessioniGUI.setCorso(corso);
+        visualizzaSessioniGUI.setController(sessioniController);
+        visualizzaSessioniGUI.setRicettaController(ricettaController);
+        visualizzaSessioniGUI.setIngredienteController(ingredienteController);
 
-			VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
-			visualizzaSessioniGUI.setCorso(corso);
-			visualizzaSessioniGUI.setController(sessioniController);
-			visualizzaSessioniGUI.setRicettaController(ricettaController);
-			visualizzaSessioniGUI.setIngredienteController(ingredienteController);
+        // ✅ Callback per tornare alla lista corsi
+        visualizzaSessioniGUI.setOnChiudiCallback(() -> {
+            // Aggiorna i dati
+            int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
+            numeroSessioniField.setText(String.valueOf(numSessioni));
+            aggiornaDataFineFromSessioni();
+            
+            // ✅ Torna alla lista corsi (non a DettagliCorso)
+            if (onChiudiCallback != null) {
+                onChiudiCallback.run();
+            }
+        });
+        
+        // ✅ Ottieni il contentPane dalla scena
+        if (card != null && card.getScene() != null) {
+            javafx.scene.Parent sceneRoot = card.getScene().getRoot();
+            
+            // Cerca il StackPane contentPane (quello di ChefMenuGUI)
+            if (sceneRoot instanceof StackPane) {
+                StackPane mainContainer = (StackPane) sceneRoot;
+                
+                // Il mainContainer di ChefMenuGUI contiene: background, mainLayout, hamburger, windowButtons
+                // Dobbiamo trovare il contentPane dentro mainLayout
+                for (javafx.scene.Node node : mainContainer.getChildren()) {
+                    if (node instanceof HBox) {
+                        HBox mainLayout = (HBox) node;
+                        
+                        // Il contentPane è il secondo figlio di mainLayout (dopo sidebar)
+                        if (mainLayout.getChildren().size() > 1) {
+                            javafx.scene.Node possibleContentPane = mainLayout.getChildren().get(1);
+                            
+                            if (possibleContentPane instanceof StackPane) {
+                                StackPane contentPane = (StackPane) possibleContentPane;
+                                
+                                // ✅ Passa il contentPane a VisualizzaSessioniGUI
+                                visualizzaSessioniGUI.setContentPane(contentPane);
+                                
+                                // ✅ Sostituisci il contenuto
+                                contentPane.getChildren().setAll(visualizzaSessioniGUI.getRoot());
+                                return; // Successo!
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // ✅ Fallback: se non troviamo contentPane, mostra errore
+        StyleHelper.showErrorDialog("Errore", "Impossibile accedere al contenitore principale");
 
-			Stage sessioniStage = new Stage();
-			sessioniStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-			sessioniStage.setTitle("📅 Gestione Sessioni - " + corso.getNomeCorso());
+    } catch (Exception ex) {
+        StyleHelper.showErrorDialog("Errore", "Impossibile inizializzare la gestione sessioni: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
 
-			javafx.scene.Scene scene = new javafx.scene.Scene(visualizzaSessioniGUI.getRoot(), 900, 700);
-			sessioniStage.setScene(scene);
-
-			sessioniStage.setOnHidden(e -> {
-				int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
-				numeroSessioniField.setText(String.valueOf(numSessioni));
-				aggiornaDataFineFromSessioni();
-			});
-
-			sessioniStage.showAndWait();
-
-		} catch (Exception ex) {
-			StyleHelper.showErrorDialog("Errore", "Impossibile inizializzare la gestione sessioni: " + ex.getMessage());
-			ex.printStackTrace();
-		}
-	}
 
 	private void aggiornaDataFineFromSessioni() {
-		if (corso.getSessioni() == null || corso.getSessioni().isEmpty())
+		if (corso.getSessioni() == null || corso.getSessioni().isEmpty()) {
 			return;
+		}
+
 		LocalDate maxDate = corso.getSessioni().stream().map(s -> s.getDataFineSessione().toLocalDate())
 				.max(LocalDate::compareTo).orElse(null);
-		if (maxDate != null && !maxDate.equals(dataFinePicker.getValue())) {
+
+		if (maxDate != null) {
+			corso.setDataFineCorso(maxDate.atStartOfDay());
 			dataFinePicker.setValue(maxDate);
+
+			try {
+				gestioneController.modificaCorso(corso);
+				System.out.println("✅ Data fine corso aggiornata automaticamente: " + maxDate);
+			} catch (Exception ex) {
+				System.err.println("❌ Errore aggiornamento data fine: " + ex.getMessage());
+			}
 		}
 	}
 
@@ -837,12 +661,6 @@ public class DettagliCorsoGUI {
 		} else {
 			hasUnsavedChanges = false;
 		}
-
-		LocalDate oggi = LocalDate.now();
-		LocalDate dataInizio = corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null;
-		LocalDate dataFine = corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null;
-
-		boolean corsoGiaIniziato = dataInizio != null && !dataInizio.isAfter(oggi);
 
 		nomeField.setEditable(edit);
 		prezzoField.setEditable(edit);
@@ -869,18 +687,12 @@ public class DettagliCorsoGUI {
 			numeroPostiField.setMouseTransparent(false);
 		}
 
-		frequenzaCombo.setDisable(!edit);
-		dataInizioPicker.setDisable(!edit || corsoGiaIniziato);
-
-		if (edit && frequenzaCombo.getValue() == Frequenza.unica) {
-			dataFinePicker.setDisable(true);
-		} else {
-			dataFinePicker.setDisable(!edit);
-		}
+		frequenzaCombo.setDisable(true);
+		dataInizioPicker.setDisable(true);
+		dataFinePicker.setDisable(true);
 
 		addChefBtn.setDisable(!edit);
 
-		// ✅ USA colori StyleHelper
 		String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
 
 		String fieldStyle = "-fx-text-fill: " + StyleHelper.TEXT_BLACK + ";" + "-fx-background-color: white;"
@@ -892,9 +704,6 @@ public class DettagliCorsoGUI {
 		prezzoField.setStyle(fieldStyle);
 		argomentoField.setStyle(fieldStyle);
 		numeroPostiField.setStyle(fieldStyle);
-
-		// ✅ RIMUOVI modifica bordo card - ora è sempre arancione
-		// Il card mantiene sempre lo stesso stile definito in getRoot()
 
 		refreshChefListView();
 	}
@@ -987,5 +796,4 @@ public class DettagliCorsoGUI {
 			return null;
 		return (s.getWindow() instanceof Stage) ? (Stage) s.getWindow() : null;
 	}
-
 }
