@@ -9,14 +9,29 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+
+// JFreeChart imports
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.fx.ChartViewer;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.renderer.category.BarRenderer;
+import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.chart.ui.RectangleInsets;
+
+// Java AWT imports (per JFreeChart)
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.BasicStroke;
+import java.awt.GradientPaint;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -74,7 +89,7 @@ public class ReportMensileGUI {
         StyleHelper.applyBackgroundGradient(header);
         
         DropShadow shadow = new DropShadow();
-        shadow.setColor(Color.rgb(0, 0, 0, 0.15));
+        shadow.setColor(javafx.scene.paint.Color.rgb(0, 0, 0, 0.15));
         shadow.setRadius(15);
         shadow.setOffsetY(5);
         header.setEffect(shadow);
@@ -87,12 +102,12 @@ public class ReportMensileGUI {
         
         VBox textBox = new VBox(5);
         Label titolo = new Label("Report Periodico");
-        titolo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 34));
-        titolo.setTextFill(Color.WHITE);
+        titolo.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 34));
+        titolo.setTextFill(javafx.scene.paint.Color.WHITE);
         
         Label sotto = new Label("Chef: " + reportController.getChefLoggato().getUsername());
-        sotto.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
-        sotto.setTextFill(Color.rgb(255, 255, 255, 0.9));
+        sotto.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 16));
+        sotto.setTextFill(javafx.scene.paint.Color.rgb(255, 255, 255, 0.9));
         
         textBox.getChildren().addAll(titolo, sotto);
         titleBox.getChildren().addAll(icon, textBox);
@@ -111,8 +126,8 @@ public class ReportMensileGUI {
         );
 
         Label sectionTitle = new Label("Configurazione Periodo");
-        sectionTitle.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+        sectionTitle.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.SEMI_BOLD, 18));
+        sectionTitle.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
 
         HBox controls = new HBox(25);
         controls.setAlignment(Pos.CENTER_LEFT);
@@ -152,8 +167,8 @@ public class ReportMensileGUI {
         box.setAlignment(Pos.CENTER_LEFT);
         
         Label label = new Label(caption);
-        label.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 13));
-        label.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        label.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.SEMI_BOLD, 13));
+        label.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
         
         box.getChildren().addAll(label, picker);
         return box;
@@ -175,12 +190,12 @@ public class ReportMensileGUI {
         icon.setStyle("-fx-font-size: 64px; -fx-opacity: 0.6;");
         
         Label msg = new Label("Nessun Report Generato");
-        msg.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-        msg.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+        msg.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 20));
+        msg.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
         
         Label hint = new Label("Seleziona un intervallo di date e premi 'Genera Report'");
-        hint.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-        hint.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        hint.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 14));
+        hint.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
         hint.setWrapText(true);
         hint.setMaxWidth(400);
         hint.setAlignment(Pos.CENTER);
@@ -244,14 +259,14 @@ public class ReportMensileGUI {
         icon.setStyle("-fx-font-size: 48px;");
 
         Label titolo = new Label("Report Generato");
-        titolo.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
-        titolo.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        titolo.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 28));
+        titolo.setTextFill(javafx.scene.paint.Color.web(StyleHelper.PRIMARY_ORANGE));
 
         Label periodo = new Label(
             d.getInizio().format(DATE_FORMATTER) + " → " + d.getFine().format(DATE_FORMATTER)
         );
-        periodo.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 16));
-        periodo.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        periodo.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 16));
+        periodo.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
 
         header.getChildren().addAll(icon, titolo, periodo);
         return header;
@@ -303,13 +318,13 @@ public class ReportMensileGUI {
         });
 
         Label titleLabel = new Label(titolo);
-        titleLabel.setFont(Font.font("Segoe UI", FontWeight.MEDIUM, 13));
-        titleLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        titleLabel.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.MEDIUM, 13));
+        titleLabel.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
         titleLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
         Label valueLabel = new Label(valore);
-        valueLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 48));
-        valueLabel.setTextFill(Color.web(colorAccent));
+        valueLabel.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 48));
+        valueLabel.setTextFill(javafx.scene.paint.Color.web(colorAccent));
 
         tile.getChildren().addAll(titleLabel, valueLabel);
         return tile;
@@ -337,38 +352,86 @@ public class ReportMensileGUI {
     }
 
     private VBox createPieChartCard(DatiReportMensile d) {
-        VBox card = new VBox(15);
-        card.setPadding(new Insets(25));
-        card.setAlignment(Pos.TOP_CENTER);
-        card.setStyle(
-            "-fx-background-color: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
-        );
+    VBox card = new VBox(15);
+    card.setPadding(new Insets(25));
+    card.setAlignment(Pos.TOP_CENTER);
+    card.setStyle(
+        "-fx-background-color: white;" +
+        "-fx-background-radius: 20;" +
+        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);"
+    );
 
-        Label title = new Label("Distribuzione Sessioni");
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-        title.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+    Label title = new Label("Distribuzione Sessioni");
+    title.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 16));
+    title.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
 
-        PieChart pie = new PieChart();
-        pie.getData().addAll(
-            new PieChart.Data("Online (" + d.getSessioniOnline() + ")", d.getSessioniOnline()),
-            new PieChart.Data("Pratiche (" + d.getSessioniPratiche() + ")", d.getSessioniPratiche())
-        );
-        pie.setLabelsVisible(true);
-        pie.setLegendVisible(true);
-        pie.setPrefSize(400, 300);
-        pie.setStyle("-fx-font-size: 12px;");
-        pie.setAnimated(true);
+    DefaultPieDataset<String> dataset = new DefaultPieDataset<>();
+    dataset.setValue("Online", d.getSessioniOnline());
+    dataset.setValue("In Presenza", d.getSessioniPratiche());
 
-        pie.getData().get(0).getNode().setStyle("-fx-pie-color: " + StyleHelper.INFO_BLUE + ";");
-        pie.getData().get(1).getNode().setStyle("-fx-pie-color: " + StyleHelper.SUCCESS_GREEN + ";");
+    // CREA PIE CHART 3D
+    JFreeChart pieChart = ChartFactory.createPieChart3D(
+        null, dataset, true, true, false
+    );
 
-        card.getChildren().addAll(title, pie);
-        return card;
-    }
+    // PERSONALIZZA GRAFICO
+    pieChart.setBackgroundPaint(null);
+    pieChart.setBorderVisible(false);
+    pieChart.setAntiAlias(true);
+    
+    org.jfree.chart.plot.PiePlot3D plot = (org.jfree.chart.plot.PiePlot3D) pieChart.getPlot();
+    plot.setBackgroundPaint(Color.WHITE);
+    plot.setOutlineVisible(false);
+    plot.setShadowPaint(null);
+    plot.setDepthFactor(0.08);
+    plot.setStartAngle(290);
+    plot.setCircular(true);
+    plot.setLabelGap(0.02);
+    
+    // FONT PIÙ GRANDE E LEGGIBILE
+    plot.setLabelFont(new Font("Segoe UI", Font.BOLD, 13));
+    plot.setLabelBackgroundPaint(new Color(255, 255, 255, 200));
+    plot.setLabelOutlinePaint(null);
+    plot.setLabelShadowPaint(null);
+    
+    // COLORI MODERNI
+    plot.setSectionPaint("Online", new Color(33, 150, 243));
+    plot.setSectionPaint("In Presenza", new Color(76, 175, 80));
+    
+    // BORDI SEZIONI
+    plot.setSectionOutlinesVisible(true);
+    plot.setSectionOutlinePaint("Online", Color.WHITE);
+    plot.setSectionOutlinePaint("In Presenza", Color.WHITE);
+    plot.setSectionOutlineStroke("Online", new BasicStroke(3.0f));
+    plot.setSectionOutlineStroke("In Presenza", new BasicStroke(3.0f));
+    
+    // LEGENDA MODERNA
+    org.jfree.chart.title.LegendTitle legend = pieChart.getLegend();
+    legend.setFrame(org.jfree.chart.block.BlockBorder.NONE);
+    legend.setBackgroundPaint(Color.WHITE);
+    legend.setItemFont(new Font("Segoe UI", Font.PLAIN, 13));
+    legend.setPosition(org.jfree.chart.ui.RectangleEdge.BOTTOM);
+    legend.setPadding(10, 10, 5, 10);
+    
+    // ✅ CREA CHART VIEWER CON INTERATTIVITÀ DISABILITATA
+    ChartViewer chartViewer = new ChartViewer(pieChart);
+    chartViewer.setPrefSize(400, 350);
+    
+    // ✅ DISABILITA TUTTE LE INTERAZIONI
+    chartViewer.setMouseWheelEnabled(false);        // Disabilita rotellina del mouse
+    chartViewer.setDomainZoomable(false);           // Disabilita zoom orizzontale
+    chartViewer.setRangeZoomable(false);            // Disabilita zoom verticale
+    chartViewer.getCanvas().setOnScroll(null);      // Blocca eventi scroll
+    chartViewer.getCanvas().setOnMousePressed(null); // Blocca drag
+    chartViewer.getCanvas().setOnMouseDragged(null); // Blocca drag
 
-   private VBox createBarChartCard(Map<LocalDate, Integer> ricPerGiorno) {
+    card.getChildren().addAll(title, chartViewer);
+    return card;
+}
+
+
+
+    private VBox createBarChartCard(Map<LocalDate, Integer> ricPerGiorno) {
     VBox card = new VBox(15);
     card.setPadding(new Insets(25));
     card.setAlignment(Pos.TOP_CENTER);
@@ -379,103 +442,101 @@ public class ReportMensileGUI {
     );
 
     Label title = new Label("Ricette per Giorno");
-    title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-    title.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+    title.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 16));
+    title.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
 
-    CategoryAxis xAxis = new CategoryAxis();
-    xAxis.setLabel("Giorno del Mese");
-    xAxis.setStyle("-fx-font-size: 13px; -fx-label-padding: 15;");
-    xAxis.setTickLabelGap(10);
+    DefaultCategoryDataset dataset = new DefaultCategoryDataset();
     
-    NumberAxis yAxis = new NumberAxis();
-    yAxis.setLabel("Numero Ricette");
-    yAxis.setStyle("-fx-font-size: 13px;");
-    yAxis.setAutoRanging(true);
-    yAxis.setMinorTickVisible(false);
-    
-    BarChart<String, Number> bar = new BarChart<>(xAxis, yAxis);
-    bar.setLegendVisible(false);
-    bar.setPrefSize(600, 400);
-    bar.setBarGap(8);
-    bar.setCategoryGap(25);
-    bar.setStyle(
-        "-fx-font-size: 13px;" +
-        "-fx-padding: 25;" +
-        "-fx-background-color: #FAFAFA;" +
-        "-fx-background-radius: 10;"
-    );
-    bar.setAnimated(true);
-
-    XYChart.Series<String, Number> series = new XYChart.Series<>();
-    series.setName("Ricette");
-
     if (ricPerGiorno != null && !ricPerGiorno.isEmpty()) {
         ricPerGiorno.forEach((giorno, count) -> {
             String giornoStr = String.format("%02d", giorno.getDayOfMonth());
-            XYChart.Data<String, Number> data = new XYChart.Data<>(giornoStr, count);
-            series.getData().add(data);
+            dataset.addValue(count, "Ricette", giornoStr);
         });
     } else {
-        series.getData().add(new XYChart.Data<>("N/A", 0));
+        dataset.addValue(0, "Ricette", "N/A");
     }
 
-    bar.getData().add(series);
+    JFreeChart barChart = ChartFactory.createBarChart(
+        null, 
+        "Giorno del Mese", 
+        "Numero Ricette", 
+        dataset,
+        PlotOrientation.VERTICAL, 
+        false, 
+        true, 
+        false
+    );
 
-    // Stilizzazione barre con effetti avanzati
-    for (XYChart.Data<String, Number> data : series.getData()) {
-        if (data.getNode() != null) {
-            String barColor = StyleHelper.PRIMARY_ORANGE;
-            
-            data.getNode().setStyle(
-                "-fx-bar-fill: " + barColor + ";" +
-                "-fx-padding: 0;" +
-                "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.4), 8, 0.0, 0.0, 3.0);"
-            );
-            
-            // Hover effect su barre con scale e shadow
-            data.getNode().setOnMouseEntered(e -> {
-                data.getNode().setStyle(
-                    "-fx-bar-fill: " + StyleHelper.PRIMARY_LIGHT + ";" +
-                    "-fx-padding: 0;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.8), 15, 0.0, 0.0, 7.0);"
-                );
-                
-                ScaleTransition st = new ScaleTransition(Duration.millis(200), data.getNode());
-                st.setToY(1.12);
-                st.setCycleCount(1);
-                st.play();
-            });
-            
-            data.getNode().setOnMouseExited(e -> {
-                data.getNode().setStyle(
-                    "-fx-bar-fill: " + barColor + ";" +
-                    "-fx-padding: 0;" +
-                    "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.4), 8, 0.0, 0.0, 3.0);"
-                );
-                
-                ScaleTransition st = new ScaleTransition(Duration.millis(200), data.getNode());
-                st.setToY(1.0);
-                st.setCycleCount(1);
-                st.play();
-            });
-            
-            Tooltip tooltip = new Tooltip();
-            tooltip.setText("Giorno " + data.getXValue() + ": " + data.getYValue() + " ricette");
-            tooltip.setStyle(
-                "-fx-font-size: 13px; " +
-                "-fx-background-color: rgba(43,45,66,0.95); " +
-                "-fx-text-fill: white; " +
-                "-fx-padding: 10;" +
-                "-fx-background-radius: 8;"
-            );
-            tooltip.setShowDelay(Duration.millis(200));
-            Tooltip.install(data.getNode(), tooltip);
-        }
-    }
+    barChart.setBackgroundPaint(null);
+    barChart.setBorderVisible(false);
+    barChart.setAntiAlias(true);
+    barChart.setPadding(new RectangleInsets(15, 15, 15, 15));
+    
+    CategoryPlot plot = (CategoryPlot) barChart.getPlot();
+    plot.setBackgroundPaint(new Color(252, 252, 252));
+    plot.setOutlineVisible(false);
+    plot.setRangeGridlinePaint(new Color(230, 230, 230));
+    plot.setRangeGridlineStroke(new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+    plot.setDomainGridlinesVisible(false);
+    
+    plot.setAxisOffset(new RectangleInsets(10, 10, 10, 10));
+    
+    BarRenderer renderer = (BarRenderer) plot.getRenderer();
+    
+    GradientPaint gradient = new GradientPaint(
+        0.0f, 0.0f, new Color(255, 138, 101), 
+        0.0f, 300.0f, new Color(255, 87, 34)
+    );
+    renderer.setSeriesPaint(0, gradient);
+    
+    renderer.setBarPainter(new org.jfree.chart.renderer.category.StandardBarPainter());
+    renderer.setDrawBarOutline(true);
+    renderer.setSeriesOutlinePaint(0, new Color(230, 230, 230));
+    renderer.setSeriesOutlineStroke(0, new BasicStroke(1.5f));
+    
+    // ✅ OMBRA SOTTO LE BARRE
+//    renderer.setShadowVisible(true);
+//    renderer.setShadowPaint(new Color(0, 0, 0, 40));
+//    renderer.setShadowXOffset(4.0);
+//    renderer.setShadowYOffset(4.0);
+    
+    renderer.setItemMargin(0.15);
+    renderer.setMaximumBarWidth(0.08);
+    
+    renderer.setDefaultToolTipGenerator(
+        new org.jfree.chart.labels.StandardCategoryToolTipGenerator(
+            "<html><b>Giorno {1}</b><br>Ricette: <b>{2}</b></html>", 
+            java.text.NumberFormat.getInstance()
+        )
+    );
+    
+    org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
+    domainAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 14));
+    domainAxis.setTickLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
+    domainAxis.setTickLabelPaint(new Color(100, 100, 100));
+    domainAxis.setAxisLinePaint(new Color(200, 200, 200));
+    domainAxis.setTickMarkPaint(new Color(200, 200, 200));
+    domainAxis.setLowerMargin(0.02);
+    domainAxis.setUpperMargin(0.02);
+    domainAxis.setCategoryMargin(0.25);
+    
+    org.jfree.chart.axis.NumberAxis rangeAxis = (org.jfree.chart.axis.NumberAxis) plot.getRangeAxis();
+    rangeAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 14));
+    rangeAxis.setTickLabelFont(new Font("Segoe UI", Font.PLAIN, 12));
+    rangeAxis.setTickLabelPaint(new Color(100, 100, 100));
+    rangeAxis.setAxisLinePaint(new Color(200, 200, 200));
+    rangeAxis.setTickMarkPaint(new Color(200, 200, 200));
+    rangeAxis.setStandardTickUnits(org.jfree.chart.axis.NumberAxis.createIntegerTickUnits());
+    rangeAxis.setLowerMargin(0.10);
+    rangeAxis.setUpperMargin(0.10);
 
-    card.getChildren().addAll(title, bar);
+    ChartViewer chartViewer = new ChartViewer(barChart);
+    chartViewer.setPrefSize(650, 420);
+
+    card.getChildren().addAll(title, chartViewer);
     return card;
 }
+
 
     private VBox creaStatisticheRicetteCard(DatiReportMensile d) {
         VBox card = new VBox(15);
@@ -488,12 +549,12 @@ public class ReportMensileGUI {
         );
 
         Label title = new Label("Statistiche Ricette");
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 16));
-        title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        title.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 16));
+        title.setTextFill(javafx.scene.paint.Color.web(StyleHelper.PRIMARY_ORANGE));
 
         Label sottotitolo = new Label("(Solo Sessioni in Presenza)");
-        sottotitolo.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 12));
-        sottotitolo.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        sottotitolo.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 12));
+        sottotitolo.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
 
         VBox titleBox = new VBox(3);
         titleBox.getChildren().addAll(title, sottotitolo);
@@ -511,8 +572,8 @@ public class ReportMensileGUI {
             card.getChildren().addAll(titleBox, statsRow);
         } else {
             Label noData = new Label("Nessuna sessione pratica nel periodo");
-            noData.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 13));
-            noData.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+            noData.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 13));
+            noData.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
             card.getChildren().addAll(titleBox, noData);
         }
 
@@ -533,12 +594,12 @@ public class ReportMensileGUI {
         );
 
         Label labelText = new Label(label);
-        labelText.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 11));
-        labelText.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        labelText.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 11));
+        labelText.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_GRAY));
 
         Label valueText = new Label(value);
-        valueText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
-        valueText.setTextFill(Color.web(color));
+        valueText.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 28));
+        valueText.setTextFill(javafx.scene.paint.Color.web(color));
 
         miniCard.getChildren().addAll(labelText, valueText);
         return miniCard;
@@ -559,12 +620,12 @@ public class ReportMensileGUI {
         );
 
         Label summaryTitle = new Label("Riepilogo Periodo");
-        summaryTitle.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
-        summaryTitle.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+        summaryTitle.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 18));
+        summaryTitle.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
 
         Label summaryText = new Label(generaMessaggioRiepilogo(d));
-        summaryText.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
-        summaryText.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+        summaryText.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.NORMAL, 14));
+        summaryText.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
         summaryText.setWrapText(true);
         summaryText.setMaxWidth(900);
 

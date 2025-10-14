@@ -21,6 +21,7 @@
 	<classpathentry kind="lib" path="lib/postgresql-42.7.7.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
+			<attribute name="module" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
@@ -29,5 +30,8 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/jfreechart-1.5.5.jar"/>
+	<classpathentry kind="lib" path="lib/org.jfree.chart.fx-2.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/org.jfree.fxgraphics2d-2.1.5.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
