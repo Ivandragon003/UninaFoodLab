@@ -185,50 +185,6 @@ public class VisualizzaSessioniGUI {
                 Label fineLabel = new Label("🏁 Fine: " + fine);
                 
                 infoBox.getChildren().addAll(tipoLabel, inizioLabel, fineLabel);
-                
-                if (s instanceof Online) {
-                    Online online = (Online) s;
-                    Label piattaformaLabel = new Label("💻 Piattaforma: " + online.getPiattaformaStreaming());
-                    piattaformaLabel.setStyle("-fx-text-fill: #666;");
-                    infoBox.getChildren().add(piattaformaLabel);
-                } else if (s instanceof InPresenza) {
-                    InPresenza ip = (InPresenza) s;
-                    
-                    System.out.println("\n========== DEBUG SESSIONE IN PRESENZA ==========");
-                    System.out.println("ID Sessione: " + ip.getIdSessione());
-                    System.out.println("Data Inizio: " + ip.getDataInizioSessione());
-                    System.out.println("Luogo: " + ip.getVia() + ", " + ip.getCitta());
-                    System.out.println("getRicette() = " + ip.getRicette());
-                    System.out.println("getRicette() == null? " + (ip.getRicette() == null));
-                    
-                    if (ip.getRicette() != null) {
-                        System.out.println("getRicette().size() = " + ip.getRicette().size());
-                        System.out.println("getRicette().isEmpty() = " + ip.getRicette().isEmpty());
-                        
-                        if (!ip.getRicette().isEmpty()) {
-                            System.out.println("Ricette trovate:");
-                            for (Ricetta r : ip.getRicette()) {
-                                System.out.println("  - ID: " + r.getIdRicetta() + " | Nome: " + r.getNome());
-                            }
-                        } else {
-                            System.out.println("⚠️ Set<Ricetta> NON è null ma è VUOTO!");
-                        }
-                    } else {
-                        System.out.println("⚠️ Set<Ricetta> è NULL!");
-                    }
-                    System.out.println("================================================\n");
-                    
-                    Label luogoLabel = new Label("📍 Luogo: " + ip.getVia() + ", " + ip.getCitta() + " (" + ip.getCAP() + ")");
-                    luogoLabel.setStyle("-fx-text-fill: #666;");
-                    Label postiLabel = new Label("🪑 Posti: " + ip.getNumeroPosti());
-                    postiLabel.setStyle("-fx-text-fill: #666;");
-                    
-                    int ricette = ip.getRicette() != null ? ip.getRicette().size() : 0;
-                    
-                    Label ricetteLabel = new Label("🍝 Ricette associate: " + ricette);
-                    ricetteLabel.setStyle("-fx-text-fill: #666;");
-                    infoBox.getChildren().addAll(luogoLabel, postiLabel, ricetteLabel);
-                }
 
                 aggiornaStatoBottoneElimina(eliminaBtn);
 

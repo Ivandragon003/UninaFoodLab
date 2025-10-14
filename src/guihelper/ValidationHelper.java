@@ -3,6 +3,7 @@
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -157,4 +158,29 @@ public final class ValidationHelper {
     public static void resetStyle(TextInputControl field) {
         if (field != null) field.setStyle(NORMAL_STYLE);
     }
+    
+    public static TextFormatter<String> getLettersOnlyFormatter() {
+        return new TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+            if (newText.matches("[a-zA-ZàèéìòùÀÈÉÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜâêîôûÂÊÎÔÛçÇ' ]*")) {
+                return change;
+            }
+            return null;
+        });
+    }
+    
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String emailRegex = "^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        
+        if (!email.matches(emailRegex)) {
+            return false;
+        }
+        String domain = email.substring(email.indexOf('@') + 1, email.lastIndexOf('.'));
+        return !domain.matches("\\d+");
+    }
+
 }

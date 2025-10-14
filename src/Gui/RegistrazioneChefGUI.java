@@ -17,16 +17,13 @@ import java.time.LocalDate;
 
 public class RegistrazioneChefGUI extends VBox {
 
-    // ========== COSTANTI ==========
     private static final double CARD_WIDTH = 500;
     private static final double CARD_HEIGHT = 650;
     private static final double FIELD_WIDTH = 250;
     
-    // ========== DIPENDENZE ==========
     private final ChefController chefController;
     private final Runnable tornaAlLogin;
     
-    // ========== COMPONENTI UI ==========
     private Label errorLabel;
     private TextField codFiscaleField;
     private TextField nomeField;
@@ -38,34 +35,24 @@ public class RegistrazioneChefGUI extends VBox {
     private PasswordField passwordField;
     private PasswordField confermaPasswordField;
 
-    // ========== COSTRUTTORE ==========
     public RegistrazioneChefGUI(ChefController controller, Runnable tornaAlLoginCallback) {
         this.chefController = controller;
         this.tornaAlLogin = tornaAlLoginCallback;
         initUI();
     }
 
-    // ========== INIZIALIZZAZIONE UI ==========
     private void initUI() {
         setupContainer();
         
-        // Header
         VBox headerBox = createHeader();
-        
-        // Error Label
         errorLabel = createErrorLabel();
-        
-        // Form
         GridPane formGrid = createFormGrid();
-        
-        // Buttons
         HBox buttonBox = createButtonBox();
 
         getChildren().addAll(headerBox, errorLabel, formGrid, buttonBox);
         setSpacing(20);
     }
 
-    // ========== SETUP CONTAINER ==========
     private void setupContainer() {
         setAlignment(Pos.CENTER);
         setPadding(new Insets(40));
@@ -81,7 +68,6 @@ public class RegistrazioneChefGUI extends VBox {
         """);
     }
 
-    // ========== HEADER ==========
     private VBox createHeader() {
         Label titleLabel = new Label("👨‍🍳 Registrazione Chef");
         titleLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
@@ -97,10 +83,9 @@ public class RegistrazioneChefGUI extends VBox {
         return header;
     }
 
-    // ========== ERROR LABEL ==========
     private Label createErrorLabel() {
         Label label = new Label();
-        label.setFont(Font.font("Roboto", FontWeight.BOLD, 11));
+        label.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
         label.setTextFill(Color.RED);
         label.setVisible(false);
         label.setWrapText(true);
@@ -108,68 +93,69 @@ public class RegistrazioneChefGUI extends VBox {
         label.setAlignment(Pos.CENTER);
         label.setStyle("""
             -fx-background-color: #ffe6e6;
-            -fx-padding: 8;
+            -fx-padding: 12;
             -fx-background-radius: 10;
             -fx-border-color: red;
-            -fx-border-width: 1;
+            -fx-border-width: 2;
             -fx-border-radius: 10;
         """);
         return label;
     }
 
-    // ========== FORM GRID ==========
     private GridPane createFormGrid() {
-        GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(12);
-        grid.setAlignment(Pos.CENTER);
+    GridPane grid = new GridPane();
+    grid.setHgap(15);
+    grid.setVgap(12);
+    grid.setAlignment(Pos.CENTER);
 
-        // Creazione campi
-        codFiscaleField = createTextField("Codice Fiscale");
-        nomeField = createTextField("Nome");
-        cognomeField = createTextField("Cognome");
-        emailField = createTextField("Email");
-        dataNascitaPicker = createDatePicker();
-        disponibilitaCheck = createDisponibilitaCheckBox();
-        usernameField = createTextField("Username");
-        passwordField = createPasswordField("Password");
-        confermaPasswordField = createPasswordField("Conferma Password");
+    codFiscaleField = createTextField("Codice Fiscale");
+    
+    nomeField = createTextField("Nome");
+    nomeField.setTextFormatter(ValidationHelper.getLettersOnlyFormatter());
+    
+    cognomeField = createTextField("Cognome");
+    cognomeField.setTextFormatter(ValidationHelper.getLettersOnlyFormatter());
+    
+    emailField = createTextField("Email");
+    dataNascitaPicker = createDatePicker();
+    disponibilitaCheck = createDisponibilitaCheckBox();
+    usernameField = createTextField("Username");
+    passwordField = createPasswordField("Password");
+    confermaPasswordField = createPasswordField("Conferma Password");
 
-        // Listener per reset errori
-        setupAutoResetListeners();
+    setupAutoResetListeners();
 
-        // Aggiunta al grid
-        int row = 0;
-        grid.add(createLabel("Codice Fiscale:"), 0, row);
-        grid.add(codFiscaleField, 1, row++);
-        
-        grid.add(createLabel("Nome:"), 0, row);
-        grid.add(nomeField, 1, row++);
-        
-        grid.add(createLabel("Cognome:"), 0, row);
-        grid.add(cognomeField, 1, row++);
-        
-        grid.add(createLabel("Email:"), 0, row);
-        grid.add(emailField, 1, row++);
-        
-        grid.add(createLabel("Data di Nascita:"), 0, row);
-        grid.add(dataNascitaPicker, 1, row++);
-        
-        grid.add(disponibilitaCheck, 1, row++);
-        
-        grid.add(createLabel("Username:"), 0, row);
-        grid.add(usernameField, 1, row++);
-        
-        grid.add(createLabel("Password:"), 0, row);
-        grid.add(passwordField, 1, row++);
-        
-        grid.add(createLabel("Conferma Password:"), 0, row);
-        grid.add(confermaPasswordField, 1, row);
+    int row = 0;
+    grid.add(createLabel("Codice Fiscale:"), 0, row);
+    grid.add(codFiscaleField, 1, row++);
+    
+    grid.add(createLabel("Nome:"), 0, row);
+    grid.add(nomeField, 1, row++);
+    
+    grid.add(createLabel("Cognome:"), 0, row);
+    grid.add(cognomeField, 1, row++);
+    
+    grid.add(createLabel("Email:"), 0, row);
+    grid.add(emailField, 1, row++);
+    
+    grid.add(createLabel("Data di Nascita:"), 0, row);
+    grid.add(dataNascitaPicker, 1, row++);
+    
+    grid.add(disponibilitaCheck, 1, row++);
+    
+    grid.add(createLabel("Username:"), 0, row);
+    grid.add(usernameField, 1, row++);
+    
+    grid.add(createLabel("Password:"), 0, row);
+    grid.add(passwordField, 1, row++);
+    
+    grid.add(createLabel("Conferma Password:"), 0, row);
+    grid.add(confermaPasswordField, 1, row);
 
-        return grid;
-    }
+    return grid;
+}
 
-    // ========== CREAZIONE LABEL ==========
+
     private Label createLabel(String text) {
         Label label = new Label(text);
         label.setFont(Font.font("Roboto", FontWeight.NORMAL, 12));
@@ -177,7 +163,6 @@ public class RegistrazioneChefGUI extends VBox {
         return label;
     }
 
-    // ========== CREAZIONE TEXT FIELD ==========
     private TextField createTextField(String prompt) {
         TextField field = new TextField();
         field.setPromptText(prompt);
@@ -193,7 +178,6 @@ public class RegistrazioneChefGUI extends VBox {
         return field;
     }
 
-    // ========== CREAZIONE PASSWORD FIELD ==========
     private PasswordField createPasswordField(String prompt) {
         PasswordField field = new PasswordField();
         field.setPromptText(prompt);
@@ -209,11 +193,12 @@ public class RegistrazioneChefGUI extends VBox {
         return field;
     }
 
-    // ========== CREAZIONE DATE PICKER ==========
     private DatePicker createDatePicker() {
         DatePicker picker = new DatePicker();
         picker.setPrefWidth(FIELD_WIDTH);
         picker.setPromptText("Seleziona data");
+        picker.setValue(LocalDate.of(2000, 1, 1));
+        
         picker.setStyle("""
             -fx-background-color: #FFF8F0;
             -fx-background-radius: 10;
@@ -225,7 +210,6 @@ public class RegistrazioneChefGUI extends VBox {
             -fx-font-family: 'Roboto';
         """);
 
-        // Blocca date future o troppo vecchie
         picker.setDayCellFactory(dp -> new DateCell() {
             @Override
             public void updateItem(LocalDate date, boolean empty) {
@@ -239,7 +223,6 @@ public class RegistrazioneChefGUI extends VBox {
             }
         });
 
-        // Effetto focus
         picker.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (Boolean.TRUE.equals(newVal)) {
                 picker.setStyle("""
@@ -263,7 +246,6 @@ public class RegistrazioneChefGUI extends VBox {
         return picker;
     }
 
-    // ========== CREAZIONE CHECKBOX ==========
     private CheckBox createDisponibilitaCheckBox() {
         CheckBox checkBox = new CheckBox("Disponibile per insegnare");
         checkBox.setSelected(true);
@@ -272,7 +254,6 @@ public class RegistrazioneChefGUI extends VBox {
         return checkBox;
     }
 
-    // ========== SETUP AUTO RESET LISTENERS ==========
     private void setupAutoResetListeners() {
         TextInputControl[] fields = {
             codFiscaleField, nomeField, cognomeField, emailField,
@@ -286,7 +267,6 @@ public class RegistrazioneChefGUI extends VBox {
         dataNascitaPicker.valueProperty().addListener((obs, oldVal, newVal) -> nascondiErrore());
     }
 
-    // ========== BUTTON BOX ==========
     private HBox createButtonBox() {
         Button registratiButton = StyleHelper.createSuccessButton("REGISTRATI");
         registratiButton.setPrefSize(150, 45);
@@ -305,52 +285,122 @@ public class RegistrazioneChefGUI extends VBox {
         return buttonBox;
     }
 
-    // ========== HANDLE REGISTRATION ==========
     private void handleRegistration() {
-        nascondiErrore();
+    nascondiErrore();
 
-        // Validazione campi vuoti
-        if (!validateFields()) {
-            return;
-        }
-
-        // Validazione password match
-        if (!passwordField.getText().equals(confermaPasswordField.getText())) {
-            mostraErrore("❌ Le password non coincidono");
-            return;
-        }
-
-        try {
-            Chef chef = chefController.registraChef(
-                codFiscaleField.getText().trim(),
-                nomeField.getText().trim(),
-                cognomeField.getText().trim(),
-                emailField.getText().trim(),
-                dataNascitaPicker.getValue(),
-                disponibilitaCheck.isSelected(),
-                usernameField.getText().trim(),
-                passwordField.getText()
-            );
-
-            StyleHelper.showSuccessDialog(
-                "Registrazione Completata",
-                "Account creato con successo!\nOra puoi effettuare il login."
-            );
-
-            tornaAlLogin.run();
-
-        } catch (ValidationException ex) {
-            mostraErrore("❌ " + ex.getMessage());
-
-        } catch (DataAccessException ex) {
-            mostraErrore("❌ Errore di connessione al database");
-
-        } catch (Exception ex) {
-            mostraErrore("❌ Errore durante la registrazione: " + ex.getMessage());
-        }
+    if (!validateFields()) {
+        return;
     }
 
-    // ========== VALIDAZIONE CAMPI ==========
+    if (!passwordField.getText().equals(confermaPasswordField.getText())) {
+        mostraErrore("❌ Le password non coincidono");
+        confermaPasswordField.requestFocus();
+        return;
+    }
+
+    try {
+        Chef chef = chefController.registraChef(
+            codFiscaleField.getText().trim(),
+            nomeField.getText().trim(),
+            cognomeField.getText().trim(),
+            emailField.getText().trim(),
+            dataNascitaPicker.getValue(),
+            disponibilitaCheck.isSelected(),
+            usernameField.getText().trim(),
+            passwordField.getText()
+        );
+
+        StyleHelper.showSuccessDialog(
+            "Registrazione Completata",
+            "Account creato con successo!\nOra puoi effettuare il login."
+        );
+
+        tornaAlLogin.run();
+
+    } catch (ValidationException ex) {
+        String msg = ex.getMessage().toLowerCase();
+        
+        if (msg.contains("codice fiscale") || msg.contains("codicefiscale")) {
+            mostraErrore("❌ Formato codice fiscale errato. Riprovare");
+            codFiscaleField.requestFocus();
+            codFiscaleField.selectAll();
+        } else if (msg.contains("email")) {
+            mostraErrore("❌ Formato email non valido. Riprovare");
+            emailField.requestFocus();
+            emailField.selectAll();
+        } else if (msg.contains("nome")) {
+            mostraErrore("❌ Nome non valido. Usa solo lettere");
+            nomeField.requestFocus();
+            nomeField.selectAll();
+        } else if (msg.contains("cognome")) {
+            mostraErrore("❌ Cognome non valido. Usa solo lettere");
+            cognomeField.requestFocus();
+            cognomeField.selectAll();
+        } else if (msg.contains("password")) {
+            mostraErrore("❌ Password non valida. Min 6 caratteri");
+            passwordField.requestFocus();
+            passwordField.clear();
+        } else if (msg.contains("username")) {
+            mostraErrore("❌ Username non valido o già in uso");
+            usernameField.requestFocus();
+            usernameField.selectAll();
+        } else if (msg.contains("data") || msg.contains("nascita")) {
+            mostraErrore("❌ Data di nascita non valida");
+            dataNascitaPicker.requestFocus();
+        } else {
+            mostraErrore("❌ " + ex.getMessage());
+        }
+
+    } catch (IllegalArgumentException ex) {
+        String msg = ex.getMessage().toLowerCase();
+        
+        if (msg.contains("codice fiscale")) {
+            mostraErrore("❌ Formato codice fiscale errato. Riprovare");
+            codFiscaleField.requestFocus();
+            codFiscaleField.selectAll();
+        } else if (msg.contains("email")) {
+            mostraErrore("❌ Formato email non valido. Riprovare");
+            emailField.requestFocus();
+            emailField.selectAll();
+        } else if (msg.contains("nome")) {
+            mostraErrore("❌ Nome non valido. Usa solo lettere");
+            nomeField.requestFocus();
+            nomeField.selectAll();
+        } else if (msg.contains("cognome")) {
+            mostraErrore("❌ Cognome non valido. Usa solo lettere");
+            cognomeField.requestFocus();
+            cognomeField.selectAll();
+        } else {
+            mostraErrore("❌ " + ex.getMessage());
+        }
+
+    } catch (DataAccessException ex) {
+        String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        
+        if (msg.contains("unique") && msg.contains("username")) {
+            mostraErrore("❌ Username già in uso. Scegline un altro");
+            usernameField.requestFocus();
+            usernameField.selectAll();
+        } else if (msg.contains("unique") && msg.contains("email")) {
+            mostraErrore("❌ Email già registrata. Effettua il login");
+            emailField.requestFocus();
+            emailField.selectAll();
+        } else if (msg.contains("unique") && msg.contains("codice")) {
+            mostraErrore("❌ Codice Fiscale già registrato");
+            codFiscaleField.requestFocus();
+            codFiscaleField.selectAll();
+        } else {
+            mostraErrore("❌ Errore di connessione al database");
+        }
+
+    } catch (Exception ex) {
+        mostraErrore("❌ Errore imprevisto. Riprovare");
+        ex.printStackTrace();
+    }
+}
+
+
+
     private boolean validateFields() {
         if (codFiscaleField.getText() == null || codFiscaleField.getText().trim().isEmpty()) {
             mostraErrore("❌ Inserisci il codice fiscale");
@@ -375,6 +425,14 @@ public class RegistrazioneChefGUI extends VBox {
             emailField.requestFocus();
             return false;
         }
+
+        if (!ValidationHelper.isValidEmail(emailField.getText().trim())) {
+            mostraErrore("❌ Email non valida\nUsa un formato come: nome@dominio.it");
+            emailField.requestFocus();
+            emailField.selectAll();
+            return false;
+        }
+
 
         if (dataNascitaPicker.getValue() == null) {
             mostraErrore("❌ Seleziona la data di nascita");
@@ -403,7 +461,6 @@ public class RegistrazioneChefGUI extends VBox {
         return true;
     }
 
-    // ========== GESTIONE ERRORI ==========
     private void mostraErrore(String messaggio) {
         errorLabel.setText(messaggio);
         errorLabel.setVisible(true);
