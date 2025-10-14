@@ -787,9 +787,9 @@ public class DettagliCorsoGUI {
     }
     
     try {
-        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
+    	CucinaDAO cucinaDAO = new CucinaDAO();
+        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
         OnlineDAO onlineDAO = new OnlineDAO();
-        CucinaDAO cucinaDAO = new CucinaDAO();
         
         GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
         GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
@@ -897,7 +897,6 @@ public class DettagliCorsoGUI {
 
     addChefBtn.setDisable(!edit);
 
-    // ⚠️ FIX: Testo SEMPRE NERO (#000000)
     String borderColor = edit ? StyleHelper.PRIMARY_ORANGE : StyleHelper.BORDER_LIGHT;
 
     String fieldStyle = 

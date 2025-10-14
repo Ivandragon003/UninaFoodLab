@@ -4,6 +4,8 @@ import java.sql.*;
 import util.DBConnection;
 import java.util.*;
 
+import model.Ricetta;
+
 public class CucinaDAO {
 
     public void save(int idRicetta, int idSessione) throws SQLException {
@@ -72,4 +74,29 @@ public class CucinaDAO {
 
         return result;
     }
+    
+    public Set<Ricetta> getRicettePerSessione(int idSessione) throws SQLException {
+        Set<Ricetta> ricette = new HashSet<>();
+        String sql = "SELECT r.* FROM ricetta r " +
+                     "JOIN cucina c ON r.idricetta = c.idricetta " +
+                     "WHERE c.idsessione = ?";
+        
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idSessione);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Ricetta r = new Ricetta(
+                        rs.getString("nome"),
+                        rs.getInt("tempoPreparazione")
+                    );
+                    r.setIdRicetta(rs.getInt("idricetta"));
+                    ricette.add(r);
+                }
+            }
+        }
+        return ricette;
+    }
+
+    
 }

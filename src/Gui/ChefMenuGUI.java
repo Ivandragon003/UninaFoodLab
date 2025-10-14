@@ -101,11 +101,11 @@ public class ChefMenuGUI {
 		this.tieneDAO = new TieneDAO();
 		this.iscrizioneDAO = new IscrizioneDAO();
 		this.onlineDAO = new OnlineDAO();
-		this.inPresenzaDAO = new InPresenzaDAO();
+		this.cucinaDAO = new CucinaDAO();
+		this.inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
 		this.ricettaDAO = new RicettaDAO();
 		this.ingredienteDAO = new IngredienteDAO();
 		this.usaDAO = new UsaDAO();
-		this.cucinaDAO = new CucinaDAO();
 	}
 
 	private void inizializzaServices() {

@@ -1,6 +1,7 @@
 package dao;
 
 import model.InPresenza;
+import model.Ricetta;
 import model.CorsoCucina;
 import model.Frequenza;
 import util.DBConnection;
@@ -10,9 +11,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class InPresenzaDAO {
-
+	
+	
+	private final CucinaDAO cucinaDAO;
+    
+    public InPresenzaDAO(CucinaDAO cucinaDAO) {
+        this.cucinaDAO = cucinaDAO;
+    }
+    
     public int save(InPresenza sessione) throws SQLException {
         String sql = "INSERT INTO sessione "
                 + "(datainiziosessione, datafinesessione, tipo, via, citta, cap, numeroposti, idcorsocucina) "
@@ -151,7 +160,12 @@ public class InPresenzaDAO {
                     numeroPostiCorso);
             corso.setIdCorso(rs.getInt("idCorsoCucina"));
             sessione.setCorsoCucina(corso);
+            
+            int idSessione = sessione.getIdSessione();
+            Set<Ricetta> ricette = cucinaDAO.getRicettePerSessione(idSessione);
+            sessione.setRicette(ricette);
         }
+        
 
         return sessione;
     }

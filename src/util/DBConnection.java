@@ -12,13 +12,11 @@ public class DBConnection {
         try {
             HikariConfig config = new HikariConfig();
             
-            // Database URL
             config.setJdbcUrl(
                 "jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&pgbouncer=true&prepareThreshold=0");
             config.setUsername("postgres.knvggfhdcilpqhozvmkp");
             config.setPassword("#federicoII");
             
-            // Configurazione del pool
             config.setMaximumPoolSize(3);
             config.setMinimumIdle(1);
             config.setIdleTimeout(5 * 60_000);     // 5 minuti

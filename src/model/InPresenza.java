@@ -30,6 +30,10 @@ public class InPresenza extends Sessione {
     public Set<Ricetta> getRicette() {
         return ricette;
     }
+    
+    public void setRicette(Set<Ricetta> ricette) {
+        this.ricette = ricette != null ? ricette : new HashSet<>();
+    }
 
     public List<Adesione> getAdesioniSessione() {
         return adesioniSessione;

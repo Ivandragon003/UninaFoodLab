@@ -14,11 +14,11 @@ public class Main {
             CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
             IscrizioneDAO iscrizioneDAO = new IscrizioneDAO();
             OnlineDAO onlineDAO = new OnlineDAO();
-            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO();
+            CucinaDAO cucinaDAO = new CucinaDAO();
+            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
             RicettaDAO ricettaDAO = new RicettaDAO();
             IngredienteDAO ingredienteDAO = new IngredienteDAO();
             UsaDAO usaDAO = new UsaDAO();
-            CucinaDAO cucinaDAO = new CucinaDAO();
 
             // ======== CREAZIONE SERVIZI ========
             GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
