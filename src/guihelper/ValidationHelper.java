@@ -1,4 +1,4 @@
- package guihelper;
+package guihelper;
 
 import javafx.application.Platform;
 import javafx.scene.Node;
@@ -9,12 +9,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
+import java.util.regex.Pattern;
 
 public final class ValidationHelper {
 
-    private ValidationHelper() { throw new AssertionError("Classe di utilità non istanziabile"); }
+    private ValidationHelper() { 
+        throw new AssertionError("Classe di utilità non istanziabile"); 
+    }
 
-  
+    // ========== STILI ==========
     private static final String NORMAL_STYLE = """
         -fx-background-color: white;
         -fx-background-radius: 15;
@@ -33,7 +36,11 @@ public final class ValidationHelper {
         -fx-padding: 5 10;
     """;
 
-    // VALIDAZIONE SEMPLICE
+    // ========== PATTERN VALIDAZIONE ==========
+    public static final String CODICE_FISCALE_REGEX = "^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$";
+    private static final Pattern CF_PATTERN = Pattern.compile(CODICE_FISCALE_REGEX);
+
+    // ========== VALIDAZIONE SEMPLICE ==========
     public static boolean validateNotEmpty(TextInputControl field, Label errorLabel, String fieldName) {
         return validateNotEmpty(field, null, errorLabel, fieldName);
     }
@@ -50,7 +57,74 @@ public final class ValidationHelper {
         }
     }
 
-    // MOSTRA / NASCONDI ERRORE (thread-safe)
+    // ========== VALIDAZIONE CODICE FISCALE ==========
+    /**
+     * Valida il formato del codice fiscale italiano.
+     * 
+     * @param codiceFiscale il codice fiscale da validare
+     * @return true se il formato è valido, false altrimenti
+     */
+    public static boolean isValidCodiceFiscale(String codiceFiscale) {
+        if (codiceFiscale == null || codiceFiscale.trim().isEmpty()) {
+            return false;
+        }
+        return CF_PATTERN.matcher(codiceFiscale.trim().toUpperCase()).matches();
+    }
+
+    // ========== VALIDAZIONE EMAIL ==========
+    /**
+     * Valida il formato di un indirizzo email.
+     * 
+     * @param email l'email da validare
+     * @return true se l'email è valida, false altrimenti
+     */
+    public static boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String emailRegex = "^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+        
+        if (!email.matches(emailRegex)) {
+            return false;
+        }
+        
+        String domain = email.substring(email.indexOf('@') + 1, email.lastIndexOf('.'));
+        return !domain.matches("\\d+");
+    }
+
+    // ========== TEXT FORMATTERS ==========
+    /**
+     * Restituisce un TextFormatter che accetta solo lettere, spazi e apostrofi.
+     */
+    public static TextFormatter<String> getLettersOnlyFormatter() {
+        return new TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+            if (newText.matches("[a-zA-ZàèéìòùÀÈÉÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜâêîôûÂÊÎÔÛçÇ' ]*")) {
+                return change;
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Restituisce un TextFormatter che accetta solo caratteri validi per il codice fiscale.
+     * Converte automaticamente in maiuscolo e limita a 16 caratteri.
+     */
+    public static TextFormatter<String> getCodiceFiscaleFormatter() {
+        return new TextFormatter<>(change -> {
+            String newText = change.getControlNewText().toUpperCase();
+            
+            // Permette solo lettere maiuscole e numeri (max 16 caratteri)
+            if (newText.matches("[A-Z0-9]{0,16}")) {
+                change.setText(change.getText().toUpperCase());
+                return change;
+            }
+            return null;
+        });
+    }
+
+    // ========== MOSTRA / NASCONDI ERRORE (thread-safe) ==========
     public static void showError(TextInputControl field, Label errorLabel, String message) {
         showError(field, null, errorLabel, message);
     }
@@ -81,7 +155,7 @@ public final class ValidationHelper {
         runOnUiThread(r);
     }
 
-    // LISTENER PER RESET AUTOMATICO
+    // ========== LISTENER PER RESET AUTOMATICO ==========
     public static void addAutoResetListener(TextInputControl field, Label errorLabel) {
         addAutoResetListener(field, null, errorLabel);
     }
@@ -95,7 +169,7 @@ public final class ValidationHelper {
         });
     }
 
-    // METODI INTERNI
+    // ========== METODI INTERNI ==========
     private static void applyErrorStyle(TextInputControl field, VBox container) {
         if (container != null) {
             setContainerErrorStyleSafe(container);
@@ -147,42 +221,16 @@ public final class ValidationHelper {
                     """);
                 }
             }
-        } catch (Exception ignored) {  }
+        } catch (Exception ignored) { }
     }
 
     private static void runOnUiThread(Runnable r) {
-        if (Platform.isFxApplicationThread()) r.run(); else Platform.runLater(r);
+        if (Platform.isFxApplicationThread()) r.run(); 
+        else Platform.runLater(r);
     }
 
-   
+    // ========== UTILITY ==========
     public static void resetStyle(TextInputControl field) {
         if (field != null) field.setStyle(NORMAL_STYLE);
     }
-    
-    public static TextFormatter<String> getLettersOnlyFormatter() {
-        return new TextFormatter<>(change -> {
-            String newText = change.getControlNewText();
-            if (newText.matches("[a-zA-ZàèéìòùÀÈÉÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜâêîôûÂÊÎÔÛçÇ' ]*")) {
-                return change;
-            }
-            return null;
-        });
-    }
-    
-    public static boolean isValidEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
-            return false;
-        }
-
-        String emailRegex = "^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
-        
-        if (!email.matches(emailRegex)) {
-            return false;
-        }
-        String domain = email.substring(email.indexOf('@') + 1, email.lastIndexOf('.'));
-        return !domain.matches("\\d+");
-    }
-    
-    
-
 }
