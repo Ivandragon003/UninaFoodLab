@@ -35,18 +35,7 @@ public class ValidationUtils {
         }
     }
     
-    public static void validateEmail(String email) throws ValidationException {
-        if (email == null || email.trim().isEmpty()) {
-            throw new ValidationException(ErrorMessages.campoObbligatorio("Email"));
-        }
-        
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-        Pattern pattern = Pattern.compile(emailRegex);
-        
-        if (!pattern.matcher(email.trim()).matches()) {
-            throw new ValidationException("Formato email non valido");
-        }
-    }
+  
 
     // ==================== VALIDAZIONI RICETTE ====================
     
@@ -77,15 +66,7 @@ public class ValidationUtils {
         }
     }
 
-    public static void validateIngredienti(Map<Ingrediente, Double> ingredienti) throws ValidationException {
-        if (ingredienti == null || ingredienti.isEmpty()) {
-            throw new ValidationException(ErrorMessages.INGREDIENTI_MANCANTI);
-        }
-        
-        for (Map.Entry<Ingrediente, Double> entry : ingredienti.entrySet()) {
-            validateQuantita(entry.getValue());
-        }
-    }
+    
 
     public static void validateQuantita(double quantita) throws ValidationException {
         if (quantita <= 0) {
