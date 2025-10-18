@@ -642,4 +642,34 @@ public final class StyleHelper {
 
 		return button;
 	}
+    
+    public static void styleMenuButton(MenuButton menuBtn) {
+        menuBtn.setStyle(
+            "-fx-background-color: " + PRIMARY_ORANGE + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 20;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-weight: bold;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
+        );
+        
+        menuBtn.setOnMouseEntered(e -> menuBtn.setStyle(
+            "-fx-background-color: derive(" + PRIMARY_ORANGE + ", -12%);" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 20;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-weight: bold;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.4, 1, 2.5);"
+        ));
+        
+        menuBtn.setOnMouseExited(e -> menuBtn.setStyle(
+            "-fx-background-color: " + PRIMARY_ORANGE + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 20;" +
+            "-fx-cursor: hand;" +
+            "-fx-font-weight: bold;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
+        ));
+    }
+
 }

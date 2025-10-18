@@ -6,192 +6,198 @@ import java.util.List;
 
 public class CorsoCucina {
 
-	private int idCorso;
-	private String nomeCorso;
-	private double prezzo;
-	private String argomento;
-	private Frequenza frequenzaCorso;
-	private int numeroPosti;
-	private int numeroSessioni;
-	private LocalDateTime dataInizioCorso;
-	private LocalDateTime dataFineCorso;
-	
-	private String codfiscaleFondatore;
+    private int idCorso;
+    private String nomeCorso;
+    private double prezzo;
+    private String argomento;
+    private Frequenza frequenzaCorso;
+    private int numeroPosti;
+    private int numeroSessioni;
+    private LocalDateTime dataInizioCorso;
+    private LocalDateTime dataFineCorso;
+    private String codfiscaleFondatore;
+    private List<Chef> chef = new ArrayList<>();
+    private List<Iscrizione> iscrizioni = new ArrayList<>();
+    private List<Sessione> sessioni = new ArrayList<>();
+    private List<Ricetta> ricette = new ArrayList<>();
 
-	private List<Chef> chef = new ArrayList<>();
-	private List<Iscrizione> iscrizioni = new ArrayList<>();
-	private List<Sessione> sessioni = new ArrayList<>();
+    public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso, int numeroPosti) {
+        setNomeCorso(nomeCorso);
+        setPrezzo(prezzo);
+        setArgomento(argomento);
+        setFrequenzaCorso(frequenzaCorso);
+        setNumeroPosti(numeroPosti);
+    }
 
-	public CorsoCucina(String nomeCorso, double prezzo, String argomento, Frequenza frequenzaCorso, int numeroPosti) {
-		setNomeCorso(nomeCorso);
-		setPrezzo(prezzo);
-		setArgomento(argomento);
-		setFrequenzaCorso(frequenzaCorso);
-		setNumeroPosti(numeroPosti);
-	}
+    public void setChef(List<Chef> chef) {
+        this.chef = chef;
+    }
 
-	public void setChef(List<Chef> chef) {
-		this.chef = chef;
-	}
+    public void setSessioni(List<Sessione> sessioni) {
+        this.sessioni = sessioni;
+    }
 
-	public void setSessioni(List<Sessione> sessioni) {
-		this.sessioni = sessioni;
-	}
+    public void setIscrizioni(List<Iscrizione> iscrizioni) {
+        this.iscrizioni = iscrizioni;
+    }
 
-	public void setIscrizioni(List<Iscrizione> iscrizioni) {
-		this.iscrizioni = iscrizioni;
-	}
+    public List<Ricetta> getRicette() {
+        return ricette;
+    }
 
-	public int getIdCorso() {
-		return idCorso;
-	}
+    public void setRicette(List<Ricetta> ricette) {
+        this.ricette = ricette;
+    }
 
-	public void setIdCorso(int idCorso) {
-		this.idCorso = idCorso;
-	}
+    public int getIdCorso() {
+        return idCorso;
+    }
 
-	public List<Sessione> getSessioni() {
-		return sessioni;
-	}
+    public void setIdCorso(int idCorso) {
+        this.idCorso = idCorso;
+    }
 
-	public String getNomeCorso() {
-		return nomeCorso;
-	}
+    public List<Sessione> getSessioni() {
+        return sessioni;
+    }
 
-	public void setNomeCorso(String nomeCorso) {
-		if (nomeCorso == null || nomeCorso.trim().isEmpty())
-			throw new IllegalArgumentException("Nome corso non può essere vuoto");
-		this.nomeCorso = nomeCorso.trim();
-	}
+    public String getNomeCorso() {
+        return nomeCorso;
+    }
 
-	public double getPrezzo() {
-		return prezzo;
-	}
+    public void setNomeCorso(String nomeCorso) {
+        if (nomeCorso == null || nomeCorso.trim().isEmpty())
+            throw new IllegalArgumentException("Nome corso non può essere vuoto");
+        this.nomeCorso = nomeCorso.trim();
+    }
 
-	public void setPrezzo(double prezzo) {
-		if (prezzo < 0)
-			throw new IllegalArgumentException("Il prezzo non può essere negativo");
-		this.prezzo = prezzo;
-	}
+    public double getPrezzo() {
+        return prezzo;
+    }
 
-	public String getArgomento() {
-		return argomento;
-	}
+    public void setPrezzo(double prezzo) {
+        if (prezzo < 0)
+            throw new IllegalArgumentException("Il prezzo non può essere negativo");
+        this.prezzo = prezzo;
+    }
 
-	public void setArgomento(String argomento) {
-		if (argomento == null || argomento.trim().isEmpty())
-			throw new IllegalArgumentException("Categoria non può essere vuota");
-		this.argomento = argomento.trim();
-	}
+    public String getArgomento() {
+        return argomento;
+    }
 
-	public Frequenza getFrequenzaCorso() {
-		return frequenzaCorso;
-	}
+    public void setArgomento(String argomento) {
+        if (argomento == null || argomento.trim().isEmpty())
+            throw new IllegalArgumentException("Categoria non può essere vuota");
+        this.argomento = argomento.trim();
+    }
 
-	public void setFrequenzaCorso(Frequenza frequenzaCorso) {
-		if (frequenzaCorso == null)
-			throw new IllegalArgumentException("Frequenza corso non può essere null");
-		this.frequenzaCorso = frequenzaCorso;
-	}
+    public Frequenza getFrequenzaCorso() {
+        return frequenzaCorso;
+    }
 
-	public int getNumeroPosti() {
-		return numeroPosti;
-	}
+    public void setFrequenzaCorso(Frequenza frequenzaCorso) {
+        if (frequenzaCorso == null)
+            throw new IllegalArgumentException("Frequenza corso non può essere null");
+        this.frequenzaCorso = frequenzaCorso;
+    }
 
-	public void setNumeroPosti(int numeroPosti) {
-		if (numeroPosti <= 0)
-			throw new IllegalArgumentException("Il numero di posti deve essere maggiore di zero");
-		this.numeroPosti = numeroPosti;
-	}
+    public int getNumeroPosti() {
+        return numeroPosti;
+    }
 
-	public int getNumeroSessioni() {
-		return numeroSessioni;
-	}
+    public void setNumeroPosti(int numeroPosti) {
+        if (numeroPosti <= 0)
+            throw new IllegalArgumentException("Il numero di posti deve essere maggiore di zero");
+        this.numeroPosti = numeroPosti;
+    }
 
-	public void setNumeroSessioni(int numeroSessioni) {
-	    if (numeroSessioni < 0)
-	        throw new IllegalArgumentException("Il numero di sessioni non può essere negativo");
-	    this.numeroSessioni = numeroSessioni;
-	}
+    public int getNumeroSessioni() {
+        return numeroSessioni;
+    }
 
-	public String getCodfiscaleFondatore() {
-		return codfiscaleFondatore;
-	}
+    public void setNumeroSessioni(int numeroSessioni) {
+        if (numeroSessioni < 0)
+            throw new IllegalArgumentException("Il numero di sessioni non può essere negativo");
+        this.numeroSessioni = numeroSessioni;
+    }
 
-	public void setCodfiscaleFondatore(String codfiscaleFondatore) {
-		this.codfiscaleFondatore = codfiscaleFondatore;
-	}
+    public String getCodfiscaleFondatore() {
+        return codfiscaleFondatore;
+    }
 
-	public List<Chef> getChef() {
-		return chef;
-	}
+    public void setCodfiscaleFondatore(String codfiscaleFondatore) {
+        this.codfiscaleFondatore = codfiscaleFondatore;
+    }
 
-	public LocalDateTime getDataInizioCorso() {
-		return dataInizioCorso;
-	}
+    public List<Chef> getChef() {
+        return chef;
+    }
 
-	public void setDataInizioCorso(LocalDateTime dataInizioCorso) {
-	    if (dataInizioCorso == null)
-	        throw new IllegalArgumentException("Data inizio corso non può essere null");
-	    this.dataInizioCorso = dataInizioCorso;
-	}
+    public LocalDateTime getDataInizioCorso() {
+        return dataInizioCorso;
+    }
 
-	public void setDataFineCorso(LocalDateTime dataFineCorso) {
-	    if (dataFineCorso == null)
-	        throw new IllegalArgumentException("Data fine corso non può essere null");
-	    this.dataFineCorso = dataFineCorso;
-	}
+    public void setDataInizioCorso(LocalDateTime dataInizioCorso) {
+        if (dataInizioCorso == null)
+            throw new IllegalArgumentException("Data inizio corso non può essere null");
+        this.dataInizioCorso = dataInizioCorso;
+    }
 
-	public LocalDateTime getDataFineCorso() {
-		return dataFineCorso;
-	}
+    public void setDataFineCorso(LocalDateTime dataFineCorso) {
+        if (dataFineCorso == null)
+            throw new IllegalArgumentException("Data fine corso non può essere null");
+        this.dataFineCorso = dataFineCorso;
+    }
 
-	public List<Iscrizione> getIscrizioni() {
-		return iscrizioni;
-	}
+    public LocalDateTime getDataFineCorso() {
+        return dataFineCorso;
+    }
 
-	public void setDataInizioCorsoFromDB(LocalDateTime dataInizioCorso) {
-		this.dataInizioCorso = dataInizioCorso;
-	}
+    public List<Iscrizione> getIscrizioni() {
+        return iscrizioni;
+    }
 
-	public void setDataFineCorsoFromDB(LocalDateTime dataFineCorso) {
-		this.dataFineCorso = dataFineCorso;
-	}
+    public void setDataInizioCorsoFromDB(LocalDateTime dataInizioCorso) {
+        this.dataInizioCorso = dataInizioCorso;
+    }
 
-	public String toStringIdCorso() {
-		return "ID Corso: " + idCorso;
-	}
+    public void setDataFineCorsoFromDB(LocalDateTime dataFineCorso) {
+        this.dataFineCorso = dataFineCorso;
+    }
 
-	public String toStringNomeCorso() {
-		return "Nome Corso: " + nomeCorso;
-	}
+    public String toStringIdCorso() {
+        return "ID Corso: " + idCorso;
+    }
 
-	public String toStringPrezzo() {
-		return "Prezzo: " + prezzo;
-	}
+    public String toStringNomeCorso() {
+        return "Nome Corso: " + nomeCorso;
+    }
 
-	public String toStringArgomento() {
-		return "Argomento: " + argomento;
-	}
+    public String toStringPrezzo() {
+        return "Prezzo: " + prezzo;
+    }
 
-	public String toStringFrequenza() {
-		return "Frequenza: " + frequenzaCorso;
-	}
+    public String toStringArgomento() {
+        return "Argomento: " + argomento;
+    }
 
-	public String toStringNumeroPosti() {
-		return "Numero Posti: " + numeroPosti;
-	}
+    public String toStringFrequenza() {
+        return "Frequenza: " + frequenzaCorso;
+    }
 
-	public String toStringNumeroSessioni() {
-		return "Numero Sessioni: " + numeroSessioni;
-	}
+    public String toStringNumeroPosti() {
+        return "Numero Posti: " + numeroPosti;
+    }
 
-	public String toStringDataInizio() {
-		return "Data Inizio Corso: " + dataInizioCorso;
-	}
+    public String toStringNumeroSessioni() {
+        return "Numero Sessioni: " + numeroSessioni;
+    }
 
-	public String toStringDataFine() {
-		return "Data Fine Corso: " + dataFineCorso;
-	}
+    public String toStringDataInizio() {
+        return "Data Inizio Corso: " + dataInizioCorso;
+    }
 
+    public String toStringDataFine() {
+        return "Data Fine Corso: " + dataFineCorso;
+    }
 }

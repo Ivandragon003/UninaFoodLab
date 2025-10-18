@@ -67,7 +67,7 @@ public class GestioneCorsiCucina {
 							for (Ricetta r : ip.getRicette()) {
 								if (r.getIdRicetta() == 0) {
 								gestioneRicette.creaRicetta(r);								}
-								gestioneCucina.aggiungiSessioneARicetta(r, ip);0							}
+								gestioneCucina.aggiungiSessioneARicetta(r, ip);				}
 						}
 					}
 				}

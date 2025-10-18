@@ -3,12 +3,10 @@ package controller;
 import model.CorsoCucina;
 import model.Chef;
 import service.GestioneCorsiCucina;
-
+import exceptions.DataAccessException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Collections;
-
 
 public class VisualizzaCorsiController {
 
@@ -29,43 +27,51 @@ public class VisualizzaCorsiController {
     }
 
     public List<CorsoCucina> getTuttiICorsi() throws SQLException {
-        return corsiService.getCorsi();
+        try {
+            return corsiService.getCorsi();
+        } catch (DataAccessException e) {
+            throw new SQLException("Errore caricamento corsi", e);
+        }
+    }
+
+    public List<CorsoCucina> getCorsiDelChef() throws DataAccessException {
+        try {
+            return getCorsiChefLoggato();
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore nel caricamento dei corsi: " + e.getMessage(), e);
+        }
+    }
+
+    public List<CorsoCucina> visualizzaCorsiChef() throws DataAccessException {
+        return getCorsiDelChef();
     }
 
     public List<CorsoCucina> getCorsiChefLoggato() throws SQLException {
-    if (chefLoggato == null) {
-        return Collections.emptyList();
+        if (chefLoggato == null) {
+            return Collections.emptyList();
+        }
+
+        try {
+            return corsiService.getCorsiByChef(chefLoggato);
+        } catch (DataAccessException e) {
+            throw new SQLException("Errore caricamento corsi chef", e);
+        }
     }
-    
-    String cfChefLoggato = chefLoggato.getCodFiscale();
-   
-    
-    List<CorsoCucina> tuttiICorsi = getTuttiICorsi();
-    
-    List<CorsoCucina> corsiChef = tuttiICorsi.stream()
-        .filter(c -> {
-            boolean isFondatore = c.getCodfiscaleFondatore() != null && 
-                                 c.getCodfiscaleFondatore().equalsIgnoreCase(cfChefLoggato.trim());
-       
-            
-            return isFondatore;
-        })
-        .collect(Collectors.toList());
-    
-    
-   
-    return corsiChef;
-}
-
-
-
 
     public List<CorsoCucina> cercaPerNomeOCategoria(String filtro) throws SQLException {
-        return corsiService.cercaPerNomeOCategoria(filtro);
+        try {
+            return corsiService.cercaPerNomeOCategoria(filtro);
+        } catch (DataAccessException e) {
+            throw new SQLException("Errore ricerca corsi", e);
+        }
     }
 
     public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
-        return corsiService.getNumeroSessioniPerCorso(idCorso);
+        try {
+            return corsiService.getNumeroSessioniPerCorso(idCorso);
+        } catch (DataAccessException e) {
+            throw new SQLException("Errore conteggio sessioni", e);
+        }
     }
 
     public void visualizzaCorsi(List<CorsoCucina> corsi) {
