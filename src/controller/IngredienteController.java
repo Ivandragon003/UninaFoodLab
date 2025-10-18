@@ -2,32 +2,26 @@ package controller;
 
 import exceptions.ValidationException;
 import exceptions.DataAccessException;
+import exceptions.ErrorMessages;
 import model.Ingrediente;
 import service.GestioneIngrediente;
 
 import java.util.List;
 import java.util.Optional;
 
-
 public class IngredienteController {
-
     private final GestioneIngrediente gestioneIngrediente;
 
     public IngredienteController(GestioneIngrediente gestioneIngrediente) {
         this.gestioneIngrediente = gestioneIngrediente;
     }
 
-  
+    // ✅ SEMPLIFICATO: Validazione delegata al service
     public int creaIngrediente(String nome, String tipo) throws ValidationException, DataAccessException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new ValidationException("Il nome dell'ingrediente non può essere vuoto");
-        }
-
         Ingrediente ingrediente = new Ingrediente(
-            nome.trim(),
+            nome == null ? null : nome.trim(),
             tipo == null ? null : tipo.trim()
         );
-
         return gestioneIngrediente.salvaIngrediente(ingrediente);
     }
 
@@ -51,16 +45,12 @@ public class IngredienteController {
         return gestioneIngrediente.trovaIngredientePerNome(nome);
     }
 
+    // ✅ SEMPLIFICATO: Validazione delegata al service
     public void aggiornaIngrediente(int id, String nome, String tipo) throws ValidationException, DataAccessException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new ValidationException("Il nome dell'ingrediente non può essere vuoto");
-        }
-
         Ingrediente ingrediente = new Ingrediente(
-            nome.trim(),
+            nome == null ? null : nome.trim(),
             tipo == null ? null : tipo.trim()
         );
-
         gestioneIngrediente.aggiornaIngrediente(id, ingrediente);
     }
 
