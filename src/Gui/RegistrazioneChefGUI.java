@@ -109,8 +109,7 @@ public class RegistrazioneChefGUI extends VBox {
     grid.setAlignment(Pos.CENTER);
 
     codFiscaleField = createTextField("Codice Fiscale");
-    codFiscaleField.setTextFormatter(ValidationHelper.getCodiceFiscaleFormatter()); // ✅ AGGIUNGI QUESTO
-
+    
     nomeField = createTextField("Nome");
     nomeField.setTextFormatter(ValidationHelper.getLettersOnlyFormatter());
     
@@ -315,72 +314,44 @@ public class RegistrazioneChefGUI extends VBox {
             "Registrazione Completata",
             "Account creato con successo!\nOra puoi effettuare il login."
         );
+
         tornaAlLogin.run();
 
     } catch (ValidationException ex) {
-        System.out.println("====== CATTURATO ValidationException ======");
-        System.out.println(ex.getMessage());
-        System.out.println("==========================================");
-        
         String msg = ex.getMessage().toLowerCase();
         
-        if (msg.contains("codice fiscale") && msg.contains("già presente")) {
-            mostraErrore("❌ Codice Fiscale già registrato");
-            codFiscaleField.requestFocus();
-            codFiscaleField.selectAll();
-            
-        } else if (msg.contains("username") && msg.contains("già")) {
-            mostraErrore("❌ Username già in uso. Scegline un altro");
-            usernameField.requestFocus();
-            usernameField.selectAll();
-            
-        } else if (msg.contains("email") && msg.contains("già")) {
-            mostraErrore("❌ Email già registrata. Effettua il login");
-            emailField.requestFocus();
-            emailField.selectAll();
-            
-        } else if (msg.contains("codice fiscale") || msg.contains("codicefiscale")) {
+        if (msg.contains("codice fiscale") || msg.contains("codicefiscale")) {
             mostraErrore("❌ Formato codice fiscale errato. Riprovare");
             codFiscaleField.requestFocus();
             codFiscaleField.selectAll();
-            
         } else if (msg.contains("email")) {
             mostraErrore("❌ Formato email non valido. Riprovare");
             emailField.requestFocus();
             emailField.selectAll();
-            
         } else if (msg.contains("nome")) {
             mostraErrore("❌ Nome non valido. Usa solo lettere");
             nomeField.requestFocus();
             nomeField.selectAll();
-            
         } else if (msg.contains("cognome")) {
             mostraErrore("❌ Cognome non valido. Usa solo lettere");
             cognomeField.requestFocus();
             cognomeField.selectAll();
-            
         } else if (msg.contains("password")) {
             mostraErrore("❌ Password non valida. Min 6 caratteri");
             passwordField.requestFocus();
             passwordField.clear();
-            
         } else if (msg.contains("username")) {
-            mostraErrore("❌ Username non valido");
+            mostraErrore("❌ Username non valido o già in uso");
             usernameField.requestFocus();
             usernameField.selectAll();
-            
         } else if (msg.contains("data") || msg.contains("nascita")) {
             mostraErrore("❌ Data di nascita non valida");
             dataNascitaPicker.requestFocus();
-            
         } else {
             mostraErrore("❌ " + ex.getMessage());
         }
-    	} catch (IllegalArgumentException ex) {
-        System.out.println("====== CATTURATO IllegalArgumentException ======");
-        System.out.println(ex.getMessage());
-        System.out.println("===============================================");
-        
+
+    } catch (IllegalArgumentException ex) {
         String msg = ex.getMessage().toLowerCase();
         
         if (msg.contains("codice fiscale")) {
@@ -404,11 +375,6 @@ public class RegistrazioneChefGUI extends VBox {
         }
 
     } catch (DataAccessException ex) {
-        System.out.println("====== CATTURATO DataAccessException ======");
-        System.out.println("Messaggio: " + ex.getMessage());
-        System.out.println("Causa: " + (ex.getCause() != null ? ex.getCause().getMessage() : "nessuna"));
-        System.out.println("==========================================");
-        
         String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
         
         if (msg.contains("duplicate key") || msg.contains("unique constraint") || msg.contains("unique")) {
@@ -439,15 +405,10 @@ public class RegistrazioneChefGUI extends VBox {
         ex.printStackTrace();
 
     } catch (Exception ex) {
-        System.out.println("====== CATTURATO Exception GENERICA ======");
-        System.out.println(ex.getMessage());
-        ex.printStackTrace();
-        System.out.println("==========================================");
-        
         mostraErrore("❌ Errore imprevisto. Riprovare");
+        ex.printStackTrace();
     }
 }
-
 
 
 
@@ -458,14 +419,7 @@ public class RegistrazioneChefGUI extends VBox {
             codFiscaleField.requestFocus();
             return false;
         }
-        
-        if (!ValidationHelper.isValidCodiceFiscale(codFiscaleField.getText().trim())) {
-            mostraErrore("❌ Formato codice fiscale errato\n(16 caratteri: RSSMRA85M01H501Z)");
-            codFiscaleField.requestFocus();
-            codFiscaleField.selectAll();
-            return false;
-        }
-        
+
         if (nomeField.getText() == null || nomeField.getText().trim().isEmpty()) {
             mostraErrore("❌ Inserisci il nome");
             nomeField.requestFocus();

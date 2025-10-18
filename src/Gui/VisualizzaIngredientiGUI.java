@@ -5,388 +5,419 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import model.Ingrediente;
 import guihelper.StyleHelper;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
-public class VisualizzaIngredientiGUI extends Stage {
-    private IngredienteController ingredienteController;
-    private ObservableList<Ingrediente> ingredientiData;
-    private ListView<Ingrediente> ingredientiListView;
-    private TextField filtroNomeField;
-    private TextField filtroTipoField;
-    private Button creaIngredientiBtn;
+/**
+ * Componente VBox per visualizzare e gestire ingredienti.
+ * NON è uno Stage, ma un componente riutilizzabile.
+ */
+public class VisualizzaIngredientiGUI {
+    private final IngredienteController controller;
+    private final ObservableList<Ingrediente> data;
+    private ListView<Ingrediente> listView;
+    private TextField filtroNome, filtroTipo;
+    
+    // ✅ FORM INLINE per creare ingredienti
+    private VBox formCreazioneSection;
+    private TextField formNomeField, formTipoField;
+    private Label formErrorLabel;
+    private boolean formVisible = false;
+    
+    // ✅ Per modalità selezione (usato da SelezionaIngredienteDialog)
     private boolean modalitaSelezione = false;
-    private Ingrediente ingredienteSelezionato = null;
-    private double xOffset = 0;
-    private double yOffset = 0;
+    private Consumer<Ingrediente> onIngredienteSelezionato;
+    
+    private VBox root;
 
     public VisualizzaIngredientiGUI(IngredienteController controller) {
-        this.ingredienteController = controller;
-        this.ingredientiData = FXCollections.observableArrayList();
-        initializeGUI();
-        caricaIngredienti();
+        this.controller = controller;
+        this.data = FXCollections.observableArrayList();
+        carica();
     }
 
-    public void setModalitaSelezione(boolean modalitaSelezione) {
-        this.modalitaSelezione = modalitaSelezione;
-        if (modalitaSelezione) {
-            setTitle("Seleziona Ingrediente");
+    public void setModalitaSelezione(boolean mode) {
+        this.modalitaSelezione = mode;
+    }
+
+    public void setOnIngredienteSelezionato(Consumer<Ingrediente> callback) {
+        this.onIngredienteSelezionato = callback;
+    }
+
+    // ✅ METODO PRINCIPALE: restituisce il contenuto VBox
+    public VBox getContent() {
+        if (root == null) {
+            root = buildMain();
         }
+        return root;
     }
 
-    private void initializeGUI() {
-        setTitle("Gestione Ingredienti");
-        initModality(Modality.APPLICATION_MODAL);
-        initStyle(StageStyle.UNDECORATED);
-        setResizable(true);
-        createLayout();
-    }
+    // ==================== BUILD ====================
 
-    private void createLayout() {
-        StackPane rootPane = new StackPane();
-        rootPane.setMinSize(700, 600);
-        rootPane.setPrefSize(800, 700);
-
-        Region background = new Region();
-        StyleHelper.applyBackgroundGradient(background);
-
-        VBox mainContainer = new VBox(25);
-        mainContainer.setAlignment(Pos.TOP_CENTER);
-        mainContainer.setPadding(new Insets(40, 30, 30, 30));
-
-        Label title = new Label("🥕 Gestione Ingredienti");
-        title.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 28));
-        title.setTextFill(Color.WHITE);
-        title.setAlignment(Pos.CENTER);
-
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-
-        VBox contentCard = StyleHelper.createSection();
-        contentCard.setSpacing(20);
-
-        VBox filtriSection = createFiltriSection();
-        VBox listaSection = createListaSection();
-        HBox buttonsSection = createButtonsSection();
-
-        contentCard.getChildren().addAll(
-                filtriSection,
-                new Separator(),
-                listaSection,
-                new Separator(),
-                buttonsSection
+    private VBox buildMain() {
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(20));
+        
+        VBox content = StyleHelper.createSection();
+        content.setSpacing(20);
+        
+        // ✅ FORM CREAZIONE (inizialmente nascosto)
+        formCreazioneSection = buildFormCreazione();
+        formCreazioneSection.setVisible(false);
+        formCreazioneSection.setManaged(false);
+        
+        content.getChildren().addAll(
+            buildFiltri(),
+            new Separator(),
+            buildLista(),
+            new Separator(),
+            formCreazioneSection  // ✅ FORM INLINE
         );
 
-        scrollPane.setContent(contentCard);
-        mainContainer.getChildren().addAll(title, scrollPane);
-        rootPane.getChildren().addAll(background, mainContainer);
+        ScrollPane scroll = new ScrollPane(content);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
 
-        HBox windowButtons = createWindowButtons();
-        rootPane.getChildren().add(windowButtons);
-        StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-        StackPane.setMargin(windowButtons, new Insets(8));
-
-        makeDraggable(rootPane);
-
-        Scene scene = new Scene(rootPane, 800, 700);
-        scene.setFill(Color.TRANSPARENT);
-        setScene(scene);
+        container.getChildren().add(scroll);
+        return container;
     }
 
-    private HBox createWindowButtons() {
-        Button closeButton = new Button("✕");
-        Button minimizeButton = new Button("−");
-        Button maximizeButton = new Button("○");
-
-        Button[] buttons = { minimizeButton, maximizeButton, closeButton };
-        for (Button btn : buttons) {
-            btn.setPrefSize(30, 30);
-            btn.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 12));
-            btn.setTextFill(Color.WHITE);
-            btn.setStyle("-fx-background-color: rgba(255,140,0,0.8); -fx-background-radius: 15; -fx-cursor: hand;");
-            btn.setFocusTraversable(false);
-        }
-
-        closeButton.setOnAction(e -> {
-            ingredienteSelezionato = null;
-            close();
-        });
-        minimizeButton.setOnAction(e -> setIconified(true));
-        maximizeButton.setOnAction(e -> setMaximized(!isMaximized()));
-
-        HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);
-        box.setAlignment(Pos.TOP_RIGHT);
-        box.setPickOnBounds(false);
-        return box;
-    }
-
-    private void makeDraggable(StackPane root) {
-        root.setOnMousePressed(event -> {
-            xOffset = event.getSceneX();
-            yOffset = event.getSceneY();
-        });
-
-        root.setOnMouseDragged(event -> {
-            setX(event.getScreenX() - xOffset);
-            setY(event.getScreenY() - yOffset);
-        });
-    }
-
-    private VBox createFiltriSection() {
+    private VBox buildFiltri() {
         VBox section = new VBox(15);
 
-        Label sectionTitle = new Label("🔍 Filtri Ingredienti");
-        sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        Label title = createTitle("🔍 Filtri Ingredienti");
 
-        HBox filtriBox = new HBox(15);
-        filtriBox.setAlignment(Pos.CENTER_LEFT);
+        filtroNome = StyleHelper.createTextField("Cerca per nome...");
+        filtroNome.setPrefWidth(250);
+        filtroNome.textProperty().addListener((obs, old, val) -> filtra());
 
-        filtroNomeField = StyleHelper.createTextField("Cerca per nome...");
-        filtroNomeField.setPrefWidth(250);
-        filtroNomeField.textProperty().addListener((obs, oldVal, newVal) -> applicaFiltri());
+        filtroTipo = StyleHelper.createTextField("Cerca per tipo...");
+        filtroTipo.setPrefWidth(200);
+        filtroTipo.textProperty().addListener((obs, old, val) -> filtra());
 
-        filtroTipoField = StyleHelper.createTextField("Cerca per tipo...");
-        filtroTipoField.setPrefWidth(200);
-        filtroTipoField.textProperty().addListener((obs, oldVal, newVal) -> applicaFiltri());
+        Button resetBtn = StyleHelper.createInfoButton("🔄 Reset");
+        resetBtn.setOnAction(e -> reset());
 
-        Button resetFiltriBtn = StyleHelper.createInfoButton("🔄 Reset");
-        resetFiltriBtn.setOnAction(e -> resetFiltri());
-
-        filtriBox.getChildren().addAll(
-                StyleHelper.createLabel("Nome:"), filtroNomeField,
-                StyleHelper.createLabel("Tipo:"), filtroTipoField,
-                resetFiltriBtn
+        HBox filtri = new HBox(15,
+            StyleHelper.createLabel("Nome:"), filtroNome,
+            StyleHelper.createLabel("Tipo:"), filtroTipo,
+            resetBtn
         );
+        filtri.setAlignment(Pos.CENTER_LEFT);
 
-        section.getChildren().addAll(sectionTitle, filtriBox);
+        section.getChildren().addAll(title, filtri);
         return section;
     }
 
-    private VBox createListaSection() {
+    private VBox buildLista() {
         VBox section = new VBox(15);
 
-        HBox headerBox = new HBox(10);
-        headerBox.setAlignment(Pos.CENTER_LEFT);
-
-        Label sectionTitle = new Label("📋 Lista Ingredienti");
-        sectionTitle.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 18));
-        sectionTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-
-        Label istruzioniLabel = new Label("💡 Doppio click su un ingrediente per selezionarlo rapidamente");
-        istruzioniLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 13));
-        istruzioniLabel.setTextFill(Color.WHITE);
-        istruzioniLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + "; -fx-padding: 10; -fx-background-radius: 8;");
-        istruzioniLabel.setWrapText(true);
-
-        VBox titleBox = new VBox(8);
-        titleBox.getChildren().addAll(sectionTitle, istruzioniLabel);
-
-        HBox actionButtons = new HBox(10);
-        actionButtons.setAlignment(Pos.CENTER_RIGHT);
-
-        if (modalitaSelezione) {
-            Button selezionaBtn = StyleHelper.createPrimaryButton("✅ Seleziona");
-            selezionaBtn.setOnAction(e -> selezionaIngrediente());
-            actionButtons.getChildren().add(selezionaBtn);
-        }
-
-        creaIngredientiBtn = StyleHelper.createSuccessButton("➕ Crea Nuovo");
-        creaIngredientiBtn.setOnAction(e -> apriCreaIngrediente());
-        actionButtons.getChildren().add(creaIngredientiBtn);
-
-        headerBox.getChildren().addAll(titleBox, new Region(), actionButtons);
-        HBox.setHgrow(headerBox.getChildren().get(1), Priority.ALWAYS);
-
-        ingredientiListView = new ListView<>();
-        ingredientiListView.setPrefHeight(300);
-        ingredientiListView.setItems(ingredientiData);
+        Label title = createTitle("📋 Lista Ingredienti");
         
-        // ✅ CORRETTO: Applica stile inline invece di chiamare metodo inesistente
-        ingredientiListView.setStyle(
+        Label info = new Label("💡 Doppio click su un ingrediente per selezionarlo rapidamente");
+        info.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+        info.setTextFill(Color.WHITE);
+        info.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + "; -fx-padding: 10; -fx-background-radius: 8;");
+        info.setWrapText(true);
+
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        VBox titleBox = new VBox(8, title, info);
+
+        HBox actions = new HBox(10);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+
+        Button creaBtn = StyleHelper.createSuccessButton("➕ Crea Nuovo");
+        creaBtn.setOnAction(e -> toggleFormCreazione());
+        actions.getChildren().add(creaBtn);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        header.getChildren().addAll(titleBox, spacer, actions);
+
+        listView = new ListView<>(data);
+        listView.setPrefHeight(300);
+        listView.setStyle(
             "-fx-background-color: white;" +
             "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
             "-fx-border-radius: 8;" +
             "-fx-background-radius: 8;" +
             "-fx-border-width: 1;"
         );
+        listView.setCellFactory(lv -> new IngredienteCell());
 
-        ingredientiListView.setCellFactory(listView -> new ListCell<Ingrediente>() {
-            @Override
-            protected void updateItem(Ingrediente item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                    setOnMouseClicked(null);
-                } else {
-                    HBox cellBox = new HBox(15);
-                    cellBox.setAlignment(Pos.CENTER_LEFT);
-                    cellBox.setPadding(new Insets(12));
-
-                    VBox infoBox = new VBox(5);
-
-                    Label nomeLabel = new Label("🥕 " + item.getNome());
-                    nomeLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 15));
-                    nomeLabel.setTextFill(Color.BLACK);
-
-                    Label tipoLabel = new Label("📂 Tipo: " + item.getTipo());
-                    tipoLabel.setFont(javafx.scene.text.Font.font("Roboto", 12));
-                    tipoLabel.setTextFill(Color.GRAY);
-
-                    infoBox.getChildren().addAll(nomeLabel, tipoLabel);
-
-                    Region spacer = new Region();
-                    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                    cellBox.getChildren().addAll(infoBox, spacer);
-
-                    if (modalitaSelezione) {
-                        cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;");
-
-                        cellBox.setOnMouseEntered(e ->
-                                cellBox.setStyle("-fx-background-color: #C8E6C9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                                        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 3; -fx-cursor: hand;"));
-
-                        cellBox.setOnMouseExited(e ->
-                                cellBox.setStyle("-fx-background-color: #E8F5E9; -fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
-                                        "-fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 2; -fx-cursor: hand;"));
-                    }
-
-                    setGraphic(cellBox);
-                    setText(null);
-
-                    if (modalitaSelezione) {
-                        setOnMouseClicked(event -> {
-                            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                                ingredientiListView.getSelectionModel().select(item);
-                                selezionaIngrediente();
-                            }
-                        });
-                    }
-                }
-            }
-        });
-
-        section.getChildren().addAll(headerBox, ingredientiListView);
+        section.getChildren().addAll(header, listView);
         return section;
     }
 
-    private void selezionaIngrediente() {
-        Ingrediente selezionato = ingredientiListView.getSelectionModel().getSelectedItem();
-        if (selezionato == null) {
-            StyleHelper.showValidationDialog("Attenzione", 
-                "⚠️ Seleziona un ingrediente dalla lista oppure fai doppio click su un ingrediente");
-            return;
-        }
-        ingredienteSelezionato = selezionato;
-        close();
+    // ✅ FORM CREAZIONE INLINE
+    private VBox buildFormCreazione() {
+        VBox section = new VBox(20);
+        section.setPadding(new Insets(20));
+        section.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 12;" +
+            "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
+            "-fx-border-width: 3;" +
+            "-fx-border-radius: 12;" +
+            "-fx-effect: dropshadow(gaussian, rgba(255,140,0,0.3), 15, 0, 0, 5);"
+        );
+
+        Label title = new Label("🎨 Informazioni Base");
+        title.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
+        title.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+
+        formErrorLabel = new Label();
+        formErrorLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+        formErrorLabel.setTextFill(Color.RED);
+        formErrorLabel.setVisible(false);
+        formErrorLabel.setWrapText(true);
+        formErrorLabel.setStyle("-fx-background-color: #ffe6e6; -fx-padding: 10; -fx-background-radius: 8;");
+
+        Label nomeLabel = new Label("Nome Ingrediente:");
+        nomeLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 14));
+        nomeLabel.setTextFill(Color.BLACK);
+
+        formNomeField = StyleHelper.createTextField("Es. Pomodoro San Marzano");
+        formNomeField.setPrefHeight(40);
+        formNomeField.textProperty().addListener((obs, old, val) -> {
+            if (!val.trim().isEmpty()) {
+                formNomeField.setStyle("");
+                formErrorLabel.setVisible(false);
+            }
+        });
+
+        Label tipoLabel = new Label("Tipo (es. Verdura, Carne, Spezie...):");
+        tipoLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 14));
+        tipoLabel.setTextFill(Color.BLACK);
+
+        formTipoField = StyleHelper.createTextField("Es. Verdura");
+        formTipoField.setPrefHeight(40);
+        formTipoField.textProperty().addListener((obs, old, val) -> {
+            if (!val.trim().isEmpty()) {
+                formTipoField.setStyle("");
+                formErrorLabel.setVisible(false);
+            }
+        });
+
+        Label hint = new Label("💡 Esempi: Verdura, Frutta, Carne, Pesce, Latticini, Cereali, Legumi, Spezie, Condimenti");
+        hint.setFont(Font.font("Roboto", 11));
+        hint.setTextFill(Color.web(StyleHelper.INFO_BLUE));
+        hint.setWrapText(true);
+
+        HBox buttonsBox = new HBox(15);
+        buttonsBox.setAlignment(Pos.CENTER);
+        buttonsBox.setPadding(new Insets(10, 0, 0, 0));
+
+        Button annullaBtn = new Button("✕ Annulla");
+        annullaBtn.setPrefSize(120, 40);
+        annullaBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+        annullaBtn.setStyle("-fx-background-color: " + StyleHelper.NEUTRAL_GRAY + "; -fx-text-fill: white; -fx-background-radius: 20; -fx-cursor: hand;");
+        annullaBtn.setOnAction(e -> toggleFormCreazione());
+
+        Button salvaBtn = StyleHelper.createSuccessButton("💾 Salva Ingrediente");
+        salvaBtn.setPrefSize(180, 40);
+        salvaBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+        salvaBtn.setOnAction(e -> salvaIngrediente());
+
+        buttonsBox.getChildren().addAll(annullaBtn, salvaBtn);
+
+        section.getChildren().addAll(
+            formErrorLabel,
+            title,
+            new Separator(),
+            nomeLabel, formNomeField,
+            tipoLabel, formTipoField,
+            hint,
+            buttonsBox
+        );
+
+        return section;
     }
 
-    private HBox createButtonsSection() {
-        HBox buttonBox = new HBox(15);
-        buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(15, 0, 0, 0));
+    // ==================== LOGICA ====================
 
-        if (modalitaSelezione) {
-         
-            Button annullaBtn = StyleHelper.createStyledButton("❌ Annulla", StyleHelper.NEUTRAL_GRAY, "#FFFFFF");
-            annullaBtn.setPrefWidth(130);
-            annullaBtn.setPrefHeight(40);
-            annullaBtn.setOnAction(e -> {
-                ingredienteSelezionato = null;
-                close();
-            });
-
-            buttonBox.getChildren().add(annullaBtn);
-        } else {
-            Button aggiornaBtn = StyleHelper.createInfoButton("🔄 Aggiorna");
-            aggiornaBtn.setOnAction(e -> caricaIngredienti());
-
-            Button chiudiBtn = StyleHelper.createPrimaryButton("🚪 Chiudi");
-            chiudiBtn.setOnAction(e -> close());
-
-            buttonBox.getChildren().addAll(aggiornaBtn, chiudiBtn);
-        }
-
-        return buttonBox;
-    }
-
-    private void caricaIngredienti() {
+    private void carica() {
         try {
-            List<Ingrediente> ingredienti = ingredienteController.getAllIngredienti();
-            ingredientiData.setAll(ingredienti);
+            data.setAll(controller.getAllIngredienti());
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", 
-                "❌ Errore nel caricamento ingredienti: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore caricamento: " + e.getMessage());
         }
     }
 
-    private void applicaFiltri() {
+    private void filtra() {
         try {
-            String nomeRicerca = filtroNomeField.getText();
-            String tipoRicerca = filtroTipoField.getText();
+            String nome = filtroNome.getText();
+            String tipo = filtroTipo.getText();
 
-            List<Ingrediente> ingredientiFiltrati;
+            List<Ingrediente> filtrati;
 
-            if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) &&
-                    (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
-                ingredientiFiltrati = ingredienteController.getAllIngredienti();
-            } else if (nomeRicerca != null && !nomeRicerca.trim().isEmpty() &&
-                    (tipoRicerca == null || tipoRicerca.trim().isEmpty())) {
-                ingredientiFiltrati = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
-            } else if ((nomeRicerca == null || nomeRicerca.trim().isEmpty()) &&
-                    tipoRicerca != null && !tipoRicerca.trim().isEmpty()) {
-                ingredientiFiltrati = ingredienteController.cercaIngredientiPerTipo(tipoRicerca.trim());
+            if ((nome == null || nome.trim().isEmpty()) && (tipo == null || tipo.trim().isEmpty())) {
+                filtrati = controller.getAllIngredienti();
+            } else if (nome != null && !nome.trim().isEmpty() && (tipo == null || tipo.trim().isEmpty())) {
+                filtrati = controller.cercaIngredientiPerNome(nome.trim());
+            } else if ((nome == null || nome.trim().isEmpty()) && tipo != null && !tipo.trim().isEmpty()) {
+                filtrati = controller.cercaIngredientiPerTipo(tipo.trim());
             } else {
-                List<Ingrediente> perNome = ingredienteController.cercaIngredientiPerNome(nomeRicerca.trim());
-                ingredientiFiltrati = perNome.stream()
-                        .filter(ing -> ing.getTipo().toLowerCase().contains(tipoRicerca.toLowerCase().trim()))
-                        .toList();
+                List<Ingrediente> perNome = controller.cercaIngredientiPerNome(nome.trim());
+                String tipoLower = tipo.toLowerCase().trim();
+                filtrati = perNome.stream()
+                    .filter(i -> i.getTipo().toLowerCase().contains(tipoLower))
+                    .toList();
             }
 
-            ingredientiData.setAll(ingredientiFiltrati);
+            data.setAll(filtrati);
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", 
-                "❌ Errore nell'applicazione filtri: " + e.getMessage());
+            StyleHelper.showErrorDialog("Errore", "Errore filtro: " + e.getMessage());
         }
     }
 
-    private void resetFiltri() {
-        filtroNomeField.clear();
-        filtroTipoField.clear();
-        caricaIngredienti();
+    private void reset() {
+        filtroNome.clear();
+        filtroTipo.clear();
+        carica();
     }
 
-    private void apriCreaIngrediente() {
+    private void toggleFormCreazione() {
+        formVisible = !formVisible;
+        formCreazioneSection.setVisible(formVisible);
+        formCreazioneSection.setManaged(formVisible);
+        
+        if (formVisible) {
+            formNomeField.clear();
+            formTipoField.clear();
+            formErrorLabel.setVisible(false);
+            javafx.application.Platform.runLater(() -> formNomeField.requestFocus());
+        }
+    }
+
+    private void salvaIngrediente() {
         try {
-            CreaIngredientiGUI creaGUI = new CreaIngredientiGUI(ingredienteController);
-            Ingrediente nuovoIngrediente = creaGUI.showAndReturn();
-            if (nuovoIngrediente != null) {
-                caricaIngredienti();
-                StyleHelper.showSuccessDialog("Successo", 
-                    "Ingrediente '" + nuovoIngrediente.getNome() + "' creato con successo!");
+            String nome = formNomeField.getText().trim();
+            String tipo = formTipoField.getText().trim();
+
+            if (nome.isEmpty()) {
+                formErrorLabel.setText("❌ Il nome è obbligatorio");
+                formErrorLabel.setVisible(true);
+                formNomeField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                return;
             }
+
+            if (tipo.isEmpty()) {
+                formErrorLabel.setText("❌ Il tipo è obbligatorio");
+                formErrorLabel.setVisible(true);
+                formTipoField.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
+                return;
+            }
+
+            int id = controller.creaIngrediente(nome, tipo);
+            Optional<Ingrediente> opt = controller.trovaIngredientePerId(id);
+
+            if (opt.isPresent()) {
+                carica();
+                toggleFormCreazione();
+                StyleHelper.showSuccessDialog("Successo", 
+                    String.format("✅ Ingrediente '%s' creato!\n\n📂 Tipo: %s", nome, tipo));
+            }
+
         } catch (Exception e) {
-            StyleHelper.showErrorDialog("Errore", 
-                "❌ Errore nell'apertura creazione ingrediente: " + e.getMessage());
+            formErrorLabel.setText("❌ " + e.getMessage());
+            formErrorLabel.setVisible(true);
         }
     }
 
-    public Ingrediente showAndReturn() {
-        showAndWait();
-        return ingredienteSelezionato;
+    private Label createTitle(String text) {
+        Label lbl = new Label(text);
+        lbl.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
+        lbl.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        return lbl;
+    }
+
+    // ==================== CELL RENDERER ====================
+
+    private class IngredienteCell extends ListCell<Ingrediente> {
+        @Override
+        protected void updateItem(Ingrediente item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setGraphic(null);
+                setText(null);
+                setOnMouseClicked(null);
+            } else {
+                setGraphic(buildCell(item));
+                setText(null);
+                
+                if (modalitaSelezione) {
+                    setOnMouseClicked(e -> {
+                        if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
+                            if (onIngredienteSelezionato != null) {
+                                onIngredienteSelezionato.accept(item);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        private HBox buildCell(Ingrediente item) {
+            HBox box = new HBox(15);
+            box.setAlignment(Pos.CENTER_LEFT);
+            box.setPadding(new Insets(12));
+
+            Label nome = new Label("🥕 " + item.getNome());
+            nome.setFont(Font.font("Roboto", FontWeight.BOLD, 15));
+            nome.setTextFill(Color.BLACK);
+
+            Label tipo = new Label("📂 Tipo: " + item.getTipo());
+            tipo.setFont(Font.font("Roboto", 12));
+            tipo.setTextFill(Color.GRAY);
+
+            VBox info = new VBox(5, nome, tipo);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            box.getChildren().addAll(info, spacer);
+
+            if (modalitaSelezione) {
+                box.setStyle(
+                    "-fx-background-color: #E8F5E9; " +
+                    "-fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                    "-fx-border-radius: 8; " +
+                    "-fx-background-radius: 8; " +
+                    "-fx-border-width: 2; " +
+                    "-fx-cursor: hand;"
+                );
+
+                box.setOnMouseEntered(e -> box.setStyle(
+                    "-fx-background-color: #C8E6C9; " +
+                    "-fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                    "-fx-border-radius: 8; " +
+                    "-fx-background-radius: 8; " +
+                    "-fx-border-width: 3; " +
+                    "-fx-cursor: hand;"
+                ));
+
+                box.setOnMouseExited(e -> box.setStyle(
+                    "-fx-background-color: #E8F5E9; " +
+                    "-fx-border-color: " + StyleHelper.SUCCESS_GREEN + "; " +
+                    "-fx-border-radius: 8; " +
+                    "-fx-background-radius: 8; " +
+                    "-fx-border-width: 2; " +
+                    "-fx-cursor: hand;"
+                ));
+            }
+
+            return box;
+        }
     }
 }
