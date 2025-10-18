@@ -31,7 +31,6 @@ public class GestioneSessioni {
 		this.cucinaDAO = cucinaDAO;
 	}
 
-	// --- CREAZIONE / RIMOZIONE SESSIONI ---
 	public void creaSessione(Sessione sessione) throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotNull(sessione, ErrorMessages.SESSIONE_NULLA);
 

@@ -21,11 +21,9 @@ public class GestioneCorsiCucina {
 	private final OnlineDAO onlineDAO;
 	private final InPresenzaDAO inPresenzaDAO;
 
-	// Servizi esterni obbligatori
 	private final GestioneRicette gestioneRicette;
 	private final GestioneCucina gestioneCucina;
 
-	// Costruttore completo: DAO + servizi esterni
 	public GestioneCorsiCucina(CorsoCucinaDAO corsoDAO, ChefDAO chefDAO, TieneDAO tieneDAO, IscrizioneDAO iscrizioneDAO,
 			OnlineDAO onlineDAO, InPresenzaDAO inPresenzaDAO, GestioneRicette gestioneRicette,
 			GestioneCucina gestioneCucina) {
@@ -39,7 +37,6 @@ public class GestioneCorsiCucina {
 		this.gestioneCucina = gestioneCucina;
 	}
 
-	// ==================== CRUD CORSO ====================
 	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotNull(corso, "Corso");
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
@@ -55,10 +52,8 @@ public class GestioneCorsiCucina {
 			throw new ValidationException(ErrorMessages.DATA_FINE_PRECEDENTE);
 
 		try {
-			// 1️⃣ Salvataggio corso
 			corsoDAO.save(corso);
 
-			// 2️⃣ Salvataggio sessioni e associazioni alle ricette
 			if (corso.getSessioni() != null) {
 				for (Sessione s : corso.getSessioni()) {
 					s.setCorsoCucina(corso);
@@ -71,16 +66,13 @@ public class GestioneCorsiCucina {
 						if (ip.getRicette() != null) {
 							for (Ricetta r : ip.getRicette()) {
 								if (r.getIdRicetta() == 0) {
-									gestioneRicette.creaRicetta(r); // usa GestioneRicette
-								}
-								gestioneCucina.aggiungiSessioneARicetta(r, ip); // usa GestioneCucina
-							}
+								gestioneRicette.creaRicetta(r);								}
+								gestioneCucina.aggiungiSessioneARicetta(r, ip);0							}
 						}
 					}
 				}
 			}
 
-			// 3️⃣ Gestione chef
 			if (corso.getChef() != null) {
 				for (Chef c : corso.getChef()) {
 					if (!chefDAO.findByCodFiscale(c.getCodFiscale()).isPresent()) {
@@ -114,7 +106,6 @@ public class GestioneCorsiCucina {
 		}
 	}
 
-	// ==================== GESTIONE CHEF ====================
 	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password)
 			throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotNull(corso, "Corso");
@@ -175,7 +166,6 @@ public class GestioneCorsiCucina {
 		}
 	}
 
-	// ==================== LETTURA ====================
 	public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
 		try {
 			CorsoCucina corso = corsoDAO.findById(idCorso)

@@ -61,8 +61,8 @@ public class SelezionaChefDialog {
         root.setPrefSize(600, 500);
         root.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-border-color: #FF6600; -fx-border-width: 2; -fx-border-radius: 15;");
         
-        DropShadow shadow = new DropShadow(20, Color.rgb(0, 0, 0, 0.2));
-        root.setEffect(shadow);
+        //DropShadow shadow = new DropShadow(20, Color.rgb(0, 0, 0, 0.2));
+        //root.setEffect(shadow);
 
         // Header
         VBox header = createHeader();

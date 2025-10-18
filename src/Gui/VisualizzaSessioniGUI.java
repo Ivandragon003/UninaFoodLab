@@ -35,10 +35,8 @@ public class VisualizzaSessioniGUI {
 
     private VBox root;
     
-    // ✅ Riferimento al contentPane per navigazione
     private StackPane contentPane;
     
-    // ✅ Callback per tornare alla schermata precedente
     private Runnable onChiudiCallback;
 
     public void setController(GestioneSessioniController controller) {
@@ -109,8 +107,8 @@ public class VisualizzaSessioniGUI {
             "-fx-background-radius: 12;" +
             "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
             "-fx-border-width: 1;" +
-            "-fx-border-radius: 12;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
+            "-fx-border-radius: 12;" 
+//            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
         );
 
         Label filtroLabel = StyleHelper.createLabel("Filtri:");
