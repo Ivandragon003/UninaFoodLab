@@ -35,6 +35,11 @@ public class CreaRicettaGUI {
     
     private Ricetta ricettaCreata = null;
     private Stage dialog;
+    
+    // ✅ Per gestire schermate continue
+    private VBox mainContainer;
+    private VBox creaView;
+    private VBox selezionaView;
 
     public CreaRicettaGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
         if (ricettaController == null || ingredienteController == null) {
@@ -54,7 +59,12 @@ public class CreaRicettaGUI {
     }
 
     public VBox getContent() {
-        return buildMainLayout();
+        if (mainContainer == null) {
+            mainContainer = new VBox();
+            creaView = buildMainLayout();
+            mainContainer.getChildren().add(creaView);
+        }
+        return mainContainer;
     }
 
     // ==================== LAYOUT ====================
@@ -122,7 +132,7 @@ public class CreaRicettaGUI {
 
         Button selezionaBtn = StyleHelper.createPrimaryButton("➕ Aggiungi Ingrediente");
         selezionaBtn.setPrefWidth(200);
-        selezionaBtn.setOnAction(e -> selezionaIngrediente());
+        selezionaBtn.setOnAction(e -> mostraSelezioneIngrediente());
 
         Label suggerimento = new Label("💡 Clicca per aggiungere ingredienti. Puoi crearne di nuovi dalla finestra di selezione.");
         suggerimento.setFont(Font.font("Roboto", 12));
@@ -165,42 +175,14 @@ public class CreaRicettaGUI {
         return box;
     }
 
-    // ==================== LOGICA ====================
+    // ==================== SELEZIONE INGREDIENTE (SCHERMATA CONTINUA) ====================
 
-    private void handleReset() {
-        if (onAnnulla != null) {
-            onAnnulla.run();
-        } else {
-            if (dialog != null) {
-                ricettaCreata = null;
-                dialog.close();
-            } else {
-                clearForm();
-            }
-        }
-    }
+    private void mostraSelezioneIngrediente() {
+        selezionaView = new VBox(20);
+        selezionaView.setPadding(new Insets(20));
+        StyleHelper.applyBackgroundGradient(selezionaView);
 
-    private void selezionaIngrediente() {
-        // ✅ USA DIALOG CON VisualizzaIngredientiGUI INTEGRATO
-        Stage selDialog = new Stage();
-        selDialog.initModality(Modality.APPLICATION_MODAL);
-        selDialog.initStyle(StageStyle.UNDECORATED);
-        selDialog.setTitle("Seleziona Ingrediente");
-
-        StackPane root = new StackPane();
-        root.setMinSize(800, 700);
-
-        // Background gradient
-        Region bg = new Region();
-        StyleHelper.applyBackgroundGradient(bg);
-
-        // Main content
-        VBox main = new VBox(25);
-        main.setAlignment(Pos.TOP_CENTER);
-        main.setPadding(new Insets(40, 30, 30, 30));
-
-        Label title = new Label("🥕 Seleziona Ingrediente");
-        title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
+        Label title = StyleHelper.createTitleLabel("🥕 Seleziona Ingrediente");
         title.setTextFill(Color.WHITE);
         title.setAlignment(Pos.CENTER);
 
@@ -212,7 +194,6 @@ public class CreaRicettaGUI {
         VBox titleBox = new VBox(8, title, subtitle);
         titleBox.setAlignment(Pos.CENTER);
 
-        // ✅ USA VisualizzaIngredientiGUI
         VisualizzaIngredientiGUI visualizzaGUI = new VisualizzaIngredientiGUI(ingredienteController);
         visualizzaGUI.setModalitaSelezione(true);
         visualizzaGUI.setOnIngredienteSelezionato(ing -> {
@@ -220,32 +201,26 @@ public class CreaRicettaGUI {
                 StyleHelper.showValidationDialog("Attenzione", "Ingrediente già presente nella ricetta");
                 return;
             }
-            selDialog.close();
             chiediQuantita(ing);
         });
 
         VBox content = visualizzaGUI.getContent();
         VBox.setVgrow(content, Priority.ALWAYS);
 
-        main.getChildren().addAll(titleBox, content);
+        Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
+        indietroBtn.setPrefWidth(150);
+        indietroBtn.setOnAction(e -> mainContainer.getChildren().setAll(creaView));
 
-        // Window buttons
-        HBox winBtns = buildWindowButtons(selDialog);
+        HBox buttons = new HBox(indietroBtn);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.setPadding(new Insets(15, 0, 5, 0));
 
-        root.getChildren().addAll(bg, main, winBtns);
-        StackPane.setAlignment(winBtns, Pos.TOP_RIGHT);
-        StackPane.setMargin(winBtns, new Insets(8));
-
-        makeDraggable(root, selDialog);
-
-        Scene scene = new Scene(root, 850, 750);
-        scene.setFill(Color.TRANSPARENT);
-        selDialog.setScene(scene);
-        selDialog.showAndWait();
+        selezionaView.getChildren().addAll(titleBox, content, new Separator(), buttons);
+        mainContainer.getChildren().setAll(selezionaView);
     }
 
+    // ✅ DIALOG QUANTITÀ MIGLIORATO
     private void chiediQuantita(Ingrediente ing) {
-        // ✅ DIALOG SEMPLICE E PULITO COME NELLE IMMAGINI
         Dialog<Double> dialog = new Dialog<>();
         dialog.setTitle("Quantità Ingrediente");
         dialog.initModality(Modality.APPLICATION_MODAL);
@@ -411,9 +386,25 @@ public class CreaRicettaGUI {
         dialog.showAndWait().ifPresent(q -> {
             ingredientiMap.put(ing, q);
             updateDisplay();
+            mainContainer.getChildren().setAll(creaView);
             StyleHelper.showSuccessDialog("✅ Ingrediente Aggiunto",
                 String.format("'%s' aggiunto con %.0fg", ing.getNome(), q));
         });
+    }
+
+    // ==================== LOGICA ====================
+
+    private void handleReset() {
+        if (onAnnulla != null) {
+            onAnnulla.run();
+        } else {
+            if (dialog != null) {
+                ricettaCreata = null;
+                dialog.close();
+            } else {
+                clearForm();
+            }
+        }
     }
 
     private void salva() {
@@ -580,50 +571,6 @@ public class CreaRicettaGUI {
         updateDisplay();
     }
 
-    // ==================== WINDOW HELPERS ====================
-
-    private HBox buildWindowButtons(Stage stage) {
-        Button close = new Button("✕");
-        Button minimize = new Button("−");
-        Button maximize = new Button("○");
-
-        for (Button btn : new Button[]{minimize, maximize, close}) {
-            btn.setPrefSize(30, 30);
-            btn.setFont(Font.font("Roboto", FontWeight.BOLD, 12));
-            btn.setTextFill(Color.WHITE);
-            btn.setStyle(
-                "-fx-background-color: rgba(255,140,0,0.8);" +
-                "-fx-background-radius: 15;" +
-                "-fx-cursor: hand;"
-            );
-            btn.setFocusTraversable(false);
-        }
-
-        close.setOnAction(e -> stage.close());
-        minimize.setOnAction(e -> stage.setIconified(true));
-        maximize.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
-
-        HBox box = new HBox(3, minimize, maximize, close);
-        box.setAlignment(Pos.TOP_RIGHT);
-        box.setPickOnBounds(false);
-        return box;
-    }
-
-    private void makeDraggable(StackPane root, Stage stage) {
-        final double[] xOffset = {0};
-        final double[] yOffset = {0};
-        
-        root.setOnMousePressed(e -> {
-            xOffset[0] = e.getSceneX();
-            yOffset[0] = e.getSceneY();
-        });
-        
-        root.setOnMouseDragged(e -> {
-            stage.setX(e.getScreenX() - xOffset[0]);
-            stage.setY(e.getScreenY() - yOffset[0]);
-        });
-    }
-
     public Ricetta showAndReturn() {
         dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
@@ -632,7 +579,7 @@ public class CreaRicettaGUI {
         dialog.setMinWidth(700);
         dialog.setMinHeight(750);
 
-        Scene scene = new Scene(buildMainLayout(), 700, 800);
+        Scene scene = new Scene(getContent(), 700, 800);
         dialog.setScene(scene);
         dialog.showAndWait();
 
