@@ -65,10 +65,7 @@ public class GestioneCorsoController {
         return corsiService.getCorsoCompleto(idCorso);
     }
 
-    public CorsoCucina getDettagliCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-        return corsiService.getCorsoCompleto(corso.getIdCorso());
-    }
+    
     
     
 }

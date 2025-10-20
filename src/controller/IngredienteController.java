@@ -16,7 +16,7 @@ public class IngredienteController {
         this.gestioneIngrediente = gestioneIngrediente;
     }
 
-    // ✅ SEMPLIFICATO: Validazione delegata al service
+
     public int creaIngrediente(String nome, String tipo) throws ValidationException, DataAccessException {
         Ingrediente ingrediente = new Ingrediente(
             nome == null ? null : nome.trim(),
@@ -41,9 +41,7 @@ public class IngredienteController {
         return gestioneIngrediente.trovaIngredientePerId(id);
     }
 
-    public Optional<Ingrediente> trovaIngredientePerNome(String nome) throws ValidationException, DataAccessException {
-        return gestioneIngrediente.trovaIngredientePerNome(nome);
-    }
+    
 
     
 }

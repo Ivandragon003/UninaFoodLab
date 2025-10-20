@@ -38,16 +38,13 @@ public class GestioneCorsiCucina {
 	}
 
 	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-		ValidationUtils.validateNotNull(corso, "Corso");
-		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-		if (corso.getNumeroPosti() <= 0)
-			throw new ValidationException(ErrorMessages.NUMERO_POSTI_NON_VALIDO);
-		if (corso.getPrezzo() < 0)
-			throw new ValidationException(ErrorMessages.PREZZO_NON_VALIDO);
+
 		if (corso.getDataInizioCorso() == null || corso.getDataFineCorso() == null)
 			throw new ValidationException(ErrorMessages.DATE_CORSO_MANCANTI);
+
 		if (corso.getDataInizioCorso().isBefore(java.time.LocalDateTime.now()))
 			throw new ValidationException(ErrorMessages.DATA_INIZIO_PASSATA);
+
 		if (corso.getDataFineCorso().isBefore(corso.getDataInizioCorso()))
 			throw new ValidationException(ErrorMessages.DATA_FINE_PRECEDENTE);
 
@@ -66,8 +63,10 @@ public class GestioneCorsiCucina {
 						if (ip.getRicette() != null) {
 							for (Ricetta r : ip.getRicette()) {
 								if (r.getIdRicetta() == 0) {
-								gestioneRicette.creaRicetta(r);								}
-								gestioneCucina.aggiungiSessioneARicetta(r, ip);				}
+									gestioneRicette.creaRicetta(r);
+								}
+								gestioneCucina.aggiungiSessioneARicetta(r, ip);
+							}
 						}
 					}
 				}
@@ -132,8 +131,6 @@ public class GestioneCorsiCucina {
 		}
 	}
 
-	
-
 	public void rimuoviChefDaCorso(Chef chef, CorsoCucina corso) throws ValidationException, DataAccessException {
 		if (chef == null)
 			throw new ValidationException(ErrorMessages.CHEF_NULLO);
@@ -141,7 +138,7 @@ public class GestioneCorsiCucina {
 			throw new ValidationException(ErrorMessages.CORSO_NULLO);
 
 		try {
-			
+
 			List<Chef> chefAssegnati = tieneDAO.getChefByCorso(corso.getIdCorso());
 			boolean assegnato = chefAssegnati.stream()
 					.anyMatch(c -> c.getCodFiscale() != null && c.getCodFiscale().equals(chef.getCodFiscale()));
@@ -149,10 +146,8 @@ public class GestioneCorsiCucina {
 				throw new ValidationException("Lo chef non è assegnato a questo corso");
 			}
 
-			
 			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
-		
-			
+
 			if (chef.getCorsi() != null) {
 				chef.getCorsi().removeIf(c -> c.getIdCorso() == corso.getIdCorso());
 			}

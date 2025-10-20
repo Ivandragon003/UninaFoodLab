@@ -33,11 +33,7 @@ public class ChefController {
         return gestioneChef.creaChef(codFiscale, nome, cognome, email, dataNascita, disponibilita, username, password);
     }
 
-    public void aggiornaCredenziali(Chef chef, String nuovoUsername, String nuovaPassword)
-            throws ValidationException, DataAccessException {
-        gestioneChef.aggiornaCredenziali(chef, nuovoUsername, nuovaPassword);
-    }
-
+   
     public void eliminaAccount(Chef chef) throws ValidationException, DataAccessException {
         if (chef == null) {
             throw new ValidationException("Chef non valido");
@@ -52,23 +48,7 @@ public class ChefController {
     public List<Chef> getAllChef() throws DataAccessException {
         return gestioneChef.getAll();
     }
-
-    public List<Chef> filterChefs(List<Chef> chefs, String query, String filtroDisp) {
-        if (chefs == null) return List.of();
-        String search = query == null ? "" : query.trim().toLowerCase();
-
-        return chefs.stream()
-                .filter(c -> (search.isEmpty() ||
-                        c.getNome().toLowerCase().contains(search) ||
-                        c.getCognome().toLowerCase().contains(search) ||
-                        c.getUsername().toLowerCase().contains(search)))
-                .filter(c -> switch (filtroDisp) {
-                    case "Solo Disponibili" -> Boolean.TRUE.equals(c.getDisponibilita());
-                    case "Solo Non Disponibili" -> !Boolean.TRUE.equals(c.getDisponibilita());
-                    default -> true;
-                }).toList();
-    }
-
+  
     public void saveCorsoFromForm(String nome, String prezzoText, String argomento, String postiText,
             Frequenza frequenza, LocalDate dataInizio, Integer startHour, Integer startMinute, LocalDate dataFine,
             Integer endHour, Integer endMinute, List<Chef> chefSelezionati, List<Sessione> sessioni)
@@ -77,8 +57,7 @@ public class ChefController {
         if (gestioneCorsoController == null) {
             throw new IllegalStateException("GestioneCorsoController non impostato: impossibile salvare corso");
         }
-
-        // INPUT VALIDATION (UI-friendly messages)
+   
         if (nome == null || nome.trim().isEmpty()) {
             throw new ValidationException(ErrorMessages.NOME_CORSO_MANCANTE);
         }
