@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class ValidationUtils {
-
-    // ==================== VALIDAZIONI GENERICHE ====================
     
     public static void validateNotEmpty(String value, String fieldName) throws ValidationException {
         if (value == null || value.trim().isEmpty()) {
@@ -34,10 +32,6 @@ public class ValidationUtils {
             );
         }
     }
-    
-  
-
-    // ==================== VALIDAZIONI RICETTE ====================
     
     public static void validateNomeRicetta(String nome) throws ValidationException {
         if (nome == null || nome.trim().isEmpty()) {
@@ -74,7 +68,6 @@ public class ValidationUtils {
         }
     }
     
- // ==================== VALIDAZIONI INGREDIENTI ====================
     public static void validateNomeIngrediente(String nome) throws ValidationException {
         if (nome == null || nome.trim().isEmpty()) {
             throw new ValidationException("Nome ingrediente mancante");
@@ -87,17 +80,12 @@ public class ValidationUtils {
             throw new ValidationException("Nome ingrediente troppo lungo");
         }
     }
-
-
-    // ==================== VALIDAZIONI RANGE ====================
     
     public static void validateIntRange(Integer min, Integer max, String fieldName) throws ValidationException {
         if (min != null && max != null && min > max) {
             throw new ValidationException(fieldName + ": valore minimo maggiore del massimo");
         }
     }
-
-    // ==================== PARSING SICURO ====================
     
     public static Integer parseIntegerSafe(String text) {
         if (text == null || text.trim().isEmpty()) {
