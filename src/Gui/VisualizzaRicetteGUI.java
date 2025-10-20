@@ -170,7 +170,8 @@ public class VisualizzaRicetteGUI {
 		title.setTextFill(Color.WHITE);
 		title.setAlignment(Pos.CENTER);
 
-		// Inizializza la mappa solo se è null (così non sovrascriviamo le modifiche già fatte)
+		// Inizializza la mappa solo se è null (così non sovrascriviamo le modifiche già
+		// fatte)
 		if (modificaIngredientiMap == null) {
 			modificaIngredientiMap = new HashMap<>(ricetta.getIngredienti());
 		}
@@ -367,8 +368,13 @@ public class VisualizzaRicetteGUI {
 		VisualizzaIngredientiGUI selGUI = new VisualizzaIngredientiGUI(ingredienteController);
 		selGUI.setModalitaSelezione(true);
 		selGUI.setOnIngredienteSelezionato(ing -> {
-			if (modificaIngredientiMap.containsKey(ing)) {
-				StyleHelper.showValidationDialog("Attenzione", "Ingrediente già presente");
+
+			boolean giaPresente = modificaIngredientiMap.keySet().stream()
+					.anyMatch(i -> i.getIdIngrediente() == ing.getIdIngrediente());
+
+			if (giaPresente) {
+				StyleHelper.showValidationDialog("Attenzione",
+						"L'ingrediente '" + ing.getNome() + "' è già presente nella ricetta");
 			} else {
 				chiediQuantitaPerModifica(ing, ricetta);
 			}
@@ -401,65 +407,112 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void mostraDialogQuantita(Ingrediente ing, java.util.function.Consumer<Double> onSuccess) {
-		VBox dialogView = new VBox(20);
-		dialogView.setPadding(new Insets(20));
-		StyleHelper.applyBackgroundGradient(dialogView);
+		VBox dialogView = new VBox(30);
+		dialogView.setPadding(new Insets(40));
+		dialogView.setAlignment(Pos.CENTER);
 
-		Label title = StyleHelper.createTitleLabel("🥕 Quantità Ingrediente");
+		// ✅ SFONDO ARANCIONE PIENO come nelle foto originali
+		dialogView.setStyle("-fx-background-color: #FF9B7A;" // Arancione chiaro uniforme
+		);
+
+		// ✅ TITOLO PRINCIPALE con ombra
+		Label title = new Label("🥕 Quantità Ingrediente");
+		title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 38));
 		title.setTextFill(Color.WHITE);
+		title.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 6, 0.4, 0, 2);");
 		title.setAlignment(Pos.CENTER);
 
-		VBox card = StyleHelper.createSection();
-		card.setSpacing(20);
+		// ✅ CARD CENTRALE bianca ben centrata
+		VBox card = new VBox(25);
 		card.setAlignment(Pos.CENTER);
+		card.setPadding(new Insets(40));
+		card.setMaxWidth(700);
+		card.setMinHeight(450);
+		card.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0.2, 0, 5);");
 
+		// ✅ ICONA GRANDE per l'ingrediente
+		Label iconLabel = new Label("🥕");
+		iconLabel.setFont(Font.font("Segoe UI Emoji", 72));
+		iconLabel.setAlignment(Pos.CENTER);
+
+		// ✅ NOME INGREDIENTE
 		Label nomeLabel = new Label(ing.getNome());
-		nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 24));
+		nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
 		nomeLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 		nomeLabel.setAlignment(Pos.CENTER);
+		nomeLabel.setWrapText(true);
+		nomeLabel.setMaxWidth(600);
 
+		// ✅ BADGE per il tipo
 		Label tipoLabel = new Label("📂 " + ing.getTipo());
-		tipoLabel.setFont(Font.font("Roboto", 14));
-		tipoLabel.setTextFill(Color.GRAY);
+		tipoLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 16));
+		tipoLabel.setTextFill(Color.WHITE);
 		tipoLabel.setAlignment(Pos.CENTER);
+		tipoLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + ";" + "-fx-padding: 8 24;"
+				+ "-fx-background-radius: 20;");
 
+		VBox headerBox = new VBox(15, iconLabel, nomeLabel, tipoLabel);
+		headerBox.setAlignment(Pos.CENTER);
+
+		// ✅ SEPARATORE
+		Separator sep = new Separator();
+		sep.setMaxWidth(550);
+		sep.setStyle("-fx-background-color: " + StyleHelper.BORDER_LIGHT + ";");
+
+		// ✅ ISTRUZIONI
 		Label istruzioni = new Label("Inserisci la quantità in grammi:");
-		istruzioni.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 15));
+		istruzioni.setFont(Font.font("Roboto", FontWeight.BOLD, 17));
+		istruzioni.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
 		istruzioni.setAlignment(Pos.CENTER);
 
-		TextField quantField = StyleHelper.createTextField("Es. 250");
-		quantField.setPrefWidth(200);
-		quantField.setPrefHeight(50);
+		// ✅ CAMPO QUANTITÀ grande e centrato
+		TextField quantField = new TextField();
+		quantField.setPromptText("Es. 250");
+		quantField.setPrefWidth(280);
+		quantField.setPrefHeight(70);
 		quantField.setAlignment(Pos.CENTER);
 		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
-				+ "-fx-border-width: 3;" + "-fx-border-radius: 12;" + "-fx-background-radius: 12;"
-				+ "-fx-font-size: 20px;" + "-fx-font-weight: bold;");
-		// permetti numeri interi e decimali con punto
+				+ "-fx-border-width: 3;" + "-fx-border-radius: 15;" + "-fx-background-radius: 15;"
+				+ "-fx-font-size: 32px;" + "-fx-font-weight: bold;" + "-fx-prompt-text-fill: #ccc;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.15), 6, 0.2, 0, 2);");
+
+		// Validazione input
 		quantField.textProperty().addListener((obs, old, val) -> {
 			if (!val.matches("^\\d*\\.?\\d*$"))
 				quantField.setText(old);
 		});
 
+		// ✅ LABEL UNITÀ
 		Label unitLabel = new Label("grammi (g)");
-		unitLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 13));
+		unitLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
 		unitLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+		unitLabel.setAlignment(Pos.CENTER);
 
-		VBox fieldBox = new VBox(10, quantField, unitLabel);
+		VBox fieldBox = new VBox(12, quantField, unitLabel);
 		fieldBox.setAlignment(Pos.CENTER);
 
-		HBox buttons = new HBox(15);
+		// Aggiungi tutto alla card
+		card.getChildren().addAll(headerBox, sep, istruzioni, fieldBox);
+
+		// ✅ PULSANTI sotto la card (non dentro)
+		HBox buttons = new HBox(20);
 		buttons.setAlignment(Pos.CENTER);
+		buttons.setPadding(new Insets(20, 0, 0, 0));
 
 		Button annullaBtn = StyleHelper.createSecondaryButton("❌ Annulla");
-		annullaBtn.setPrefWidth(140);
+		annullaBtn.setPrefSize(170, 55);
+		annullaBtn.setStyle(annullaBtn.getStyle() + "-fx-font-size: 16px;");
 		annullaBtn.setOnAction(e -> mainContainer.getChildren().setAll(modificaView));
 
 		Button confermaBtn = StyleHelper.createSuccessButton("✅ Conferma");
-		confermaBtn.setPrefWidth(140);
+		confermaBtn.setPrefSize(170, 55);
+		confermaBtn.setStyle(confermaBtn.getStyle() + "-fx-font-size: 16px;");
 		confermaBtn.setOnAction(e -> {
 			String text = quantField.getText().trim();
 			if (text.isEmpty()) {
 				StyleHelper.showValidationDialog("Errore", "Inserisci una quantità");
+				quantField.requestFocus();
 				return;
 			}
 			try {
@@ -468,28 +521,22 @@ public class VisualizzaRicetteGUI {
 					onSuccess.accept(q);
 				} else {
 					StyleHelper.showValidationDialog("Errore", "La quantità deve essere maggiore di zero");
+					quantField.requestFocus();
 				}
 			} catch (NumberFormatException ex) {
 				StyleHelper.showValidationDialog("Errore", "Inserisci un numero valido");
+				quantField.requestFocus();
 			}
 		});
 
 		buttons.getChildren().addAll(annullaBtn, confermaBtn);
 
-		card.getChildren().addAll(nomeLabel, tipoLabel, new Separator(), istruzioni, fieldBox);
+		// ✅ LAYOUT FINALE
+		dialogView.getChildren().addAll(title, card, buttons);
 
-		ScrollPane scroll = new ScrollPane(card);
-		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(true);
-		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-		VBox.setVgrow(scroll, Priority.ALWAYS);
-
-		dialogView.getChildren().addAll(title, scroll, new Separator(), buttons);
-		VBox.setVgrow(scroll, Priority.ALWAYS);
-
-		VBox previousView = modificaView;
 		mainContainer.getChildren().setAll(dialogView);
 
+		// Focus automatico
 		javafx.application.Platform.runLater(() -> quantField.requestFocus());
 	}
 
@@ -501,10 +548,35 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void mostraModifica(Ricetta ricetta) {
-		// assicurati di inizializzare una nuova mappa per la ricetta appena aperta
-		modificaIngredientiMap = null;
-		modificaView = buildModificaLayout(ricetta);
-		mainContainer.getChildren().setAll(modificaView);
+		try {
+			// 🔄 IMPORTANTE: Ricarica la ricetta fresca dal controller
+			Ricetta ricettaAggiornata = ricettaController.getRicettaPerId(ricetta.getIdRicetta());
+
+			if (ricettaAggiornata == null) {
+				StyleHelper.showErrorDialog("Errore", "Ricetta non trovata");
+				mostraLista();
+				return;
+			}
+
+			// Crea una NUOVA mappa con gli ingredienti "freschi" dal DB
+			modificaIngredientiMap = new HashMap<>();
+
+			// Normalizza gli ingredienti usando l'ID come chiave univoca
+			for (Map.Entry<Ingrediente, Double> entry : ricettaAggiornata.getIngredienti().entrySet()) {
+				Ingrediente ing = entry.getKey();
+				// Verifica che l'ingrediente abbia un ID valido
+				if (ing.getIdIngrediente() > 0) {
+					modificaIngredientiMap.put(ing, entry.getValue());
+				}
+			}
+
+			modificaView = buildModificaLayout(ricettaAggiornata);
+			mainContainer.getChildren().setAll(modificaView);
+
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore caricamento ricetta: " + e.getMessage());
+			mostraLista();
+		}
 	}
 
 	private void salvaModifica(Ricetta ricetta) {

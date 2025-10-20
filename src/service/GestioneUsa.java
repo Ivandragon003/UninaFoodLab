@@ -27,21 +27,44 @@ public class GestioneUsa {
 	// ==================== OPERAZIONI SULL'ASSOCIAZIONE ====================
 
 	public void aggiungiIngredienteARicetta(Ricetta ricetta, Ingrediente ingrediente, double quantita)
-			throws ValidationException, DataAccessException {
-		validateParams(ricetta, ingrediente, quantita);
+        throws ValidationException, DataAccessException {
 
-		Ingrediente keyEsistente = trovaIngredienteKey(ricetta.getIngredienti(), ingrediente);
-		if (keyEsistente != null) {
-			throw new ValidationException("Ingrediente già presente nella ricetta");
-		}
+    validateParams(ricetta, ingrediente, quantita);
 
-		try {
-			Ingrediente ingredienteConID = recuperaOCreaIngrediente(ingrediente);
-			ricetta.getIngredienti().put(ingredienteConID, quantita);
-			usaDAO.save(new Usa(ricetta, ingredienteConID, quantita));
-		} catch (SQLException e) {
-			throw new DataAccessException("Errore durante l'aggiunta ingrediente-ricetta", e);
-		}
+    try {
+        // 1️⃣ Recupera l'ingrediente già presente in DB (con id)
+        Ingrediente ingredienteConID = recuperaOCreaIngrediente(ingrediente);
+
+        // 2️⃣ CONTROLLO CORRETTO: confronta solo gli ID, ignorando equals()
+        boolean giaPresente = ricetta.getIngredienti().keySet().stream()
+            .anyMatch(i -> i.getIdIngrediente() > 0 && 
+                          ingredienteConID.getIdIngrediente() > 0 &&
+                          i.getIdIngrediente() == ingredienteConID.getIdIngrediente());
+
+        if (giaPresente) {
+            throw new ValidationException("Ingrediente già presente nella ricetta");
+        }
+
+        // 3️⃣ Associa ingrediente e quantità alla ricetta
+        ricetta.getIngredienti().put(ingredienteConID, quantita);
+
+        // 4️⃣ Salva relazione nel DB
+        usaDAO.save(new Usa(ricetta, ingredienteConID, quantita));
+
+    } catch (SQLException e) {
+        throw new DataAccessException("Errore durante il recupero o la creazione dell'ingrediente", e);
+    }
+}
+
+// ==================== METODO DI DEBUG ====================
+// Aggiungi questo metodo per il debug
+	public void debugIngredienti(Ricetta ricetta, Ingrediente nuovoIng) {
+		System.out.println("=== DEBUG INGREDIENTI ===");
+		System.out.println("Nuovo ingrediente: ID=" + nuovoIng.getIdIngrediente() + ", Nome=" + nuovoIng.getNome());
+		System.out.println("Ingredienti nella ricetta:");
+		ricetta.getIngredienti().keySet().forEach(i -> System.out
+				.println("  - ID=" + i.getIdIngrediente() + ", Nome=" + i.getNome() + ", HashCode=" + i.hashCode()));
+		System.out.println("=======================");
 	}
 
 	public void aggiornaQuantitaIngrediente(Ricetta ricetta, Ingrediente ingrediente, double nuovaQuantita)
@@ -74,10 +97,9 @@ public class GestioneUsa {
 		}
 
 		try {
-			
+
 			ricetta.getIngredienti().remove(key);
 
-			
 			usaDAO.deleteByRicettaIdAndIngredienteId(ricetta.getIdRicetta(), key.getIdIngrediente());
 
 		} catch (SQLException e) {
@@ -108,15 +130,12 @@ public class GestioneUsa {
 	}
 
 	private Ingrediente trovaIngredienteKey(Map<Ingrediente, Double> m, Ingrediente ingrediente) {
-		if (m.containsKey(ingrediente))
-			return ingrediente;
-		return m.keySet().stream().filter(i -> i.getNome() != null && ingrediente.getNome() != null
-				&& i.getNome().equalsIgnoreCase(ingrediente.getNome())).findFirst().orElse(null);
+		return m.keySet().stream().filter(i -> i.equals(ingrediente)) // usa equals corretto
+				.findFirst().orElse(null);
 	}
 
 	private void validateParams(Ricetta ricetta, Ingrediente ingrediente, double quantita) throws ValidationException {
-		// non validiamo oggetti null in quanto il model li gestisce; validiamo solo la
-		// quantità
+
 		ValidationUtils.validateQuantita(quantita);
 	}
 }
