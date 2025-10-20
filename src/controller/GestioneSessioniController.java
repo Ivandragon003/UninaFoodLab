@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
 
 public class GestioneSessioniController {
 
@@ -34,55 +36,52 @@ public class GestioneSessioniController {
 		this.gestioneRicetteService = gestioneRicetteService;
 	}
 
-public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
-        throws ValidationException, DataAccessException {
+    public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
+            throws ValidationException, DataAccessException {
 
-    ValidationUtils.validateNotNull(sessione, "Sessione");
-    ValidationUtils.validateNotNull(corso, "Corso");
+        ValidationUtils.validateNotNull(sessione, "Sessione");
+        ValidationUtils.validateNotNull(corso, "Corso");
 
-    // ✅ CORRETTO: Associa l'intero oggetto corso alla sessione
-    sessione.setCorsoCucina(corso);
+        sessione.setCorsoCucina(corso);
 
-    // Valida solo la DATA (ignora orario)
-    LocalDate dataSessione = sessione.getDataInizioSessione().toLocalDate();
-    validaDataSessione(dataSessione);
+        LocalDate dataSessione = sessione.getDataInizioSessione().toLocalDate();
+        validaDataSessione(dataSessione);
 
-    // Validazioni orario
-    LocalDateTime now = LocalDateTime.now();
-    if (sessione.getDataInizioSessione().isBefore(now)) {
-        throw new ValidationException(
-            "La sessione non può iniziare nel passato.\n\n" +
-            "📅 Data/ora attuale: " + now.toLocalDate() + " " + now.toLocalTime() + "\n" +
-            "📅 Data/ora selezionata: " + sessione.getDataInizioSessione().toLocalDate() + 
-            " " + sessione.getDataInizioSessione().toLocalTime()
-        );
-    }
+        LocalDateTime now = LocalDateTime.now();
+        if (sessione.getDataInizioSessione().isBefore(now)) {
+            throw new ValidationException(
+                "La sessione non può iniziare nel passato.\n\n" +
+                "📅 Data/ora attuale: " + now.toLocalDate() + " " + now.toLocalTime() + "\n" +
+                "📅 Data/ora selezionata: " + sessione.getDataInizioSessione().toLocalDate() +
+                " " + sessione.getDataInizioSessione().toLocalTime()
+            );
+        }
 
-    if (!sessione.getDataFineSessione().isAfter(sessione.getDataInizioSessione())) {
-        throw new ValidationException(
-            "L'ora di fine deve essere dopo l'ora di inizio.\n\n" +
-            "🕐 Inizio: " + sessione.getDataInizioSessione().toLocalTime() + "\n" +
-            "🕐 Fine: " + sessione.getDataFineSessione().toLocalTime()
-        );
-    }
+        if (!sessione.getDataFineSessione().isAfter(sessione.getDataInizioSessione())) {
+            throw new ValidationException(
+                "L'ora di fine deve essere dopo l'ora di inizio.\n\n" +
+                "🕐 Inizio: " + sessione.getDataInizioSessione().toLocalTime() + "\n" +
+                "🕐 Fine: " + sessione.getDataFineSessione().toLocalTime()
+            );
+        }
 
-    gestioneSessioniService.creaSessione(sessione);
-    corso.getSessioni().add(sessione);
+        gestioneSessioniService.creaSessione(sessione);
+        corso.getSessioni().add(sessione);
 
-    if (sessione instanceof InPresenza ip && ricette != null) {
-        for (Ricetta r : ricette) {
-            if (r.getIdRicetta() == 0) {
-                gestioneRicetteService.creaRicetta(r);
+        if (sessione instanceof InPresenza ip && ricette != null) {
+            for (Ricetta r : ricette) {
+                if (r.getIdRicetta() == 0) {
+                    gestioneRicetteService.creaRicetta(r);
+                }
+
+                if (ip.getIdSessione() == 0) {
+                    gestioneSessioniService.creaSessione(ip);
+                }
+
+                gestioneCucinaService.aggiungiSessioneARicetta(r, ip);
             }
-
-            if (ip.getIdSessione() == 0) {
-                gestioneSessioniService.creaSessione(ip);
-            }
-
-            gestioneCucinaService.aggiungiSessioneARicetta(r, ip);
         }
     }
-}
 
 
 	public void aggiornaSessione(Sessione oldS, Sessione newS) throws ValidationException, DataAccessException {
@@ -115,144 +114,137 @@ public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
 		corso.getSessioni().remove(sessione);
 	}
 
-	// ========== GESTIONE AUTOMATICA DATE CON FREQUENZA ==========
-
-	/**
-	 * ✅ Calcola la prossima data valida per una nuova sessione Usa la DATA FINE
-	 * dell'ultima sessione come riferimento
-	 */
 	public LocalDate calcolaProssimaDataSessione() {
-		List<Sessione> sessioni = corso.getSessioni();
+	    List<Sessione> sessioni = corso.getSessioni();
 
-		if (sessioni == null || sessioni.isEmpty()) {
-			return corso.getDataInizioCorso().toLocalDate();
-		}
+	    if (sessioni == null || sessioni.isEmpty()) {
+	        return corso.getDataInizioCorso().toLocalDate();
+	    }
 
-		// ✅ Trova l'ultima sessione per DATA FINE (più recente)
-		Sessione ultimaSessione = sessioni.stream().max(Comparator.comparing(Sessione::getDataFineSessione))
-				.orElse(null);
+	    Sessione ultimaSessione = sessioni.stream()
+	            .max(Comparator.comparing(Sessione::getDataFineSessione))
+	            .orElse(null);
 
-		if (ultimaSessione == null) {
-			return corso.getDataInizioCorso().toLocalDate();
-		}
+	    if (ultimaSessione == null) {
+	        return corso.getDataInizioCorso().toLocalDate();
+	    }
 
-		// ✅ USA LA DATA FINE (non data inizio)
-		LocalDate dataFineUltimaSessione = ultimaSessione.getDataFineSessione().toLocalDate();
-		Frequenza freq = corso.getFrequenzaCorso();
+	    LocalDate dataFineUltimaSessione = ultimaSessione.getDataFineSessione().toLocalDate();
+	    Frequenza freq = corso.getFrequenzaCorso();
 
-		LocalDate prossimaData = switch (freq) {
-		case unica -> null;
-		case giornaliero -> dataFineUltimaSessione.plusDays(1);
-		case ogniDueGiorni -> dataFineUltimaSessione.plusDays(2);
-		case settimanale -> dataFineUltimaSessione.plusWeeks(1);
-		case mensile -> dataFineUltimaSessione.plusMonths(1);
-		};
+	    LocalDate prossimaData = switch (freq) {
+	        case unica -> null;
+	        case giornaliero -> dataFineUltimaSessione.plusDays(1);
+	        case ogniDueGiorni -> dataFineUltimaSessione.plusDays(2);
+	        case settimanale -> {
+	            LocalDate primoLunediSuccessivo = dataFineUltimaSessione.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+	            yield primoLunediSuccessivo;
+	        }
+	        case mensile -> dataFineUltimaSessione.plusMonths(1);
+	    };
 
-		if (prossimaData != null && prossimaData.isAfter(corso.getDataFineCorso().toLocalDate())) {
-			return null;
-		}
+	    if (prossimaData != null && corso.getDataFineCorso() != null &&
+	            prossimaData.isAfter(corso.getDataFineCorso().toLocalDate())) {
+	        return null;
+	    }
 
-		return prossimaData;
+	    return prossimaData;
 	}
 
-	/**
-	 * ✅ Valida che una data rispetti la frequenza del corso
-	 */
 	public boolean validaDataSessione(LocalDate dataSelezionata) throws ValidationException {
-		if (dataSelezionata == null) {
-			throw new ValidationException("Data non può essere null");
-		}
+	    if (dataSelezionata == null) {
+	        throw new ValidationException("Data non può essere null");
+	    }
 
-		// Verifica se corso è finito
-		LocalDateTime fineCorso = corso.getDataFineCorso();
-		if (fineCorso != null && LocalDateTime.now().isAfter(fineCorso)) {
-			throw new ValidationException(
-					"❌ Corso Terminato\n\n" + "Impossibile aggiungere sessioni a un corso già concluso.\n\n"
-							+ "🏁 Data fine corso: " + fineCorso.toLocalDate());
-		}
+	    LocalDateTime fineCorso = corso.getDataFineCorso();
+	    if (fineCorso != null && LocalDateTime.now().isAfter(fineCorso)) {
+	        throw new ValidationException(
+	                "❌ Corso Terminato\n\n" + "Impossibile aggiungere sessioni a un corso già concluso.\n\n"
+	                        + "🏁 Data fine corso: " + fineCorso.toLocalDate());
+	    }
 
-		LocalDate inizioCorso = corso.getDataInizioCorso().toLocalDate();
-		LocalDate fineCorsoDate = fineCorso.toLocalDate();
+	    LocalDate inizioCorso = corso.getDataInizioCorso().toLocalDate();
+	    LocalDate fineCorsoDate = fineCorso.toLocalDate();
 
-		if (dataSelezionata.isBefore(inizioCorso)) {
-			throw new ValidationException("La sessione non può essere prima dell'inizio del corso.\n\n"
-					+ "📅 Data inizio corso: " + inizioCorso + "\n" + "📅 Data selezionata: " + dataSelezionata);
-		}
+	    if (dataSelezionata.isBefore(inizioCorso)) {
+	        throw new ValidationException("La sessione non può essere prima dell'inizio del corso.\n\n"
+	                + "📅 Data inizio corso: " + inizioCorso + "\n" + "📅 Data selezionata: " + dataSelezionata);
+	    }
 
-		if (dataSelezionata.isAfter(fineCorsoDate)) {
-			throw new ValidationException("La sessione non può essere dopo la fine del corso.\n\n"
-					+ "📅 Data fine corso: " + fineCorsoDate + "\n" + "📅 Data selezionata: " + dataSelezionata);
-		}
+	    List<Sessione> sessioni = corso.getSessioni();
 
-		List<Sessione> sessioni = corso.getSessioni();
+	    if (sessioni == null || sessioni.isEmpty()) {
+	        return true;
+	    }
 
-		if (sessioni == null || sessioni.isEmpty()) {
-			return true;
-		}
+	    boolean conflitto = sessioni.stream()
+	            .anyMatch(s -> s.getDataInizioSessione().toLocalDate().equals(dataSelezionata));
 
-		// ✅ Controlla conflitti sulla STESSA DATA (solo giorno, ignora orario)
-		boolean conflitto = sessioni.stream()
-				.anyMatch(s -> s.getDataInizioSessione().toLocalDate().equals(dataSelezionata));
+	    if (conflitto) {
+	        throw new ValidationException("⚠️ Esiste già una sessione in data " + dataSelezionata + "\n\n"
+	                + "Ogni data può ospitare una sola sessione.\n" + "Scegli una data diversa.");
+	    }
 
-		if (conflitto) {
-			throw new ValidationException("⚠️ Esiste già una sessione in data " + dataSelezionata + "\n\n"
-					+ "Ogni data può ospitare una sola sessione.\n" + "Scegli una data diversa.");
-		}
+	    Sessione ultimaSessione = sessioni.stream()
+	            .max(Comparator.comparing(s -> s.getDataFineSessione().toLocalDate())).orElse(null);
 
-		// ✅ Trova l'ultima sessione (per data FINE, solo giorno)
-		Sessione ultimaSessione = sessioni.stream()
-				.max(Comparator.comparing(s -> s.getDataFineSessione().toLocalDate())).orElse(null);
+	    if (ultimaSessione != null) {
+	        LocalDate dataFineUltima = ultimaSessione.getDataFineSessione().toLocalDate();
 
-		if (ultimaSessione != null) {
-			LocalDate dataFineUltima = ultimaSessione.getDataFineSessione().toLocalDate();
+	        if (dataSelezionata.isBefore(dataFineUltima) || dataSelezionata.equals(dataFineUltima)) {
+	            throw new ValidationException("❌ Data Non Valida\n\n"
+	                    + "La nuova sessione deve iniziare dopo la fine dell'ultima sessione.\n\n"
+	                    + "🏁 Fine ultima sessione: " + dataFineUltima + "\n" + "📅 Data selezionata: "
+	                    + dataSelezionata + "\n\n" + "💡 La prossima data valida è: " + dataFineUltima.plusDays(1));
+	        }
 
-			// ✅ Verifica che la nuova sessione inizi DOPO la fine dell'ultima (solo date)
-			if (dataSelezionata.isBefore(dataFineUltima) || dataSelezionata.equals(dataFineUltima)) {
-				throw new ValidationException("❌ Data Non Valida\n\n"
-						+ "La nuova sessione deve iniziare dopo la fine dell'ultima sessione.\n\n"
-						+ "🏁 Fine ultima sessione: " + dataFineUltima + "\n" + "📅 Data selezionata: "
-						+ dataSelezionata + "\n\n" + "💡 La prossima data valida è: " + dataFineUltima.plusDays(1));
-			}
+	        Frequenza freq = corso.getFrequenzaCorso();
 
-			// ✅ Calcola distanza dalla DATA FINE (solo giorni)
-			long giorniDistanza = ChronoUnit.DAYS.between(dataFineUltima, dataSelezionata);
-			Frequenza freq = corso.getFrequenzaCorso();
+	        if (freq == Frequenza.unica) {
+	            throw new ValidationException(
+	                    "❌ Il corso ha frequenza 'Sessione Unica'\n\n" + "Non puoi aggiungere altre sessioni.\n"
+	                            + "Esiste già 1 sessione (terminata il " + dataFineUltima + ")");
+	        }
 
-			int giorniMinimi = switch (freq) {
-			case unica -> Integer.MAX_VALUE;
-			case giornaliero -> 1;
-			case ogniDueGiorni -> 2;
-			case settimanale -> 7;
-			case mensile -> 30;
-			};
+	        if (freq == Frequenza.settimanale) {
+	            LocalDate primoLunediSuccessivo = dataFineUltima.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+	            LocalDate fineSettimana = primoLunediSuccessivo.plusDays(6);
 
-			if (freq == Frequenza.unica) {
-				throw new ValidationException(
-						"❌ Il corso ha frequenza 'Sessione Unica'\n\n" + "Non puoi aggiungere altre sessioni.\n"
-								+ "Esiste già 1 sessione (terminata il " + dataFineUltima + ")");
-			}
+	            if (dataSelezionata.isBefore(primoLunediSuccessivo) || dataSelezionata.isAfter(fineSettimana)) {
+	                throw new ValidationException(String.format("❌ Frequenza Non Rispettata (Settimanale)\n\n"
+	                        + "La nuova sessione deve appartenere a un giorno della settimana immediatamente successiva.\n\n"
+	                        + "🏁 Fine ultima sessione: %s\n" + "📅 Data selezionata: %s\n\n"
+	                        + "💡 La settimana valida è: %s - %s", dataFineUltima, dataSelezionata,
+	                        primoLunediSuccessivo, fineSettimana));
+	            }
 
-			if (giorniDistanza < giorniMinimi) {
-				LocalDate dataMinimaConsentita = dataFineUltima.plusDays(giorniMinimi);
+	            return true;
+	        }
 
-				throw new ValidationException(String.format("❌ Frequenza Non Rispettata\n\n"
-						+ "Con frequenza '%s' la nuova sessione deve iniziare almeno %d giorni dopo la fine dell'ultima.\n\n"
-						+ "🏁 Fine ultima sessione: %s\n" + "📅 Data selezionata: %s\n" + "📊 Distanza: %d giorni\n"
-						+ "✅ Minimo richiesto: %d giorni\n\n" + "💡 La prossima data valida è: %s", freq.name(),
-						giorniMinimi, dataFineUltima, dataSelezionata, giorniDistanza, giorniMinimi,
-						dataMinimaConsentita));
-			}
-		}
+	        long giorniDistanza = ChronoUnit.DAYS.between(dataFineUltima, dataSelezionata);
 
-		return true;
+	        int giorniMinimi = switch (freq) {
+	            case giornaliero -> 1;
+	            case ogniDueGiorni -> 2;
+	            case mensile -> 30;
+	            default -> Integer.MAX_VALUE;
+	        };
+
+	        if (giorniDistanza < giorniMinimi) {
+	            LocalDate dataMinimaConsentita = dataFineUltima.plusDays(giorniMinimi);
+	            throw new ValidationException(String.format("❌ Frequenza Non Rispettata\n\n"
+	                    + "Con frequenza '%s' la nuova sessione deve iniziare almeno %d giorni dopo la fine dell'ultima.\n\n"
+	                    + "🏁 Fine ultima sessione: %s\n" + "📅 Data selezionata: %s\n" + "📊 Distanza: %d giorni\n"
+	                    + "✅ Minimo richiesto: %d giorni\n\n" + "💡 La prossima data valida è: %s", freq.name(),
+	                    giorniMinimi, dataFineUltima, dataSelezionata, giorniDistanza, giorniMinimi,
+	                    dataMinimaConsentita));
+	        }
+	    }
+
+	    return true;
 	}
 
-	/**
-	 * ✅ Verifica se è possibile aggiungere sessioni (controlla anche se corso
-	 * finito)
-	 */
 	public boolean puoAggiungereSessions() {
-		// ✅ Blocco se corso finito
 		LocalDateTime fineCorso = corso.getDataFineCorso();
 		if (fineCorso != null && LocalDateTime.now().isAfter(fineCorso)) {
 			return false;
@@ -263,7 +255,6 @@ public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
 	}
 
 	public String getMotivoBloccoSessioni() {
-		// ✅ Controlla se corso finito
 		LocalDateTime fineCorso = corso.getDataFineCorso();
 		if (fineCorso != null && LocalDateTime.now().isAfter(fineCorso)) {
 			return "Il corso è terminato il " + fineCorso.toLocalDate()

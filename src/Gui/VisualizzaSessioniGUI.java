@@ -55,12 +55,10 @@ public class VisualizzaSessioniGUI {
         this.corso = corso;
     }
     
-    // ✅ Setter per contentPane
     public void setContentPane(StackPane contentPane) {
         this.contentPane = contentPane;
     }
     
-    // ✅ Setter per il callback
     public void setOnChiudiCallback(Runnable callback) {
         this.onChiudiCallback = callback;
     }
@@ -108,7 +106,6 @@ public class VisualizzaSessioniGUI {
             "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
             "-fx-border-width: 1;" +
             "-fx-border-radius: 12;" 
-//            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0.0, 0.0, 2.0);"
         );
 
         Label filtroLabel = StyleHelper.createLabel("Filtri:");
@@ -254,7 +251,7 @@ public class VisualizzaSessioniGUI {
         String sessioneInfo = "Tipo: " + tipo + "\n" +
                              "Inizio: " + sessione.getDataInizioSessione().toLocalDate();
         
-        StyleHelper.showConfirmationDialog(
+        StyleHelper.showCustomConfirmationDialog(
             "Conferma Eliminazione",
             "Sei sicuro di voler eliminare questa sessione?\n\n" + sessioneInfo,
             () -> {
@@ -291,11 +288,9 @@ public class VisualizzaSessioniGUI {
         Button indietroBtn = StyleHelper.createPrimaryButton("⬅️ Indietro");
         indietroBtn.setPrefWidth(150);
         indietroBtn.setOnAction(e -> {
-            // ✅ Usa il callback per tornare indietro
             if (onChiudiCallback != null) {
                 onChiudiCallback.run();
             } else {
-                // Fallback: chiudi lo stage se esiste
                 if (root.getScene() != null && root.getScene().getWindow() != null) {
                     root.getScene().getWindow().hide();
                 }

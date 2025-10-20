@@ -16,11 +16,15 @@ import controller.IngredienteController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.WeekFields;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.WeekFields;
 
 public class CreaSessioniGUI extends Stage {
 	private Sessione sessioneCreata = null;
@@ -42,12 +46,10 @@ public class CreaSessioniGUI extends Stage {
 	private ListView<Ricetta> ricetteListView;
 	private List<Ricetta> ricetteSelezionate = new ArrayList<>();
 
-	// COSTRUTTORE PRINCIPALE - Richiede entrambi i controller
 	public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso,
 			Set<LocalDate> dateOccupate, RicettaController ricettaController,
 			IngredienteController ingredienteController) {
 
-		// VALIDAZIONE PARAMETRI CRITICI
 		if (corsoInizio == null || corsoFine == null) {
 			throw new IllegalArgumentException("Le date di inizio e fine corso non possono essere null");
 		}
@@ -126,100 +128,115 @@ public class CreaSessioniGUI extends Stage {
 
 		datePicker = StyleHelper.createDatePicker();
 
-		// ✅ LOGICA UNIFICATA: funziona per creazione E aggiunta
+		// Catturo i valori in variabili effectively-final in modo che l'inner class
+		// DateCell le possa usare senza ambiguità.
+		final LocalDate corsoStart = this.corsoInizio;
+		final LocalDate corsoEnd = this.corsoFine;
+		final Set<LocalDate> occupiedDates = this.dateOccupate != null ? this.dateOccupate : new HashSet<>();
+		final Frequenza freq = this.frequenzaCorso;
+
 		datePicker.setDayCellFactory(dp -> new DateCell() {
 			@Override
 			public void updateItem(LocalDate d, boolean empty) {
-				super.updateItem(d, empty);
-				if (empty || d == null)
-					return;
+			    super.updateItem(d, empty);
 
-				// 1. Fuori dal range del corso
-				if (d.isBefore(corsoInizio) || d.isAfter(corsoFine)) {
-					setDisable(true);
-					setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
-					setTooltip(new Tooltip("Fuori dal periodo del corso"));
-					return;
-				}
+			    if (empty || d == null) {
+			        setDisable(true);
+			        setText(null);
+			        setStyle("");
+			        setTooltip(null);
+			        return;
+			    }
 
-				// 2. Data già occupata
-				if (dateOccupate.contains(d)) {
-					setDisable(true);
-					setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #f57f17;");
-					setTooltip(new Tooltip("Data già occupata da altra sessione"));
-					return;
-				}
+			    // 1) Fuori dal range inizio/fine corso -> rosso/disabilitato
+			    if (d.isBefore(corsoStart)) {
+			        setDisable(true);
+			        setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+			        setTooltip(new Tooltip("Data prima dell'inizio del corso"));
+			        return;
+			    }
 
-				// ✅ 3. SE CI SONO SESSIONI ESISTENTI
-				if (!dateOccupate.isEmpty()) {
-					LocalDate dataFineUltimaSessione = dateOccupate.stream().max(LocalDate::compareTo).orElse(null);
+			    // 2) Date già occupate -> giallo (non cliccabile)
+			    if (occupiedDates.contains(d)) {
+			        setDisable(true);
+			        setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #8a6d00;");
+			        setTooltip(new Tooltip("Esiste già una sessione in questa data"));
+			        return;
+			    }
 
-					if (dataFineUltimaSessione != null) {
-						boolean isDisponibile = false;
-						String motivoRosso = "";
+			    boolean isDisponibile = false;
+			    String motivoNonDisponibile = "Data non disponibile";
 
-						switch (frequenzaCorso) {
-						case unica:
-							setDisable(true);
-							setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
-							setTooltip(new Tooltip("Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni"));
-							return;
+			    LocalDate dataFineUltimaSessione = null;
+			    if (!occupiedDates.isEmpty()) {
+			        dataFineUltimaSessione = occupiedDates.stream().max(LocalDate::compareTo).orElse(null);
+			    }
 
-						case giornaliero:
-							isDisponibile = d.isAfter(dataFineUltimaSessione);
-							motivoRosso = "Deve essere almeno 1 giorno dopo il " + dataFineUltimaSessione;
-							break;
+			    switch (freq) {
+			        case unica:
+			            isDisponibile = occupiedDates.isEmpty();
+			            if (!isDisponibile) motivoNonDisponibile = "Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni";
+			            break;
 
-						case ogniDueGiorni:
-							isDisponibile = d.isAfter(dataFineUltimaSessione.plusDays(1));
-							motivoRosso = "Deve essere almeno 2 giorni dopo il " + dataFineUltimaSessione;
-							break;
+			        case giornaliero:
+			            if (dataFineUltimaSessione == null) {
+			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
+			            } else {
+			                isDisponibile = d.isAfter(dataFineUltimaSessione) && !d.isAfter(corsoEnd);
+			            }
+			            break;
 
-						case settimanale:
-							// ✅ Deve essere nella settimana SUCCESSIVA (o oltre)
-							int settimanaUltima = dataFineUltimaSessione.get(WeekFields.ISO.weekOfWeekBasedYear());
-							int annoUltima = dataFineUltimaSessione.get(WeekFields.ISO.weekBasedYear());
+			        case ogniDueGiorni:
+			            if (dataFineUltimaSessione == null) {
+			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
+			            } else {
+			                long giorniDiff = ChronoUnit.DAYS.between(dataFineUltimaSessione, d);
+			                isDisponibile = (giorniDiff >= 2) && !d.isAfter(corsoEnd);
+			                if (!isDisponibile) motivoNonDisponibile = "Richiede almeno 2 giorni di distanza dall'ultima sessione";
+			            }
+			            break;
 
-							int settimanaCorrente = d.get(WeekFields.ISO.weekOfWeekBasedYear());
-							int annoCorrente = d.get(WeekFields.ISO.weekBasedYear());
+			        case settimanale:
+			            if (dataFineUltimaSessione == null) {
+			                // nessuna sessione precedente: consenti date entro range corso
+			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
+			            } else {
+			                // Calcola la settimana IMMEDIATAMENTE successiva alla data di fine dell'ultima sessione:
+			                // prendiamo il LUNEDI della settimana successiva e consideriamo l'intervallo [lun, dom]
+			                LocalDate primoLunediSuccessivo = dataFineUltimaSessione.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+			                LocalDate fineSettimana = primoLunediSuccessivo.plusDays(6);
 
-							isDisponibile = (annoCorrente > annoUltima)
-									|| (annoCorrente == annoUltima && settimanaCorrente > settimanaUltima);
+			                // disponibile se la data è dentro quell'intervallo (NOTA: ignoriamo corsoEnd qui
+			                // perché l'applicazione estenderà la data fine corso se la sessione è valida)
+			                isDisponibile = !d.isBefore(primoLunediSuccessivo) && !d.isAfter(fineSettimana);
 
-							motivoRosso = "Deve essere nella settimana " + (settimanaUltima + 1) + " o successiva";
-							break;
+			                if (!isDisponibile) {
+			                    motivoNonDisponibile = "La sessione settimanale deve essere nella settimana immediatamente successiva (" 
+			                        + primoLunediSuccessivo + " - " + fineSettimana + ")";
+			                }
+			            }
+			            break;
 
-						case mensile:
-							// ✅ Deve essere nel mese SUCCESSIVO (o oltre)
-							int meseUltima = dataFineUltimaSessione.getMonthValue();
-							int annoMeseUltima = dataFineUltimaSessione.getYear();
+			        case mensile:
+			            if (dataFineUltimaSessione == null) {
+			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
+			            } else {
+			                LocalDate nextMonth = dataFineUltimaSessione.plusMonths(1);
+			                isDisponibile = !d.isBefore(nextMonth) && !d.isAfter(corsoEnd);
+			                if (!isDisponibile) motivoNonDisponibile = "La sessione mensile deve essere almeno un mese dopo l'ultima";
+			            }
+			            break;
+			    }
 
-							int meseCorrente = d.getMonthValue();
-							int annoMeseCorrente = d.getYear();
-
-							isDisponibile = (annoMeseCorrente > annoMeseUltima)
-									|| (annoMeseCorrente == annoMeseUltima && meseCorrente > meseUltima);
-
-							motivoRosso = "Deve essere a " + dataFineUltimaSessione.plusMonths(1).getMonth()
-									+ " o oltre";
-							break;
-						}
-
-						if (isDisponibile) {
-							setStyle("-fx-background-color: #c8e6c9; -fx-text-fill: #2e7d32;");
-							setTooltip(new Tooltip("Data disponibile"));
-						} else {
-							setDisable(true);
-							setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
-							setTooltip(new Tooltip(motivoRosso));
-						}
-						return;
-					}
-				}
-
-				// Prima sessione: tutte le date nel range sono disponibili
-				setStyle("-fx-background-color: #c8e6c9; -fx-text-fill: #2e7d32;");
-				setTooltip(new Tooltip("Data disponibile"));
+			    if (isDisponibile) {
+			        setDisable(false);
+			        setStyle("-fx-background-color: #e8f5e9; -fx-text-fill: black;"); // verde chiaro, cliccabile
+			        setTooltip(new Tooltip("Data disponibile"));
+			    } else {
+			        setDisable(true);
+			        setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;"); // rosso
+			        setTooltip(new Tooltip(motivoNonDisponibile));
+			    }
 			}
 		});
 
@@ -301,7 +318,6 @@ public class CreaSessioniGUI extends Stage {
 		selezionaRicetteBtn = StyleHelper.createPrimaryButton("📚 Seleziona Ricette");
 		selezionaRicetteBtn.setOnAction(e -> apriDialogRicette());
 
-		// PULSANTE SEMPRE DISPONIBILE (disabilitato solo per sessioni online)
 		selezionaRicetteBtn.setDisable(true);
 
 		ricetteLabel = StyleHelper.createLabel("⚠️ Nessuna ricetta selezionata");

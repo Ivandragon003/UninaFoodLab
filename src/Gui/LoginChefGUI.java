@@ -47,41 +47,43 @@ public class LoginChefGUI extends Application {
 		chefController = controller;
 		corsiService = corsiServiceArg;
 	}
-
+	
 	@Override
-	public void start(Stage primaryStage) {
-		if (chefController == null || corsiService == null) {
-			throw new IllegalStateException("Controller o Service non inizializzati");
-		}
+public void start(Stage primaryStage) {
+    if (chefController == null || corsiService == null) {
+        throw new IllegalStateException("Controller o Service non inizializzati");
+    }
 
-		primaryStage.initStyle(StageStyle.UNDECORATED);
-		primaryStage.setTitle("Chef Login - UninaFoodLab");
+    if (!primaryStage.isShowing()) {
+        primaryStage.initStyle(StageStyle.UNDECORATED);
+    }
+    primaryStage.setTitle("Chef Login - UninaFoodLab");
 
-		StackPane root = new StackPane();
-		root.setPrefSize(600, 650);
+    StackPane root = new StackPane();
+    root.setPrefSize(600, 650);
 
-		Region background = new Region();
-		StyleHelper.applyBackgroundGradient(background);
-		background.setPrefSize(600, 650);
-		root.getChildren().add(background);
+    Region background = new Region();
+    StyleHelper.applyBackgroundGradient(background);
+    background.setPrefSize(600, 650);
+    root.getChildren().add(background);
 
-		contentPane = new StackPane();
-		VBox loginCard = createLoginCard();
-		contentPane.getChildren().add(loginCard);
-		root.getChildren().add(contentPane);
+    contentPane = new StackPane();
+    VBox loginCard = createLoginCard();
+    contentPane.getChildren().add(loginCard);
+    root.getChildren().add(contentPane);
 
-		HBox windowButtons = createWindowButtons(primaryStage);
-		root.getChildren().add(windowButtons);
-		StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-		StackPane.setMargin(windowButtons, new Insets(10));
+    HBox windowButtons = createWindowButtons(primaryStage);
+    root.getChildren().add(windowButtons);
+    StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+    StackPane.setMargin(windowButtons, new Insets(10));
 
-		makeDraggable(root, primaryStage);
+    makeDraggable(root, primaryStage);
 
-		Scene scene = new Scene(root);
-		scene.setFill(Color.TRANSPARENT);
-		primaryStage.setScene(scene);
-		primaryStage.show();
-	}
+    Scene scene = new Scene(root, 600, 650);
+    scene.setFill(Color.TRANSPARENT);
+    primaryStage.setScene(scene);
+    primaryStage.show();
+}
 
 	@Override
 	public void stop() {

@@ -7,10 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.time.temporal.WeekFields;
 import java.util.Set;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
 
 public class FrequenzaHelper {
 
- 
     public static List<Frequenza> getFrequenzeDisponibili(LocalDate dataInizio, LocalDate dataFine) {
         List<Frequenza> disponibili = new ArrayList<>();
 
@@ -18,7 +19,6 @@ public class FrequenzaHelper {
             return List.of(Frequenza.unica);
         }
 
-        // Gestisci date inverse o uguali
         if (dataInizio.isAfter(dataFine)) {
             return List.of(Frequenza.unica);
         }
@@ -34,7 +34,6 @@ public class FrequenzaHelper {
         return disponibili.isEmpty() ? List.of(Frequenza.unica) : disponibili;
     }
 
-  
     public static int calcolaNumeroSessioni(LocalDate dataInizio, LocalDate dataFine, Frequenza frequenza) {
         if (dataInizio == null || dataFine == null) {
             throw new IllegalArgumentException("Date non possono essere null");
@@ -52,18 +51,17 @@ public class FrequenzaHelper {
 
         return switch (frequenza) {
             case unica -> 1;
-            
+
             case giornaliero -> (int) giorniTotali + 1;
-            
+
             case ogniDueGiorni -> (int) Math.ceil((giorniTotali + 1) / 2.0);
-            
+
             case settimanale -> (int) Math.ceil((giorniTotali + 1) / 7.0);
-            
+
             case mensile -> (int) Math.ceil((giorniTotali + 1) / 30.0);
         };
     }
 
-  
     public static boolean isFrequenzaValida(LocalDate dataInizio, LocalDate dataFine, Frequenza frequenza) {
         if (dataInizio == null || dataFine == null || frequenza == null) {
             return false;
@@ -77,7 +75,6 @@ public class FrequenzaHelper {
         return giorniDurata >= frequenza.getDurataMinima();
     }
 
-  
     public static String getMessaggioErroreFrequenza(LocalDate dataInizio, LocalDate dataFine, Frequenza frequenza) {
         if (frequenza == null) {
             return "⚠️ Seleziona una frequenza valida";
@@ -96,47 +93,53 @@ public class FrequenzaHelper {
             "💡 Aumenta la durata del corso o scegli una frequenza diversa.",
             frequenza.getDescrizione(), durataMinima, giorniDurata
         );
-    }  
-
-public static boolean isDataDisponibile(LocalDate data, Frequenza frequenza, Set<LocalDate> dateOccupate, LocalDate corsoInizio) {
-    if (frequenza == null || data == null || dateOccupate == null) return false;
-
-    switch (frequenza) {
-        case unica:
-            return dateOccupate.isEmpty();
-
-        case giornaliero:
-            return !dateOccupate.contains(data);
-
-        case ogniDueGiorni:
-            LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
-            long giorniDiff = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
-            return giorniDiff >= 2 && giorniDiff % 2 == 0;
-
-        case settimanale:
-            int settimanaData = data.get(WeekFields.ISO.weekOfWeekBasedYear());
-            int annoData = data.getYear();
-            for (LocalDate d : dateOccupate) {
-                if (d.getYear() == annoData && d.get(WeekFields.ISO.weekOfWeekBasedYear()) == settimanaData) {
-                    return false;
-                }
-            }
-            return true;
-
-        case mensile:
-            int meseData = data.getMonthValue();
-            annoData = data.getYear();
-            for (LocalDate d : dateOccupate) {
-                if (d.getYear() == annoData && d.getMonthValue() == meseData) {
-                    return false;
-                }
-            }
-            return true;
-
-        default:
-            return true;
     }
-}
+
+    public static boolean isDataDisponibile(LocalDate data, Frequenza frequenza, Set<LocalDate> dateOccupate, LocalDate corsoInizio) {
+        if (frequenza == null || data == null || dateOccupate == null) return false;
+
+        switch (frequenza) {
+            case unica:
+                return dateOccupate.isEmpty();
+
+            case giornaliero:
+                return !dateOccupate.contains(data);
+
+            case ogniDueGiorni:
+                LocalDate riferimento = dateOccupate.stream().min(LocalDate::compareTo).orElse(corsoInizio);
+                long giorniDiff = java.time.temporal.ChronoUnit.DAYS.between(riferimento, data);
+                return giorniDiff >= 2 && giorniDiff % 2 == 0;
+
+            case settimanale:
+                // se non ci sono date occupate, il comportamento è: non prima della data di inizio corso
+                if (dateOccupate.isEmpty()) {
+                    return !data.isBefore(corsoInizio);
+                }
+
+                // troviamo l'ultima data occupata (massima)
+                LocalDate ultima = dateOccupate.stream().max(LocalDate::compareTo).orElse(corsoInizio);
+                LocalDate primoLunediSuccessivo = ultima.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+                LocalDate fineSettimana = primoLunediSuccessivo.plusDays(6);
+
+                int targetWeek = primoLunediSuccessivo.get(WeekFields.ISO.weekOfWeekBasedYear());
+                int targetYear = primoLunediSuccessivo.get(WeekFields.ISO.weekBasedYear());
+
+                int selWeek = data.get(WeekFields.ISO.weekOfWeekBasedYear());
+                int selYear = data.get(WeekFields.ISO.weekBasedYear());
+
+                // disponibile solo se la data appartiene ESATTAMENTE alla settimana immediatamente successiva
+                return !data.isBefore(primoLunediSuccessivo) && !data.isAfter(fineSettimana);
+
+            case mensile:
+                for (LocalDate d : dateOccupate) {
+                    if (d.getMonthValue() == data.getMonthValue() && d.getYear() == data.getYear()) {
+                        return false;
+                    }
+                }
+                return true;
+        }
+        return false;
+    }
 
     private FrequenzaHelper() {
         throw new AssertionError("Utility class - non istanziabile");

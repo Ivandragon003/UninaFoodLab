@@ -42,7 +42,6 @@ public final class StyleHelper {
 	public static final String ACCENT_PURPLE = "#9D4EDD";
 	public static final String ACCENT_YELLOW = "#FFD60A";
 
-	// ✅ STILE ORIGINALE: Con dropshadow LEGGERO ma SENZA animazioni
 	public static Button createPrimaryButton(String text) {
 		return createStyledButton(text, PRIMARY_ORANGE, "#FFFFFF");
 	}
@@ -67,7 +66,6 @@ public final class StyleHelper {
 		return createStyledButton(text, CYAN_REGISTER, "#FFFFFF");
 	}
 
-	// ✅ STILE ORIGINALE OTTIMIZZATO: Ombra leggera, NO animazione scale
 	public static Button createStyledButton(String text, String color, String textColor) {
 		Button button = new Button(text);
 		button.setPrefSize(140, 45);
@@ -105,7 +103,6 @@ public final class StyleHelper {
 		return button;
 	}
 
-	// ✅ ComboBox con ombra LEGGERA
 	public static void styleComboBox(ComboBox<?> comboBox) {
 		comboBox.setPrefHeight(40);
 		comboBox.setStyle(
@@ -171,7 +168,6 @@ public final class StyleHelper {
 		return label;
 	}
 
-	// ✅ TextField con ombra LEGGERA
 	public static TextField createTextField(String promptText) {
 		TextField field = new TextField();
 		field.setPromptText(promptText);
@@ -216,7 +212,6 @@ public final class StyleHelper {
 		return field;
 	}
 
-	// ✅ TextArea con ombra LEGGERA
 	public static TextArea createTextArea(String promptText) {
 		TextArea area = new TextArea();
 		area.setPromptText(promptText);
@@ -313,7 +308,6 @@ public final class StyleHelper {
 		showCustomDialog(title, message, "ℹ️", INFO_BLUE, "#E6F9F8");
 	}
 
-	// ✅ Dialog con ombra (accettabile, dialog aperto raramente)
 	private static void showCustomDialog(String title, String message, String icon, String accentColor, String bgColor) {
 		Stage dialogStage = new Stage();
 		dialogStage.initModality(Modality.APPLICATION_MODAL);
@@ -378,7 +372,7 @@ public final class StyleHelper {
 
 	public static void showConfirmationDialog(String title, String message, Runnable onConfirm) {
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-		alert.setTitle(title);
+		alert.setTitle("");
 		alert.setHeaderText(null);
 		alert.setContentText(null);
 
@@ -403,13 +397,6 @@ public final class StyleHelper {
 		Label iconLabel = new Label("❓");
 		iconLabel.setStyle("-fx-font-size: 50px;");
 
-		Label titleLabel = new Label(title);
-		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
-		titleLabel.setTextFill(Color.web(TEXT_BLACK));
-		titleLabel.setAlignment(Pos.CENTER);
-		titleLabel.setMaxWidth(450);
-		titleLabel.setWrapText(true);
-
 		Label messageLabel = new Label(message);
 		messageLabel.setWrapText(true);
 		messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 14));
@@ -417,7 +404,7 @@ public final class StyleHelper {
 		messageLabel.setAlignment(Pos.CENTER);
 		messageLabel.setMaxWidth(450);
 
-		content.getChildren().addAll(iconLabel, titleLabel, messageLabel);
+		content.getChildren().addAll(iconLabel, messageLabel);
 		dialogPane.setContent(content);
 
 		Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
@@ -452,6 +439,82 @@ public final class StyleHelper {
 			}
 		});
 	}
+	
+	public static void showCustomConfirmationDialog(String title, String message, Runnable onConfirm) {
+	    Stage dialogStage = new Stage();
+	    dialogStage.initModality(Modality.APPLICATION_MODAL);
+	    dialogStage.initStyle(StageStyle.TRANSPARENT);
+	    dialogStage.setResizable(false);
+
+	    VBox content = new VBox(20);
+	    content.setPadding(new Insets(30));
+	    content.setAlignment(Pos.CENTER);
+	    content.setStyle(
+	        "-fx-background-color: " + BG_WHITE + ";" +
+	        "-fx-background-radius: 20;" +
+	        "-fx-border-color: " + ERROR_RED + ";" +
+	        "-fx-border-width: 3;" +
+	        "-fx-border-radius: 20;" +
+	        "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 15, 0, 0, 6);"  // ✅ Ombra rossa
+	    );
+
+	    // Icona warning (non punto interrogativo!)
+	    Label iconLabel = new Label("⚠️");
+	    iconLabel.setStyle("-fx-font-size: 48px;");
+	    iconLabel.setAlignment(Pos.CENTER);
+
+	    // Titolo
+	    Label titleLabel = new Label(title);
+	    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
+	    titleLabel.setTextFill(Color.web(ERROR_RED));
+	    titleLabel.setAlignment(Pos.CENTER);
+
+	    // Messaggio
+	    Label messageLabel = new Label(message);
+	    messageLabel.setWrapText(true);
+	    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
+	    messageLabel.setTextFill(Color.web(TEXT_GRAY));
+	    messageLabel.setAlignment(Pos.CENTER);
+	    messageLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+	    messageLabel.setMaxWidth(javafx.stage.Screen.getPrimary().getVisualBounds().getWidth() * 0.4);
+
+	    // Bottoni
+	    HBox buttonsBox = new HBox(15);
+	    buttonsBox.setAlignment(Pos.CENTER);
+
+	    Button confirmButton = createStyledButton("Sì", SUCCESS_GREEN, "#FFFFFF");
+	    confirmButton.setPrefWidth(150);
+	    confirmButton.setOnAction(e -> {
+	        dialogStage.close();
+	        if (onConfirm != null) {
+	            onConfirm.run();
+	        }
+	    });
+
+	    Button cancelButton = createStyledButton("No", ERROR_RED, "#FFFFFF");
+	    cancelButton.setPrefWidth(150);
+	    cancelButton.setOnAction(e -> dialogStage.close());
+
+	    buttonsBox.getChildren().addAll(confirmButton, cancelButton);
+
+	    content.getChildren().addAll(iconLabel, titleLabel, messageLabel, buttonsBox);
+
+	    StackPane root = new StackPane(content);
+	    root.setStyle("-fx-background-color: transparent;");
+	    Scene scene = new Scene(root);
+	    scene.setFill(Color.TRANSPARENT);
+	    dialogStage.setScene(scene);
+
+	    // Animazione di entrata
+	    content.setOpacity(0);
+	    FadeTransition fadeIn = new FadeTransition(Duration.millis(300), content);
+	    fadeIn.setFromValue(0.0);
+	    fadeIn.setToValue(1.0);
+	    fadeIn.play();
+
+	    dialogStage.showAndWait();
+	}
+
 
 	public static void showUnsavedChangesDialog(String title, String message, Runnable onSaveAndClose,
 			Runnable onCloseWithoutSaving) {
