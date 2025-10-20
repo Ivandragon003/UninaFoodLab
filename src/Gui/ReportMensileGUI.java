@@ -394,32 +394,21 @@ public class ReportMensileGUI {
 		card.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;"
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);");
 
-		Label title = new Label("📅 Ricette Preparate nel Periodo"); // ✅ TITOLO MIGLIORATO
+		Label title = new Label("📅 Ricette Preparate nel Periodo");
 		title.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 16));
 		title.setTextFill(javafx.scene.paint.Color.web(StyleHelper.TEXT_BLACK));
 
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
 		if (ricPerGiorno != null && !ricPerGiorno.isEmpty()) {
-			// ✅ DETERMINA SE IL REPORT COPRE PIÙ ANNI
-			boolean multiAnno = ricPerGiorno.keySet().stream().map(LocalDate::getYear).distinct().count() > 1;
-
-			// ✅ ORDINA LE DATE
+			// ✅ ORDINA LE DATE E CREA DATASET
 			ricPerGiorno.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
 				LocalDate giorno = entry.getKey();
 				Integer count = entry.getValue();
 
-				// ✅ FORMATO DATA INTELLIGENTE
-				String etichetta;
-				if (multiAnno) {
-					// Se copre più anni: "27/09/24"
-					etichetta = String.format("%02d/%02d/%02d", giorno.getDayOfMonth(), giorno.getMonthValue(),
-							giorno.getYear() % 100); // Solo ultime 2 cifre anno
-				} else {
-					// Se stesso anno: "27 Set" o "16 Gen"
-					String meseAbbr = getMeseAbbreviato(giorno.getMonthValue());
-					etichetta = String.format("%02d %s", giorno.getDayOfMonth(), meseAbbr);
-				}
+				// 🎯 FORMATO DATA: Giorno Mese Anno (es: "27 Gen 2025")
+				String meseAbbr = getMeseAbbreviato(giorno.getMonthValue());
+				String etichetta = String.format("%02d %s %d", giorno.getDayOfMonth(), meseAbbr, giorno.getYear());
 
 				dataset.addValue(count, "Ricette", etichetta);
 			});
@@ -427,8 +416,13 @@ public class ReportMensileGUI {
 			dataset.addValue(0, "Ricette", "N/A");
 		}
 
-		JFreeChart barChart = ChartFactory.createBarChart(null, "Data", // ✅ ETICHETTA GENERICA
-				"Numero Ricette", dataset, PlotOrientation.VERTICAL, false, true, false);
+		JFreeChart barChart = ChartFactory.createBarChart(null, // Nessun titolo
+				"Data", // Label asse X
+				"Numero Ricette", // Label asse Y
+				dataset, PlotOrientation.VERTICAL, false, // No legenda
+				true, // Tooltips
+				false // URLs
+		);
 
 		barChart.setBackgroundPaint(null);
 		barChart.setBorderVisible(false);
@@ -462,10 +456,11 @@ public class ReportMensileGUI {
 		renderer.setDefaultToolTipGenerator(new org.jfree.chart.labels.StandardCategoryToolTipGenerator(
 				"{1}: {2} ricette", java.text.NumberFormat.getInstance()));
 
+		// ✅ CONFIGURAZIONE ASSE X (Date)
 		org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
 		domainAxis.setLabel("📅 Data");
 		domainAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 15));
-		domainAxis.setTickLabelFont(new Font("Segoe UI", Font.PLAIN, 11)); // ✅ Font più piccolo per date lunghe
+		domainAxis.setTickLabelFont(new Font("Segoe UI", Font.PLAIN, 11));
 		domainAxis.setTickLabelPaint(new Color(100, 100, 100));
 		domainAxis.setAxisLinePaint(new Color(200, 200, 200));
 		domainAxis.setTickMarkPaint(new Color(200, 200, 200));
@@ -473,13 +468,12 @@ public class ReportMensileGUI {
 		domainAxis.setUpperMargin(0.02);
 		domainAxis.setCategoryMargin(0.25);
 
-		// ✅ ROTAZIONE ETICHETTE SE TROPPE DATE
+		// ✅ ROTAZIONE ETICHETTE SE TROPPE DATE (più di 10)
 		if (ricPerGiorno != null && ricPerGiorno.size() > 10) {
-			domainAxis.setCategoryLabelPositions(org.jfree.chart.axis.CategoryLabelPositions.UP_45 // Ruota 45° se
-																									// troppe barre
-			);
+			domainAxis.setCategoryLabelPositions(org.jfree.chart.axis.CategoryLabelPositions.UP_45);
 		}
 
+		// ✅ CONFIGURAZIONE ASSE Y (Numero Ricette)
 		org.jfree.chart.axis.NumberAxis rangeAxis = (org.jfree.chart.axis.NumberAxis) plot.getRangeAxis();
 		rangeAxis.setLabel("📊 Numero Ricette");
 		rangeAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -494,6 +488,7 @@ public class ReportMensileGUI {
 		ChartViewer chartViewer = new ChartViewer(barChart);
 		chartViewer.setPrefSize(650, 420);
 
+		// ✅ ABILITA SCROLL SU SCROLLPANE QUANDO MOUSE SOPRA GRAFICO
 		chartViewer.getCanvas().setOnScroll(scrollEvent -> {
 			scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(javafx.scene.input.ScrollEvent.SCROLL,
 					scrollEvent.getX(), scrollEvent.getY(), scrollEvent.getScreenX(), scrollEvent.getScreenY(),
@@ -508,7 +503,6 @@ public class ReportMensileGUI {
 		card.getChildren().addAll(title, chartViewer);
 		return card;
 	}
-
 
 	private String getMeseAbbreviato(int mese) {
 		switch (mese) {
