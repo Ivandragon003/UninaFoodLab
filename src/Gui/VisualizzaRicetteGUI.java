@@ -409,73 +409,67 @@ public class VisualizzaRicetteGUI {
 	private void mostraDialogQuantita(Ingrediente ing, java.util.function.Consumer<Double> onSuccess) {
 		VBox dialogView = new VBox(30);
 		dialogView.setPadding(new Insets(40));
-		dialogView.setAlignment(Pos.CENTER);
-
-		// ✅ SFONDO ARANCIONE PIENO come nelle foto originali
-		dialogView.setStyle("-fx-background-color: #FF9B7A;" // Arancione chiaro uniforme
-		);
+		dialogView.setAlignment(Pos.TOP_CENTER);
+		StyleHelper.applyBackgroundGradient(dialogView);
 
 		// ✅ TITOLO PRINCIPALE con ombra
 		Label title = new Label("🥕 Quantità Ingrediente");
 		title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 38));
 		title.setTextFill(Color.WHITE);
-		title.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 6, 0.4, 0, 2);");
+		title.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0.5, 0, 2);");
 		title.setAlignment(Pos.CENTER);
 
-		// ✅ CARD CENTRALE bianca ben centrata
-		VBox card = new VBox(25);
+		// ✅ CARD CENTRALE più grande e spaziosa
+		VBox card = StyleHelper.createSection();
+		card.setSpacing(25);
 		card.setAlignment(Pos.CENTER);
 		card.setPadding(new Insets(40));
-		card.setMaxWidth(700);
-		card.setMinHeight(450);
-		card.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0.2, 0, 5);");
+		card.setMaxWidth(550);
+		card.setStyle(card.getStyle() + "-fx-min-height: 450px;");
 
 		// ✅ ICONA GRANDE per l'ingrediente
 		Label iconLabel = new Label("🥕");
 		iconLabel.setFont(Font.font("Segoe UI Emoji", 72));
 		iconLabel.setAlignment(Pos.CENTER);
 
-		// ✅ NOME INGREDIENTE
+		// ✅ NOME INGREDIENTE più prominente
 		Label nomeLabel = new Label(ing.getNome());
 		nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
 		nomeLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
 		nomeLabel.setAlignment(Pos.CENTER);
 		nomeLabel.setWrapText(true);
-		nomeLabel.setMaxWidth(600);
+		nomeLabel.setMaxWidth(450);
 
-		// ✅ BADGE per il tipo
+		// ✅ TIPO con badge
 		Label tipoLabel = new Label("📂 " + ing.getTipo());
 		tipoLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 16));
 		tipoLabel.setTextFill(Color.WHITE);
 		tipoLabel.setAlignment(Pos.CENTER);
-		tipoLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + ";" + "-fx-padding: 8 24;"
+		tipoLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + ";" + "-fx-padding: 8 20;"
 				+ "-fx-background-radius: 20;");
 
 		VBox headerBox = new VBox(15, iconLabel, nomeLabel, tipoLabel);
 		headerBox.setAlignment(Pos.CENTER);
 
-		// ✅ SEPARATORE
-		Separator sep = new Separator();
-		sep.setMaxWidth(550);
-		sep.setStyle("-fx-background-color: " + StyleHelper.BORDER_LIGHT + ";");
+		Separator sep1 = new Separator();
+		sep1.setMaxWidth(400);
 
-		// ✅ ISTRUZIONI
+		// ✅ ISTRUZIONI più chiare
 		Label istruzioni = new Label("Inserisci la quantità in grammi:");
 		istruzioni.setFont(Font.font("Roboto", FontWeight.BOLD, 17));
 		istruzioni.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
 		istruzioni.setAlignment(Pos.CENTER);
 
-		// ✅ CAMPO QUANTITÀ grande e centrato
+		// ✅ CAMPO QUANTITÀ più grande e centrato
 		TextField quantField = new TextField();
 		quantField.setPromptText("Es. 250");
-		quantField.setPrefWidth(280);
-		quantField.setPrefHeight(70);
+		quantField.setPrefWidth(250);
+		quantField.setPrefHeight(65);
 		quantField.setAlignment(Pos.CENTER);
 		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
 				+ "-fx-border-width: 3;" + "-fx-border-radius: 15;" + "-fx-background-radius: 15;"
-				+ "-fx-font-size: 32px;" + "-fx-font-weight: bold;" + "-fx-prompt-text-fill: #ccc;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.15), 6, 0.2, 0, 2);");
+				+ "-fx-font-size: 28px;" + "-fx-font-weight: bold;" + "-fx-prompt-text-fill: #ccc;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 8, 0.3, 0, 2);");
 
 		// Validazione input
 		quantField.textProperty().addListener((obs, old, val) -> {
@@ -483,7 +477,7 @@ public class VisualizzaRicetteGUI {
 				quantField.setText(old);
 		});
 
-		// ✅ LABEL UNITÀ
+		// ✅ LABEL UNITÀ più visibile
 		Label unitLabel = new Label("grammi (g)");
 		unitLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
 		unitLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
@@ -492,22 +486,17 @@ public class VisualizzaRicetteGUI {
 		VBox fieldBox = new VBox(12, quantField, unitLabel);
 		fieldBox.setAlignment(Pos.CENTER);
 
-		// Aggiungi tutto alla card
-		card.getChildren().addAll(headerBox, sep, istruzioni, fieldBox);
-
-		// ✅ PULSANTI sotto la card (non dentro)
+		// ✅ PULSANTI uniformi
 		HBox buttons = new HBox(20);
 		buttons.setAlignment(Pos.CENTER);
-		buttons.setPadding(new Insets(20, 0, 0, 0));
+		buttons.setPadding(new Insets(10, 0, 0, 0));
 
 		Button annullaBtn = StyleHelper.createSecondaryButton("❌ Annulla");
-		annullaBtn.setPrefSize(170, 55);
-		annullaBtn.setStyle(annullaBtn.getStyle() + "-fx-font-size: 16px;");
+		annullaBtn.setPrefSize(160, 50);
 		annullaBtn.setOnAction(e -> mainContainer.getChildren().setAll(modificaView));
 
 		Button confermaBtn = StyleHelper.createSuccessButton("✅ Conferma");
-		confermaBtn.setPrefSize(170, 55);
-		confermaBtn.setStyle(confermaBtn.getStyle() + "-fx-font-size: 16px;");
+		confermaBtn.setPrefSize(160, 50);
 		confermaBtn.setOnAction(e -> {
 			String text = quantField.getText().trim();
 			if (text.isEmpty()) {
@@ -531,12 +520,23 @@ public class VisualizzaRicetteGUI {
 
 		buttons.getChildren().addAll(annullaBtn, confermaBtn);
 
-		// ✅ LAYOUT FINALE
-		dialogView.getChildren().addAll(title, card, buttons);
+		card.getChildren().addAll(headerBox, sep1, istruzioni, fieldBox);
+
+		ScrollPane scroll = new ScrollPane(card);
+		scroll.setFitToWidth(true);
+		scroll.setFitToHeight(true);
+		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		VBox.setVgrow(scroll, Priority.ALWAYS);
+
+		Separator sep2 = new Separator();
+		sep2.setMaxWidth(600);
+
+		dialogView.getChildren().addAll(title, scroll, sep2, buttons);
+		VBox.setVgrow(scroll, Priority.ALWAYS);
 
 		mainContainer.getChildren().setAll(dialogView);
 
-		// Focus automatico
+		// ✅ Focus automatico sul campo
 		javafx.application.Platform.runLater(() -> quantField.requestFocus());
 	}
 

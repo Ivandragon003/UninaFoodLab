@@ -15,6 +15,9 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.scene.Scene;
 import javafx.scene.effect.DropShadow;
+
+import java.util.function.Consumer;
+
 import javafx.animation.FadeTransition;
 import javafx.util.Duration;
 
@@ -71,36 +74,25 @@ public final class StyleHelper {
 	public static Button createStyledButton(String text, String color, String textColor) {
 		Button button = new Button(text);
 		button.setPrefSize(140, 45);
-		button.setStyle(
-			"-fx-background-color: " + color + ";" +
-			"-fx-text-fill: " + textColor + ";" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);" // ✅ Ombra LEGGERA
+		button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: " + textColor + ";"
+				+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);" // ✅ Ombra LEGGERA
 		);
 
 		// ✅ Hover SENZA animazione scale (solo cambio colore + ombra più forte)
-		button.setOnMouseEntered(e -> button.setStyle(
-			"-fx-background-color: derive(" + color + ", -12%);" +
-			"-fx-text-fill: " + textColor + ";" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 8, 0.4, 1.5, 3);" // ✅ Ombra leggermente più forte
-		));
+		button.setOnMouseEntered(e -> button
+				.setStyle("-fx-background-color: derive(" + color + ", -12%);" + "-fx-text-fill: " + textColor + ";"
+						+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 8, 0.4, 1.5, 3);" // ✅
+																														// Ombra
+																														// leggermente
+																														// più
+																														// forte
+				));
 
-		button.setOnMouseExited(e -> button.setStyle(
-			"-fx-background-color: " + color + ";" +
-			"-fx-text-fill: " + textColor + ";" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"
-		));
+		button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: "
+				+ textColor + ";" + "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+				+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"));
 
 		return button;
 	}
@@ -108,35 +100,18 @@ public final class StyleHelper {
 	// ✅ ComboBox con ombra LEGGERA
 	public static void styleComboBox(ComboBox<?> comboBox) {
 		comboBox.setPrefHeight(40);
-		comboBox.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0, 0, 1);"
-		);
+		comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 8 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0, 0, 1);");
 
-		comboBox.setOnMouseEntered(e -> comboBox.setStyle(
-			"-fx-background-color: " + BG_LIGHT + ";" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);"
-		));
+		comboBox.setOnMouseEntered(e -> comboBox.setStyle("-fx-background-color: " + BG_LIGHT + ";"
+				+ "-fx-background-radius: 12;" + "-fx-border-color: " + PRIMARY_ORANGE + ";" + "-fx-border-width: 2;"
+				+ "-fx-border-radius: 12;" + "-fx-padding: 8 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);"));
 
-		comboBox.setOnMouseExited(e -> comboBox.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 8 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0, 0, 1);"
-		));
+		comboBox.setOnMouseExited(e -> comboBox.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;"
+				+ "-fx-border-color: " + BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+				+ "-fx-padding: 8 12;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 4, 0, 0, 1);"));
 	}
 
 	public static Label createTitleLabel(String text) {
@@ -176,40 +151,20 @@ public final class StyleHelper {
 		TextField field = new TextField();
 		field.setPromptText(promptText);
 		field.setPrefHeight(42);
-		field.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 10 15;" +
-			"-fx-font-size: 14px;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
-		);
+		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+				+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 
 		field.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
 			if (isNowFocused) {
-				field.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 10 15;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);"
-				);
+				field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+						+ "-fx-padding: 10 15;" + "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);");
 			} else {
-				field.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + BORDER_LIGHT + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 10 15;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
-				);
+				field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+						+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 			}
 		});
 
@@ -221,40 +176,20 @@ public final class StyleHelper {
 		TextArea area = new TextArea();
 		area.setPromptText(promptText);
 		area.setWrapText(true);
-		area.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-padding: 12;" +
-			"-fx-font-size: 14px;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
-		);
+		area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+				+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 
 		area.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
 			if (isNowFocused) {
-				area.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 12;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);"
-				);
+				area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+						+ "-fx-font-size: 14px;"
+						+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);");
 			} else {
-				area.setStyle(
-					"-fx-background-color: white;" +
-					"-fx-background-radius: 12;" +
-					"-fx-border-color: " + BORDER_LIGHT + ";" +
-					"-fx-border-width: 2;" +
-					"-fx-border-radius: 12;" +
-					"-fx-padding: 12;" +
-					"-fx-font-size: 14px;" +
-					"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
-				);
+				area.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+						+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 12;"
+						+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 			}
 		});
 
@@ -266,14 +201,9 @@ public final class StyleHelper {
 		VBox section = new VBox();
 		section.setSpacing(18);
 		section.setPadding(new Insets(24));
-		section.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-background-radius: 16;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-radius: 16;" +
-			"-fx-border-width: 1;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);"
-		);
+		section.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 16;" + "-fx-border-color: "
+				+ BORDER_LIGHT + ";" + "-fx-border-radius: 16;" + "-fx-border-width: 1;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);");
 		return section;
 	}
 
@@ -282,11 +212,8 @@ public final class StyleHelper {
 		VBox card = new VBox();
 		card.setSpacing(12);
 		card.setPadding(new Insets(20));
-		card.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-background-radius: 20;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 3);"
-		);
+		card.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 3);");
 		return card;
 	}
 
@@ -314,7 +241,8 @@ public final class StyleHelper {
 	}
 
 	// ✅ Dialog con ombra (accettabile, dialog aperto raramente)
-	private static void showCustomDialog(String title, String message, String icon, String accentColor, String bgColor) {
+	private static void showCustomDialog(String title, String message, String icon, String accentColor,
+			String bgColor) {
 		Stage dialogStage = new Stage();
 		dialogStage.initModality(Modality.APPLICATION_MODAL);
 		dialogStage.initStyle(StageStyle.TRANSPARENT);
@@ -323,14 +251,9 @@ public final class StyleHelper {
 		VBox content = new VBox(20);
 		content.setPadding(new Insets(30));
 		content.setAlignment(Pos.CENTER);
-		content.setStyle(
-			"-fx-background-color: " + bgColor + ";" +
-			"-fx-background-radius: 20;" +
-			"-fx-border-color: " + accentColor + ";" +
-			"-fx-border-width: 3;" +
-			"-fx-border-radius: 20;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 15, 0, 0, 6);"
-		);
+		content.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 20;" + "-fx-border-color: "
+				+ accentColor + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 15, 0, 0, 6);");
 
 		Label iconLabel = new Label(icon);
 		iconLabel.setStyle("-fx-font-size: 48px;");
@@ -385,14 +308,9 @@ public final class StyleHelper {
 		DialogPane dialogPane = alert.getDialogPane();
 		dialogPane.getStyleClass().remove("alert");
 
-		dialogPane.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-border-color: " + PRIMARY_ORANGE + ";" +
-			"-fx-border-width: 3px;" +
-			"-fx-border-radius: 12px;" +
-			"-fx-background-radius: 12px;" +
-			"-fx-padding: 30px;"
-		);
+		dialogPane.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-border-color: " + PRIMARY_ORANGE + ";"
+				+ "-fx-border-width: 3px;" + "-fx-border-radius: 12px;" + "-fx-background-radius: 12px;"
+				+ "-fx-padding: 30px;");
 
 		dialogPane.setMinWidth(500);
 		dialogPane.setMinHeight(280);
@@ -423,28 +341,16 @@ public final class StyleHelper {
 		Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
 		okButton.setText("Sì");
 		okButton.setStyle(
-			"-fx-background-color: " + SUCCESS_GREEN + ";" +
-			"-fx-text-fill: white;" +
-			"-fx-font-size: 14px;" +
-			"-fx-font-weight: bold;" +
-			"-fx-padding: 12 30 12 30;" +
-			"-fx-background-radius: 10px;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-		);
+				"-fx-background-color: " + SUCCESS_GREEN + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+						+ "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;" + "-fx-background-radius: 10px;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
 
 		Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
 		cancelButton.setText("No");
-		cancelButton.setStyle(
-			"-fx-background-color: " + ERROR_RED + ";" +
-			"-fx-text-fill: white;" +
-			"-fx-font-size: 14px;" +
-			"-fx-font-weight: bold;" +
-			"-fx-padding: 12 30 12 30;" +
-			"-fx-background-radius: 10px;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-		);
+		cancelButton
+				.setStyle("-fx-background-color: " + ERROR_RED + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+						+ "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;" + "-fx-background-radius: 10px;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
 
 		alert.showAndWait().ifPresent(response -> {
 			if (response == ButtonType.OK && onConfirm != null) {
@@ -464,13 +370,8 @@ public final class StyleHelper {
 		dialogPane.getStyleClass().remove("alert");
 
 		dialogPane.setStyle(
-			"-fx-background-color: " + BG_WHITE + ";" +
-			"-fx-border-color: #FFA500;" +
-			"-fx-border-width: 3px;" +
-			"-fx-border-radius: 12px;" +
-			"-fx-background-radius: 12px;" +
-			"-fx-padding: 30px;"
-		);
+				"-fx-background-color: " + BG_WHITE + ";" + "-fx-border-color: #FFA500;" + "-fx-border-width: 3px;"
+						+ "-fx-border-radius: 12px;" + "-fx-background-radius: 12px;" + "-fx-padding: 30px;");
 
 		dialogPane.setMinWidth(550);
 		dialogPane.setMinHeight(300);
@@ -506,39 +407,20 @@ public final class StyleHelper {
 
 		Button saveButton = (Button) dialogPane.lookupButton(saveAndCloseBtn);
 		saveButton.setStyle(
-			"-fx-background-color: " + SUCCESS_GREEN + ";" +
-			"-fx-text-fill: white;" +
-			"-fx-font-size: 14px;" +
-			"-fx-font-weight: bold;" +
-			"-fx-padding: 12 20 12 20;" +
-			"-fx-background-radius: 10px;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-		);
+				"-fx-background-color: " + SUCCESS_GREEN + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+						+ "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;" + "-fx-background-radius: 10px;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
 
 		Button closeButton = (Button) dialogPane.lookupButton(closeWithoutSavingBtn);
-		closeButton.setStyle(
-			"-fx-background-color: " + ERROR_RED + ";" +
-			"-fx-text-fill: white;" +
-			"-fx-font-size: 14px;" +
-			"-fx-font-weight: bold;" +
-			"-fx-padding: 12 20 12 20;" +
-			"-fx-background-radius: 10px;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-		);
+		closeButton
+				.setStyle("-fx-background-color: " + ERROR_RED + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+						+ "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;" + "-fx-background-radius: 10px;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
 
 		Button cancelButton = (Button) dialogPane.lookupButton(cancelBtn);
-		cancelButton.setStyle(
-			"-fx-background-color: #6C757D;" +
-			"-fx-text-fill: white;" +
-			"-fx-font-size: 14px;" +
-			"-fx-font-weight: bold;" +
-			"-fx-padding: 12 20 12 20;" +
-			"-fx-background-radius: 10px;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-		);
+		cancelButton.setStyle("-fx-background-color: #6C757D;" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
+				+ "-fx-font-weight: bold;" + "-fx-padding: 12 20 12 20;" + "-fx-background-radius: 10px;"
+				+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
 
 		alert.showAndWait().ifPresent(response -> {
 			if (response == saveAndCloseBtn && onSaveAndClose != null) {
@@ -552,14 +434,9 @@ public final class StyleHelper {
 	public static DatePicker createDatePicker() {
 		DatePicker dp = new DatePicker();
 		dp.setPrefHeight(42);
-		dp.setStyle(
-			"-fx-background-color: white;" +
-			"-fx-background-radius: 12;" +
-			"-fx-border-color: " + BORDER_LIGHT + ";" +
-			"-fx-border-width: 2;" +
-			"-fx-border-radius: 12;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);"
-		);
+		dp.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: " + BORDER_LIGHT
+				+ ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 		return dp;
 	}
 
@@ -581,27 +458,16 @@ public final class StyleHelper {
 		btn.setPrefSize(35, 35);
 		btn.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
 		btn.setTextFill(Color.WHITE);
-		btn.setStyle(
-			"-fx-background-color: " + bgColor + ";" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 4, 0.3, 0.5, 1.5);"
-		);
+		btn.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 18;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 4, 0.3, 0.5, 1.5);");
 		btn.setFocusTraversable(false);
 
-		btn.setOnMouseEntered(e -> btn.setStyle(
-			"-fx-background-color: derive(" + bgColor + ", -15%);" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.4, 1, 2.5);"
-		));
-		
-		btn.setOnMouseExited(e -> btn.setStyle(
-			"-fx-background-color: " + bgColor + ";" +
-			"-fx-background-radius: 18;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 4, 0.3, 0.5, 1.5);"
-		));
+		btn.setOnMouseEntered(
+				e -> btn.setStyle("-fx-background-color: derive(" + bgColor + ", -15%);" + "-fx-background-radius: 18;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.4, 1, 2.5);"));
+
+		btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: " + bgColor + ";" + "-fx-background-radius: 18;"
+				+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 4, 0.3, 0.5, 1.5);"));
 
 		btn.setOnAction(e -> action.run());
 		return btn;
@@ -610,66 +476,37 @@ public final class StyleHelper {
 	public static Button createStyledButtonWithWhiteBorder(String text, String color) {
 		Button button = new Button(text);
 		button.setPrefSize(140, 45);
-		button.setStyle(
-			"-fx-background-color: " + color + ";" +
-			"-fx-text-fill: #FFFFFF;" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"
-		);
+		button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;" + "-fx-font-weight: bold;"
+				+ "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);");
 
-		button.setOnMouseEntered(e -> button.setStyle(
-			"-fx-background-color: derive(" + color + ", -12%);" +
-			"-fx-text-fill: #FFFFFF;" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 8, 0.4, 1.5, 3);"
-		));
+		button.setOnMouseEntered(
+				e -> button.setStyle("-fx-background-color: derive(" + color + ", -12%);" + "-fx-text-fill: #FFFFFF;"
+						+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
+						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 8, 0.4, 1.5, 3);"));
 
-		button.setOnMouseExited(e -> button.setStyle(
-			"-fx-background-color: " + color + ";" +
-			"-fx-text-fill: #FFFFFF;" +
-			"-fx-font-weight: bold;" +
-			"-fx-font-size: 14px;" +
-			"-fx-background-radius: 25;" +
-			"-fx-cursor: hand;" +
-			"-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"
-		));
+		button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;"
+				+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"));
 
 		return button;
 	}
-    
-    public static void styleMenuButton(MenuButton menuBtn) {
-        menuBtn.setStyle(
-            "-fx-background-color: " + PRIMARY_ORANGE + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-cursor: hand;" +
-            "-fx-font-weight: bold;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-        );
-        
-        menuBtn.setOnMouseEntered(e -> menuBtn.setStyle(
-            "-fx-background-color: derive(" + PRIMARY_ORANGE + ", -12%);" +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-cursor: hand;" +
-            "-fx-font-weight: bold;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.4, 1, 2.5);"
-        ));
-        
-        menuBtn.setOnMouseExited(e -> menuBtn.setStyle(
-            "-fx-background-color: " + PRIMARY_ORANGE + ";" +
-            "-fx-text-fill: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-cursor: hand;" +
-            "-fx-font-weight: bold;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"
-        ));
-    }
+
+	public static void styleMenuButton(MenuButton menuBtn) {
+		menuBtn.setStyle("-fx-background-color: " + PRIMARY_ORANGE + ";" + "-fx-text-fill: white;"
+				+ "-fx-background-radius: 20;" + "-fx-cursor: hand;" + "-fx-font-weight: bold;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
+
+		menuBtn.setOnMouseEntered(e -> menuBtn.setStyle("-fx-background-color: derive(" + PRIMARY_ORANGE + ", -12%);"
+				+ "-fx-text-fill: white;" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
+				+ "-fx-font-weight: bold;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 6, 0.4, 1, 2.5);"));
+
+		menuBtn.setOnMouseExited(e -> menuBtn.setStyle("-fx-background-color: " + PRIMARY_ORANGE + ";"
+				+ "-fx-text-fill: white;" + "-fx-background-radius: 20;" + "-fx-cursor: hand;"
+				+ "-fx-font-weight: bold;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);"));
+	}
+
+
+
 
 }
