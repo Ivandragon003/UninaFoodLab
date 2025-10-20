@@ -16,7 +16,7 @@ public class UsaDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, usa.getRicetta().getIdRicetta());  
+            ps.setInt(1, usa.getRicetta().getIdRicetta());
             ps.setInt(2, usa.getIngrediente().getIdIngrediente());
             ps.setDouble(3, usa.getQuantita());
             ps.executeUpdate();
@@ -45,7 +45,18 @@ public class UsaDAO {
             ps.executeUpdate();
         }
     }
-    
+
+    // Nuovo metodo: cancella usando direttamente gli id (evita di creare Usa con quantita=0)
+    public void deleteByRicettaIdAndIngredienteId(int idRicetta, int idIngrediente) throws SQLException {
+        String sql = "DELETE FROM Usa WHERE idRicetta = ? AND idIngrediente = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, idRicetta);
+            ps.setInt(2, idIngrediente);
+            ps.executeUpdate();
+        }
+    }
+
     public void deleteByRicetta(int idRicetta) throws SQLException {
         String sql = "DELETE FROM Usa WHERE idRicetta = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -54,7 +65,7 @@ public class UsaDAO {
             ps.executeUpdate();
         }
     }
-    
+
     public void deleteByIngrediente(Ingrediente ingrediente) throws SQLException {
         if (ingrediente == null) {
             throw new IllegalArgumentException("Ingrediente non può essere null");
@@ -83,10 +94,10 @@ public class UsaDAO {
             while (rs.next()) {
                 Ricetta r = new Ricetta(rs.getString("nomeRicetta"), rs.getInt("tempoPreparazione"));
                 r.setIdRicetta(rs.getInt("idRicetta"));
-                
+
                 Ingrediente i = new Ingrediente(rs.getString("nomeIngrediente"), rs.getString("tipoIngrediente"));
                 i.setIdIngrediente(rs.getInt("idIngrediente"));
-                
+
                 Usa usa = new Usa(r, i, rs.getDouble("quantita"));
                 list.add(usa);
             }
@@ -111,10 +122,10 @@ public class UsaDAO {
                 while (rs.next()) {
                     Ricetta r = new Ricetta(rs.getString("nomeRicetta"), rs.getInt("tempoPreparazione"));
                     r.setIdRicetta(rs.getInt("idRicetta"));
-                    
+
                     Ingrediente i = new Ingrediente(rs.getString("nomeIngrediente"), rs.getString("tipoIngrediente"));
                     i.setIdIngrediente(rs.getInt("idIngrediente"));
-                    
+
                     Usa usa = new Usa(r, i, rs.getDouble("quantita"));
                     list.add(usa);
                 }

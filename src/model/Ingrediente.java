@@ -41,17 +41,17 @@ public class Ingrediente {
         this.tipo = tipo.trim();
     }
     
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Ingrediente that = (Ingrediente) obj;
-        return Objects.equals(nome, that.nome) && Objects.equals(tipo, that.tipo);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Ingrediente)) return false;
+        Ingrediente that = (Ingrediente) o;
+      
+        return Objects.equals(this.getIdIngrediente(), that.getIdIngrediente());
     }
-    
+
     @Override
     public int hashCode() {
-        return Objects.hash(nome, tipo);
+        return Objects.hash(getIdIngrediente());
     }
     
     @Override

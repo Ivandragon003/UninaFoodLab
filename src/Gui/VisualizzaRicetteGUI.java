@@ -170,7 +170,10 @@ public class VisualizzaRicetteGUI {
 		title.setTextFill(Color.WHITE);
 		title.setAlignment(Pos.CENTER);
 
-		modificaIngredientiMap = new HashMap<>(ricetta.getIngredienti());
+		// Inizializza la mappa solo se è null (così non sovrascriviamo le modifiche già fatte)
+		if (modificaIngredientiMap == null) {
+			modificaIngredientiMap = new HashMap<>(ricetta.getIngredienti());
+		}
 
 		ScrollPane scroll = new ScrollPane(new VBox(15, buildModificaInfoSection(ricetta), new Separator(),
 				buildModificaIngredientiSection(ricetta)));
@@ -244,7 +247,7 @@ public class VisualizzaRicetteGUI {
 
 	private void aggiornaListaIngredienti() {
 		listaIngredientiModifica.getChildren().clear();
-		if (modificaIngredientiMap.isEmpty()) {
+		if (modificaIngredientiMap == null || modificaIngredientiMap.isEmpty()) {
 			Label empty = new Label("Nessun ingrediente");
 			empty.setFont(Font.font("Roboto", 13));
 			empty.setTextFill(Color.GRAY);
@@ -289,14 +292,17 @@ public class VisualizzaRicetteGUI {
 		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
 				+ "-fx-border-width: 2;" + "-fx-border-radius: 8;" + "-fx-background-radius: 8;"
 				+ "-fx-padding: 5 10;");
+		// permetti numeri interi e decimali con punto
 		quantField.textProperty().addListener((obs, old, val) -> {
-			if (!val.matches("\\d*")) {
+			if (!val.matches("^\\d*\\.?\\d*$")) {
 				quantField.setText(old);
 			} else if (!val.isEmpty()) {
 				try {
 					double nuovaQ = Double.parseDouble(val);
 					if (nuovaQ > 0) {
+						// aggiorna la mappa e la visuale
 						modificaIngredientiMap.put(ing, nuovaQ);
+						aggiornaListaIngredienti();
 					}
 				} catch (NumberFormatException e) {
 				}
@@ -386,6 +392,7 @@ public class VisualizzaRicetteGUI {
 	private void chiediQuantitaPerModifica(Ingrediente ing, Ricetta ricetta) {
 		mostraDialogQuantita(ing, q -> {
 			modificaIngredientiMap.put(ing, q);
+			// Ricostruiamo la view: buildModificaLayout non sovrascriverà più la mappa
 			modificaView = buildModificaLayout(ricetta);
 			mainContainer.getChildren().setAll(modificaView);
 			StyleHelper.showSuccessDialog("✅ Ingrediente Aggiunto",
@@ -427,8 +434,9 @@ public class VisualizzaRicetteGUI {
 		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
 				+ "-fx-border-width: 3;" + "-fx-border-radius: 12;" + "-fx-background-radius: 12;"
 				+ "-fx-font-size: 20px;" + "-fx-font-weight: bold;");
+		// permetti numeri interi e decimali con punto
 		quantField.textProperty().addListener((obs, old, val) -> {
-			if (!val.matches("\\d*"))
+			if (!val.matches("^\\d*\\.?\\d*$"))
 				quantField.setText(old);
 		});
 
@@ -493,6 +501,8 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void mostraModifica(Ricetta ricetta) {
+		// assicurati di inizializzare una nuova mappa per la ricetta appena aperta
+		modificaIngredientiMap = null;
 		modificaView = buildModificaLayout(ricetta);
 		mainContainer.getChildren().setAll(modificaView);
 	}
@@ -521,7 +531,7 @@ public class VisualizzaRicetteGUI {
 			return;
 		}
 
-		if (modificaIngredientiMap.isEmpty()) {
+		if (modificaIngredientiMap == null || modificaIngredientiMap.isEmpty()) {
 			StyleHelper.showValidationDialog("Errore", "Aggiungi almeno un ingrediente");
 			return;
 		}
