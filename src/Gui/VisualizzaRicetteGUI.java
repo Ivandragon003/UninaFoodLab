@@ -49,6 +49,8 @@ public class VisualizzaRicetteGUI {
 	public VBox getRoot() {
 		if (mainContainer == null) {
 			mainContainer = new VBox();
+			// Gradiente applicato al ROOT, così copre sempre tutta la finestra
+			StyleHelper.applyBackgroundGradient(mainContainer);
 			listaView = buildListaLayout();
 			mainContainer.getChildren().add(listaView);
 			VBox.setVgrow(listaView, Priority.ALWAYS);
@@ -61,7 +63,9 @@ public class VisualizzaRicetteGUI {
 	private VBox buildListaLayout() {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
-		StyleHelper.applyBackgroundGradient(container);
+		// Facoltativo: il gradiente è già sul root; mantenere bianco interno per le
+		// card
+		// StyleHelper.applyBackgroundGradient(container);
 
 		Label title = StyleHelper.createTitleLabel("📖 Gestione Ricette");
 		title.setAlignment(Pos.CENTER);
@@ -72,7 +76,15 @@ public class VisualizzaRicetteGUI {
 		ScrollPane scroll = new ScrollPane(scrollContent);
 		scroll.setFitToWidth(true);
 		scroll.setFitToHeight(true);
-		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		// Trasparenza completa (pane + viewport + corner)
+		scroll.setStyle("-fx-background-color: transparent;");
+		scroll.getContent().setStyle("-fx-background-color: transparent;");
+		// Prova a forzare il corner trasparente via pseudo-lookup (senza CSS esterno)
+		scroll.skinProperty().addListener((obs, old, skin) -> {
+			Region corner = (Region) scroll.lookup(".corner");
+			if (corner != null)
+				corner.setStyle("-fx-background-color: transparent;");
+		});
 		VBox.setVgrow(scroll, Priority.ALWAYS);
 
 		Separator bottomSep = new Separator();
@@ -164,23 +176,30 @@ public class VisualizzaRicetteGUI {
 	private VBox buildModificaLayout(Ricetta ricetta) {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
-		StyleHelper.applyBackgroundGradient(container);
+		// Il gradiente è già sul root; questa vista può restare “card-based”
+		// StyleHelper.applyBackgroundGradient(container);
 
 		Label title = StyleHelper.createTitleLabel("📖 Modifica: " + ricetta.getNome());
 		title.setTextFill(Color.WHITE);
 		title.setAlignment(Pos.CENTER);
 
-		// Inizializza la mappa solo se è null (così non sovrascriviamo le modifiche già
-		// fatte)
 		if (modificaIngredientiMap == null) {
 			modificaIngredientiMap = new HashMap<>(ricetta.getIngredienti());
 		}
 
-		ScrollPane scroll = new ScrollPane(new VBox(15, buildModificaInfoSection(ricetta), new Separator(),
-				buildModificaIngredientiSection(ricetta)));
+		VBox inner = new VBox(15, buildModificaInfoSection(ricetta), new Separator(),
+				buildModificaIngredientiSection(ricetta));
+
+		ScrollPane scroll = new ScrollPane(inner);
 		scroll.setFitToWidth(true);
 		scroll.setFitToHeight(true);
-		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		scroll.setStyle("-fx-background-color: transparent;");
+		scroll.getContent().setStyle("-fx-background-color: transparent;");
+		scroll.skinProperty().addListener((obs, old, skin) -> {
+			Region corner = (Region) scroll.lookup(".corner");
+			if (corner != null)
+				corner.setStyle("-fx-background-color: transparent;");
+		});
 		VBox.setVgrow(scroll, Priority.ALWAYS);
 
 		Separator bottomSep = new Separator();
@@ -293,7 +312,6 @@ public class VisualizzaRicetteGUI {
 		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
 				+ "-fx-border-width: 2;" + "-fx-border-radius: 8;" + "-fx-background-radius: 8;"
 				+ "-fx-padding: 5 10;");
-		// permetti numeri interi e decimali con punto
 		quantField.textProperty().addListener((obs, old, val) -> {
 			if (!val.matches("^\\d*\\.?\\d*$")) {
 				quantField.setText(old);
@@ -301,11 +319,10 @@ public class VisualizzaRicetteGUI {
 				try {
 					double nuovaQ = Double.parseDouble(val);
 					if (nuovaQ > 0) {
-						// aggiorna la mappa e la visuale
 						modificaIngredientiMap.put(ing, nuovaQ);
 						aggiornaListaIngredienti();
 					}
-				} catch (NumberFormatException e) {
+				} catch (NumberFormatException ignored) {
 				}
 			}
 		});
@@ -359,7 +376,8 @@ public class VisualizzaRicetteGUI {
 	private void mostraSelezinaIngredientePerModifica(Ricetta ricetta) {
 		VBox selezionaView = new VBox(20);
 		selezionaView.setPadding(new Insets(20));
-		StyleHelper.applyBackgroundGradient(selezionaView);
+		// Il gradiente resta sul root; qui puoi tenerlo oppure no
+		// StyleHelper.applyBackgroundGradient(selezionaView);
 
 		Label title = StyleHelper.createTitleLabel("🥕 Seleziona Ingrediente");
 		title.setTextFill(Color.WHITE);
@@ -398,7 +416,6 @@ public class VisualizzaRicetteGUI {
 	private void chiediQuantitaPerModifica(Ingrediente ing, Ricetta ricetta) {
 		mostraDialogQuantita(ing, q -> {
 			modificaIngredientiMap.put(ing, q);
-			// Ricostruiamo la view: buildModificaLayout non sovrascriverà più la mappa
 			modificaView = buildModificaLayout(ricetta);
 			mainContainer.getChildren().setAll(modificaView);
 			StyleHelper.showSuccessDialog("✅ Ingrediente Aggiunto",
@@ -407,138 +424,155 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void mostraDialogQuantita(Ingrediente ing, java.util.function.Consumer<Double> onSuccess) {
-		VBox dialogView = new VBox(30);
-		dialogView.setPadding(new Insets(40));
-		dialogView.setAlignment(Pos.TOP_CENTER);
-		StyleHelper.applyBackgroundGradient(dialogView);
+    VBox dialogView = new VBox(24);
+    dialogView.setPadding(new Insets(32, 32, 28, 32));
+    dialogView.setAlignment(Pos.TOP_CENTER);
 
-		// ✅ TITOLO PRINCIPALE con ombra
-		Label title = new Label("🥕 Quantità Ingrediente");
-		title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 38));
-		title.setTextFill(Color.WHITE);
-		title.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0.5, 0, 2);");
-		title.setAlignment(Pos.CENTER);
+    // Titolo ben distanziato
+    Label title = new Label("🥕 Quantità Ingrediente");
+    title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 34));
+    title.setTextFill(Color.WHITE);
+    title.setStyle("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0.5, 0, 2);");
+    title.setAlignment(Pos.CENTER);
 
-		// ✅ CARD CENTRALE più grande e spaziosa
-		VBox card = StyleHelper.createSection();
-		card.setSpacing(25);
-		card.setAlignment(Pos.CENTER);
-		card.setPadding(new Insets(40));
-		card.setMaxWidth(550);
-		card.setStyle(card.getStyle() + "-fx-min-height: 450px;");
+    // Card principale
+    VBox card = StyleHelper.createSection();
+    card.setSpacing(22);
+    card.setAlignment(Pos.CENTER);
+    card.setPadding(new Insets(32));
+    card.setMaxWidth(680);           // limite max più largo ma controllato
+    card.setPrefWidth(640);
+    card.setStyle(card.getStyle() + "-fx-min-height: 420px;");
 
-		// ✅ ICONA GRANDE per l'ingrediente
-		Label iconLabel = new Label("🥕");
-		iconLabel.setFont(Font.font("Segoe UI Emoji", 72));
-		iconLabel.setAlignment(Pos.CENTER);
+    Label iconLabel = new Label("🥕");
+    iconLabel.setFont(Font.font("Segoe UI Emoji", 64));
 
-		// ✅ NOME INGREDIENTE più prominente
-		Label nomeLabel = new Label(ing.getNome());
-		nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
-		nomeLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
-		nomeLabel.setAlignment(Pos.CENTER);
-		nomeLabel.setWrapText(true);
-		nomeLabel.setMaxWidth(450);
+    Label nomeLabel = new Label(ing.getNome());
+    nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
+    nomeLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+    nomeLabel.setWrapText(true);
+    nomeLabel.setMaxWidth(520);
+    nomeLabel.setAlignment(Pos.CENTER);
 
-		// ✅ TIPO con badge
-		Label tipoLabel = new Label("📂 " + ing.getTipo());
-		tipoLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 16));
-		tipoLabel.setTextFill(Color.WHITE);
-		tipoLabel.setAlignment(Pos.CENTER);
-		tipoLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + ";" + "-fx-padding: 8 20;"
-				+ "-fx-background-radius: 20;");
+    Label tipoLabel = new Label("📂 " + ing.getTipo());
+    tipoLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 14));
+    tipoLabel.setTextFill(Color.WHITE);
+    tipoLabel.setAlignment(Pos.CENTER);
+    tipoLabel.setStyle("-fx-background-color: " + StyleHelper.INFO_BLUE + "; -fx-padding: 6 14; -fx-background-radius: 16;");
 
-		VBox headerBox = new VBox(15, iconLabel, nomeLabel, tipoLabel);
-		headerBox.setAlignment(Pos.CENTER);
+    VBox headerBox = new VBox(10, iconLabel, nomeLabel, tipoLabel);
+    headerBox.setAlignment(Pos.CENTER);
 
-		Separator sep1 = new Separator();
-		sep1.setMaxWidth(400);
+    Separator sep1 = new Separator();
+    sep1.setMaxWidth(420);
 
-		// ✅ ISTRUZIONI più chiare
-		Label istruzioni = new Label("Inserisci la quantità in grammi:");
-		istruzioni.setFont(Font.font("Roboto", FontWeight.BOLD, 17));
-		istruzioni.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
-		istruzioni.setAlignment(Pos.CENTER);
+    Label istruzioni = new Label("Inserisci la quantità in grammi:");
+    istruzioni.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
+    istruzioni.setTextFill(Color.web(StyleHelper.TEXT_BLACK));
+    istruzioni.setAlignment(Pos.CENTER);
 
-		// ✅ CAMPO QUANTITÀ più grande e centrato
-		TextField quantField = new TextField();
-		quantField.setPromptText("Es. 250");
-		quantField.setPrefWidth(250);
-		quantField.setPrefHeight(65);
-		quantField.setAlignment(Pos.CENTER);
-		quantField.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";"
-				+ "-fx-border-width: 3;" + "-fx-border-radius: 15;" + "-fx-background-radius: 15;"
-				+ "-fx-font-size: 28px;" + "-fx-font-weight: bold;" + "-fx-prompt-text-fill: #ccc;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 8, 0.3, 0, 2);");
+    TextField quantField = new TextField();
+    quantField.setPromptText("Es. 250");
+    quantField.setPrefWidth(300);
+    quantField.setPrefHeight(56);
+    quantField.setAlignment(Pos.CENTER);
+    quantField.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
+            "-fx-border-width: 3;" +
+            "-fx-border-radius: 14;" +
+            "-fx-background-radius: 14;" +
+            "-fx-font-size: 24px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-prompt-text-fill: #c3c3c3;" +
+            "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.18), 7, 0.3, 0, 2);"
+    );
+    quantField.textProperty().addListener((obs, old, val) -> {
+        if (!val.matches("^\\d*\\.?\\d*$")) quantField.setText(old);
+    });
 
-		// Validazione input
-		quantField.textProperty().addListener((obs, old, val) -> {
-			if (!val.matches("^\\d*\\.?\\d*$"))
-				quantField.setText(old);
-		});
+    Label unitLabel = new Label("grammi (g)");
+    unitLabel.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 13));
+    unitLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
 
-		// ✅ LABEL UNITÀ più visibile
-		Label unitLabel = new Label("grammi (g)");
-		unitLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
-		unitLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
-		unitLabel.setAlignment(Pos.CENTER);
+    VBox fieldBox = new VBox(8, quantField, unitLabel);
+    fieldBox.setAlignment(Pos.CENTER);
 
-		VBox fieldBox = new VBox(12, quantField, unitLabel);
-		fieldBox.setAlignment(Pos.CENTER);
+    card.getChildren().addAll(headerBox, sep1, istruzioni, fieldBox);
 
-		// ✅ PULSANTI uniformi
-		HBox buttons = new HBox(20);
-		buttons.setAlignment(Pos.CENTER);
-		buttons.setPadding(new Insets(10, 0, 0, 0));
+    // Colonna centrata con margini elastici sopra/sotto
+    Region topSpacer = new Region();
+    Region bottomSpacer = new Region();
+    VBox centeredCol = new VBox(topSpacer, card, bottomSpacer);
+    centeredCol.setAlignment(Pos.CENTER);
+    VBox.setVgrow(topSpacer, Priority.ALWAYS);
+    VBox.setVgrow(bottomSpacer, Priority.ALWAYS);
 
-		Button annullaBtn = StyleHelper.createSecondaryButton("❌ Annulla");
-		annullaBtn.setPrefSize(160, 50);
-		annullaBtn.setOnAction(e -> mainContainer.getChildren().setAll(modificaView));
+    // “Pista” centrale con padding laterale per non far sembrare tutto schiacciato
+    VBox content = new VBox(centeredCol);
+    content.setFillWidth(true);
+    content.setPadding(new Insets(10, 24, 10, 24));
+    content.setMaxWidth(900);        // limita la colonna per monitor larghi
+    content.setAlignment(Pos.CENTER);
 
-		Button confermaBtn = StyleHelper.createSuccessButton("✅ Conferma");
-		confermaBtn.setPrefSize(160, 50);
-		confermaBtn.setOnAction(e -> {
-			String text = quantField.getText().trim();
-			if (text.isEmpty()) {
-				StyleHelper.showValidationDialog("Errore", "Inserisci una quantità");
-				quantField.requestFocus();
-				return;
-			}
-			try {
-				double q = Double.parseDouble(text);
-				if (q > 0) {
-					onSuccess.accept(q);
-				} else {
-					StyleHelper.showValidationDialog("Errore", "La quantità deve essere maggiore di zero");
-					quantField.requestFocus();
-				}
-			} catch (NumberFormatException ex) {
-				StyleHelper.showValidationDialog("Errore", "Inserisci un numero valido");
-				quantField.requestFocus();
-			}
-		});
+    ScrollPane scroll = new ScrollPane(content);
+    scroll.setFitToWidth(true);
+    scroll.setPannable(true);
+    scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+    scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+    scroll.setStyle("-fx-background-color: transparent;");
+    scroll.getContent().setStyle("-fx-background-color: transparent;");
+    scroll.skinProperty().addListener((obs, old, skin) -> {
+        Region corner = (Region) scroll.lookup(".corner");
+        if (corner != null) corner.setStyle("-fx-background-color: transparent;");
+    });
+    VBox.setVgrow(scroll, Priority.ALWAYS);
 
-		buttons.getChildren().addAll(annullaBtn, confermaBtn);
+    Separator sep2 = new Separator();
+    sep2.setMaxWidth(720);
 
-		card.getChildren().addAll(headerBox, sep1, istruzioni, fieldBox);
+    // Bottoni con area di respiro
+    HBox buttons = new HBox(18);
+    buttons.setAlignment(Pos.CENTER);
+    buttons.setPadding(new Insets(6, 0, 0, 0));
 
-		ScrollPane scroll = new ScrollPane(card);
-		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(true);
-		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-		VBox.setVgrow(scroll, Priority.ALWAYS);
+    Button annullaBtn = StyleHelper.createSecondaryButton("❌ Annulla");
+    annullaBtn.setPrefSize(160, 48);
+    annullaBtn.setOnAction(e -> mainContainer.getChildren().setAll(modificaView));
 
-		Separator sep2 = new Separator();
-		sep2.setMaxWidth(600);
+    Button confermaBtn = StyleHelper.createSuccessButton("✅ Conferma");
+    confermaBtn.setPrefSize(160, 48);
+    confermaBtn.setOnAction(e -> {
+        String text = quantField.getText().trim();
+        if (text.isEmpty()) {
+            StyleHelper.showValidationDialog("Errore", "Inserisci una quantità");
+            quantField.requestFocus();
+            return;
+        }
+        try {
+            double q = Double.parseDouble(text);
+            if (q > 0) {
+                onSuccess.accept(q);
+            } else {
+                StyleHelper.showValidationDialog("Errore", "La quantità deve essere maggiore di zero");
+                quantField.requestFocus();
+            }
+        } catch (NumberFormatException ex) {
+            StyleHelper.showValidationDialog("Errore", "Inserisci un numero valido");
+            quantField.requestFocus();
+        }
+    });
 
-		dialogView.getChildren().addAll(title, scroll, sep2, buttons);
-		VBox.setVgrow(scroll, Priority.ALWAYS);
+    buttons.getChildren().addAll(annullaBtn, confermaBtn);
 
-		mainContainer.getChildren().setAll(dialogView);
+    // Layout finale
+    dialogView.getChildren().setAll(title, scroll, sep2, buttons);
+    VBox.setVgrow(scroll, Priority.ALWAYS);
 
-		// ✅ Focus automatico sul campo
-		javafx.application.Platform.runLater(() -> quantField.requestFocus());
-	}
+    mainContainer.getChildren().setAll(dialogView);
+    javafx.application.Platform.runLater(quantField::requestFocus);
+}
+
 
 	// ==================== NAVIGAZIONE ====================
 
@@ -549,7 +583,6 @@ public class VisualizzaRicetteGUI {
 
 	private void mostraModifica(Ricetta ricetta) {
 		try {
-			// 🔄 IMPORTANTE: Ricarica la ricetta fresca dal controller
 			Ricetta ricettaAggiornata = ricettaController.getRicettaPerId(ricetta.getIdRicetta());
 
 			if (ricettaAggiornata == null) {
@@ -558,13 +591,9 @@ public class VisualizzaRicetteGUI {
 				return;
 			}
 
-			// Crea una NUOVA mappa con gli ingredienti "freschi" dal DB
 			modificaIngredientiMap = new HashMap<>();
-
-			// Normalizza gli ingredienti usando l'ID come chiave univoca
 			for (Map.Entry<Ingrediente, Double> entry : ricettaAggiornata.getIngredienti().entrySet()) {
 				Ingrediente ing = entry.getKey();
-				// Verifica che l'ingrediente abbia un ID valido
 				if (ing.getIdIngrediente() > 0) {
 					modificaIngredientiMap.put(ing, entry.getValue());
 				}
@@ -609,14 +638,11 @@ public class VisualizzaRicetteGUI {
 		}
 
 		try {
-			// Aggiorna nome e tempo della ricetta tramite controller
 			ricettaController.aggiornaRicetta(ricetta.getIdRicetta(), nome.trim(), tempo, modificaIngredientiMap);
-
 			StyleHelper.showSuccessDialog("✅ Successo", "Ricetta aggiornata!");
 			mostraLista();
 
 		} catch (Exception e) {
-			// Tutti i controlli e validazioni sono gestiti dal server/controller
 			StyleHelper.showErrorDialog("Errore", e.getMessage());
 		}
 	}

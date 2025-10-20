@@ -57,13 +57,7 @@ public final class ValidationHelper {
         }
     }
 
-    // ========== VALIDAZIONE CODICE FISCALE ==========
-    /**
-     * Valida il formato del codice fiscale italiano.
-     * 
-     * @param codiceFiscale il codice fiscale da validare
-     * @return true se il formato è valido, false altrimenti
-     */
+   
     public static boolean isValidCodiceFiscale(String codiceFiscale) {
         if (codiceFiscale == null || codiceFiscale.trim().isEmpty()) {
             return false;
@@ -71,13 +65,7 @@ public final class ValidationHelper {
         return CF_PATTERN.matcher(codiceFiscale.trim().toUpperCase()).matches();
     }
 
-    // ========== VALIDAZIONE EMAIL ==========
-    /**
-     * Valida il formato di un indirizzo email.
-     * 
-     * @param email l'email da validare
-     * @return true se l'email è valida, false altrimenti
-     */
+   
     public static boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return false;
