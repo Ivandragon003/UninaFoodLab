@@ -12,7 +12,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import model.Ricetta;
 import model.Ingrediente;
 import guihelper.StyleHelper;
@@ -36,10 +35,10 @@ public class CreaRicettaGUI {
     private Ricetta ricettaCreata = null;
     private Stage dialog;
     
-    // ✅ Per gestire schermate continue
     private VBox mainContainer;
     private VBox creaView;
-    private VBox selezionaView;
+    private VBox selezionaIngView;
+    private VBox creaIngView;
 
     public CreaRicettaGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
         if (ricettaController == null || ingredienteController == null) {
@@ -67,7 +66,7 @@ public class CreaRicettaGUI {
         return mainContainer;
     }
 
-    // ==================== LAYOUT ====================
+    // ==================== LAYOUT PRINCIPALE ====================
 
     private VBox buildMainLayout() {
         VBox container = new VBox(15);
@@ -84,6 +83,7 @@ public class CreaRicettaGUI {
             buildIngredientiSection()
         ));
         scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
@@ -91,6 +91,7 @@ public class CreaRicettaGUI {
         HBox buttons = buildButtons();
 
         container.getChildren().addAll(title, scroll, bottomSep, buttons);
+        VBox.setVgrow(scroll, Priority.ALWAYS);
         return container;
     }
 
@@ -175,12 +176,12 @@ public class CreaRicettaGUI {
         return box;
     }
 
-    // ==================== SELEZIONE INGREDIENTE (SCHERMATA CONTINUA) ====================
+    // ==================== SELEZIONE INGREDIENTE ====================
 
     private void mostraSelezioneIngrediente() {
-        selezionaView = new VBox(20);
-        selezionaView.setPadding(new Insets(20));
-        StyleHelper.applyBackgroundGradient(selezionaView);
+        selezionaIngView = new VBox(20);
+        selezionaIngView.setPadding(new Insets(20));
+        StyleHelper.applyBackgroundGradient(selezionaIngView);
 
         Label title = StyleHelper.createTitleLabel("🥕 Seleziona Ingrediente");
         title.setTextFill(Color.WHITE);
@@ -215,181 +216,122 @@ public class CreaRicettaGUI {
         buttons.setAlignment(Pos.CENTER);
         buttons.setPadding(new Insets(15, 0, 5, 0));
 
-        selezionaView.getChildren().addAll(titleBox, content, new Separator(), buttons);
-        mainContainer.getChildren().setAll(selezionaView);
+        selezionaIngView.getChildren().addAll(titleBox, content, new Separator(), buttons);
+        mainContainer.getChildren().setAll(selezionaIngView);
     }
 
-    // ✅ DIALOG QUANTITÀ MIGLIORATO
     private void chiediQuantita(Ingrediente ing) {
-        Dialog<Double> dialog = new Dialog<>();
-        dialog.setTitle("Quantità Ingrediente");
-        dialog.initModality(Modality.APPLICATION_MODAL);
+        VBox dialogView = new VBox(30);
+        dialogView.setPadding(new Insets(40));
+        StyleHelper.applyBackgroundGradient(dialogView);
+        dialogView.setAlignment(Pos.CENTER);
 
-        ButtonType aggiungiBtn = new ButtonType("✅ Aggiungi", ButtonBar.ButtonData.OK_DONE);
-        ButtonType annullaBtn = new ButtonType("❌ Annulla", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(aggiungiBtn, annullaBtn);
+        Label title = StyleHelper.createTitleLabel("🥕 Quantità Ingrediente");
+        title.setTextFill(Color.WHITE);
+        title.setAlignment(Pos.CENTER);
 
-        VBox content = new VBox(18);
-        content.setPadding(new Insets(30));
-        content.setAlignment(Pos.CENTER);
-        content.setPrefWidth(450);
+        // Card centrata con larghezza fissa
+        VBox card = new VBox(20);
+        card.setMaxWidth(600);
+        card.setMinHeight(300);
+        card.setPadding(new Insets(40));
+        card.setAlignment(Pos.CENTER);
+        card.setStyle(
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
+            "-fx-border-radius: 16;" +
+            "-fx-border-width: 1;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);"
+        );
 
-        // Icona grande
-        Label icon = new Label("🥕");
-        icon.setFont(Font.font("Segoe UI Emoji", 72));
-        icon.setAlignment(Pos.CENTER);
-        icon.setMaxWidth(Double.MAX_VALUE);
-
-        // Nome ingrediente
         Label nomeLabel = new Label(ing.getNome());
-        nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 26));
+        nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 24));
         nomeLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
         nomeLabel.setAlignment(Pos.CENTER);
         nomeLabel.setMaxWidth(Double.MAX_VALUE);
 
-        // Tipo ingrediente
-        Label tipoLabel = new Label("📂 Tipo: " + ing.getTipo());
-        tipoLabel.setFont(Font.font("Roboto", 15));
+        Label tipoLabel = new Label("📂 " + ing.getTipo());
+        tipoLabel.setFont(Font.font("Roboto", 13));
         tipoLabel.setTextFill(Color.GRAY);
         tipoLabel.setAlignment(Pos.CENTER);
         tipoLabel.setMaxWidth(Double.MAX_VALUE);
 
         Separator sep = new Separator();
-        sep.setMaxWidth(350);
-        sep.setPadding(new Insets(10, 0, 10, 0));
 
-        // Istruzioni
-        Label istr = new Label("Inserisci la quantità in grammi:");
-        istr.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 16));
-        istr.setAlignment(Pos.CENTER);
-        istr.setMaxWidth(Double.MAX_VALUE);
+        Label istruzioni = new Label("Inserisci la quantità in grammi:");
+        istruzioni.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 14));
+        istruzioni.setAlignment(Pos.CENTER);
+        istruzioni.setMaxWidth(Double.MAX_VALUE);
 
-        // Campo quantità GRANDE E PULITO
-        TextField field = new TextField();
-        field.setPromptText("Es. 250");
-        field.setPrefWidth(220);
-        field.setPrefHeight(55);
-        field.setAlignment(Pos.CENTER);
-        field.setStyle(
+        // CAMPO CON LARGHEZZA FISSA PICCOLA
+        TextField quantField = new TextField();
+        quantField.setPromptText("Es. 250");
+        quantField.setMaxWidth(200);  // FISSA!
+        quantField.setMinWidth(200);  // FISSA!
+        quantField.setPrefWidth(200); // FISSA!
+        quantField.setPrefHeight(45);
+        quantField.setAlignment(Pos.CENTER);
+        quantField.setStyle(
             "-fx-background-color: white;" +
             "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-            "-fx-border-width: 3;" +
-            "-fx-border-radius: 28;" +
-            "-fx-background-radius: 28;" +
-            "-fx-padding: 14 22;" +
-            "-fx-font-size: 22px;" +
-            "-fx-font-weight: bold;" +
-            "-fx-font-family: 'Roboto';"
+            "-fx-border-width: 2;" +
+            "-fx-border-radius: 10;" +
+            "-fx-background-radius: 10;" +
+            "-fx-font-size: 18px;" +
+            "-fx-font-weight: bold;"
         );
-        
-        field.textProperty().addListener((obs, old, val) -> {
-            if (!val.matches("\\d*")) field.setText(old);
+        quantField.textProperty().addListener((obs, old, val) -> {
+            if (!val.matches("\\d*")) quantField.setText(old);
         });
 
-        Label unit = new Label("grammi (g)");
-        unit.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 14));
-        unit.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        Label unitLabel = new Label("grammi (g)");
+        unitLabel.setFont(Font.font("Roboto", 12));
+        unitLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
+        unitLabel.setAlignment(Pos.CENTER);
 
-        VBox fieldBox = new VBox(10, field, unit);
-        fieldBox.setAlignment(Pos.CENTER);
+        VBox fieldContainer = new VBox(8, quantField, unitLabel);
+        fieldContainer.setAlignment(Pos.CENTER);
 
-        // Quantità comuni CON STILE MODERNO
-        Label suggTitle = new Label("💡 Quantità comuni:");
-        suggTitle.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
-        suggTitle.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
+        card.getChildren().addAll(nomeLabel, tipoLabel, sep, istruzioni, fieldContainer);
 
-        HBox quickBtns = new HBox(12);
-        quickBtns.setAlignment(Pos.CENTER);
+        HBox buttons = new HBox(15);
+        buttons.setAlignment(Pos.CENTER);
 
-        for (String q : new String[]{"100g", "250g", "500g"}) {
-            Button btn = new Button(q);
-            btn.setPrefSize(80, 35);
-            btn.setStyle(
-                "-fx-background-color: white;" +
-                "-fx-text-fill: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-font-weight: bold;" +
-                "-fx-font-size: 13px;" +
-                "-fx-background-radius: 18;" +
-                "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 18;" +
-                "-fx-cursor: hand;"
-            );
-            btn.setOnMouseEntered(e -> btn.setStyle(
-                "-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-font-size: 13px;" +
-                "-fx-background-radius: 18;" +
-                "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 18;" +
-                "-fx-cursor: hand;"
-            ));
-            btn.setOnMouseExited(e -> btn.setStyle(
-                "-fx-background-color: white;" +
-                "-fx-text-fill: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-font-weight: bold;" +
-                "-fx-font-size: 13px;" +
-                "-fx-background-radius: 18;" +
-                "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-                "-fx-border-width: 2;" +
-                "-fx-border-radius: 18;" +
-                "-fx-cursor: hand;"
-            ));
-            btn.setOnAction(e -> field.setText(q.replace("g", "")));
-            quickBtns.getChildren().add(btn);
-        }
+        Button annullaBtn = StyleHelper.createSecondaryButton("❌ Annulla");
+        annullaBtn.setPrefWidth(140);
+        annullaBtn.setOnAction(e -> mainContainer.getChildren().setAll(creaView));
 
-        VBox suggBox = new VBox(10);
-        suggBox.setAlignment(Pos.CENTER);
-        suggBox.setPadding(new Insets(15));
-        suggBox.setStyle(
-            "-fx-background-color: " + StyleHelper.BG_ORANGE_LIGHT + ";" +
-            "-fx-background-radius: 20;"
-        );
-        suggBox.getChildren().addAll(suggTitle, quickBtns);
-
-        content.getChildren().addAll(
-            icon, nomeLabel, tipoLabel, sep, 
-            istr, fieldBox, suggBox
-        );
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setStyle(
-            "-fx-background-color: " + StyleHelper.BG_WHITE + ";" +
-            "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
-            "-fx-border-width: 5;" +
-            "-fx-border-radius: 25;" +
-            "-fx-background-radius: 25;"
-        );
-
-        dialog.getDialogPane().setMinWidth(500);
-        dialog.getDialogPane().setMinHeight(580);
-
-        javafx.application.Platform.runLater(() -> field.requestFocus());
-
-        dialog.setResultConverter(btn -> {
-            if (btn == aggiungiBtn) {
-                try {
-                    String txt = field.getText().trim();
-                    if (txt.isEmpty()) return null;
-                    double q = Double.parseDouble(txt);
-                    return q > 0 ? q : null;
-                } catch (NumberFormatException e) { 
-                    return null; 
-                }
+        Button confermaBtn = StyleHelper.createSuccessButton("✅ Conferma");
+        confermaBtn.setPrefWidth(140);
+        confermaBtn.setOnAction(e -> {
+            String text = quantField.getText().trim();
+            if (text.isEmpty()) {
+                StyleHelper.showValidationDialog("Errore", "Inserisci una quantità");
+                return;
             }
-            return null;
+            try {
+                double q = Double.parseDouble(text);
+                if (q > 0) {
+                    ingredientiMap.put(ing, q);
+                    updateDisplay();
+                    mainContainer.getChildren().setAll(creaView);
+                    StyleHelper.showSuccessDialog("✅ Ingrediente Aggiunto",
+                        String.format("'%s' aggiunto con %.0fg", ing.getNome(), q));
+                } else {
+                    StyleHelper.showValidationDialog("Errore", "La quantità deve essere maggiore di zero");
+                }
+            } catch (NumberFormatException ex) {
+                StyleHelper.showValidationDialog("Errore", "Inserisci un numero valido");
+            }
         });
 
-        dialog.showAndWait().ifPresent(q -> {
-            ingredientiMap.put(ing, q);
-            updateDisplay();
-            mainContainer.getChildren().setAll(creaView);
-            StyleHelper.showSuccessDialog("✅ Ingrediente Aggiunto",
-                String.format("'%s' aggiunto con %.0fg", ing.getNome(), q));
-        });
+        buttons.getChildren().addAll(annullaBtn, confermaBtn);
+
+        dialogView.getChildren().addAll(title, card, buttons);
+        mainContainer.getChildren().setAll(dialogView);
+        
+        javafx.application.Platform.runLater(() -> quantField.requestFocus());
     }
 
     // ==================== LOGICA ====================
