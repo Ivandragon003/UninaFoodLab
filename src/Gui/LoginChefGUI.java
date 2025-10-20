@@ -270,39 +270,41 @@ public void start(Stage primaryStage) {
 	}
 
 	private void aprireMenuChef(Chef chef) {
-    try {
-        RicettaDAO ricettaDAO = new RicettaDAO();
-        IngredienteDAO ingredienteDAO = new IngredienteDAO();
-        UsaDAO usaDAO = new UsaDAO();
-        
-        GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
-        
-        GestioneUsa gestioneUsa = new GestioneUsa(usaDAO, ingredienteDAO);
-        CucinaDAO cucinaDAO = new CucinaDAO();
-        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-        
-        RicettaController ricettaController = new RicettaController(gestioneRicette, gestioneUsa, gestioneCucina);
-        
-        GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
-        controller.IngredienteController ingredienteController = new controller.IngredienteController(gestioneIngrediente);
-        
-        ChefMenuGUI menu = new ChefMenuGUI();
-        menu.setChefLoggato(chef);
-        
-        menu.setRicettaController(ricettaController);
-        menu.setIngredienteController(ingredienteController);
+		try {
+			RicettaDAO ricettaDAO = new RicettaDAO();
+			IngredienteDAO ingredienteDAO = new IngredienteDAO();
+			UsaDAO usaDAO = new UsaDAO();
+			CucinaDAO cucinaDAO = new CucinaDAO();
 
-        Stage menuStage = new Stage();
-        menu.start(menuStage);
+		
+			GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
+			GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
+			GestioneUsa gestioneUsa = new GestioneUsa(usaDAO, ingredienteDAO);
+			GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
 
-        ((Stage) contentPane.getScene().getWindow()).close();
-    } catch (Exception ex) {
-        ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
-        ex.printStackTrace();
-    }
-}
+			controller.IngredienteController ingredienteController = new controller.IngredienteController(
+					gestioneIngrediente);
 
+	
+			RicettaController ricettaController = new RicettaController(gestioneRicette, gestioneUsa, gestioneCucina,
+					ingredienteController);
 
+			ChefMenuGUI menu = new ChefMenuGUI();
+			menu.setChefLoggato(chef);
+			menu.setRicettaController(ricettaController);
+			menu.setIngredienteController(ingredienteController);
+
+			
+			Stage menuStage = new Stage();
+			menu.start(menuStage);
+
+			
+			((Stage) contentPane.getScene().getWindow()).close();
+		} catch (Exception ex) {
+			ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
+			ex.printStackTrace();
+		}
+	}
 
 	private void handleRegister() {
 		errorLabel.setVisible(false);

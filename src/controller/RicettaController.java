@@ -9,138 +9,188 @@ import service.GestioneCucina;
 import exceptions.ValidationException;
 import exceptions.DataAccessException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Optional;
 
 public class RicettaController {
 
-    private final GestioneRicette gestioneRicette;
-    private final GestioneUsa gestioneUsa;
-    private final GestioneCucina gestioneCucina;
-    private List<Ricetta> cachedRicette = null;
+	private final GestioneRicette gestioneRicette;
+	private final GestioneUsa gestioneUsa;
+	private final GestioneCucina gestioneCucina;
+	private final IngredienteController ingredienteController; // ✅ AGGIUNTO
+	private List<Ricetta> cachedRicette = null;
 
-    public RicettaController(GestioneRicette gestioneRicette,
-                             GestioneUsa gestioneUsa,
-                             GestioneCucina gestioneCucina) {
-        this.gestioneRicette = gestioneRicette;
-        this.gestioneUsa = gestioneUsa;
-        this.gestioneCucina = gestioneCucina;
-    }
+	// ✅ COSTRUTTORE AGGIORNATO
+	public RicettaController(GestioneRicette gestioneRicette, GestioneUsa gestioneUsa, 
+	                         GestioneCucina gestioneCucina, IngredienteController ingredienteController) {
+		this.gestioneRicette = gestioneRicette;
+		this.gestioneUsa = gestioneUsa;
+		this.gestioneCucina = gestioneCucina;
+		this.ingredienteController = ingredienteController;
+	}
 
-    // ==================== CRUD ====================
+	// ==================== CRUD ====================
 
-    public Ricetta creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti)
-            throws ValidationException, DataAccessException {
+	public Ricetta creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti)
+			throws ValidationException, DataAccessException {
 
-        Ricetta ricetta = new Ricetta(nome, tempoPreparazione);
-        ricetta.setIngredienti(ingredienti);
+		Ricetta ricetta = new Ricetta(nome, tempoPreparazione);
+		gestioneRicette.creaRicetta(ricetta);
 
-        gestioneRicette.creaRicetta(ricetta);
-        invalidaCache();
+		if (ingredienti != null) {
+			for (Map.Entry<Ingrediente, Double> entry : ingredienti.entrySet()) {
+				Ingrediente ing = entry.getKey();
+				double q = entry.getValue();
+				gestioneUsa.aggiungiIngredienteARicetta(ricetta, ing, q);
+			}
+		}
 
-        return ricetta;
-    }
+		invalidaCache();
+		return ricetta;
+	}
 
-    public void aggiornaRicetta(int idRicetta, String nuovoNome, int nuovoTempo,
-                                Map<Ingrediente, Double> nuoviIngredienti) throws ValidationException, DataAccessException {
+	public void aggiornaRicetta(int idRicetta, String nuovoNome, int nuovoTempo,
+			Map<Ingrediente, Double> nuoviIngredienti) throws ValidationException, DataAccessException {
 
-        Ricetta ricetta = new Ricetta(nuovoNome, nuovoTempo);
-        ricetta.setIngredienti(nuoviIngredienti);
+		// 1. Prendi la ricetta vecchia
+		Ricetta vecchiaRicetta = gestioneRicette.getAllRicette().stream()
+				.filter(r -> r.getIdRicetta() == idRicetta)
+				.findFirst()
+				.orElseThrow(() -> new ValidationException("Ricetta non trovata"));
 
-        gestioneRicette.aggiornaRicetta(idRicetta, ricetta);
-        invalidaCache();
-    }
+		// 2. Rimuovi TUTTI i vecchi ingredienti dalla tabella Usa
+		if (vecchiaRicetta.getIngredienti() != null) {
+			// Crea una copia delle chiavi per evitare ConcurrentModificationException
+			List<Ingrediente> ingredientiDaRimuovere = List.copyOf(vecchiaRicetta.getIngredienti().keySet());
+			for (Ingrediente ing : ingredientiDaRimuovere) {
+				gestioneUsa.rimuoviIngredienteDaRicetta(vecchiaRicetta, ing);
+			}
+		}
 
-    public void eliminaRicetta(int idRicetta) throws ValidationException, DataAccessException {
-        gestioneRicette.cancellaRicetta(idRicetta);
-        invalidaCache();
-    }
+		// 3. Aggiorna info base ricetta
+		Ricetta ricetta = new Ricetta(nuovoNome, nuovoTempo);
+		ricetta.setIdRicetta(idRicetta);
+		gestioneRicette.aggiornaRicetta(idRicetta, ricetta);
 
-    // ==================== QUERY ====================
+		// 4. Normalizza e inserisci i NUOVI ingredienti
+		Map<Ingrediente, Double> mappaIngredentiNormalizzati = new HashMap<>();
 
-    public List<Ricetta> getAllRicette() throws DataAccessException {
-        if (cachedRicette == null) {
-            cachedRicette = gestioneRicette.getAllRicette();
-        }
-        return List.copyOf(cachedRicette);
-    }
+		for (Map.Entry<Ingrediente, Double> entry : nuoviIngredienti.entrySet()) {
+			Ingrediente ing = entry.getKey();
+			Double quantita = entry.getValue();
 
-    public Ricetta getRicettaPerId(int idRicetta) throws DataAccessException {
-        return getAllRicette().stream()
-                .filter(r -> r.getIdRicetta() == idRicetta)
-                .findFirst()
-                .orElse(null);
-    }
+			try {
+				// ✅ Recupera l'ingrediente "ufficiale" dal database usando l'ID
+				Optional<Ingrediente> ingredienteOpt = ingredienteController.trovaIngredientePerId(ing.getIdIngrediente());
+				
+				if (!ingredienteOpt.isPresent()) {
+					throw new ValidationException("Ingrediente non trovato: " + ing.getNome() + " (ID: " + ing.getIdIngrediente() + ")");
+				}
+				
+				Ingrediente ingredienteDB = ingredienteOpt.get();
 
-    public List<Ricetta> cercaPerNome(String nome) throws ValidationException, DataAccessException {
-        return gestioneRicette.cercaPerNome(nome, getAllRicette());
-    }
+				// Aggiungi alla ricetta e salva nel DB
+				gestioneUsa.aggiungiIngredienteARicetta(ricetta, ingredienteDB, quantita);
+				mappaIngredentiNormalizzati.put(ingredienteDB, quantita);
+				
+			} catch (ValidationException e) {
+				throw e; // Rilancia le ValidationException così come sono
+			} catch (Exception e) {
+				throw new DataAccessException("Errore aggiunta ingrediente '" + ing.getNome() + "': " + e.getMessage(), e);
+			}
+		}
 
-    public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax,
-                                         Integer ingredientiMin, Integer ingredientiMax) throws ValidationException, DataAccessException {
+		ricetta.setIngredienti(mappaIngredentiNormalizzati);
+		invalidaCache();
+	}
 
-        return gestioneRicette.filtraCombinato(nome, tempoMin, tempoMax,
-                ingredientiMin, ingredientiMax, getAllRicette());
-    }
+	public void eliminaRicetta(int idRicetta) throws ValidationException, DataAccessException {
+		gestioneRicette.cancellaRicetta(idRicetta);
+		invalidaCache();
+	}
 
-    // ==================== OPERAZIONI SUGLI INGREDIENTI (DELEGA A GestioneUsa) ====================
+	// ==================== QUERY ====================
 
-    public void aggiungiIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita)
-            throws ValidationException, DataAccessException {
+	public List<Ricetta> getAllRicette() throws DataAccessException {
+		if (cachedRicette == null) {
+			cachedRicette = gestioneRicette.getAllRicette();
+		}
+		return List.copyOf(cachedRicette);
+	}
 
-        gestioneUsa.aggiungiIngredienteARicetta(ricetta, ingrediente, quantita);
-        invalidaCache();
-    }
+	public Ricetta getRicettaPerId(int idRicetta) throws DataAccessException {
+		return getAllRicette().stream()
+				.filter(r -> r.getIdRicetta() == idRicetta)
+				.findFirst()
+				.orElse(null);
+	}
 
-    public void aggiornaQuantitaIngrediente(Ricetta ricetta, Ingrediente ingrediente, double nuovaQuantita)
-            throws ValidationException, DataAccessException {
+	public List<Ricetta> cercaPerNome(String nome) throws ValidationException, DataAccessException {
+		return gestioneRicette.cercaPerNome(nome, getAllRicette());
+	}
 
-        gestioneUsa.aggiornaQuantitaIngrediente(ricetta, ingrediente, nuovaQuantita);
-        invalidaCache();
-    }
+	public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax, 
+			Integer ingredientiMin, Integer ingredientiMax) throws ValidationException, DataAccessException {
+		return gestioneRicette.filtraCombinato(nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax, getAllRicette());
+	}
 
-    public void rimuoviIngrediente(Ricetta ricetta, Ingrediente ingrediente)
-            throws ValidationException, DataAccessException {
+	// ==================== OPERAZIONI SUGLI INGREDIENTI ====================
 
-        gestioneUsa.rimuoviIngredienteDaRicetta(ricetta, ingrediente);
-        invalidaCache();
-    }
+	public void aggiungiIngrediente(Ricetta ricetta, Ingrediente ingrediente, double quantita)
+			throws ValidationException, DataAccessException {
 
-    // ==================== ASSOCIAZIONI SESSIONI (DELEGA A GestioneCucina) ====================
+		if (ricetta == null || ricetta.getIdRicetta() == 0) {
+			throw new ValidationException("La ricetta deve essere salvata prima di aggiungere ingredienti.");
+		}
 
-    public void associaRicettaASessione(Ricetta ricetta, InPresenza sessione)
-            throws ValidationException, DataAccessException {
+		gestioneUsa.aggiungiIngredienteARicetta(ricetta, ingrediente, quantita);
+		invalidaCache();
+	}
 
-        gestioneCucina.aggiungiSessioneARicetta(ricetta, sessione);
-    }
+	public void aggiornaQuantitaIngrediente(Ricetta ricetta, Ingrediente ingrediente, double nuovaQuantita)
+			throws ValidationException, DataAccessException {
+		gestioneUsa.aggiornaQuantitaIngrediente(ricetta, ingrediente, nuovaQuantita);
+		invalidaCache();
+	}
 
-    public void disassociaRicettaDaSessione(Ricetta ricetta, InPresenza sessione)
-            throws ValidationException, DataAccessException {
+	public void rimuoviIngrediente(Ricetta ricetta, Ingrediente ingrediente)
+			throws ValidationException, DataAccessException {
+		gestioneUsa.rimuoviIngredienteDaRicetta(ricetta, ingrediente);
+		invalidaCache();
+	}
 
-        gestioneCucina.rimuoviSessioneDaRicetta(ricetta, sessione);
-    }
+	// ==================== ASSOCIAZIONI SESSIONI ====================
 
-    /**
-     * Restituisce le ricette non ancora associate alla sessione (calcolo locale per evitare dipendenze service mancanti)
-     */
-    public List<Ricetta> getRicetteNonAssociate(InPresenza sessione) throws DataAccessException {
-        return getAllRicette().stream()
-                .filter(r -> r.getSessioni() == null || !r.getSessioni().contains(sessione))
-                .toList();
-    }
+	public void associaRicettaASessione(Ricetta ricetta, InPresenza sessione)
+			throws ValidationException, DataAccessException {
+		gestioneCucina.aggiungiSessioneARicetta(ricetta, sessione);
+	}
 
-    // CACHE
-    public void invalidaCache() {
-        cachedRicette = null;
-    }
+	public void disassociaRicettaDaSessione(Ricetta ricetta, InPresenza sessione)
+			throws ValidationException, DataAccessException {
+		gestioneCucina.rimuoviSessioneDaRicetta(ricetta, sessione);
+	}
 
-    public void ricaricaCache() throws DataAccessException {
-        invalidaCache();
-        getAllRicette();
-    }
+	public List<Ricetta> getRicetteNonAssociate(InPresenza sessione) throws DataAccessException {
+		return getAllRicette().stream()
+				.filter(r -> r.getSessioni() == null || !r.getSessioni().contains(sessione))
+				.toList();
+	}
 
-    public GestioneRicette getGestioneRicette() {
-        return gestioneRicette;
-    }
+	// ==================== CACHE ====================
+
+	public void invalidaCache() {
+		cachedRicette = null;
+	}
+
+	public void ricaricaCache() throws DataAccessException {
+		invalidaCache();
+		getAllRicette();
+	}
+
+	public GestioneRicette getGestioneRicette() {
+		return gestioneRicette;
+	}
 }

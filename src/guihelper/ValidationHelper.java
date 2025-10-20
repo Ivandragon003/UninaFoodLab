@@ -107,27 +107,9 @@ public final class ValidationHelper {
         });
     }
 
-    /**
-     * Restituisce un TextFormatter che accetta solo caratteri validi per il codice fiscale.
-     * Converte automaticamente in maiuscolo e limita a 16 caratteri.
-     */
-    public static TextFormatter<String> getCodiceFiscaleFormatter() {
-        return new TextFormatter<>(change -> {
-            String newText = change.getControlNewText().toUpperCase();
-            
-            // Permette solo lettere maiuscole e numeri (max 16 caratteri)
-            if (newText.matches("[A-Z0-9]{0,16}")) {
-                change.setText(change.getText().toUpperCase());
-                return change;
-            }
-            return null;
-        });
-    }
 
-    // ========== MOSTRA / NASCONDI ERRORE (thread-safe) ==========
-    public static void showError(TextInputControl field, Label errorLabel, String message) {
-        showError(field, null, errorLabel, message);
-    }
+   
+  
 
     public static void showError(TextInputControl field, VBox container, Label errorLabel, String message) {
         Runnable r = () -> {
@@ -141,9 +123,7 @@ public final class ValidationHelper {
         runOnUiThread(r);
     }
 
-    public static void hideError(TextInputControl field, Label errorLabel) {
-        hideError(field, null, errorLabel);
-    }
+ 
 
     public static void hideError(TextInputControl field, VBox container, Label errorLabel) {
         Runnable r = () -> {
@@ -229,8 +209,5 @@ public final class ValidationHelper {
         else Platform.runLater(r);
     }
 
-    // ========== UTILITY ==========
-    public static void resetStyle(TextInputControl field) {
-        if (field != null) field.setStyle(NORMAL_STYLE);
-    }
+   
 }

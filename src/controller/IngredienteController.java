@@ -45,20 +45,5 @@ public class IngredienteController {
         return gestioneIngrediente.trovaIngredientePerNome(nome);
     }
 
-    // ✅ SEMPLIFICATO: Validazione delegata al service
-    public void aggiornaIngrediente(int id, String nome, String tipo) throws ValidationException, DataAccessException {
-        Ingrediente ingrediente = new Ingrediente(
-            nome == null ? null : nome.trim(),
-            tipo == null ? null : tipo.trim()
-        );
-        gestioneIngrediente.aggiornaIngrediente(id, ingrediente);
-    }
-
-    public void eliminaIngrediente(int id) throws DataAccessException {
-        gestioneIngrediente.eliminaIngrediente(id);
-    }
-
-    public boolean ingredienteEsiste(String nome) throws ValidationException, DataAccessException {
-        return gestioneIngrediente.ingredienteEsiste(nome);
-    }
+    
 }

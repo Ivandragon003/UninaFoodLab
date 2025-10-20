@@ -67,10 +67,12 @@ public class VisualizzaIngredientiGUI {
 
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
+        scroll.setFitToHeight(true);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
         container.getChildren().add(scroll);
+        VBox.setVgrow(scroll, Priority.ALWAYS);
         return container;
     }
 
@@ -128,7 +130,8 @@ public class VisualizzaIngredientiGUI {
         header.getChildren().addAll(titleBox, spacer, actions);
 
         listView = new ListView<>(data);
-        listView.setPrefHeight(350);
+        listView.setMinHeight(300);
+        listView.setPrefHeight(Region.USE_COMPUTED_SIZE);
         listView.setStyle(
             "-fx-background-color: white;" +
             "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";" +
@@ -137,8 +140,10 @@ public class VisualizzaIngredientiGUI {
             "-fx-border-width: 1;"
         );
         listView.setCellFactory(lv -> new IngredienteCell());
+        VBox.setVgrow(listView, Priority.ALWAYS);
 
         section.getChildren().addAll(header, listView);
+        VBox.setVgrow(listView, Priority.ALWAYS);
         return section;
     }
 
@@ -186,24 +191,19 @@ public class VisualizzaIngredientiGUI {
     }
 
     private void apriCreaIngrediente() {
-        Stage stage = new Stage();
         CreaIngredientiGUI creaGUI = new CreaIngredientiGUI(controller);
-
+        
         creaGUI.setOnIngredienteCreato(ingrediente -> {
-            carica(); // aggiorna lista
-            stage.close();
-            StyleHelper.showSuccessDialog("✅ Ingrediente creato",
-                    String.format("Ingrediente '%s' (%s) aggiunto con successo.",
-                            ingrediente.getNome(), ingrediente.getTipo()));
+            carica();
+            root.getChildren().setAll(buildMain());
         });
 
-        creaGUI.setOnAnnulla(stage::close);
+        creaGUI.setOnAnnulla(() -> {
+            root.getChildren().setAll(buildMain());
+        });
 
-        Scene scene = new Scene(creaGUI.getContent(), 600, 400);
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("Crea Nuovo Ingrediente");
-        stage.setScene(scene);
-        stage.showAndWait();
+        VBox content = creaGUI.getContent();
+        root.getChildren().setAll(content);
     }
 
     private Label createTitle(String text) {
