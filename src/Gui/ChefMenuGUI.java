@@ -236,7 +236,15 @@ public class ChefMenuGUI {
 		btnCreaRicetta.setOnAction(e -> safeRun(this::apriCreaRicetta, "Crea Ricetta"));
 		btnReportMensile.setOnAction(e -> safeRun(this::apriReportMensile, "Report Mensile"));
 		btnEliminaAccount.setOnAction(e -> safeRun(this::eliminaAccount, "Elimina Account"));
-		btnLogout.setOnAction(e -> stage.close());
+		btnLogout.setOnAction(e -> safeRun(() -> {
+		    try {
+		        LoginChefGUI loginGui = new LoginChefGUI();
+		        loginGui.start(stage);
+		    } catch (Exception ex) {
+		        // rilanciamo per far gestire l'errore da safeRun
+		        throw new RuntimeException("Errore durante il logout: " + ex.getMessage(), ex);
+		    }
+		}, "Logout"));
 
 		for (Button btn : new Button[] { btnVisualizzaCorsi, btnCreaCorso, btnGestisciRicette, btnCreaRicetta,
 				btnReportMensile, btnEliminaAccount, btnLogout }) {

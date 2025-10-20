@@ -26,6 +26,7 @@ import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 import model.CorsoCucina;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -481,12 +482,24 @@ public class VisualizzaCorsiGUI {
 
             @Override
             protected void succeeded() {
-                Platform.runLater(() -> {
-                    corsiData.setAll(getValue());
-                    progressIndicator.setVisible(false);
-                    applicaFiltriConStato();
-                });
-            }
+            Platform.runLater(() -> {
+                	List<CorsoCucina> result = getValue();
+                	        for (CorsoCucina corso : result) {
+                	            try {
+                	                int numSessioni = visualizzaController.getNumeroSessioniPerCorso(corso.getIdCorso());
+                	                corso.setNumeroSessioni(numSessioni);
+                	            } catch (SQLException e) {
+                	                System.err.println("Errore conteggio sessioni per corso " + corso.getIdCorso() + ": " + e.getMessage());
+                	                corso.setNumeroSessioni(0);
+                	            }
+                	        }
+                	        
+                	        corsiData.setAll(result);
+                	        progressIndicator.setVisible(false);
+                	        applicaFiltriConStato();
+                	    });
+                	}
+
 
             @Override
             protected void failed() {

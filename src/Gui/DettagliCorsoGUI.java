@@ -45,7 +45,6 @@ public class DettagliCorsoGUI {
 
     private boolean hasUnsavedChanges = false;
     
-    // ✅ FLAG per evitare loop infiniti
     private boolean isUpdating = false;
 
     private TextField nomeField, prezzoField, argomentoField, numeroPostiField, numeroSessioniField;
@@ -505,13 +504,14 @@ public class DettagliCorsoGUI {
             );
             return;
         }
-        
+
         StyleHelper.showConfirmationDialog(
             "⚠️ Conferma Eliminazione",
             "Eliminare il corso '" + corso.getNomeCorso() + "'?\n\n⚠️ Questa azione è IRREVERSIBILE!",
             this::eliminaCorso
         );
     }
+
 
     private void eliminaCorso() {
         int corsoId = corso.getIdCorso();
@@ -593,158 +593,111 @@ public class DettagliCorsoGUI {
         numeroPostiField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
     }
 
-    // ✅ METODO OTTIMIZZATO: Callback che torna a DettagliCorso (non ricrea VisualizzaCorsi)
-    private void apriVisualizzaSessioni() {
-        if (ricettaController == null || ingredienteController == null) {
-            StyleHelper.showErrorDialog(
-                "Errore",
-                "Controller non inizializzati.\n\n" + "Impossibile aprire la gestione sessioni."
-            );
-            return;
-        }
 
-        try {
-            CucinaDAO cucinaDAO = new CucinaDAO();
-            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
-            OnlineDAO onlineDAO = new OnlineDAO();
-            GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-            GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-            GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
-            GestioneSessioniController sessioniController = new GestioneSessioniController(
-                corso,
-                gestioneSessioni,
-                gestioneCucina,
-                gestioneRicette
-            );
-
-            VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
-            visualizzaSessioniGUI.setCorso(corso);
-            visualizzaSessioniGUI.setController(sessioniController);
-            visualizzaSessioniGUI.setRicettaController(ricettaController);
-            visualizzaSessioniGUI.setIngredienteController(ingredienteController);
-
-            // ✅ CALLBACK OTTIMIZZATO: Torna a DettagliCorso SENZA ricreare VisualizzaCorsi
-            visualizzaSessioniGUI.setOnChiudiCallback(() -> {
-                System.out.println("🔙 Tornando a DettagliCorsoGUI...");
-                
-                // Aggiorna i dati
-                int numSessioni = corso.getSessioni() != null ? corso.getSessioni().size() : 0;
-                numeroSessioniField.setText(String.valueOf(numSessioni));
-                aggiornaDataFineFromSessioni();
-
-                // ✅ METODO 1: Trova contentPane e torna a DettagliCorso
-                try {
-                    if (card != null && card.getScene() != null) {
-                        javafx.scene.Parent sceneRoot = card.getScene().getRoot();
-                        
-                        if (sceneRoot instanceof StackPane) {
-                            StackPane mainContainer = (StackPane) sceneRoot;
-                            
-                            for (javafx.scene.Node node : mainContainer.getChildren()) {
-                                if (node instanceof HBox) {
-                                    HBox mainLayout = (HBox) node;
-                                    
-                                    if (mainLayout.getChildren().size() > 1) {
-                                        javafx.scene.Node possibleContent = mainLayout.getChildren().get(1);
-                                        
-                                        if (possibleContent instanceof StackPane) {
-                                            StackPane contentPane = (StackPane) possibleContent;
-                                            contentPane.getChildren().setAll(this.getRoot());
-                                            System.out.println("✅ Tornato a DettagliCorsoGUI con successo");
-                                            return;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    System.err.println("⚠️ Errore nel trovare contentPane: " + ex.getMessage());
-                }
-                
-                // ✅ METODO 2 (FALLBACK): Se non trova contentPane, usa onChiudiCallback
-                System.out.println("⚠️ Usando fallback: onChiudiCallback");
-                if (onChiudiCallback != null) {
-                    onChiudiCallback.run();
-                } else {
-                    System.err.println("❌ onChiudiCallback è null!");
-                }
-            });
-
-            // Ottieni il contentPane e mostra VisualizzaSessioni
-            if (card != null && card.getScene() != null) {
-                javafx.scene.Parent sceneRoot = card.getScene().getRoot();
-                
-                if (sceneRoot instanceof StackPane) {
-                    StackPane mainContainer = (StackPane) sceneRoot;
-                    
-                    for (javafx.scene.Node node : mainContainer.getChildren()) {
-                        if (node instanceof HBox) {
-                            HBox mainLayout = (HBox) node;
-                            
-                            if (mainLayout.getChildren().size() > 1) {
-                                javafx.scene.Node possibleContentPane = mainLayout.getChildren().get(1);
-                                
-                                if (possibleContentPane instanceof StackPane) {
-                                    StackPane contentPane = (StackPane) possibleContentPane;
-                                    visualizzaSessioniGUI.setContentPane(contentPane);
-                                    contentPane.getChildren().setAll(visualizzaSessioniGUI.getRoot());
-                                    System.out.println("✅ VisualizzaSessioniGUI aperto");
-                                    return;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            StyleHelper.showErrorDialog("Errore", "Impossibile accedere al contenitore principale");
-
-        } catch (Exception ex) {
-            StyleHelper.showErrorDialog(
-                "Errore",
-                "Impossibile inizializzare la gestione sessioni: " + ex.getMessage()
-            );
-            System.err.println("Errore inizializzazione sessioni: " + ex.getMessage());
-        }
-    }
-
-
-    private void aggiornaDataFineFromSessioni() {
-    if (isUpdating) {
-        System.out.println("⚠️ Aggiornamento già in corso, skip.");
+private void apriVisualizzaSessioni() {
+    if (ricettaController == null || ingredienteController == null) {
+        StyleHelper.showErrorDialog(
+            "Errore",
+            "Controller non inizializzati.\n\nImpossibile aprire la gestione sessioni."
+        );
         return;
     }
-    
-    isUpdating = true;
-    
+
     try {
-        if (corso == null || corso.getSessioni() == null || corso.getSessioni().isEmpty()) {
+        CucinaDAO cucinaDAO = new CucinaDAO();
+        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
+        OnlineDAO onlineDAO = new OnlineDAO();
+        GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
+        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+        GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
+        GestioneSessioniController sessioniController = new GestioneSessioniController(
+            corso,
+            gestioneSessioni,
+            gestioneCucina,
+            gestioneRicette
+        );
+
+        VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
+        visualizzaSessioniGUI.setCorso(corso);
+        visualizzaSessioniGUI.setController(sessioniController);
+        visualizzaSessioniGUI.setRicettaController(ricettaController);
+        visualizzaSessioniGUI.setIngredienteController(ingredienteController);
+
+        StackPane contentPane = trovaContentPane();
+        
+        if (contentPane == null) {
+            StyleHelper.showErrorDialog("Errore", "Impossibile trovare il contenitore principale");
             return;
         }
 
-        // ✅ CORRETTO: Usa getDataFineSessione() invece di getDataFine()
-        LocalDateTime ultimaDataFine = corso.getSessioni().stream()
-            .map(s -> s.getDataFineSessione())  // ✅ CORRETTO
-            .filter(d -> d != null)
-            .max(LocalDateTime::compareTo)
-            .orElse(null);
+        visualizzaSessioniGUI.setContentPane(contentPane);
 
-        if (ultimaDataFine != null) {
-            corso.setDataFineCorso(ultimaDataFine);
+        visualizzaSessioniGUI.setOnChiudiCallback(() -> {
+            System.out.println("🔙 Tornando a DettagliCorsoGUI...");
             
-            // Aggiorna il campo della GUI
-            if (dataFinePicker != null) {
-                dataFinePicker.setValue(ultimaDataFine.toLocalDate());
+            try {
+                CorsoCucina corsoAggiornato = gestioneController.getCorsoCompleto(corso.getIdCorso());
+                
+                DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
+                dettagliGUI.setController(gestioneController);
+                dettagliGUI.setChefController(chefController);
+                dettagliGUI.setRicettaController(ricettaController);
+                dettagliGUI.setIngredienteController(ingredienteController);
+                dettagliGUI.setCorso(corsoAggiornato);
+                dettagliGUI.setOnChiudiCallback(onChiudiCallback);
+                
+                contentPane.getChildren().setAll(dettagliGUI.getRoot());
+                System.out.println("✅ Tornato a DettagliCorsoGUI con successo");
+                
+            } catch (Exception ex) {
+                System.err.println("❌ Errore nel tornare a DettagliCorso: " + ex.getMessage());
+                ex.printStackTrace();
+                StyleHelper.showErrorDialog("Errore", "Impossibile ricaricare i dettagli del corso");
             }
-            
-            System.out.println("✅ Data fine corso aggiornata automaticamente: " + ultimaDataFine.toLocalDate());
-        }
-    } finally {
-        isUpdating = false; // ✅ Rilascia il lock
+        });
+
+        contentPane.getChildren().setAll(visualizzaSessioniGUI.getRoot());
+        System.out.println("✅ VisualizzaSessioniGUI aperto");
+
+    } catch (Exception ex) {
+        StyleHelper.showErrorDialog(
+            "Errore",
+            "Impossibile inizializzare la gestione sessioni: " + ex.getMessage()
+        );
+        System.err.println("Errore inizializzazione sessioni: " + ex.getMessage());
+        ex.printStackTrace();
     }
 }
 
+private StackPane trovaContentPane() {
+    try {
+        if (card != null && card.getScene() != null) {
+            javafx.scene.Parent sceneRoot = card.getScene().getRoot();
+            
+            if (sceneRoot instanceof StackPane) {
+                StackPane mainContainer = (StackPane) sceneRoot;
+                
+                for (javafx.scene.Node node : mainContainer.getChildren()) {
+                    if (node instanceof HBox) {
+                        HBox mainLayout = (HBox) node;
+                        
+                        if (mainLayout.getChildren().size() > 1) {
+                            javafx.scene.Node possibleContentPane = mainLayout.getChildren().get(1);
+                            
+                            if (possibleContentPane instanceof StackPane) {
+                                return (StackPane) possibleContentPane;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Exception ex) {
+        System.err.println("⚠️ Errore nel trovare contentPane: " + ex.getMessage());
+    }
+    
+    return null;
+}
 
     private void setEditable(boolean edit) {
         if (isCorsoFinito()) {
@@ -827,58 +780,60 @@ public class DettagliCorsoGUI {
     }
 
     private void rimuoviChef(Chef chef) {
-        if (!editable || isCorsoFinito()) return;
+    if (!editable || isCorsoFinito()) return;
 
-        if (isChefLoggato(chef)) {
-            StyleHelper.showValidationDialog(
-                "⚠️ Operazione Non Permessa",
-                "Non puoi rimuovere te stesso dall'elenco del corso."
-            );
-            return;
-        }
-
-        if (isFondatore(chef)) {
-            StyleHelper.showErrorDialog(
-                "❌ Operazione Non Permessa",
-                "Non è possibile rimuovere il fondatore del corso.\n\n👑 " + 
-                chef.getNome() + " " + chef.getCognome() + " ha creato questo corso."
-            );
-            return;
-        }
-
-        Chef chefLoggato = gestioneController.getChefLoggato();
-        if (chefLoggato == null || corso.getCodfiscaleFondatore() == null
-                || !chefLoggato.getCodFiscale().equals(corso.getCodfiscaleFondatore())) {
-            StyleHelper.showErrorDialog(
-                "🔒 Permessi Insufficienti",
-                "Solo il fondatore del corso può rimuovere altri chef.\n\n" + 
-                "👑 Fondatore: " + getNomeFondatore()
-            );
-            return;
-        }
-
-        StyleHelper.showConfirmationDialog(
-            "Conferma Rimozione",
-            "Rimuovere " + chef.getNome() + " " + chef.getCognome() +
-            " dal corso?\n\n⚠️ Questa azione è irreversibile.",
-            () -> {
-                try {
-                    gestioneController.rimuoviChefDaCorso(corso, chef);
-                    corso.getChef().remove(chef);
-                    chefListView.getItems().remove(chef);
-                    refreshChefListView();
-                    StyleHelper.showSuccessDialog(
-                        "✅ Chef Rimosso",
-                        chef.getNome() + " " + chef.getCognome() + " è stato rimosso con successo."
-                    );
-                } catch (ValidationException ex) {
-                    StyleHelper.showValidationDialog("⚠️ Errore Validazione", ex.getMessage());
-                } catch (DataAccessException ex) {
-                    StyleHelper.showErrorDialog("❌ Errore Database", ex.getMessage());
-                }
-            }
+    if (isChefLoggato(chef)) {
+        StyleHelper.showValidationDialog(
+            "⚠️ Operazione Non Permessa",
+            "Non puoi rimuovere te stesso dall'elenco del corso."
         );
+        return;
     }
+
+    if (isFondatore(chef)) {
+        StyleHelper.showErrorDialog(
+            "❌ Operazione Non Permessa",
+            "Non è possibile rimuovere il fondatore del corso.\n\n👑 " + 
+            chef.getNome() + " " + chef.getCognome() + " ha creato questo corso."
+        );
+        return;
+    }
+
+    Chef chefLoggato = gestioneController.getChefLoggato();
+    if (chefLoggato == null || corso.getCodfiscaleFondatore() == null
+            || !chefLoggato.getCodFiscale().equals(corso.getCodfiscaleFondatore())) {
+        StyleHelper.showErrorDialog(
+            "🔒 Permessi Insufficienti",
+            "Solo il fondatore del corso può rimuovere altri chef.\n\n" + 
+            "👑 Fondatore: " + getNomeFondatore()
+        );
+        return;
+    }
+
+    // ✅ USA LA NUOVA DIALOG CUSTOM
+    StyleHelper.showCustomConfirmationDialog(
+        "Rimuovi Chef",
+        "Rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?\n\n⚠️ Questa azione è irreversibile.",
+        () -> {
+            try {
+                gestioneController.rimuoviChefDaCorso(corso, chef);
+                corso.getChef().remove(chef);
+                chefListView.getItems().remove(chef);
+                refreshChefListView();
+                StyleHelper.showSuccessDialog(
+                    "✅ Chef Rimosso",
+                    chef.getNome() + " " + chef.getCognome() + " è stato rimosso con successo."
+                );
+            } catch (ValidationException ex) {
+                StyleHelper.showValidationDialog("⚠️ Errore Validazione", ex.getMessage());
+            } catch (DataAccessException ex) {
+                StyleHelper.showErrorDialog("❌ Errore Database", ex.getMessage());
+            }
+        }
+    );
+    }
+
+
 
     private void aggiungiChef(Chef chef, String password) {
         if (!editable || isCorsoFinito()) return;
