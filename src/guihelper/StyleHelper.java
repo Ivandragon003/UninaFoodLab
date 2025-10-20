@@ -516,7 +516,8 @@ public final class StyleHelper {
     fadeIn.play();
 
     dialogStage.showAndWait();
-	}
+}
+
 
 
 
