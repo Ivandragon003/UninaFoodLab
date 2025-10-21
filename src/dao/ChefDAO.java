@@ -113,8 +113,8 @@ public class ChefDAO {
 
 	private Chef mapResultSetToChef(ResultSet rs) throws SQLException {
 		Chef c = new Chef(rs.getString("codFiscale"), rs.getString("nome"), rs.getString("cognome"),
-				rs.getBoolean("disponibilita"), rs.getString("username"), rs.getString("password") // leggo la password
-																									// dal DB
+				rs.getBoolean("disponibilita"), rs.getString("username"), rs.getString("password")
+																								
 		);
 		c.setAnniEsperienza(rs.getInt("anniEsperienza"));
 		Date data = rs.getDate("dataNascita");

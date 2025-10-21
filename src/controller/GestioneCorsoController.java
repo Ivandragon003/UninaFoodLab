@@ -2,7 +2,6 @@ package controller;
 
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
-import exceptions.ErrorMessages;
 import model.CorsoCucina;
 import model.Chef;
 import service.GestioneCorsiCucina;
@@ -32,23 +31,20 @@ public class GestioneCorsoController {
     }
 
     public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
-
-        if (chefLoggato == null) {
+        if (chefLoggato == null)
             throw new ValidationException("Nessun chef loggato. Impossibile creare il corso.");
-        }
 
         corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
         corsiService.creaCorso(corso);
     }
 
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) throws ValidationException, DataAccessException {
+    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password) 
+            throws ValidationException, DataAccessException {
         corsiService.aggiungiChefACorso(corso, chef, password);
     }
 
-    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
-        if (chef == null) throw new ValidationException(ErrorMessages.CHEF_NULLO);
-        if (corso == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
+    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef)
+            throws ValidationException, DataAccessException {
         corsiService.rimuoviChefDaCorso(chef, corso);
     }
 
@@ -56,16 +52,12 @@ public class GestioneCorsoController {
         corsiService.cancellaCorso(idCorso);
     }
 
-    public void modificaCorso(CorsoCucina corsoAggiornato) throws ValidationException, DataAccessException {
-        if (corsoAggiornato == null) throw new ValidationException(ErrorMessages.CORSO_NULLO);
+    public void modificaCorso(CorsoCucina corsoAggiornato)
+            throws ValidationException, DataAccessException {
         corsiService.aggiornaCorso(corsoAggiornato);
     }
 
     public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
         return corsiService.getCorsoCompleto(idCorso);
     }
-
-    
-    
-    
 }

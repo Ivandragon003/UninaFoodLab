@@ -12,6 +12,7 @@ import model.*;
 import guihelper.StyleHelper;
 import controller.RicettaController;
 import controller.IngredienteController;
+import guihelper.ValidationHelper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -47,8 +48,8 @@ public class CreaSessioniGUI extends Stage {
 			Set<LocalDate> dateOccupate, RicettaController ricettaController,
 			IngredienteController ingredienteController) {
 
-		if (corsoInizio == null || corsoFine == null || frequenzaCorso == null || 
-		    ricettaController == null || ingredienteController == null) {
+		if (corsoInizio == null || corsoFine == null || frequenzaCorso == null || ricettaController == null
+				|| ingredienteController == null) {
 			throw new IllegalArgumentException("Parametri obbligatori mancanti");
 		}
 
@@ -88,16 +89,8 @@ public class CreaSessioniGUI extends Stage {
 		scroll.setStyle("-fx-background: transparent;");
 
 		VBox form = StyleHelper.createSection();
-		form.getChildren().addAll(
-			createDateSection(), 
-			new Separator(), 
-			createTipoSection(), 
-			createCampiSection(),
-			new Separator(), 
-			createRicetteSection(), 
-			new Separator(), 
-			createButtonSection()
-		);
+		form.getChildren().addAll(createDateSection(), new Separator(), createTipoSection(), createCampiSection(),
+				new Separator(), createRicetteSection(), new Separator(), createButtonSection());
 
 		scroll.setContent(form);
 		main.getChildren().addAll(title, scroll);
@@ -187,24 +180,17 @@ public class CreaSessioniGUI extends Stage {
 	}
 
 	private DateValidationResult validateDate(LocalDate d) {
-		LocalDate lastSessionDate = dateOccupate.stream()
-			.max(LocalDate::compareTo)
-			.orElse(null);
+		LocalDate lastSessionDate = dateOccupate.stream().max(LocalDate::compareTo).orElse(null);
 
 		return switch (frequenzaCorso) {
-			case unica -> new DateValidationResult(
-				dateOccupate.isEmpty(), 
-				"Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni"
-			);
-			case giornaliero -> new DateValidationResult(
-				lastSessionDate == null ? 
-					!d.isBefore(corsoInizio) && !d.isAfter(corsoFine) :
-					d.isAfter(lastSessionDate) && !d.isAfter(corsoFine),
-				"Data non disponibile"
-			);
-			case ogniDueGiorni -> validateOgniDueGiorni(d, lastSessionDate);
-			case settimanale -> validateSettimanale(d, lastSessionDate);
-			case mensile -> validateMensile(d, lastSessionDate);
+		case unica -> new DateValidationResult(dateOccupate.isEmpty(),
+				"Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni");
+		case giornaliero ->
+			new DateValidationResult(lastSessionDate == null ? !d.isBefore(corsoInizio) && !d.isAfter(corsoFine)
+					: d.isAfter(lastSessionDate) && !d.isAfter(corsoFine), "Data non disponibile");
+		case ogniDueGiorni -> validateOgniDueGiorni(d, lastSessionDate);
+		case settimanale -> validateSettimanale(d, lastSessionDate);
+		case mensile -> validateMensile(d, lastSessionDate);
 		};
 	}
 
@@ -213,10 +199,8 @@ public class CreaSessioniGUI extends Stage {
 			return new DateValidationResult(!d.isBefore(corsoInizio) && !d.isAfter(corsoFine), "");
 		}
 		long diff = ChronoUnit.DAYS.between(lastDate, d);
-		return new DateValidationResult(
-			diff >= 2 && !d.isAfter(corsoFine),
-			"Richiede almeno 2 giorni di distanza dall'ultima sessione"
-		);
+		return new DateValidationResult(diff >= 2 && !d.isAfter(corsoFine),
+				"Richiede almeno 2 giorni di distanza dall'ultima sessione");
 	}
 
 	private DateValidationResult validateSettimanale(LocalDate d, LocalDate lastDate) {
@@ -225,10 +209,8 @@ public class CreaSessioniGUI extends Stage {
 		}
 		LocalDate nextMonday = lastDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
 		LocalDate endWeek = nextMonday.plusDays(6);
-		return new DateValidationResult(
-			!d.isBefore(nextMonday) && !d.isAfter(endWeek),
-			"La sessione settimanale deve essere nella settimana " + nextMonday + " - " + endWeek
-		);
+		return new DateValidationResult(!d.isBefore(nextMonday) && !d.isAfter(endWeek),
+				"La sessione settimanale deve essere nella settimana " + nextMonday + " - " + endWeek);
 	}
 
 	private DateValidationResult validateMensile(LocalDate d, LocalDate lastDate) {
@@ -236,10 +218,8 @@ public class CreaSessioniGUI extends Stage {
 			return new DateValidationResult(!d.isBefore(corsoInizio) && !d.isAfter(corsoFine), "");
 		}
 		LocalDate nextMonth = lastDate.plusMonths(1);
-		return new DateValidationResult(
-			!d.isBefore(nextMonth) && !d.isAfter(corsoFine),
-			"La sessione mensile deve essere almeno un mese dopo l'ultima"
-		);
+		return new DateValidationResult(!d.isBefore(nextMonth) && !d.isAfter(corsoFine),
+				"La sessione mensile deve essere almeno un mese dopo l'ultima");
 	}
 
 	private static class DateValidationResult {
@@ -289,10 +269,7 @@ public class CreaSessioniGUI extends Stage {
 		VBox box = new VBox(10);
 		box.setId("onlineFields");
 		piattaformaField = StyleHelper.createTextField("Es. Zoom, Teams, Google Meet");
-		box.getChildren().addAll(
-			StyleHelper.createLabel("🌐 Dettagli Online"),
-			piattaformaField
-		);
+		box.getChildren().addAll(StyleHelper.createLabel("🌐 Dettagli Online"), piattaformaField);
 		return box;
 	}
 
@@ -307,10 +284,8 @@ public class CreaSessioniGUI extends Stage {
 		postiField = StyleHelper.createTextField("Numero posti");
 		capField = StyleHelper.createTextField("CAP");
 
-		box.getChildren().addAll(
-			StyleHelper.createLabel("🏢 Dettagli In Presenza"),
-			viaField, cittaField, postiField, capField
-		);
+		box.getChildren().addAll(StyleHelper.createLabel("🏢 Dettagli In Presenza"), viaField, cittaField, postiField,
+				capField);
 		return box;
 	}
 
@@ -334,7 +309,7 @@ public class CreaSessioniGUI extends Stage {
 
 		Label info = StyleHelper.createLabel("💡 Le sessioni in presenza richiedono almeno una ricetta");
 		info.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; "
-			+ "-fx-padding: 8; -fx-background-radius: 5;");
+				+ "-fx-padding: 8; -fx-background-radius: 5;");
 
 		box.getChildren().addAll(title, selezionaRicetteBtn, ricetteLabel, ricetteListView, info);
 		return box;
@@ -344,7 +319,7 @@ public class CreaSessioniGUI extends Stage {
 		ListView<Ricetta> listView = new ListView<>();
 		listView.setPrefHeight(150);
 		listView.setStyle("-fx-background-color: #f8f9fa; -fx-background-radius: 12; "
-			+ "-fx-border-color: #28a745; -fx-border-width: 2; -fx-border-radius: 12;");
+				+ "-fx-border-color: #28a745; -fx-border-width: 2; -fx-border-radius: 12;");
 
 		listView.setCellFactory(lv -> new ListCell<>() {
 			@Override
@@ -368,7 +343,7 @@ public class CreaSessioniGUI extends Stage {
 		cell.setAlignment(Pos.CENTER_LEFT);
 		cell.setPadding(new Insets(8));
 		cell.setStyle("-fx-background-color: white; -fx-background-radius: 8; "
-			+ "-fx-border-color: #28a745; -fx-border-width: 1; -fx-border-radius: 8;");
+				+ "-fx-border-color: #28a745; -fx-border-width: 1; -fx-border-radius: 8;");
 
 		Label icon = new Label("🍽️");
 		icon.setStyle("-fx-font-size: 16px;");
@@ -376,8 +351,8 @@ public class CreaSessioniGUI extends Stage {
 		VBox info = new VBox(3);
 		Label name = new Label(ricetta.getNome());
 		name.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-		Label details = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 " 
-			+ ricetta.getNumeroIngredienti() + " ingredienti");
+		Label details = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 " + ricetta.getNumeroIngredienti()
+				+ " ingredienti");
 		details.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
 		info.getChildren().addAll(name, details);
 
@@ -386,7 +361,7 @@ public class CreaSessioniGUI extends Stage {
 
 		Button remove = new Button("❌");
 		remove.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; "
-			+ "-fx-padding: 5 10; -fx-border-radius: 5; -fx-cursor: hand; -fx-font-size: 12px;");
+				+ "-fx-padding: 5 10; -fx-border-radius: 5; -fx-cursor: hand; -fx-font-size: 12px;");
 		remove.setTooltip(new Tooltip("Rimuovi ricetta"));
 		remove.setOnAction(e -> {
 			ricetteSelezionate.remove(ricetta);
@@ -399,7 +374,7 @@ public class CreaSessioniGUI extends Stage {
 
 	private void aggiornaListaRicette() {
 		ricetteListView.getItems().setAll(ricetteSelezionate);
-		
+
 		if (ricetteSelezionate.isEmpty()) {
 			ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
 			ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
@@ -413,7 +388,7 @@ public class CreaSessioniGUI extends Stage {
 		try {
 			VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(ricettaController, ingredienteController);
 			dialog.initOwner(this);
-			
+
 			if (!ricetteSelezionate.isEmpty()) {
 				dialog.preSelezionaRicette(ricetteSelezionate);
 			}
@@ -423,13 +398,13 @@ public class CreaSessioniGUI extends Stage {
 				ricetteSelezionate.clear();
 				ricetteSelezionate.addAll(scelte);
 				aggiornaListaRicette();
-				
+
 				if (!scelte.isEmpty()) {
-					StyleHelper.showSuccessDialog("Successo", 
-						"✅ Selezionate " + scelte.size() + " ricette per la sessione!");
+					StyleHelper.showSuccessDialog("Successo", "✅ Selezionate " + scelte.size() + " ricette!");
 				}
 			}
 		} catch (Exception e) {
+			// ✅ Gestione unificata
 			StyleHelper.showErrorDialog("Errore", "❌ Errore nell'apertura del dialog: " + e.getMessage());
 		}
 	}
@@ -487,19 +462,13 @@ public class CreaSessioniGUI extends Stage {
 				return;
 			}
 
-			// Validazione orari
+			// Costruzione orari
 			LocalTime oraInizio = LocalTime.of(oraInizioBox.getValue(), minutiInizioBox.getValue());
 			LocalTime oraFine = LocalTime.of(oraFineBox.getValue(), minutiFineBox.getValue());
-
-			if (!oraFine.isAfter(oraInizio)) {
-				StyleHelper.showValidationDialog("Validazione", "⚠️ L'ora di fine deve essere dopo l'inizio");
-				return;
-			}
-
 			LocalDateTime dataInizio = LocalDateTime.of(datePicker.getValue(), oraInizio);
 			LocalDateTime dataFine = LocalDateTime.of(datePicker.getValue(), oraFine);
 
-			// Creazione sessione basata sul tipo
+			// Creazione sessione
 			if ("Online".equals(tipoCombo.getValue())) {
 				sessioneCreata = creaSessioneOnline(dataInizio, dataFine);
 			} else {
@@ -509,31 +478,26 @@ public class CreaSessioniGUI extends Stage {
 			close();
 
 		} catch (IllegalArgumentException e) {
-			// Le validazioni dei model lanciano IllegalArgumentException
+			// ✅ Gestione unificata: validazioni model + ValidationHelper
 			StyleHelper.showValidationDialog("Validazione", "⚠️ " + e.getMessage());
 		} catch (Exception e) {
+			// ✅ Gestione unificata: errori imprevisti
 			StyleHelper.showErrorDialog("Errore", "❌ Errore: " + e.getMessage());
 		}
 	}
 
 	private Online creaSessioneOnline(LocalDateTime inizio, LocalDateTime fine) {
-		String piattaforma = piattaformaField.getText().trim();
-		// La validazione è gestita dal costruttore di Online
+		String piattaforma = ValidationHelper.validateString(piattaformaField.getText(), "piattaforma");
 		return new Online(inizio, fine, piattaforma);
 	}
 
 	private InPresenza creaSessioneInPresenza(LocalDateTime inizio, LocalDateTime fine) {
-		if (ricetteSelezionate.isEmpty()) {
-			throw new IllegalArgumentException("Le sessioni in presenza richiedono almeno una ricetta");
-		}
+		String via = ValidationHelper.validateString(viaField.getText(), "via");
+		String citta = ValidationHelper.validateString(cittaField.getText(), "città");
 
-		String via = viaField.getText().trim();
-		String citta = cittaField.getText().trim();
-		
-		int posti = parseIntegerField(postiField.getText(), "posti", 1, 1000);
-		int cap = parseIntegerField(capField.getText(), "CAP", 10000, 99999);
+		int posti = ValidationHelper.parseInteger(postiField.getText(), "posti", 1, 1000);
+		int cap = ValidationHelper.parseInteger(capField.getText(), "CAP", 10000, 99999);
 
-		// Le validazioni sono gestite dal costruttore di InPresenza
 		InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
 		sessione.getRicette().addAll(ricetteSelezionate);
 
@@ -544,13 +508,11 @@ public class CreaSessioniGUI extends Stage {
 		if (value == null || value.trim().isEmpty()) {
 			throw new IllegalArgumentException("Il campo " + fieldName + " è obbligatorio");
 		}
-		
+
 		try {
 			int parsed = Integer.parseInt(value.trim());
 			if (parsed < min || parsed > max) {
-				throw new IllegalArgumentException(
-					fieldName + " deve essere tra " + min + " e " + max
-				);
+				throw new IllegalArgumentException(fieldName + " deve essere tra " + min + " e " + max);
 			}
 			return parsed;
 		} catch (NumberFormatException e) {

@@ -15,7 +15,7 @@ public class CorsoCucinaDAO {
     public int save(CorsoCucina corso) throws SQLException {
         String sql = "INSERT INTO corsocucina "
                 + "(nomecorso, argomento, frequenzacorso, prezzo, numeroposti, " 
-                + "datainiziocorso, datafinecorso, codfiscalefondatore) "  // ✅ AGGIUNTO
+                + "datainiziocorso, datafinecorso, codfiscalefondatore) "  
                 + "VALUES (?, ?, ?::frequenza, ?, ?, ?, ?, ?) RETURNING idcorsocucina";
 
         try (Connection conn = DBConnection.getConnection(); 
@@ -37,7 +37,7 @@ public class CorsoCucinaDAO {
             else
                 ps.setNull(7, Types.TIMESTAMP);
 
-            // ✅ NUOVO: Salva codice fiscale fondatore
+          
             ps.setString(8, corso.getCodfiscaleFondatore());
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -54,7 +54,7 @@ public class CorsoCucinaDAO {
     public void update(CorsoCucina corso) throws SQLException {
         String sql = "UPDATE corsocucina SET nomecorso = ?, argomento = ?, frequenzacorso = ?::frequenza, "
                 + "prezzo = ?, numeroposti = ?, datainiziocorso = ?, datafinecorso = ?, "
-                + "codfiscalefondatore = ? "  // ✅ AGGIUNTO
+                + "codfiscalefondatore = ? "  
                 + "WHERE idcorsocucina = ?";
 
         try (Connection conn = DBConnection.getConnection(); 
@@ -76,9 +76,9 @@ public class CorsoCucinaDAO {
             else
                 ps.setNull(7, Types.TIMESTAMP);
 
-            // ✅ NUOVO: Aggiorna fondatore
+         
             ps.setString(8, corso.getCodfiscaleFondatore());
-            ps.setInt(9, corso.getIdCorso());  // WHERE clause
+            ps.setInt(9, corso.getIdCorso());  
             
             ps.executeUpdate();
         }
@@ -153,7 +153,7 @@ public class CorsoCucinaDAO {
         CorsoCucina corso = new CorsoCucina(nome, prezzo, argomento, freq, numeroPosti);
         corso.setIdCorso(rs.getInt("idcorsocucina"));
 
-        // ✅ NUOVO: Leggi codice fiscale fondatore dal database
+    
         corso.setCodfiscaleFondatore(rs.getString("codfiscalefondatore"));
 
         Timestamp tsInizio = rs.getTimestamp("datainiziocorso");

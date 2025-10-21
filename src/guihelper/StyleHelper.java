@@ -536,21 +536,32 @@ public final class StyleHelper {
 		return createWindowButton(icon, action, color);
 	}
 
-	// ✅ NUOVO: Unifica gestione stili TextField
-	public static void applyErrorState(TextInputControl field) {
-		if (field != null) {
-			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
-					+ ERROR_RED + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
-					+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 6, 0, 0, 2);");
-		}
-	}
 
-	public static void applyNormalState(TextInputControl field) {
-		if (field != null) {
-			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
-					+ BORDER_LIGHT + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
-					+ "-fx-font-size: 14px;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
-		}
-	}
+public static void applyErrorState(TextInputControl field) {
+    if (field != null) {
+        field.setStyle("-fx-background-color: white;" 
+            + "-fx-background-radius: 12;" 
+            + "-fx-border-color: " + ERROR_RED + ";" 
+            + "-fx-border-width: 2;" 
+            + "-fx-border-radius: 12;" 
+            + "-fx-padding: 10 15;"
+            + "-fx-font-size: 14px;" 
+            + "-fx-text-fill: " + TEXT_BLACK + ";"  
+            + "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 6, 0, 0, 2);");
+    }
+}
 
+public static void applyNormalState(TextInputControl field) {
+    if (field != null) {
+        field.setStyle("-fx-background-color: white;" 
+            + "-fx-background-radius: 12;" 
+            + "-fx-border-color: " + BORDER_LIGHT + ";" 
+            + "-fx-border-width: 2;" 
+            + "-fx-border-radius: 12;" 
+            + "-fx-padding: 10 15;"
+            + "-fx-font-size: 14px;" 
+            + "-fx-text-fill: " + TEXT_BLACK + ";" 
+            + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
+    }
+}
 }

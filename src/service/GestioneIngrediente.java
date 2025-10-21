@@ -24,7 +24,7 @@ public class GestioneIngrediente {
 		try {
 			ingredienteDAO.save(ingrediente);
 
-			// tentativo di recuperare l'id: cerchiamo un match per nome (case-insensitive)
+		
 			List<Ingrediente> tutti = ingredienteDAO.getAll();
 			return tutti.stream()
 					.filter(i -> i.getNome() != null && i.getNome().equalsIgnoreCase(ingrediente.getNome()))

@@ -46,7 +46,6 @@ public class UsaDAO {
         }
     }
 
-    // Nuovo metodo: cancella usando direttamente gli id (evita di creare Usa con quantita=0)
     public void deleteByRicettaIdAndIngredienteId(int idRicetta, int idIngrediente) throws SQLException {
         String sql = "DELETE FROM Usa WHERE idRicetta = ? AND idIngrediente = ?";
         try (Connection conn = DBConnection.getConnection();
