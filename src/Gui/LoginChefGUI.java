@@ -187,7 +187,7 @@ public class LoginChefGUI extends Application {
 		Button closeButton = StyleHelper.createWindowButton("✕", () -> stage.close(), StyleHelper.ERROR_RED);
 		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
 				"rgba(255,140,0,0.5)");
-		Button maximizeButton = StyleHelper.createWindowButton("□", () -> stage.setMaximized(!stage.isMaximized()),
+		Button maximizeButton = StyleHelper.createWindowButton("", () -> stage.setMaximized(!stage.isMaximized()),
 				"rgba(255,140,0,0.5)");
 
 		HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);

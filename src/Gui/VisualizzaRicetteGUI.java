@@ -344,7 +344,7 @@ public class VisualizzaRicetteGUI {
     eliminaBtn.setPrefWidth(140);
     eliminaBtn.setOnAction(e -> {
         StyleHelper.showCustomConfirmationDialog(
-            "⚠️ Conferma Eliminazione",
+            "Conferma Eliminazione",
             String.format("Sei sicuro di voler eliminare '%s'?", ricetta.getNome()),
             () -> {
                 try {

@@ -312,7 +312,7 @@ public class ChefMenuGUI {
 		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
 		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
 				"rgba(255,107,53,0.8)");
-		Button maximizeButton = StyleHelper.createWindowButton("□", () -> stage.setMaximized(!stage.isMaximized()),
+		Button maximizeButton = StyleHelper.createWindowButton("", () -> stage.setMaximized(!stage.isMaximized()),
 				"rgba(255,107,53,0.8)");
 
 		HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);

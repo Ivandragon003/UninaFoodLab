@@ -509,7 +509,7 @@ public class CreaRicettaGUI {
 
     removeBtn.setOnAction(e -> {
         StyleHelper.showCustomConfirmationDialog(
-            "⚠️ Rimuovi Ingrediente",
+            "Rimuovi Ingrediente",
             String.format("Sei sicuro di voler rimuovere '%s' dalla ricetta?", ing.getNome()),
             () -> {
                 ingredientiMap.remove(ing);

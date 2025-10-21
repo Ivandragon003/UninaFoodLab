@@ -297,77 +297,95 @@ public final class StyleHelper {
 	}
 
 	public static void showCustomConfirmationDialog(String title, String message, Runnable onConfirm) {
-		Stage dialogStage = new Stage();
-		dialogStage.initModality(Modality.APPLICATION_MODAL);
-		dialogStage.initStyle(StageStyle.TRANSPARENT);
-		dialogStage.setResizable(false);
+    Stage dialogStage = new Stage();
+    dialogStage.initModality(Modality.APPLICATION_MODAL);
+    dialogStage.initStyle(StageStyle.TRANSPARENT);
+    dialogStage.setResizable(false);
 
-		VBox content = new VBox(20);
-		content.setPadding(new Insets(30));
-		content.setAlignment(Pos.CENTER);
-		content.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 20;" + "-fx-border-color: "
-				+ ERROR_RED + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 15, 0, 0, 6);");
+    VBox content = new VBox(20);
+    content.setPadding(new Insets(30));
+    content.setAlignment(Pos.CENTER);
+    content.setStyle(
+        "-fx-background-color: " + BG_WHITE + ";" +
+        "-fx-background-radius: 20;" +
+        "-fx-border-color: " + ERROR_RED + ";" +
+        "-fx-border-width: 3;" +
+        "-fx-border-radius: 20;" +
+        "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 15, 0, 0, 6);"
+    );
 
-		Label iconLabel = new Label("⚠️");
-		iconLabel.setStyle("-fx-font-size: 48px;");
-		iconLabel.setAlignment(Pos.CENTER);
+    StackPane iconContainer = new StackPane();
+    iconContainer.setPrefSize(80, 80);
+    iconContainer.setMaxSize(80, 80);
+    iconContainer.setMinSize(80, 80);
+    iconContainer.setStyle(
+        "-fx-background-color: " + ERROR_RED + ";" +
+        "-fx-background-radius: 40;" +
+        "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.4), 10, 0, 0, 3);"
+    );
 
-		Label titleLabel = new Label(title);
-		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
-		titleLabel.setTextFill(Color.web(ERROR_RED));
-		titleLabel.setAlignment(Pos.CENTER);
+    Label iconLabel = new Label("✕");
+    iconLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 48));
+    iconLabel.setTextFill(Color.WHITE);
+    iconLabel.setAlignment(Pos.CENTER);
+    
+    iconContainer.getChildren().add(iconLabel);
 
-		Label messageLabel = new Label(message);
-		messageLabel.setWrapText(true);
-		messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
-		messageLabel.setTextFill(Color.web(TEXT_GRAY));
-		messageLabel.setAlignment(Pos.CENTER);
-		messageLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-		messageLabel.setMaxWidth(javafx.stage.Screen.getPrimary().getVisualBounds().getWidth() * 0.4);
+    Label titleLabel = new Label(title);
+    titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
+    titleLabel.setTextFill(Color.web(ERROR_RED));
+    titleLabel.setAlignment(Pos.CENTER);
 
-		HBox buttonsBox = new HBox(15);
-		buttonsBox.setAlignment(Pos.CENTER);
+    Label messageLabel = new Label(message);
+    messageLabel.setWrapText(true);
+    messageLabel.setFont(Font.font("Segoe UI", FontWeight.NORMAL, 15));
+    messageLabel.setTextFill(Color.web(TEXT_GRAY));
+    messageLabel.setAlignment(Pos.CENTER);
+    messageLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+    messageLabel.setMaxWidth(javafx.stage.Screen.getPrimary().getVisualBounds().getWidth() * 0.4);
 
-		Button confirmButton = createStyledButton("Sì", SUCCESS_GREEN, "#FFFFFF");
-		confirmButton.setPrefWidth(150);
-		confirmButton.setOnAction(e -> {
-			dialogStage.close();
-			// ✅ ESEGUI IL CALLBACK DOPO CHE LA DIALOG È COMPLETAMENTE CHIUSA
-			if (onConfirm != null) {
-				javafx.application.Platform.runLater(() -> {
-					try {
-						onConfirm.run();
-					} catch (Exception ex) {
-						System.err.println("Errore nel callback di conferma: " + ex.getMessage());
-						ex.printStackTrace();
-					}
-				});
-			}
-		});
+    HBox buttonsBox = new HBox(15);
+    buttonsBox.setAlignment(Pos.CENTER);
 
-		Button cancelButton = createStyledButton("No", ERROR_RED, "#FFFFFF");
-		cancelButton.setPrefWidth(150);
-		cancelButton.setOnAction(e -> dialogStage.close());
+    Button confirmButton = createStyledButton("Sì", SUCCESS_GREEN, "#FFFFFF");
+    confirmButton.setPrefWidth(150);
+    confirmButton.setOnAction(e -> {
+        dialogStage.close();
+        if (onConfirm != null) {
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    onConfirm.run();
+                } catch (Exception ex) {
+                    System.err.println("Errore nel callback di conferma: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
+            });
+        }
+    });
 
-		buttonsBox.getChildren().addAll(confirmButton, cancelButton);
+    Button cancelButton = createStyledButton("No", ERROR_RED, "#FFFFFF");
+    cancelButton.setPrefWidth(150);
+    cancelButton.setOnAction(e -> dialogStage.close());
 
-		content.getChildren().addAll(iconLabel, titleLabel, messageLabel, buttonsBox);
+    buttonsBox.getChildren().addAll(confirmButton, cancelButton);
 
-		StackPane root = new StackPane(content);
-		root.setStyle("-fx-background-color: transparent;");
-		Scene scene = new Scene(root);
-		scene.setFill(Color.TRANSPARENT);
-		dialogStage.setScene(scene);
+    content.getChildren().addAll(iconContainer, titleLabel, messageLabel, buttonsBox);
 
-		content.setOpacity(0);
-		FadeTransition fadeIn = new FadeTransition(Duration.millis(300), content);
-		fadeIn.setFromValue(0.0);
-		fadeIn.setToValue(1.0);
-		fadeIn.play();
+    StackPane root = new StackPane(content);
+    root.setStyle("-fx-background-color: transparent;");
+    Scene scene = new Scene(root);
+    scene.setFill(Color.TRANSPARENT);
+    dialogStage.setScene(scene);
 
-		dialogStage.showAndWait();
-	}
+    content.setOpacity(0);
+    FadeTransition fadeIn = new FadeTransition(Duration.millis(300), content);
+    fadeIn.setFromValue(0.0);
+    fadeIn.setToValue(1.0);
+    fadeIn.play();
+
+    dialogStage.showAndWait();
+}
+
 
 	public static void showUnsavedChangesDialog(String title, String message, Runnable onSaveAndClose,
 			Runnable onCloseWithoutSaving) {
