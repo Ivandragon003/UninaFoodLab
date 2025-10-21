@@ -29,7 +29,7 @@ public class CreaCorsoGUI {
 	private static final int DEFAULT_END_HOUR = 17;
 	private static final int DEFAULT_END_MINUTE = 0;
 
-	private final GestioneCorsoController corsoController;
+	
 	private final ChefController chefController;
 	private final RicettaController ricettaController;
 	private final IngredienteController ingredienteController;
@@ -59,7 +59,6 @@ public class CreaCorsoGUI {
 
 	public CreaCorsoGUI(GestioneCorsoController corsoController, ChefController chefController,
 			RicettaController ricettaController, IngredienteController ingredienteController) {
-		this.corsoController = corsoController;
 		this.chefController = chefController;
 		this.ricettaController = ricettaController;
 		this.ingredienteController = ingredienteController;

@@ -13,6 +13,7 @@ abstract public class Persona {
 	private LocalDate dataNascita;
 
 	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+	private static final Pattern CF_PATTERN = Pattern.compile("^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$");
 
 	public Persona(String codFiscale, String nome, String cognome) {
 		setCodFiscale(codFiscale);
@@ -25,19 +26,19 @@ abstract public class Persona {
 	}
 
 	public void setCodFiscale(String codFiscale) {
-	    if (codFiscale == null || codFiscale.isBlank()) {
-	        throw new IllegalArgumentException("Codice fiscale non può essere nullo o vuoto");
-	    }
-	    
-	    codFiscale = codFiscale.trim().toUpperCase();
-	    
-	    if (!ValidationHelper.isValidCodiceFiscale(codFiscale)) {
-	        throw new IllegalArgumentException("Formato codice fiscale non valido (deve essere formato italiano)");
-	    }
+		if (codFiscale == null || codFiscale.isBlank()) {
+			throw new IllegalArgumentException("Codice fiscale non può essere nullo o vuoto");
+		}
 
-	    this.codFiscale = codFiscale;
+		codFiscale = codFiscale.trim().toUpperCase();
+
+		if (codFiscale.length() != 16 || !CF_PATTERN.matcher(codFiscale).matches()) {
+			throw new IllegalArgumentException(
+					"Formato codice fiscale non valido: deve essere lungo 16 caratteri e rispettare il pattern italiano");
+		}
+
+		this.codFiscale = codFiscale;
 	}
-
 
 	public String getNome() {
 		return nome;
@@ -105,10 +106,10 @@ abstract public class Persona {
 	public String toStringDataNascita() {
 		return "Data di Nascita: " + dataNascita;
 	}
-	
+
 	@Override
 	public String toString() {
-	    return getNome() + " " + getCognome();
+		return getNome() + " " + getCognome();
 	}
 
 }

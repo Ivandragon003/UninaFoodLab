@@ -7,8 +7,6 @@ import guihelper.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.DataAccessException;
 import javafx.animation.TranslateTransition;
-import javafx.animation.FillTransition;
-import javafx.animation.ParallelTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -27,7 +25,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import model.Chef;
-import model.Ricetta;
+
 
 public class ChefMenuGUI {
 
@@ -45,15 +43,11 @@ public class ChefMenuGUI {
 	private OnlineDAO onlineDAO;
 	private InPresenzaDAO inPresenzaDAO;
 	private RicettaDAO ricettaDAO;
-	private IngredienteDAO ingredienteDAO;
-	private UsaDAO usaDAO;
 	private CucinaDAO cucinaDAO;
 
 	private GestioneCorsiCucina gestioneCorsiService;
 	private GestioneChef gestioneChefService;
 	private GestioneRicette gestioneRicetteService;
-	private GestioneIngrediente gestioneIngredienteService;
-	private GestioneUsa gestioneUsaService;
 	private GestioneCucina gestioneCucinaService;
 	private GestioneSessioni gestioneSessioniService;
 
@@ -107,8 +101,6 @@ public class ChefMenuGUI {
 		this.cucinaDAO = new CucinaDAO();
 		this.inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
 		this.ricettaDAO = new RicettaDAO();
-		this.ingredienteDAO = new IngredienteDAO();
-		this.usaDAO = new UsaDAO();
 	}
 
 	private void inizializzaServices() {
@@ -120,8 +112,7 @@ public class ChefMenuGUI {
 				inPresenzaDAO, gestioneRicetteService, gestioneCucinaService);
 
 		this.gestioneChefService = new GestioneChef(chefDAO, tieneDAO);
-		this.gestioneIngredienteService = new GestioneIngrediente(ingredienteDAO);
-		this.gestioneUsaService = new GestioneUsa(usaDAO, ingredienteDAO);
+		
 
 		this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
 	}

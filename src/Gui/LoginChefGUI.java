@@ -1,24 +1,19 @@
 package Gui;
 
 import controller.ChefController;
-import controller.GestioneCorsoController;
 import controller.RicettaController;
-import controller.VisualizzaCorsiController;
 import dao.CucinaDAO;
 import dao.IngredienteDAO;
 import dao.RicettaDAO;
 import dao.UsaDAO;
-
 import service.GestioneCorsiCucina;
 import service.GestioneCucina;
 import service.GestioneIngrediente;
 import service.GestioneRicette;
 import service.GestioneUsa;
 import util.DBConnection;
-
 import guihelper.StyleHelper;
 import guihelper.ValidationHelper;
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,7 +25,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import model.Chef;
 import exceptions.*;
 
@@ -47,43 +41,43 @@ public class LoginChefGUI extends Application {
 		chefController = controller;
 		corsiService = corsiServiceArg;
 	}
-	
+
 	@Override
-public void start(Stage primaryStage) {
-    if (chefController == null || corsiService == null) {
-        throw new IllegalStateException("Controller o Service non inizializzati");
-    }
+	public void start(Stage primaryStage) {
+		if (chefController == null || corsiService == null) {
+			throw new IllegalStateException("Controller o Service non inizializzati");
+		}
 
-    if (!primaryStage.isShowing()) {
-        primaryStage.initStyle(StageStyle.UNDECORATED);
-    }
-    primaryStage.setTitle("Chef Login - UninaFoodLab");
+		if (!primaryStage.isShowing()) {
+			primaryStage.initStyle(StageStyle.UNDECORATED);
+		}
+		primaryStage.setTitle("Chef Login - UninaFoodLab");
 
-    StackPane root = new StackPane();
-    root.setPrefSize(600, 650);
+		StackPane root = new StackPane();
+		root.setPrefSize(600, 650);
 
-    Region background = new Region();
-    StyleHelper.applyBackgroundGradient(background);
-    background.setPrefSize(600, 650);
-    root.getChildren().add(background);
+		Region background = new Region();
+		StyleHelper.applyBackgroundGradient(background);
+		background.setPrefSize(600, 650);
+		root.getChildren().add(background);
 
-    contentPane = new StackPane();
-    VBox loginCard = createLoginCard();
-    contentPane.getChildren().add(loginCard);
-    root.getChildren().add(contentPane);
+		contentPane = new StackPane();
+		VBox loginCard = createLoginCard();
+		contentPane.getChildren().add(loginCard);
+		root.getChildren().add(contentPane);
 
-    HBox windowButtons = createWindowButtons(primaryStage);
-    root.getChildren().add(windowButtons);
-    StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
-    StackPane.setMargin(windowButtons, new Insets(10));
+		HBox windowButtons = createWindowButtons(primaryStage);
+		root.getChildren().add(windowButtons);
+		StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+		StackPane.setMargin(windowButtons, new Insets(10));
 
-    makeDraggable(root, primaryStage);
+		makeDraggable(root, primaryStage);
 
-    Scene scene = new Scene(root, 600, 650);
-    scene.setFill(Color.TRANSPARENT);
-    primaryStage.setScene(scene);
-    primaryStage.show();
-}
+		Scene scene = new Scene(root, 600, 650);
+		scene.setFill(Color.TRANSPARENT);
+		primaryStage.setScene(scene);
+		primaryStage.show();
+	}
 
 	@Override
 	public void stop() {
@@ -97,12 +91,12 @@ public void start(Stage primaryStage) {
 		card.setPrefSize(400, 480);
 		card.setMaxSize(400, 480);
 		card.setStyle("""
-				    -fx-background-color: white;
-				    -fx-background-radius: 25;
-				    -fx-border-radius: 25;
-				    -fx-border-color: #FF9966;
-				    -fx-border-width: 2;
-				    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
+				-fx-background-color: white;
+				-fx-background-radius: 25;
+				-fx-border-radius: 25;
+				-fx-border-color: #FF9966;
+				-fx-border-width: 2;
+				-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 4);
 				""");
 
 		Label titleLabel = new Label("🍽️ UninaFoodLab");
@@ -120,14 +114,6 @@ public void start(Stage primaryStage) {
 		errorLabel.setWrapText(true);
 		errorLabel.setAlignment(Pos.CENTER);
 		errorLabel.setMaxWidth(320);
-		errorLabel.setStyle("""
-				    -fx-background-color: #ffe6e6;
-				    -fx-padding: 10;
-				    -fx-background-radius: 10;
-				    -fx-border-color: red;
-				    -fx-border-width: 1;
-				    -fx-border-radius: 10;
-				""");
 
 		VBox formContainer = new VBox(15);
 		formContainer.setAlignment(Pos.CENTER);
@@ -174,21 +160,21 @@ public void start(Stage primaryStage) {
 
 		Region background = new Region();
 		background.setStyle("""
-				    -fx-background-color: white;
-				    -fx-background-radius: 15;
-				    -fx-border-radius: 15;
-				    -fx-border-color: #FF9966;
-				    -fx-border-width: 1.5;
+				-fx-background-color: white;
+				-fx-background-radius: 15;
+				-fx-border-radius: 15;
+				-fx-border-color: #FF9966;
+				-fx-border-width: 1.5;
 				""");
 
 		TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
 		inputField.setPromptText(placeholder);
 		inputField.setStyle("""
-				    -fx-background-color: transparent;
-				    -fx-text-fill: black;
-				    -fx-prompt-text-fill: gray;
-				    -fx-font-size: 14px;
-				    -fx-padding: 0 15 0 15;
+				-fx-background-color: transparent;
+				-fx-text-fill: black;
+				-fx-prompt-text-fill: gray;
+				-fx-font-size: 14px;
+				-fx-padding: 0 15 0 15;
 				""");
 		inputField.setPrefWidth(300);
 
@@ -198,29 +184,11 @@ public void start(Stage primaryStage) {
 	}
 
 	private HBox createWindowButtons(Stage stage) {
-		Button closeButton = new Button("✕");
-		Button minimizeButton = new Button("−");
-		Button maximizeButton = new Button("□");
-
-		Button[] buttons = { minimizeButton, maximizeButton, closeButton };
-		for (Button btn : buttons) {
-			btn.setPrefSize(35, 35);
-			btn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-			btn.setTextFill(Color.WHITE);
-			btn.setFocusTraversable(false);
-		}
-
-		closeButton.setStyle(
-				"-fx-background-color: " + StyleHelper.ERROR_RED + "; -fx-background-radius: 20; -fx-cursor: hand;");
-		closeButton.setOnAction(e -> stage.close());
-
-		minimizeButton
-				.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20; -fx-cursor: hand;");
-		minimizeButton.setOnAction(e -> stage.setIconified(true));
-
-		maximizeButton
-				.setStyle("-fx-background-color: rgba(255,140,0,0.5); -fx-background-radius: 20; -fx-cursor: hand;");
-		maximizeButton.setOnAction(e -> stage.setMaximized(!stage.isMaximized()));
+		Button closeButton = StyleHelper.createWindowButton("✕", () -> stage.close(), StyleHelper.ERROR_RED);
+		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
+				"rgba(255,140,0,0.5)");
+		Button maximizeButton = StyleHelper.createWindowButton("□", () -> stage.setMaximized(!stage.isMaximized()),
+				"rgba(255,140,0,0.5)");
 
 		HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
 		box.setAlignment(Pos.TOP_RIGHT);
@@ -236,7 +204,9 @@ public void start(Stage primaryStage) {
 
 	private void handleLogin(TextField usernameField, PasswordField passwordField, VBox usernameContainer,
 			VBox passwordContainer) {
+	
 		errorLabel.setVisible(false);
+
 
 		if (!ValidationHelper.validateNotEmpty(usernameField, usernameContainer, errorLabel, "il tuo username")) {
 			return;
@@ -249,23 +219,29 @@ public void start(Stage primaryStage) {
 			Chef chef = chefController.login(usernameField.getText().trim(), passwordField.getText());
 			errorLabel.setVisible(false);
 			aprireMenuChef(chef);
-		} catch (ValidationException ex) {
-			String messaggio = ex.getMessage();
 
-			if (messaggio.equals(ErrorMessages.USERNAME_NON_TROVATO)) {
-				ValidationHelper.showError(usernameField, usernameContainer, errorLabel, "❌ Username non esistente");
+		} catch (ValidationException ex) {
+			String msg = ex.getMessage();
+
+			// Solo inline errorLabel, nessun dialog
+			if (msg.equals(ErrorMessages.USERNAME_NON_TROVATO)) {
+				errorLabel.setText("❌ Username non esistente");
 				usernameField.requestFocus();
-			} else if (messaggio.equals(ErrorMessages.PASSWORD_ERRATA)) {
-				ValidationHelper.showError(passwordField, passwordContainer, errorLabel, "❌ Password non corretta");
+			} else if (msg.equals(ErrorMessages.PASSWORD_ERRATA)) {
+				errorLabel.setText("❌ Password non corretta");
 				passwordField.clear();
 				passwordField.requestFocus();
 			} else {
-				ValidationHelper.showError(usernameField, usernameContainer, errorLabel, "❌ " + messaggio);
-				ValidationHelper.showError(passwordField, passwordContainer, errorLabel, "❌ " + messaggio);
+				errorLabel.setText("❌ " + msg);
 			}
+			errorLabel.setVisible(true);
+
 		} catch (Exception ex) {
-			ValidationHelper.showError(usernameField, null, errorLabel,
-					"❌ Errore durante il login: " + ex.getMessage());
+			// Solo inline errorLabel
+			String generic = "❌ Errore durante il login: " + ex.getMessage();
+			errorLabel.setText(generic);
+			errorLabel.setVisible(true);
+			ex.printStackTrace();
 		}
 	}
 
@@ -276,7 +252,6 @@ public void start(Stage primaryStage) {
 			UsaDAO usaDAO = new UsaDAO();
 			CucinaDAO cucinaDAO = new CucinaDAO();
 
-		
 			GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
 			GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
 			GestioneUsa gestioneUsa = new GestioneUsa(usaDAO, ingredienteDAO);
@@ -285,7 +260,6 @@ public void start(Stage primaryStage) {
 			controller.IngredienteController ingredienteController = new controller.IngredienteController(
 					gestioneIngrediente);
 
-	
 			RicettaController ricettaController = new RicettaController(gestioneRicette, gestioneUsa, gestioneCucina,
 					ingredienteController);
 
@@ -294,14 +268,13 @@ public void start(Stage primaryStage) {
 			menu.setRicettaController(ricettaController);
 			menu.setIngredienteController(ingredienteController);
 
-			
 			Stage menuStage = new Stage();
 			menu.start(menuStage);
 
-			
 			((Stage) contentPane.getScene().getWindow()).close();
 		} catch (Exception ex) {
-			ValidationHelper.showError(null, null, errorLabel, "❌ Impossibile aprire il menu: " + ex.getMessage());
+			// ✅ Usa StyleHelper.showErrorDialog
+			StyleHelper.showErrorDialog("Errore", "Impossibile aprire il menu: " + ex.getMessage());
 			ex.printStackTrace();
 		}
 	}
