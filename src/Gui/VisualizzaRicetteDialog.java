@@ -22,12 +22,6 @@ import guihelper.StyleHelper;
 import java.util.List;
 import java.util.ArrayList;
 
-/**
- * ✅ Dialog per selezione multipla ricette (utile per sessioni in presenza)
- * - Design moderno conforme
- * - Uso esclusivo StyleHelper
- * - Layout pulito e funzionale
- */
 public class VisualizzaRicetteDialog extends Stage {
 
     private final RicettaController ricettaController;

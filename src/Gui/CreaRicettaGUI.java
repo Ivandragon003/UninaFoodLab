@@ -67,8 +67,6 @@ public class CreaRicettaGUI {
 		return mainContainer;
 	}
 
-	// ==================== LAYOUT PRINCIPALE ====================
-
 	private VBox buildMainLayout() {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
@@ -169,8 +167,6 @@ public class CreaRicettaGUI {
 		box.setPadding(new Insets(15, 0, 5, 0));
 		return box;
 	}
-
-	// ==================== SELEZIONE INGREDIENTE ====================
 
 	private void mostraSelezioneIngrediente() {
 		selezionaIngView = new VBox(20);
@@ -308,6 +304,10 @@ public class CreaRicettaGUI {
                 updateDisplay();
                 dialogStage.close();
                 
+                // ✅ TORNA ALLA SCHERMATA PRINCIPALE
+                mainContainer.getChildren().setAll(creaView);
+                
+                // ✅ POI MOSTRA LA DIALOG DI CONFERMA
                 javafx.application.Platform.runLater(() -> {
                     StyleHelper.showSuccessDialog(
                         "Ingrediente Aggiunto",
@@ -328,7 +328,7 @@ public class CreaRicettaGUI {
 
     StackPane root = new StackPane(content);
     root.setStyle("-fx-background-color: transparent;");
-    
+
     Scene scene = new Scene(root);
     scene.setFill(Color.TRANSPARENT);
     dialogStage.setScene(scene);
@@ -336,7 +336,8 @@ public class CreaRicettaGUI {
     javafx.application.Platform.runLater(() -> quantField.requestFocus());
 
     dialogStage.show();
-}
+	}
+
 
 	
 	private void handleReset() {
@@ -439,41 +440,88 @@ public class CreaRicettaGUI {
 	}
 
 	private HBox createIngredienteBox(Ingrediente ing, double q) {
-		HBox box = new HBox(15);
-		box.setAlignment(Pos.CENTER_LEFT);
-		box.setPadding(new Insets(12));
-		box.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
-				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-radius: 12;" + "-fx-border-width: 2;");
+    HBox box = new HBox(15);
+    box.setAlignment(Pos.CENTER_LEFT);
+    box.setPadding(new Insets(12));
+    box.setStyle(
+        "-fx-background-color: white;" +
+        "-fx-background-radius: 12;" +
+        "-fx-border-color: " + StyleHelper.PRIMARY_ORANGE + ";" +
+        "-fx-border-radius: 12;" +
+        "-fx-border-width: 2;"
+    );
 
-		Label iconLabel = new Label("🥕");
-		iconLabel.setFont(Font.font("Segoe UI Emoji", 20));
+    // Icona ingrediente
+    Label iconLabel = new Label("🥕");
+    iconLabel.setFont(Font.font("Segoe UI Emoji", 20));
 
-		VBox info = new VBox(4);
-		Label nomeLabel = new Label(ing.getNome());
-		nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
-		nomeLabel.setTextFill(Color.BLACK);
+    // Info ingrediente
+    VBox info = new VBox(4);
+    Label nomeLabel = new Label(ing.getNome());
+    nomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+    nomeLabel.setTextFill(Color.BLACK);
 
-		Label dettagli = new Label(String.format("%.0fg • %s", q, ing.getTipo()));
-		dettagli.setFont(Font.font("Roboto", 12));
-		dettagli.setTextFill(Color.GRAY);
+    Label dettagli = new Label(String.format("%.0fg • %s", q, ing.getTipo()));
+    dettagli.setFont(Font.font("Roboto", 12));
+    dettagli.setTextFill(Color.GRAY);
 
-		info.getChildren().addAll(nomeLabel, dettagli);
+    info.getChildren().addAll(nomeLabel, dettagli);
 
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
+    Region spacer = new Region();
+    HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		Button removeBtn = new Button("✕");
-		removeBtn.setStyle("-fx-background-color: " + StyleHelper.ERROR_RED + ";" + "-fx-text-fill: white;"
-				+ "-fx-font-weight: bold;" + "-fx-background-radius: 20;" + "-fx-cursor: hand;" + "-fx-min-width: 35;"
-				+ "-fx-min-height: 35;" + "-fx-max-width: 35;" + "-fx-max-height: 35;" + "-fx-font-size: 16px;");
-		removeBtn.setOnAction(e -> {
-			ingredientiMap.remove(ing);
-			updateDisplay();
-		});
+    Button removeBtn = new Button("✕ Rimuovi");
+    removeBtn.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+    removeBtn.setStyle(
+        "-fx-background-color: " + StyleHelper.ERROR_RED + ";" +
+        "-fx-text-fill: white;" +
+        "-fx-background-radius: 8;" +
+        "-fx-cursor: hand;" +
+        "-fx-padding: 8 18;" +
+        "-fx-font-size: 13px;" +
+        "-fx-font-weight: bold;"
+    );
 
-		box.getChildren().addAll(iconLabel, info, spacer, removeBtn);
-		return box;
+    removeBtn.setOnMouseEntered(e -> {
+        removeBtn.setStyle(
+            "-fx-background-color: #c0392b;" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 8;" +
+            "-fx-cursor: hand;" +
+            "-fx-padding: 8 18;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);"
+        );
+    });
+
+    removeBtn.setOnMouseExited(e -> {
+        removeBtn.setStyle(
+            "-fx-background-color: " + StyleHelper.ERROR_RED + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-background-radius: 8;" +
+            "-fx-cursor: hand;" +
+            "-fx-padding: 8 18;" +
+            "-fx-font-size: 13px;" +
+            "-fx-font-weight: bold;"
+        );
+    });
+
+    removeBtn.setOnAction(e -> {
+        StyleHelper.showCustomConfirmationDialog(
+            "⚠️ Rimuovi Ingrediente",
+            String.format("Sei sicuro di voler rimuovere '%s' dalla ricetta?", ing.getNome()),
+            () -> {
+                ingredientiMap.remove(ing);
+                updateDisplay();
+            }
+        );
+    });
+
+    box.getChildren().addAll(iconLabel, info, spacer, removeBtn);
+    return box;
 	}
+
 
 	private VBox createListContainer() {
 		VBox box = new VBox(10);

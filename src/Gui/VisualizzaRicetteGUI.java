@@ -54,7 +54,6 @@ public class VisualizzaRicetteGUI {
 	public VBox getRoot() {
 		if (mainContainer == null) {
 			mainContainer = new VBox();
-			// Gradiente applicato al ROOT, così copre sempre tutta la finestra
 			StyleHelper.applyBackgroundGradient(mainContainer);
 			listaView = buildListaLayout();
 			mainContainer.getChildren().add(listaView);
@@ -63,14 +62,9 @@ public class VisualizzaRicetteGUI {
 		return mainContainer;
 	}
 
-	// ==================== LAYOUT LISTA ====================
-
 	private VBox buildListaLayout() {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
-		// Facoltativo: il gradiente è già sul root; mantenere bianco interno per le
-		// card
-		// StyleHelper.applyBackgroundGradient(container);
 
 		Label title = StyleHelper.createTitleLabel("📖 Gestione Ricette");
 		title.setAlignment(Pos.CENTER);
@@ -81,10 +75,8 @@ public class VisualizzaRicetteGUI {
 		ScrollPane scroll = new ScrollPane(scrollContent);
 		scroll.setFitToWidth(true);
 		scroll.setFitToHeight(true);
-		// Trasparenza completa (pane + viewport + corner)
 		scroll.setStyle("-fx-background-color: transparent;");
 		scroll.getContent().setStyle("-fx-background-color: transparent;");
-		// Prova a forzare il corner trasparente via pseudo-lookup (senza CSS esterno)
 		scroll.skinProperty().addListener((obs, old, skin) -> {
 			Region corner = (Region) scroll.lookup(".corner");
 			if (corner != null)
@@ -176,13 +168,9 @@ public class VisualizzaRicetteGUI {
 		return box;
 	}
 
-	// ==================== LAYOUT MODIFICA ====================
-
 	private VBox buildModificaLayout(Ricetta ricetta) {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
-		// Il gradiente è già sul root; questa vista può restare “card-based”
-		// StyleHelper.applyBackgroundGradient(container);
 
 		Label title = StyleHelper.createTitleLabel("📖 Modifica: " + ricetta.getNome());
 		title.setTextFill(Color.WHITE);
@@ -348,41 +336,44 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private HBox buildModificaButtons(Ricetta ricetta) {
-		Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
-		indietroBtn.setPrefWidth(140);
-		indietroBtn.setOnAction(e -> mostraLista());
+    Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
+    indietroBtn.setPrefWidth(140);
+    indietroBtn.setOnAction(e -> mostraLista());
 
-		Button eliminaBtn = StyleHelper.createDangerButton("🗑️ Elimina");
-		eliminaBtn.setPrefWidth(140);
-		eliminaBtn.setOnAction(e -> StyleHelper.showConfirmationDialog("Conferma Eliminazione",
-				"Sei sicuro di voler eliminare '" + ricetta.getNome() + "'?", () -> {
-					try {
-						ricettaController.eliminaRicetta(ricetta.getIdRicetta());
-						carica();
-						StyleHelper.showSuccessDialog("✅ Successo", "Ricetta eliminata");
-						mostraLista();
-					} catch (Exception ex) {
-						StyleHelper.showErrorDialog("Errore", ex.getMessage());
-					}
-				}));
+    Button eliminaBtn = StyleHelper.createDangerButton("🗑️ Elimina");
+    eliminaBtn.setPrefWidth(140);
+    eliminaBtn.setOnAction(e -> {
+        StyleHelper.showCustomConfirmationDialog(
+            "⚠️ Conferma Eliminazione",
+            String.format("Sei sicuro di voler eliminare '%s'?", ricetta.getNome()),
+            () -> {
+                try {
+                    ricettaController.eliminaRicetta(ricetta.getIdRicetta());
+                    carica();
+                    StyleHelper.showSuccessDialog("✅ Successo", "Ricetta eliminata");
+                    mostraLista();
+                } catch (Exception ex) {
+                    StyleHelper.showErrorDialog("❌ Errore", ex.getMessage());
+                }
+            }
+        );
+    });
 
-		Button salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
-		salvaBtn.setPrefWidth(140);
-		salvaBtn.setOnAction(e -> salvaModifica(ricetta));
+    Button salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
+    salvaBtn.setPrefWidth(140);
+    salvaBtn.setOnAction(e -> salvaModifica(ricetta));
 
-		HBox box = new HBox(15, indietroBtn, eliminaBtn, salvaBtn);
-		box.setAlignment(Pos.CENTER);
-		box.setPadding(new Insets(15, 0, 5, 0));
-		return box;
-	}
+    HBox box = new HBox(15, indietroBtn, eliminaBtn, salvaBtn);
+    box.setAlignment(Pos.CENTER);
+    box.setPadding(new Insets(15, 0, 5, 0));
+    return box;
+}
 
-	// ==================== SELEZIONE INGREDIENTE PER MODIFICA ====================
+
 
 	private void mostraSelezinaIngredientePerModifica(Ricetta ricetta) {
 		VBox selezionaView = new VBox(20);
 		selezionaView.setPadding(new Insets(20));
-		// Il gradiente resta sul root; qui puoi tenerlo oppure no
-		// StyleHelper.applyBackgroundGradient(selezionaView);
 
 		Label title = StyleHelper.createTitleLabel("🥕 Seleziona Ingrediente");
 		title.setTextFill(Color.WHITE);
@@ -443,7 +434,6 @@ public class VisualizzaRicetteGUI {
 				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-radius: 16;" + "-fx-border-width: 3;"
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.20), 15, 0, 0, 6);");
 
-		// Titolo / intestazione
 		Label titleLabel = new Label("🥕 Quantità Ingrediente");
 		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
 		titleLabel.setTextFill(Color.web(StyleHelper.PRIMARY_ORANGE));
@@ -452,7 +442,6 @@ public class VisualizzaRicetteGUI {
 
 		Separator sepTop = new Separator();
 
-		// Info ingrediente
 		VBox infoBox = new VBox(8);
 		infoBox.setAlignment(Pos.CENTER);
 
@@ -471,7 +460,6 @@ public class VisualizzaRicetteGUI {
 
 		infoBox.getChildren().addAll(iconLabel, nomeLabel, tipoLabel);
 
-		// Campo quantità
 		Label istruzioni = new Label("Inserisci la quantità in grammi:");
 		istruzioni.setFont(Font.font("Segoe UI", FontWeight.SEMI_BOLD, 14));
 		istruzioni.setTextFill(Color.web("#444"));
@@ -537,7 +525,6 @@ public class VisualizzaRicetteGUI {
 
 		buttons.getChildren().addAll(annullaBtn, confermaBtn);
 
-		// Assemblaggio finale
 		content.getChildren().addAll(titleLabel, sepTop, infoBox, istruzioni, fieldContainer, buttons);
 
 		StackPane root = new StackPane(content);
@@ -551,7 +538,6 @@ public class VisualizzaRicetteGUI {
 		dialogStage.showAndWait();
 	}
 
-	// ==================== NAVIGAZIONE ====================
 
 	private void mostraLista() {
 		carica();
@@ -624,8 +610,6 @@ public class VisualizzaRicetteGUI {
 		}
 	}
 
-	// ==================== LOGICA ====================
-
 	private void setupListeners() {
 		filtroNome.textProperty().addListener((obs, old, val) -> filtra());
 		filtroTempoMin.textProperty().addListener((obs, old, val) -> filtra());
@@ -672,8 +656,6 @@ public class VisualizzaRicetteGUI {
 		}
 	}
 
-	// ==================== HELPER ====================
-
 	private Label createTitle(String text) {
 		Label lbl = new Label(text);
 		lbl.setFont(Font.font("Roboto", FontWeight.BOLD, 18));
@@ -698,8 +680,6 @@ public class VisualizzaRicetteGUI {
 			return null;
 		}
 	}
-
-	// ==================== CELL RENDERER ====================
 
 	private static class RicettaCell extends ListCell<Ricetta> {
 		@Override
