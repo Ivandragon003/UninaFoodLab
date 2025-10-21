@@ -2,26 +2,24 @@ package model;
 
 import java.time.LocalDateTime;
 
-
 public class Online extends Sessione {
-    private String piattaformaStreaming;
- 
-    
-    public Online(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione, String piattaformaStreaming) {
-        super(dataInizioSessione, dataFineSessione);
-        setPiattaformaStreaming(piattaformaStreaming); 
-    }
+	private String piattaformaStreaming;
 
-    public String getPiattaformaStreaming() {
-        return piattaformaStreaming;
-    }
+	public Online(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione, String piattaformaStreaming) {
+		super(dataInizioSessione, dataFineSessione);
+		setPiattaformaStreaming(piattaformaStreaming);
+	}
 
-    public void setPiattaformaStreaming(String piattaformaStreaming) {
-        if (piattaformaStreaming == null ) {
-            throw new IllegalArgumentException("La piattaforma di streaming non può essere null o vuota");
-        }
-        this.piattaformaStreaming = piattaformaStreaming;
-    }
+	public String getPiattaformaStreaming() {
+		return piattaformaStreaming;
+	}
 
-	
+
+	public void setPiattaformaStreaming(String piattaformaStreaming) {
+		if (piattaformaStreaming == null || piattaformaStreaming.trim().isEmpty()) {
+			throw new IllegalArgumentException("La piattaforma di streaming è obbligatoria");
+		}
+		this.piattaformaStreaming = piattaformaStreaming.trim();
+	}
+
 }

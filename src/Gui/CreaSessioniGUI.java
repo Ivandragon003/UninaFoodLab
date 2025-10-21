@@ -21,10 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
-
 import java.time.DayOfWeek;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.WeekFields;
 
 public class CreaSessioniGUI extends Stage {
 	private Sessione sessioneCreata = null;
@@ -42,7 +40,6 @@ public class CreaSessioniGUI extends Stage {
 	private TextField viaField, cittaField, postiField, capField;
 	private Button selezionaRicetteBtn;
 	private Label ricetteLabel;
-	private VBox listaRicetteContainer;
 	private ListView<Ricetta> ricetteListView;
 	private List<Ricetta> ricetteSelezionate = new ArrayList<>();
 
@@ -50,18 +47,9 @@ public class CreaSessioniGUI extends Stage {
 			Set<LocalDate> dateOccupate, RicettaController ricettaController,
 			IngredienteController ingredienteController) {
 
-		if (corsoInizio == null || corsoFine == null) {
-			throw new IllegalArgumentException("Le date di inizio e fine corso non possono essere null");
-		}
-		if (frequenzaCorso == null) {
-			throw new IllegalArgumentException("La frequenza del corso non può essere null");
-		}
-		if (ricettaController == null) {
-			throw new IllegalArgumentException("RicettaController non può essere null");
-		}
-		if (ingredienteController == null) {
-			throw new IllegalArgumentException(
-					"IngredienteController non può essere null - necessario per gestire le ricette");
+		if (corsoInizio == null || corsoFine == null || frequenzaCorso == null || 
+		    ricettaController == null || ingredienteController == null) {
+			throw new IllegalArgumentException("Parametri obbligatori mancanti");
 		}
 
 		this.corsoInizio = corsoInizio;
@@ -100,8 +88,16 @@ public class CreaSessioniGUI extends Stage {
 		scroll.setStyle("-fx-background: transparent;");
 
 		VBox form = StyleHelper.createSection();
-		form.getChildren().addAll(createDateSection(), new Separator(), createTipoSection(), createCampiSection(),
-				new Separator(), createRicetteSection(), new Separator(), createButtonSection());
+		form.getChildren().addAll(
+			createDateSection(), 
+			new Separator(), 
+			createTipoSection(), 
+			createCampiSection(),
+			new Separator(), 
+			createRicetteSection(), 
+			new Separator(), 
+			createButtonSection()
+		);
 
 		scroll.setContent(form);
 		main.getChildren().addAll(title, scroll);
@@ -127,118 +123,7 @@ public class CreaSessioniGUI extends Stage {
 		grid.setVgap(15);
 
 		datePicker = StyleHelper.createDatePicker();
-
-		// Catturo i valori in variabili effectively-final in modo che l'inner class
-		// DateCell le possa usare senza ambiguità.
-		final LocalDate corsoStart = this.corsoInizio;
-		final LocalDate corsoEnd = this.corsoFine;
-		final Set<LocalDate> occupiedDates = this.dateOccupate != null ? this.dateOccupate : new HashSet<>();
-		final Frequenza freq = this.frequenzaCorso;
-
-		datePicker.setDayCellFactory(dp -> new DateCell() {
-			@Override
-			public void updateItem(LocalDate d, boolean empty) {
-			    super.updateItem(d, empty);
-
-			    if (empty || d == null) {
-			        setDisable(true);
-			        setText(null);
-			        setStyle("");
-			        setTooltip(null);
-			        return;
-			    }
-
-			    // 1) Fuori dal range inizio/fine corso -> rosso/disabilitato
-			    if (d.isBefore(corsoStart)) {
-			        setDisable(true);
-			        setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
-			        setTooltip(new Tooltip("Data prima dell'inizio del corso"));
-			        return;
-			    }
-
-			    // 2) Date già occupate -> giallo (non cliccabile)
-			    if (occupiedDates.contains(d)) {
-			        setDisable(true);
-			        setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #8a6d00;");
-			        setTooltip(new Tooltip("Esiste già una sessione in questa data"));
-			        return;
-			    }
-
-			    boolean isDisponibile = false;
-			    String motivoNonDisponibile = "Data non disponibile";
-
-			    LocalDate dataFineUltimaSessione = null;
-			    if (!occupiedDates.isEmpty()) {
-			        dataFineUltimaSessione = occupiedDates.stream().max(LocalDate::compareTo).orElse(null);
-			    }
-
-			    switch (freq) {
-			        case unica:
-			            isDisponibile = occupiedDates.isEmpty();
-			            if (!isDisponibile) motivoNonDisponibile = "Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni";
-			            break;
-
-			        case giornaliero:
-			            if (dataFineUltimaSessione == null) {
-			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
-			            } else {
-			                isDisponibile = d.isAfter(dataFineUltimaSessione) && !d.isAfter(corsoEnd);
-			            }
-			            break;
-
-			        case ogniDueGiorni:
-			            if (dataFineUltimaSessione == null) {
-			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
-			            } else {
-			                long giorniDiff = ChronoUnit.DAYS.between(dataFineUltimaSessione, d);
-			                isDisponibile = (giorniDiff >= 2) && !d.isAfter(corsoEnd);
-			                if (!isDisponibile) motivoNonDisponibile = "Richiede almeno 2 giorni di distanza dall'ultima sessione";
-			            }
-			            break;
-
-			        case settimanale:
-			            if (dataFineUltimaSessione == null) {
-			                // nessuna sessione precedente: consenti date entro range corso
-			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
-			            } else {
-			                // Calcola la settimana IMMEDIATAMENTE successiva alla data di fine dell'ultima sessione:
-			                // prendiamo il LUNEDI della settimana successiva e consideriamo l'intervallo [lun, dom]
-			                LocalDate primoLunediSuccessivo = dataFineUltimaSessione.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-			                LocalDate fineSettimana = primoLunediSuccessivo.plusDays(6);
-
-			                // disponibile se la data è dentro quell'intervallo (NOTA: ignoriamo corsoEnd qui
-			                // perché l'applicazione estenderà la data fine corso se la sessione è valida)
-			                isDisponibile = !d.isBefore(primoLunediSuccessivo) && !d.isAfter(fineSettimana);
-
-			                if (!isDisponibile) {
-			                    motivoNonDisponibile = "La sessione settimanale deve essere nella settimana immediatamente successiva (" 
-			                        + primoLunediSuccessivo + " - " + fineSettimana + ")";
-			                }
-			            }
-			            break;
-
-			        case mensile:
-			            if (dataFineUltimaSessione == null) {
-			                isDisponibile = !d.isBefore(corsoStart) && !d.isAfter(corsoEnd);
-			            } else {
-			                LocalDate nextMonth = dataFineUltimaSessione.plusMonths(1);
-			                isDisponibile = !d.isBefore(nextMonth) && !d.isAfter(corsoEnd);
-			                if (!isDisponibile) motivoNonDisponibile = "La sessione mensile deve essere almeno un mese dopo l'ultima";
-			            }
-			            break;
-			    }
-
-			    if (isDisponibile) {
-			        setDisable(false);
-			        setStyle("-fx-background-color: #e8f5e9; -fx-text-fill: black;"); // verde chiaro, cliccabile
-			        setTooltip(new Tooltip("Data disponibile"));
-			    } else {
-			        setDisable(true);
-			        setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;"); // rosso
-			        setTooltip(new Tooltip(motivoNonDisponibile));
-			    }
-			}
-		});
+		configureDatePicker();
 
 		oraInizioBox = createTimeBox(24, 9, 1);
 		minutiInizioBox = createTimeBox(60, 0, 15);
@@ -256,6 +141,117 @@ public class CreaSessioniGUI extends Stage {
 		return box;
 	}
 
+	private void configureDatePicker() {
+		datePicker.setDayCellFactory(dp -> new DateCell() {
+			@Override
+			public void updateItem(LocalDate d, boolean empty) {
+				super.updateItem(d, empty);
+
+				if (empty || d == null) {
+					disableCell(null);
+					return;
+				}
+
+				if (d.isBefore(corsoInizio)) {
+					disableCell("Data prima dell'inizio del corso");
+					setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+					return;
+				}
+
+				if (dateOccupate.contains(d)) {
+					disableCell("Esiste già una sessione in questa data");
+					setStyle("-fx-background-color: #fff9c4; -fx-text-fill: #8a6d00;");
+					return;
+				}
+
+				DateValidationResult result = validateDate(d);
+				if (result.isValid) {
+					enableCell("Data disponibile");
+				} else {
+					disableCell(result.message);
+				}
+			}
+
+			private void disableCell(String message) {
+				setDisable(true);
+				setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #c62828;");
+				setTooltip(message != null ? new Tooltip(message) : null);
+			}
+
+			private void enableCell(String message) {
+				setDisable(false);
+				setStyle("-fx-background-color: #e8f5e9; -fx-text-fill: black;");
+				setTooltip(new Tooltip(message));
+			}
+		});
+	}
+
+	private DateValidationResult validateDate(LocalDate d) {
+		LocalDate lastSessionDate = dateOccupate.stream()
+			.max(LocalDate::compareTo)
+			.orElse(null);
+
+		return switch (frequenzaCorso) {
+			case unica -> new DateValidationResult(
+				dateOccupate.isEmpty(), 
+				"Frequenza 'Sessione Unica' - non puoi aggiungere altre sessioni"
+			);
+			case giornaliero -> new DateValidationResult(
+				lastSessionDate == null ? 
+					!d.isBefore(corsoInizio) && !d.isAfter(corsoFine) :
+					d.isAfter(lastSessionDate) && !d.isAfter(corsoFine),
+				"Data non disponibile"
+			);
+			case ogniDueGiorni -> validateOgniDueGiorni(d, lastSessionDate);
+			case settimanale -> validateSettimanale(d, lastSessionDate);
+			case mensile -> validateMensile(d, lastSessionDate);
+		};
+	}
+
+	private DateValidationResult validateOgniDueGiorni(LocalDate d, LocalDate lastDate) {
+		if (lastDate == null) {
+			return new DateValidationResult(!d.isBefore(corsoInizio) && !d.isAfter(corsoFine), "");
+		}
+		long diff = ChronoUnit.DAYS.between(lastDate, d);
+		return new DateValidationResult(
+			diff >= 2 && !d.isAfter(corsoFine),
+			"Richiede almeno 2 giorni di distanza dall'ultima sessione"
+		);
+	}
+
+	private DateValidationResult validateSettimanale(LocalDate d, LocalDate lastDate) {
+		if (lastDate == null) {
+			return new DateValidationResult(!d.isBefore(corsoInizio) && !d.isAfter(corsoFine), "");
+		}
+		LocalDate nextMonday = lastDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+		LocalDate endWeek = nextMonday.plusDays(6);
+		return new DateValidationResult(
+			!d.isBefore(nextMonday) && !d.isAfter(endWeek),
+			"La sessione settimanale deve essere nella settimana " + nextMonday + " - " + endWeek
+		);
+	}
+
+	private DateValidationResult validateMensile(LocalDate d, LocalDate lastDate) {
+		if (lastDate == null) {
+			return new DateValidationResult(!d.isBefore(corsoInizio) && !d.isAfter(corsoFine), "");
+		}
+		LocalDate nextMonth = lastDate.plusMonths(1);
+		return new DateValidationResult(
+			!d.isBefore(nextMonth) && !d.isAfter(corsoFine),
+			"La sessione mensile deve essere almeno un mese dopo l'ultima"
+		);
+	}
+
+	private static class DateValidationResult {
+		final boolean isValid;
+		final String message;
+
+		DateValidationResult(boolean isValid, String message) {
+			this.isValid = isValid;
+			this.message = message;
+		}
+	}
+
 	private ComboBox<Integer> createTimeBox(int max, int def, int step) {
 		ComboBox<Integer> cb = StyleHelper.createComboBox();
 		for (int i = 0; i < max; i += step) {
@@ -267,7 +263,6 @@ public class CreaSessioniGUI extends Stage {
 
 	private VBox createTipoSection() {
 		VBox box = new VBox(10);
-
 		Label lbl = StyleHelper.createLabel("🎯 Tipo Sessione");
 		lbl.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
@@ -283,191 +278,177 @@ public class CreaSessioniGUI extends Stage {
 	private VBox createCampiSection() {
 		VBox box = new VBox(15);
 
-		VBox onlineBox = new VBox(10);
-		onlineBox.setId("onlineFields");
+		VBox onlineBox = createOnlineFields();
+		VBox presenzaBox = createPresenzaFields();
 
-		Label onlineLabel = StyleHelper.createLabel("🌐 Dettagli Online");
+		box.getChildren().addAll(onlineBox, presenzaBox);
+		return box;
+	}
+
+	private VBox createOnlineFields() {
+		VBox box = new VBox(10);
+		box.setId("onlineFields");
 		piattaformaField = StyleHelper.createTextField("Es. Zoom, Teams, Google Meet");
-		onlineBox.getChildren().addAll(onlineLabel, piattaformaField);
+		box.getChildren().addAll(
+			StyleHelper.createLabel("🌐 Dettagli Online"),
+			piattaformaField
+		);
+		return box;
+	}
 
-		VBox presenzaBox = new VBox(10);
-		presenzaBox.setId("presenzaFields");
-
-		Label presenzaLabel = StyleHelper.createLabel("🏢 Dettagli In Presenza");
+	private VBox createPresenzaFields() {
+		VBox box = new VBox(10);
+		box.setId("presenzaFields");
+		box.setVisible(false);
+		box.setManaged(false);
 
 		viaField = StyleHelper.createTextField("Via e civico");
 		cittaField = StyleHelper.createTextField("Città");
 		postiField = StyleHelper.createTextField("Numero posti");
 		capField = StyleHelper.createTextField("CAP");
 
-		presenzaBox.getChildren().addAll(presenzaLabel, viaField, cittaField, postiField, capField);
-		presenzaBox.setVisible(false);
-		presenzaBox.setManaged(false);
-
-		box.getChildren().addAll(onlineBox, presenzaBox);
+		box.getChildren().addAll(
+			StyleHelper.createLabel("🏢 Dettagli In Presenza"),
+			viaField, cittaField, postiField, capField
+		);
 		return box;
 	}
 
 	private VBox createRicetteSection() {
 		VBox box = new VBox(10);
 		box.setId("ricetteSection");
+		box.setVisible(false);
+		box.setManaged(false);
 
-		Label ricetteTitle = StyleHelper.createLabel("🍽️ Ricette (Solo per sessioni in presenza)");
-		ricetteTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+		Label title = StyleHelper.createLabel("🍽️ Ricette (Solo per sessioni in presenza)");
+		title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
 		selezionaRicetteBtn = StyleHelper.createPrimaryButton("📚 Seleziona Ricette");
 		selezionaRicetteBtn.setOnAction(e -> apriDialogRicette());
-
 		selezionaRicetteBtn.setDisable(true);
 
 		ricetteLabel = StyleHelper.createLabel("⚠️ Nessuna ricetta selezionata");
 		ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
 
-		ricetteListView = new ListView<>();
-		ricetteListView.setPrefHeight(150);
-		ricetteListView.setStyle("-fx-background-color: #f8f9fa;" + "-fx-background-radius: 12;"
-				+ "-fx-border-color: #28a745;" + "-fx-border-width: 2;" + "-fx-border-radius: 12;");
+		ricetteListView = createRicetteListView();
 
-		ricetteListView.setCellFactory(lv -> new ListCell<Ricetta>() {
+		Label info = StyleHelper.createLabel("💡 Le sessioni in presenza richiedono almeno una ricetta");
+		info.setStyle("-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; "
+			+ "-fx-padding: 8; -fx-background-radius: 5;");
+
+		box.getChildren().addAll(title, selezionaRicetteBtn, ricetteLabel, ricetteListView, info);
+		return box;
+	}
+
+	private ListView<Ricetta> createRicetteListView() {
+		ListView<Ricetta> listView = new ListView<>();
+		listView.setPrefHeight(150);
+		listView.setStyle("-fx-background-color: #f8f9fa; -fx-background-radius: 12; "
+			+ "-fx-border-color: #28a745; -fx-border-width: 2; -fx-border-radius: 12;");
+
+		listView.setCellFactory(lv -> new ListCell<>() {
 			@Override
 			protected void updateItem(Ricetta ricetta, boolean empty) {
 				super.updateItem(ricetta, empty);
-
 				if (empty || ricetta == null) {
 					setGraphic(null);
 					setText(null);
 				} else {
-					try {
-						HBox cellContent = new HBox(10);
-						cellContent.setAlignment(Pos.CENTER_LEFT);
-						cellContent.setPadding(new Insets(8));
-						cellContent.setStyle("-fx-background-color: white;" + "-fx-background-radius: 8;"
-								+ "-fx-border-color: #28a745;" + "-fx-border-width: 1;" + "-fx-border-radius: 8;");
-
-						Label iconLabel = new Label("🍽️");
-						iconLabel.setStyle("-fx-font-size: 16px;");
-
-						VBox infoBox = new VBox(3);
-						Label nameLabel = new Label(ricetta.getNome());
-						nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-						Label timeLabel = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 "
-								+ ricetta.getNumeroIngredienti() + " ingredienti");
-						timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
-						infoBox.getChildren().addAll(nameLabel, timeLabel);
-
-						Region spacer = new Region();
-						HBox.setHgrow(spacer, Priority.ALWAYS);
-
-						Button rimuoviBtn = new Button("❌");
-						rimuoviBtn.setStyle(
-								"-fx-background-color: #dc3545;" + "-fx-text-fill: white;" + "-fx-padding: 5 10;"
-										+ "-fx-border-radius: 5;" + "-fx-cursor: hand;" + "-fx-font-size: 12px;");
-						rimuoviBtn.setTooltip(new Tooltip("Rimuovi ricetta dalla selezione"));
-						rimuoviBtn.setOnAction(e -> {
-							try {
-								ricetteSelezionate.remove(ricetta);
-								aggiornaListaRicette();
-							} catch (Exception ex) {
-								StyleHelper.showErrorDialog("Errore",
-										"Errore nella rimozione ricetta: " + ex.getMessage());
-							}
-						});
-
-						cellContent.getChildren().addAll(iconLabel, infoBox, spacer, rimuoviBtn);
-						setGraphic(cellContent);
-						setText(null);
-						setStyle("-fx-background-color: transparent; -fx-padding: 0;");
-					} catch (Exception e) {
-						setText("Errore nel caricamento ricetta");
-						setGraphic(null);
-					}
+					setGraphic(createRicettaCell(ricetta));
+					setText(null);
+					setStyle("-fx-background-color: transparent; -fx-padding: 0;");
 				}
 			}
 		});
+		return listView;
+	}
 
-		Label infoLabel = StyleHelper.createLabel("💡 Le sessioni in presenza richiedono almeno una ricetta");
-		infoLabel.setStyle(
-				"-fx-text-fill: #666666; -fx-font-size: 11px; -fx-background-color: #f8f9fa; -fx-padding: 8; -fx-background-radius: 5;");
+	private HBox createRicettaCell(Ricetta ricetta) {
+		HBox cell = new HBox(10);
+		cell.setAlignment(Pos.CENTER_LEFT);
+		cell.setPadding(new Insets(8));
+		cell.setStyle("-fx-background-color: white; -fx-background-radius: 8; "
+			+ "-fx-border-color: #28a745; -fx-border-width: 1; -fx-border-radius: 8;");
 
-		box.getChildren().addAll(ricetteTitle, selezionaRicetteBtn, ricetteLabel, ricetteListView, infoLabel);
+		Label icon = new Label("🍽️");
+		icon.setStyle("-fx-font-size: 16px;");
 
-		box.setVisible(false);
-		box.setManaged(false);
+		VBox info = new VBox(3);
+		Label name = new Label(ricetta.getNome());
+		name.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+		Label details = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 " 
+			+ ricetta.getNumeroIngredienti() + " ingredienti");
+		details.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
+		info.getChildren().addAll(name, details);
 
-		return box;
+		Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
+
+		Button remove = new Button("❌");
+		remove.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; "
+			+ "-fx-padding: 5 10; -fx-border-radius: 5; -fx-cursor: hand; -fx-font-size: 12px;");
+		remove.setTooltip(new Tooltip("Rimuovi ricetta"));
+		remove.setOnAction(e -> {
+			ricetteSelezionate.remove(ricetta);
+			aggiornaListaRicette();
+		});
+
+		cell.getChildren().addAll(icon, info, spacer, remove);
+		return cell;
 	}
 
 	private void aggiornaListaRicette() {
-		try {
-			ricetteListView.getItems().clear();
-			ricetteListView.getItems().addAll(ricetteSelezionate);
-
-			if (ricetteSelezionate.isEmpty()) {
-				ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
-				ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
-			} else {
-				ricetteLabel.setText("✅ " + ricetteSelezionate.size() + " ricette selezionate");
-				ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px; -fx-font-weight: bold;");
-			}
-		} catch (Exception e) {
-			ricetteLabel.setText("❌ Errore nell'aggiornamento");
+		ricetteListView.getItems().setAll(ricetteSelezionate);
+		
+		if (ricetteSelezionate.isEmpty()) {
+			ricetteLabel.setText("⚠️ Nessuna ricetta selezionata");
 			ricetteLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;");
+		} else {
+			ricetteLabel.setText("✅ " + ricetteSelezionate.size() + " ricette selezionate");
+			ricetteLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 12px; -fx-font-weight: bold;");
 		}
 	}
 
 	private void apriDialogRicette() {
 		try {
-			// CREAZIONE DIALOG CON ENTRAMBI I CONTROLLER VALIDATI
 			VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(ricettaController, ingredienteController);
-
-			// Imposta questo Stage come owner del dialog
 			dialog.initOwner(this);
-
-			// Pre-seleziona ricette già selezionate
+			
 			if (!ricetteSelezionate.isEmpty()) {
 				dialog.preSelezionaRicette(ricetteSelezionate);
 			}
 
-			// Apertura e gestione risultato
-			List<Ricetta> ricetteScelte = dialog.showAndReturn();
-
-			if (ricetteScelte != null && !ricetteScelte.isEmpty()) {
+			List<Ricetta> scelte = dialog.showAndReturn();
+			if (scelte != null) {
 				ricetteSelezionate.clear();
-				ricetteSelezionate.addAll(ricetteScelte);
+				ricetteSelezionate.addAll(scelte);
 				aggiornaListaRicette();
-
-				String messaggioSuccesso = String.format("✅ Selezionate %d ricette per la sessione!",
-						ricetteSelezionate.size());
-
-				StyleHelper.showSuccessDialog("Successo", messaggioSuccesso);
-
-			} else if (ricetteScelte != null) {
-				ricetteSelezionate.clear();
-				aggiornaListaRicette();
+				
+				if (!scelte.isEmpty()) {
+					StyleHelper.showSuccessDialog("Successo", 
+						"✅ Selezionate " + scelte.size() + " ricette per la sessione!");
+				}
 			}
-
 		} catch (Exception e) {
-			String messaggio = "❌ Errore nell'apertura del dialog ricette: " + e.getMessage();
-			StyleHelper.showErrorDialog("Errore", messaggio);
-			e.printStackTrace();
+			StyleHelper.showErrorDialog("Errore", "❌ Errore nell'apertura del dialog: " + e.getMessage());
 		}
 	}
 
 	private HBox createButtonSection() {
-		HBox hb = new HBox(15);
-		hb.setAlignment(Pos.CENTER);
+		HBox box = new HBox(15);
+		box.setAlignment(Pos.CENTER);
 
-		Button annullaBtn = StyleHelper.createDangerButton("❌ Annulla");
-		annullaBtn.setOnAction(e -> {
+		Button annulla = StyleHelper.createDangerButton("❌ Annulla");
+		annulla.setOnAction(e -> {
 			sessioneCreata = null;
 			close();
 		});
 
-		Button salvaBtn = StyleHelper.createPrimaryButton("💾 Salva Sessione");
-		salvaBtn.setOnAction(e -> salvaSessione());
+		Button salva = StyleHelper.createPrimaryButton("💾 Salva Sessione");
+		salva.setOnAction(e -> salvaSessione());
 
-		hb.getChildren().addAll(annullaBtn, salvaBtn);
-		return hb;
+		box.getChildren().addAll(annulla, salva);
+		return box;
 	}
 
 	private void updateVisibility() {
@@ -482,11 +463,8 @@ public class CreaSessioniGUI extends Stage {
 			onlineBox.setManaged(isOnline);
 			presenzaBox.setVisible(!isOnline);
 			presenzaBox.setManaged(!isOnline);
-
 			ricetteBox.setVisible(!isOnline);
 			ricetteBox.setManaged(!isOnline);
-
-			// Abilita/disabilita pulsante ricette
 			selezionaRicetteBtn.setDisable(isOnline);
 
 			if (isOnline) {
@@ -503,109 +481,80 @@ public class CreaSessioniGUI extends Stage {
 
 	private void salvaSessione() {
 		try {
-			// VALIDAZIONE DATA
+			// Validazione data
 			if (datePicker.getValue() == null) {
-				StyleHelper.showValidationDialog("Validazione", "⚠️ Seleziona una data per la sessione");
+				StyleHelper.showValidationDialog("Validazione", "⚠️ Seleziona una data");
 				return;
 			}
 
-			// VALIDAZIONE ORARI
+			// Validazione orari
 			LocalTime oraInizio = LocalTime.of(oraInizioBox.getValue(), minutiInizioBox.getValue());
 			LocalTime oraFine = LocalTime.of(oraFineBox.getValue(), minutiFineBox.getValue());
 
 			if (!oraFine.isAfter(oraInizio)) {
-				StyleHelper.showValidationDialog("Validazione", "⚠️ L'ora di fine deve essere dopo l'ora di inizio");
+				StyleHelper.showValidationDialog("Validazione", "⚠️ L'ora di fine deve essere dopo l'inizio");
 				return;
 			}
 
 			LocalDateTime dataInizio = LocalDateTime.of(datePicker.getValue(), oraInizio);
 			LocalDateTime dataFine = LocalDateTime.of(datePicker.getValue(), oraFine);
 
-			// CREAZIONE SESSIONE ONLINE
+			// Creazione sessione basata sul tipo
 			if ("Online".equals(tipoCombo.getValue())) {
-				String piattaforma = piattaformaField.getText().trim();
-				if (piattaforma.isEmpty()) {
-					StyleHelper.showValidationDialog("Validazione", "⚠️ Inserisci la piattaforma di streaming");
-					return;
-				}
-
-				sessioneCreata = new Online(dataInizio, dataFine, piattaforma);
-
+				sessioneCreata = creaSessioneOnline(dataInizio, dataFine);
 			} else {
-				// CREAZIONE SESSIONE IN PRESENZA
-
-				// Verifica ricette per sessioni in presenza
-				if (ricetteSelezionate.isEmpty()) {
-					StyleHelper.showValidationDialog("Validazione",
-							"❌ Le sessioni in presenza richiedono almeno una ricetta.\n\n"
-									+ "Usa il pulsante '📚 Seleziona Ricette' per aggiungerne una.");
-					return;
-				}
-
-				// Validazione campi obbligatori
-				String via = viaField.getText().trim();
-				String citta = cittaField.getText().trim();
-				String postiStr = postiField.getText().trim();
-				String capStr = capField.getText().trim();
-
-				if (via.isEmpty() || citta.isEmpty() || postiStr.isEmpty() || capStr.isEmpty()) {
-					StyleHelper.showValidationDialog("Validazione",
-							"⚠️ Compila tutti i campi obbligatori per la sessione in presenza");
-					return;
-				}
-
-				// Validazione numero posti
-				int posti;
-				try {
-					posti = Integer.parseInt(postiStr);
-					if (posti <= 0) {
-						StyleHelper.showValidationDialog("Validazione",
-								"⚠️ Il numero di posti deve essere maggiore di zero");
-						return;
-					}
-					if (posti > 1000) {
-						StyleHelper.showValidationDialog("Validazione",
-								"⚠️ Il numero di posti sembra eccessivo (massimo 1000)");
-						return;
-					}
-				} catch (NumberFormatException e) {
-					StyleHelper.showValidationDialog("Validazione",
-							"⚠️ Il numero di posti deve essere un numero intero valido");
-					return;
-				}
-
-				// Validazione CAP
-				int cap;
-				try {
-					cap = Integer.parseInt(capStr);
-					if (cap < 10000 || cap > 99999) {
-						StyleHelper.showValidationDialog("Validazione", "⚠️ CAP non valido (deve essere di 5 cifre)");
-						return;
-					}
-				} catch (NumberFormatException e) {
-					StyleHelper.showValidationDialog("Validazione", "⚠️ Il CAP deve essere un numero di 5 cifre");
-					return;
-				}
-
-				// Creazione sessione in presenza
-				InPresenza sessionePresenza = new InPresenza(dataInizio, dataFine, via, citta, posti, cap);
-
-				// Aggiunta ricette
-				for (Ricetta ricetta : ricetteSelezionate) {
-					sessionePresenza.getRicette().add(ricetta);
-				}
-
-				sessioneCreata = sessionePresenza;
+				sessioneCreata = creaSessioneInPresenza(dataInizio, dataFine);
 			}
 
 			close();
 
-		} catch (NumberFormatException e) {
-			StyleHelper.showValidationDialog("Validazione", "⚠️ Formato numero non valido nei campi numerici");
+		} catch (IllegalArgumentException e) {
+			// Le validazioni dei model lanciano IllegalArgumentException
+			StyleHelper.showValidationDialog("Validazione", "⚠️ " + e.getMessage());
 		} catch (Exception e) {
-			String messaggioErrore = "❌ Errore durante la creazione della sessione: " + e.getMessage();
-			StyleHelper.showErrorDialog("Errore", messaggioErrore);
-			e.printStackTrace();
+			StyleHelper.showErrorDialog("Errore", "❌ Errore: " + e.getMessage());
+		}
+	}
+
+	private Online creaSessioneOnline(LocalDateTime inizio, LocalDateTime fine) {
+		String piattaforma = piattaformaField.getText().trim();
+		// La validazione è gestita dal costruttore di Online
+		return new Online(inizio, fine, piattaforma);
+	}
+
+	private InPresenza creaSessioneInPresenza(LocalDateTime inizio, LocalDateTime fine) {
+		if (ricetteSelezionate.isEmpty()) {
+			throw new IllegalArgumentException("Le sessioni in presenza richiedono almeno una ricetta");
+		}
+
+		String via = viaField.getText().trim();
+		String citta = cittaField.getText().trim();
+		
+		int posti = parseIntegerField(postiField.getText(), "posti", 1, 1000);
+		int cap = parseIntegerField(capField.getText(), "CAP", 10000, 99999);
+
+		// Le validazioni sono gestite dal costruttore di InPresenza
+		InPresenza sessione = new InPresenza(inizio, fine, via, citta, posti, cap);
+		sessione.getRicette().addAll(ricetteSelezionate);
+
+		return sessione;
+	}
+
+	private int parseIntegerField(String value, String fieldName, int min, int max) {
+		if (value == null || value.trim().isEmpty()) {
+			throw new IllegalArgumentException("Il campo " + fieldName + " è obbligatorio");
+		}
+		
+		try {
+			int parsed = Integer.parseInt(value.trim());
+			if (parsed < min || parsed > max) {
+				throw new IllegalArgumentException(
+					fieldName + " deve essere tra " + min + " e " + max
+				);
+			}
+			return parsed;
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException(fieldName + " deve essere un numero valido");
 		}
 	}
 

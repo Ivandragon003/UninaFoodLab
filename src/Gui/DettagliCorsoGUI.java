@@ -44,15 +44,13 @@ public class DettagliCorsoGUI {
     private Runnable onChiudiCallback;
 
     private boolean hasUnsavedChanges = false;
-    
-    private boolean isUpdating = false;
 
     private TextField nomeField, prezzoField, argomentoField, numeroPostiField, numeroSessioniField;
     private ComboBox<Frequenza> frequenzaCombo;
     private DatePicker dataInizioPicker, dataFinePicker;
     private ListView<Chef> chefListView;
     private Button addChefBtn, modificaBtn, salvaBtn, eliminaCorsoBtn;
-    private Label selezionatoLabel, avisoCorsoFinitoLabel;
+    private Label selezionatoLabel, avisoCorsoFinitoLabel, avisoSolaVisualizzazioneLabel;
 
     public void setController(GestioneCorsoController controller) {
         this.gestioneController = controller;
@@ -127,6 +125,20 @@ public class DettagliCorsoGUI {
         avisoCorsoFinitoLabel.setVisible(false);
         avisoCorsoFinitoLabel.setManaged(false);
 
+        avisoSolaVisualizzazioneLabel = new Label("👁️ NON SEI PARTECIPANTE - Solo visualizzazione");
+        avisoSolaVisualizzazioneLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 14));
+        avisoSolaVisualizzazioneLabel.setStyle(
+            "-fx-background-color: #E3F2FD;" +
+            "-fx-text-fill: #1565C0;" +
+            "-fx-padding: 12;" +
+            "-fx-background-radius: 8;" +
+            "-fx-border-color: #90CAF9;" +
+            "-fx-border-width: 2;" +
+            "-fx-border-radius: 8;"
+        );
+        avisoSolaVisualizzazioneLabel.setVisible(false);
+        avisoSolaVisualizzazioneLabel.setManaged(false);
+
         createFormFields();
 
         chefListView = createChefListView();
@@ -145,6 +157,7 @@ public class DettagliCorsoGUI {
             title,
             fondatoreLabel,
             avisoCorsoFinitoLabel,
+            avisoSolaVisualizzazioneLabel,
             new Separator(),
             grid,
             new Separator(),
@@ -157,7 +170,7 @@ public class DettagliCorsoGUI {
         );
 
         setEditable(false);
-        applicaRestrizioniCorsoFinito();
+        applicaRestrizioniPermessi();
         refreshChefListView();
 
         VBox wrapper = new VBox(card);
@@ -223,7 +236,6 @@ public class DettagliCorsoGUI {
             "-fx-font-size: 14px;"
         );
 
-        // Data inizio: sempre non modificabile
         dataInizioPicker = StyleHelper.createDatePicker();
         dataInizioPicker.setValue(corso.getDataInizioCorso() != null ? corso.getDataInizioCorso().toLocalDate() : null);
         dataInizioPicker.setDisable(true);
@@ -231,7 +243,6 @@ public class DettagliCorsoGUI {
         dataInizioPicker.setMouseTransparent(true);
         dataInizioPicker.setStyle("-fx-opacity: 1.0;" + "-fx-control-inner-background: #E9ECEF;");
 
-        // Data fine: automatica (solo lettura)
         dataFinePicker = StyleHelper.createDatePicker();
         dataFinePicker.setValue(corso.getDataFineCorso() != null ? corso.getDataFineCorso().toLocalDate() : null);
         dataFinePicker.setDisable(true);
@@ -295,7 +306,7 @@ public class DettagliCorsoGUI {
                     box.getChildren().add(nameLabel);
                     if (isFondatore(item)) box.getChildren().add(foundLabel);
                     if (isChefLoggato(item)) box.getChildren().add(meLabel);
-                    if (editable && !isCorsoFinito()) {
+                    if (editable && !isCorsoFinito() && isChefPartecipante()) {
                         removeBtn.setDisable(isChefLoggato(item));
                         box.getChildren().add(removeBtn);
                     }
@@ -323,7 +334,7 @@ public class DettagliCorsoGUI {
     }
 
     private void apriDialogSelezionaChef() {
-        if (!editable || isCorsoFinito()) return;
+        if (!editable || isCorsoFinito() || !isChefPartecipante()) return;
 
         if (chefController == null) {
             StyleHelper.showErrorDialog("Errore", "ChefController non inizializzato");
@@ -459,23 +470,32 @@ public class DettagliCorsoGUI {
         return corso.getDataFineCorso() != null && corso.getDataFineCorso().isBefore(LocalDateTime.now());
     }
 
+    private boolean isChefPartecipante() {
+        Chef chefLoggato = gestioneController.getChefLoggato();
+        if (chefLoggato == null || corso.getChef() == null) return false;
+        
+        return corso.getChef().stream()
+            .anyMatch(c -> c.getCodFiscale() != null && 
+                          c.getCodFiscale().equals(chefLoggato.getCodFiscale()));
+    }
+
     private boolean canDeleteCourse() {
         Chef chefLoggato = gestioneController.getChefLoggato();
         return chefLoggato != null && corso.getCodfiscaleFondatore() != null
                 && chefLoggato.getCodFiscale().equals(corso.getCodfiscaleFondatore());
     }
 
-    private void applicaRestrizioniCorsoFinito() {
-        if (isCorsoFinito()) {
+    private void applicaRestrizioniPermessi() {
+        boolean corsoFinito = isCorsoFinito();
+        boolean sonoPartecipante = isChefPartecipante();
+        boolean sonoFondatore = canDeleteCourse();
+
+        if (corsoFinito) {
             avisoCorsoFinitoLabel.setVisible(true);
             avisoCorsoFinitoLabel.setManaged(true);
-            nomeField.setDisable(true);
-            prezzoField.setDisable(true);
-            argomentoField.setDisable(true);
-            frequenzaCombo.setDisable(true);
-            numeroPostiField.setDisable(true);
-            dataInizioPicker.setDisable(true);
-            dataFinePicker.setDisable(true);
+            avisoSolaVisualizzazioneLabel.setVisible(false);
+            avisoSolaVisualizzazioneLabel.setManaged(false);
+            
             modificaBtn.setVisible(false);
             modificaBtn.setManaged(false);
             salvaBtn.setVisible(false);
@@ -483,8 +503,32 @@ public class DettagliCorsoGUI {
             addChefBtn.setVisible(false);
             addChefBtn.setManaged(false);
             editable = false;
+        } else if (!sonoPartecipante) {
+            avisoSolaVisualizzazioneLabel.setVisible(true);
+            avisoSolaVisualizzazioneLabel.setManaged(true);
+            avisoCorsoFinitoLabel.setVisible(false);
+            avisoCorsoFinitoLabel.setManaged(false);
+            
+            modificaBtn.setVisible(false);
+            modificaBtn.setManaged(false);
+            salvaBtn.setVisible(false);
+            salvaBtn.setManaged(false);
+            addChefBtn.setVisible(false);
+            addChefBtn.setManaged(false);
+            editable = false;
+        } else {
+            avisoCorsoFinitoLabel.setVisible(false);
+            avisoCorsoFinitoLabel.setManaged(false);
+            avisoSolaVisualizzazioneLabel.setVisible(false);
+            avisoSolaVisualizzazioneLabel.setManaged(false);
         }
-        eliminaCorsoBtn.setDisable(!canDeleteCourse());
+
+        eliminaCorsoBtn.setDisable(!sonoFondatore);
+        
+        if (!sonoFondatore) {
+            eliminaCorsoBtn.setVisible(false);
+            eliminaCorsoBtn.setManaged(false);
+        }
     }
 
     private void tornaAllaListaCorsi() {
@@ -511,7 +555,6 @@ public class DettagliCorsoGUI {
             this::eliminaCorso
         );
     }
-
 
     private void eliminaCorso() {
         int corsoId = corso.getIdCorso();
@@ -593,114 +636,105 @@ public class DettagliCorsoGUI {
         numeroPostiField.textProperty().addListener((obs, oldVal, newVal) -> hasUnsavedChanges = true);
     }
 
-
-private void apriVisualizzaSessioni() {
-    if (ricettaController == null || ingredienteController == null) {
-        StyleHelper.showErrorDialog(
-            "Errore",
-            "Controller non inizializzati.\n\nImpossibile aprire la gestione sessioni."
-        );
-        return;
-    }
-
-    try {
-        CucinaDAO cucinaDAO = new CucinaDAO();
-        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
-        OnlineDAO onlineDAO = new OnlineDAO();
-        GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-        GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-        GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
-        GestioneSessioniController sessioniController = new GestioneSessioniController(
-            corso,
-            gestioneSessioni,
-            gestioneCucina,
-            gestioneRicette
-        );
-
-        VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
-        visualizzaSessioniGUI.setCorso(corso);
-        visualizzaSessioniGUI.setController(sessioniController);
-        visualizzaSessioniGUI.setRicettaController(ricettaController);
-        visualizzaSessioniGUI.setIngredienteController(ingredienteController);
-
-        StackPane contentPane = trovaContentPane();
-        
-        if (contentPane == null) {
-            StyleHelper.showErrorDialog("Errore", "Impossibile trovare il contenitore principale");
+    private void apriVisualizzaSessioni() {
+        if (ricettaController == null || ingredienteController == null) {
+            StyleHelper.showErrorDialog(
+                "Errore",
+                "Controller non inizializzati.\n\nImpossibile aprire la gestione sessioni."
+            );
             return;
         }
 
-        visualizzaSessioniGUI.setContentPane(contentPane);
+        try {
+            CucinaDAO cucinaDAO = new CucinaDAO();
+            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
+            OnlineDAO onlineDAO = new OnlineDAO();
+            GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
+            GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
+            GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
+            GestioneSessioniController sessioniController = new GestioneSessioniController(
+                corso,
+                gestioneSessioni,
+                gestioneCucina,
+                gestioneRicette
+            );
 
-        visualizzaSessioniGUI.setOnChiudiCallback(() -> {
-            System.out.println("🔙 Tornando a DettagliCorsoGUI...");
+            VisualizzaSessioniGUI visualizzaSessioniGUI = new VisualizzaSessioniGUI();
+            visualizzaSessioniGUI.setCorso(corso);
+            visualizzaSessioniGUI.setController(sessioniController);
+            visualizzaSessioniGUI.setRicettaController(ricettaController);
+            visualizzaSessioniGUI.setIngredienteController(ingredienteController);
+            visualizzaSessioniGUI.setGestioneCorsoController(gestioneController);
+
+            StackPane contentPane = trovaContentPane();
             
-            try {
-                CorsoCucina corsoAggiornato = gestioneController.getCorsoCompleto(corso.getIdCorso());
-                
-                DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
-                dettagliGUI.setController(gestioneController);
-                dettagliGUI.setChefController(chefController);
-                dettagliGUI.setRicettaController(ricettaController);
-                dettagliGUI.setIngredienteController(ingredienteController);
-                dettagliGUI.setCorso(corsoAggiornato);
-                dettagliGUI.setOnChiudiCallback(onChiudiCallback);
-                
-                contentPane.getChildren().setAll(dettagliGUI.getRoot());
-                System.out.println("✅ Tornato a DettagliCorsoGUI con successo");
-                
-            } catch (Exception ex) {
-                System.err.println("❌ Errore nel tornare a DettagliCorso: " + ex.getMessage());
-                ex.printStackTrace();
-                StyleHelper.showErrorDialog("Errore", "Impossibile ricaricare i dettagli del corso");
+            if (contentPane == null) {
+                StyleHelper.showErrorDialog("Errore", "Impossibile trovare il contenitore principale");
+                return;
             }
-        });
 
-        contentPane.getChildren().setAll(visualizzaSessioniGUI.getRoot());
-        System.out.println("✅ VisualizzaSessioniGUI aperto");
+            visualizzaSessioniGUI.setContentPane(contentPane);
 
-    } catch (Exception ex) {
-        StyleHelper.showErrorDialog(
-            "Errore",
-            "Impossibile inizializzare la gestione sessioni: " + ex.getMessage()
-        );
-        System.err.println("Errore inizializzazione sessioni: " + ex.getMessage());
-        ex.printStackTrace();
+            visualizzaSessioniGUI.setOnChiudiCallback(() -> {
+                try {
+                    CorsoCucina corsoAggiornato = gestioneController.getCorsoCompleto(corso.getIdCorso());
+                    
+                    DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
+                    dettagliGUI.setController(gestioneController);
+                    dettagliGUI.setChefController(chefController);
+                    dettagliGUI.setRicettaController(ricettaController);
+                    dettagliGUI.setIngredienteController(ingredienteController);
+                    dettagliGUI.setCorso(corsoAggiornato);
+                    dettagliGUI.setOnChiudiCallback(onChiudiCallback);
+                    
+                    contentPane.getChildren().setAll(dettagliGUI.getRoot());
+                    
+                } catch (Exception ex) {
+                    StyleHelper.showErrorDialog("Errore", "Impossibile ricaricare i dettagli del corso");
+                }
+            });
+
+            contentPane.getChildren().setAll(visualizzaSessioniGUI.getRoot());
+
+        } catch (Exception ex) {
+            StyleHelper.showErrorDialog(
+                "Errore",
+                "Impossibile inizializzare la gestione sessioni: " + ex.getMessage()
+            );
+        }
     }
-}
 
-private StackPane trovaContentPane() {
-    try {
-        if (card != null && card.getScene() != null) {
-            javafx.scene.Parent sceneRoot = card.getScene().getRoot();
-            
-            if (sceneRoot instanceof StackPane) {
-                StackPane mainContainer = (StackPane) sceneRoot;
+    private StackPane trovaContentPane() {
+        try {
+            if (card != null && card.getScene() != null) {
+                javafx.scene.Parent sceneRoot = card.getScene().getRoot();
                 
-                for (javafx.scene.Node node : mainContainer.getChildren()) {
-                    if (node instanceof HBox) {
-                        HBox mainLayout = (HBox) node;
-                        
-                        if (mainLayout.getChildren().size() > 1) {
-                            javafx.scene.Node possibleContentPane = mainLayout.getChildren().get(1);
+                if (sceneRoot instanceof StackPane) {
+                    StackPane mainContainer = (StackPane) sceneRoot;
+                    
+                    for (javafx.scene.Node node : mainContainer.getChildren()) {
+                        if (node instanceof HBox) {
+                            HBox mainLayout = (HBox) node;
                             
-                            if (possibleContentPane instanceof StackPane) {
-                                return (StackPane) possibleContentPane;
+                            if (mainLayout.getChildren().size() > 1) {
+                                javafx.scene.Node possibleContentPane = mainLayout.getChildren().get(1);
+                                
+                                if (possibleContentPane instanceof StackPane) {
+                                    return (StackPane) possibleContentPane;
+                                }
                             }
                         }
                     }
                 }
             }
+        } catch (Exception ex) {
         }
-    } catch (Exception ex) {
-        System.err.println("⚠️ Errore nel trovare contentPane: " + ex.getMessage());
+        
+        return null;
     }
-    
-    return null;
-}
 
     private void setEditable(boolean edit) {
-        if (isCorsoFinito()) {
+        if (isCorsoFinito() || !isChefPartecipante()) {
             this.editable = false;
             return;
         }
@@ -780,63 +814,60 @@ private StackPane trovaContentPane() {
     }
 
     private void rimuoviChef(Chef chef) {
-    if (!editable || isCorsoFinito()) return;
+        if (!editable || isCorsoFinito() || !isChefPartecipante()) return;
 
-    if (isChefLoggato(chef)) {
-        StyleHelper.showValidationDialog(
-            "⚠️ Operazione Non Permessa",
-            "Non puoi rimuovere te stesso dall'elenco del corso."
-        );
-        return;
-    }
-
-    if (isFondatore(chef)) {
-        StyleHelper.showErrorDialog(
-            "❌ Operazione Non Permessa",
-            "Non è possibile rimuovere il fondatore del corso.\n\n👑 " + 
-            chef.getNome() + " " + chef.getCognome() + " ha creato questo corso."
-        );
-        return;
-    }
-
-    Chef chefLoggato = gestioneController.getChefLoggato();
-    if (chefLoggato == null || corso.getCodfiscaleFondatore() == null
-            || !chefLoggato.getCodFiscale().equals(corso.getCodfiscaleFondatore())) {
-        StyleHelper.showErrorDialog(
-            "🔒 Permessi Insufficienti",
-            "Solo il fondatore del corso può rimuovere altri chef.\n\n" + 
-            "👑 Fondatore: " + getNomeFondatore()
-        );
-        return;
-    }
-
-    // ✅ USA LA NUOVA DIALOG CUSTOM
-    StyleHelper.showCustomConfirmationDialog(
-        "Rimuovi Chef",
-        "Rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?\n\n⚠️ Questa azione è irreversibile.",
-        () -> {
-            try {
-                gestioneController.rimuoviChefDaCorso(corso, chef);
-                corso.getChef().remove(chef);
-                chefListView.getItems().remove(chef);
-                refreshChefListView();
-                StyleHelper.showSuccessDialog(
-                    "✅ Chef Rimosso",
-                    chef.getNome() + " " + chef.getCognome() + " è stato rimosso con successo."
-                );
-            } catch (ValidationException ex) {
-                StyleHelper.showValidationDialog("⚠️ Errore Validazione", ex.getMessage());
-            } catch (DataAccessException ex) {
-                StyleHelper.showErrorDialog("❌ Errore Database", ex.getMessage());
-            }
+        if (isChefLoggato(chef)) {
+            StyleHelper.showValidationDialog(
+                "⚠️ Operazione Non Permessa",
+                "Non puoi rimuovere te stesso dall'elenco del corso."
+            );
+            return;
         }
-    );
+
+        if (isFondatore(chef)) {
+            StyleHelper.showErrorDialog(
+                "❌ Operazione Non Permessa",
+                "Non è possibile rimuovere il fondatore del corso.\n\n👑 " + 
+                chef.getNome() + " " + chef.getCognome() + " ha creato questo corso."
+            );
+            return;
+        }
+
+        Chef chefLoggato = gestioneController.getChefLoggato();
+        if (chefLoggato == null || corso.getCodfiscaleFondatore() == null
+                || !chefLoggato.getCodFiscale().equals(corso.getCodfiscaleFondatore())) {
+            StyleHelper.showErrorDialog(
+                "🔒 Permessi Insufficienti",
+                "Solo il fondatore del corso può rimuovere altri chef.\n\n" + 
+                "👑 Fondatore: " + getNomeFondatore()
+            );
+            return;
+        }
+
+        StyleHelper.showCustomConfirmationDialog(
+            "Rimuovi Chef",
+            "Rimuovere " + chef.getNome() + " " + chef.getCognome() + " dal corso?\n\n⚠️ Questa azione è irreversibile.",
+            () -> {
+                try {
+                    gestioneController.rimuoviChefDaCorso(corso, chef);
+                    corso.getChef().remove(chef);
+                    chefListView.getItems().remove(chef);
+                    refreshChefListView();
+                    StyleHelper.showSuccessDialog(
+                        "✅ Chef Rimosso",
+                        chef.getNome() + " " + chef.getCognome() + " è stato rimosso con successo."
+                    );
+                } catch (ValidationException ex) {
+                    StyleHelper.showValidationDialog("⚠️ Errore Validazione", ex.getMessage());
+                } catch (DataAccessException ex) {
+                    StyleHelper.showErrorDialog("❌ Errore Database", ex.getMessage());
+                }
+            }
+        );
     }
-
-
 
     private void aggiungiChef(Chef chef, String password) {
-        if (!editable || isCorsoFinito()) return;
+        if (!editable || isCorsoFinito() || !isChefPartecipante()) return;
 
         if (corso.getChef() != null && corso.getChef().contains(chef)) {
             StyleHelper.showValidationDialog(

@@ -1,5 +1,4 @@
 package controller;
-
 import model.CorsoCucina;
 import model.Chef;
 import service.GestioneCorsiCucina;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Collections;
 
 public class VisualizzaCorsiController {
-
     private final GestioneCorsiCucina corsiService;
     private final Chef chefLoggato;
 
@@ -50,7 +48,6 @@ public class VisualizzaCorsiController {
         if (chefLoggato == null) {
             return Collections.emptyList();
         }
-
         try {
             return corsiService.getCorsiByChef(chefLoggato);
         } catch (DataAccessException e) {

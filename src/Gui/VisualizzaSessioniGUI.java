@@ -3,6 +3,7 @@ package Gui;
 import controller.GestioneSessioniController;
 import controller.RicettaController;
 import controller.IngredienteController;
+import controller.GestioneCorsoController;
 import model.*;
 import guihelper.StyleHelper;
 
@@ -27,11 +28,13 @@ public class VisualizzaSessioniGUI {
     private GestioneSessioniController controller;
     private RicettaController ricettaController;
     private IngredienteController ingredienteController;
+    private GestioneCorsoController gestioneCorsoController;
     
     private ListView<Sessione> sessioniList;
     private ComboBox<String> filtroTipo;
     private TextField filtroRicette;
     private Label numeroSessioniLabel;
+    private Label avisoSolaVisualizzazioneLabel;
 
     private VBox root;
     
@@ -63,6 +66,10 @@ public class VisualizzaSessioniGUI {
         this.onChiudiCallback = callback;
     }
 
+    public void setGestioneCorsoController(GestioneCorsoController gestioneCorsoController) {
+        this.gestioneCorsoController = gestioneCorsoController;
+    }
+
     public VBox getRoot() {
         if (corso == null) {
             throw new IllegalStateException("Corso non impostato!");
@@ -75,6 +82,20 @@ public class VisualizzaSessioniGUI {
 
         Label titolo = StyleHelper.createTitleLabel("Sessioni del Corso: " + corso.getNomeCorso());
         titolo.setTextFill(Color.WHITE);
+
+        avisoSolaVisualizzazioneLabel = new Label("👁️ NON SEI PARTECIPANTE - Solo visualizzazione");
+        avisoSolaVisualizzazioneLabel.setFont(javafx.scene.text.Font.font("Roboto", javafx.scene.text.FontWeight.BOLD, 14));
+        avisoSolaVisualizzazioneLabel.setStyle(
+            "-fx-background-color: #E3F2FD;" +
+            "-fx-text-fill: #1565C0;" +
+            "-fx-padding: 12;" +
+            "-fx-background-radius: 8;" +
+            "-fx-border-color: #90CAF9;" +
+            "-fx-border-width: 2;" +
+            "-fx-border-radius: 8;"
+        );
+        avisoSolaVisualizzazioneLabel.setVisible(false);
+        avisoSolaVisualizzazioneLabel.setManaged(false);
 
         VBox sezioneSessioni = StyleHelper.createSection();
         
@@ -90,10 +111,41 @@ public class VisualizzaSessioniGUI {
 
         HBox pulsantiBox = createPulsantiBox();
 
-        root.getChildren().addAll(titolo, sezioneSessioni, pulsantiBox);
+        root.getChildren().addAll(titolo, avisoSolaVisualizzazioneLabel, sezioneSessioni, pulsantiBox);
+        
+        applicaRestrizioniPermessi();
         aggiornaLista();
 
         return root;
+    }
+
+    private boolean isChefPartecipante() {
+        if (gestioneCorsoController == null || corso.getChef() == null) return false;
+        
+        Chef chefLoggato = gestioneCorsoController.getChefLoggato();
+        if (chefLoggato == null) return false;
+        
+        return corso.getChef().stream()
+            .anyMatch(c -> c.getCodFiscale() != null && 
+                          c.getCodFiscale().equals(chefLoggato.getCodFiscale()));
+    }
+
+    private boolean isCorsoFinito() {
+        return corso.getDataFineCorso() != null && 
+               corso.getDataFineCorso().isBefore(java.time.LocalDateTime.now());
+    }
+
+    private void applicaRestrizioniPermessi() {
+        boolean sonoPartecipante = isChefPartecipante();
+        boolean corsoFinito = isCorsoFinito();
+
+        if (!sonoPartecipante) {
+            avisoSolaVisualizzazioneLabel.setVisible(true);
+            avisoSolaVisualizzazioneLabel.setManaged(true);
+        } else {
+            avisoSolaVisualizzazioneLabel.setVisible(false);
+            avisoSolaVisualizzazioneLabel.setManaged(false);
+        }
     }
 
     private HBox createFiltriBox() {
@@ -235,17 +287,41 @@ public class VisualizzaSessioniGUI {
 
     private void aggiornaStatoBottoneElimina(Button eliminaBtn) {
         boolean isUltimaSessione = corso.getSessioni() != null && corso.getSessioni().size() <= 1;
+        boolean sonoPartecipante = isChefPartecipante();
+        boolean corsoFinito = isCorsoFinito();
         
-        eliminaBtn.setDisable(isUltimaSessione);
+        eliminaBtn.setDisable(isUltimaSessione || !sonoPartecipante || corsoFinito);
         
         if (isUltimaSessione) {
             Tooltip tooltip = new Tooltip("Non puoi eliminare l'unica sessione del corso");
+            eliminaBtn.setTooltip(tooltip);
+        } else if (!sonoPartecipante) {
+            Tooltip tooltip = new Tooltip("Solo i partecipanti possono eliminare sessioni");
+            eliminaBtn.setTooltip(tooltip);
+        } else if (corsoFinito) {
+            Tooltip tooltip = new Tooltip("Il corso è terminato");
             eliminaBtn.setTooltip(tooltip);
         }
     }
 
     private void confermaEliminaSessione(Sessione sessione) {
         if (sessione == null) return;
+        
+        if (!isChefPartecipante()) {
+            StyleHelper.showErrorDialog(
+                "🔒 Permessi Insufficienti",
+                "Solo i partecipanti del corso possono eliminare sessioni."
+            );
+            return;
+        }
+
+        if (isCorsoFinito()) {
+            StyleHelper.showErrorDialog(
+                "❌ Corso Terminato",
+                "Non è possibile eliminare sessioni da un corso terminato."
+            );
+            return;
+        }
         
         String tipo = (sessione instanceof Online) ? "Online" : "In Presenza";
         String sessioneInfo = "Tipo: " + tipo + "\n" +
@@ -297,11 +373,38 @@ public class VisualizzaSessioniGUI {
             }
         });
 
+        boolean sonoPartecipante = isChefPartecipante();
+        boolean corsoFinito = isCorsoFinito();
+        
+        creaBtn.setDisable(!sonoPartecipante || corsoFinito);
+        
+        if (!sonoPartecipante) {
+            creaBtn.setTooltip(new Tooltip("Solo i partecipanti possono creare sessioni"));
+        } else if (corsoFinito) {
+            creaBtn.setTooltip(new Tooltip("Il corso è terminato"));
+        }
+
         pulsantiBox.getChildren().addAll(creaBtn, indietroBtn);
         return pulsantiBox;
     }
     
     private void apriCreaSessioni() {
+        if (!isChefPartecipante()) {
+            StyleHelper.showErrorDialog(
+                "🔒 Permessi Insufficienti",
+                "Solo i partecipanti del corso possono creare sessioni."
+            );
+            return;
+        }
+
+        if (isCorsoFinito()) {
+            StyleHelper.showErrorDialog(
+                "❌ Corso Terminato",
+                "Non è possibile aggiungere sessioni a un corso terminato."
+            );
+            return;
+        }
+
         try {
             if (ricettaController == null || ingredienteController == null) {
                 StyleHelper.showErrorDialog("Errore", "Controller non inizializzati");
