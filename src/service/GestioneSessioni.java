@@ -1,6 +1,6 @@
 package service;
 
-import dao.AdesioneDAO;
+
 import dao.CucinaDAO;
 import dao.InPresenzaDAO;
 import dao.OnlineDAO;
@@ -10,7 +10,6 @@ import exceptions.ValidationUtils;
 import exceptions.ErrorMessages;
 import model.InPresenza;
 import model.Online;
-import model.Ricetta;
 import model.Sessione;
 
 import java.sql.SQLException;

@@ -125,9 +125,12 @@ public class LoginChefGUI extends Application {
 		PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren()
 				.get(1);
 
-		ValidationHelper.addAutoResetListener(usernameField, usernameContainer, errorLabel);
-		ValidationHelper.addAutoResetListener(passwordField, passwordContainer, errorLabel);
+		// ✅ RIMOSSI i parametri container - ora addAutoResetListener usa solo field e
+		// errorLabel
+		ValidationHelper.addAutoResetListener(usernameField, errorLabel);
+		ValidationHelper.addAutoResetListener(passwordField, errorLabel);
 
+		// ✅ RIMOSSI i parametri container anche qui
 		passwordField.setOnAction(e -> handleLogin(usernameField, passwordField, usernameContainer, passwordContainer));
 
 		Button loginButton = StyleHelper.createSuccessButton("ACCEDI");
@@ -184,13 +187,9 @@ public class LoginChefGUI extends Application {
 	}
 
 	private HBox createWindowButtons(Stage stage) {
-		Button closeButton = StyleHelper.createWindowButton("✕", () -> stage.close(), StyleHelper.ERROR_RED);
-		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
-				"rgba(255,140,0,0.5)");
-		Button maximizeButton = StyleHelper.createWindowButton("", () -> stage.setMaximized(!stage.isMaximized()),
-				"rgba(255,140,0,0.5)");
-
-		HBox box = new HBox(5, minimizeButton, maximizeButton, closeButton);
+		HBox box = new HBox(5, StyleHelper.createWindowButtonByType("minimize", () -> stage.setIconified(true)),
+				StyleHelper.createWindowButtonByType("maximize", () -> stage.setMaximized(!stage.isMaximized())),
+				StyleHelper.createWindowButtonByType("close", stage::close));
 		box.setAlignment(Pos.TOP_RIGHT);
 		box.setPickOnBounds(false);
 		return box;
@@ -204,14 +203,13 @@ public class LoginChefGUI extends Application {
 
 	private void handleLogin(TextField usernameField, PasswordField passwordField, VBox usernameContainer,
 			VBox passwordContainer) {
-	
+
 		errorLabel.setVisible(false);
 
-
-		if (!ValidationHelper.validateNotEmpty(usernameField, usernameContainer, errorLabel, "il tuo username")) {
+		if (!ValidationHelper.validateNotEmpty(usernameField, errorLabel, "il tuo username")) {
 			return;
 		}
-		if (!ValidationHelper.validateNotEmpty(passwordField, passwordContainer, errorLabel, "la tua password")) {
+		if (!ValidationHelper.validateNotEmpty(passwordField, errorLabel, "la tua password")) {
 			return;
 		}
 
@@ -273,7 +271,7 @@ public class LoginChefGUI extends Application {
 
 			((Stage) contentPane.getScene().getWindow()).close();
 		} catch (Exception ex) {
-			// ✅ Usa StyleHelper.showErrorDialog
+
 			StyleHelper.showErrorDialog("Errore", "Impossibile aprire il menu: " + ex.getMessage());
 			ex.printStackTrace();
 		}

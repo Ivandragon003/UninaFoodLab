@@ -8,7 +8,6 @@ abstract public class Sessione {
 	private LocalDateTime dataInizioSessione;
 	private LocalDateTime dataFineSessione;
 	private CorsoCucina corsoCucina;
-	private Set<Adesione> adesioni = new HashSet<>();
 
 	public Sessione(LocalDateTime dataInizioSessione, LocalDateTime dataFineSessione) {
 		this.dataInizioSessione = dataInizioSessione;
@@ -21,10 +20,6 @@ abstract public class Sessione {
 
 	public int getIdSessione() {
 		return idSessione;
-	}
-
-	public Set<Adesione> getAdesioni() {
-		return adesioni;
 	}
 
 	public LocalDateTime getDataInizioSessione() {

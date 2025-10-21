@@ -377,7 +377,7 @@ public class CreaCorsoGUI {
 				}
 			}
 
-			CreaSessioniGUI dialog = new CreaSessioniGUI(inizio, fine, freq, dateFineOccupate, // ✅ Passa date FINE
+			CreaSessioniGUI dialog = new CreaSessioniGUI(inizio, fine, freq, dateFineOccupate, 
 					ricettaController, ingredienteController);
 
 			Sessione nuovaSessione = dialog.showDialog();
@@ -522,7 +522,7 @@ public class CreaCorsoGUI {
 					numeroSessioniLabel.setStyle("-fx-text-fill: #17a2b8; -fx-font-size: 13px; -fx-font-weight: bold;");
 				}
 			} catch (NumberFormatException e) {
-				// Ignora
+			
 			}
 		}
 	}

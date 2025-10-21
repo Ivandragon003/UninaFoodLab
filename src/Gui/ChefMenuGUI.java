@@ -26,7 +26,6 @@ import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import model.Chef;
 
-
 public class ChefMenuGUI {
 
 	private static final double WINDOW_WIDTH = 1200;
@@ -112,7 +111,6 @@ public class ChefMenuGUI {
 				inPresenzaDAO, gestioneRicetteService, gestioneCucinaService);
 
 		this.gestioneChefService = new GestioneChef(chefDAO, tieneDAO);
-		
 
 		this.gestioneSessioniService = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
 	}
@@ -172,7 +170,7 @@ public class ChefMenuGUI {
 	}
 
 	private HBox createMainLayout(Stage stage) {
-		mainLayout = new HBox(); // Salva il riferimento
+		mainLayout = new HBox();
 		mainLayout.setSpacing(0);
 
 		sidebar = createSidebar(stage);
@@ -228,13 +226,13 @@ public class ChefMenuGUI {
 		btnReportMensile.setOnAction(e -> safeRun(this::apriReportMensile, "Report Mensile"));
 		btnEliminaAccount.setOnAction(e -> safeRun(this::eliminaAccount, "Elimina Account"));
 		btnLogout.setOnAction(e -> safeRun(() -> {
-		    try {
-		        LoginChefGUI loginGui = new LoginChefGUI();
-		        loginGui.start(stage);
-		    } catch (Exception ex) {
-		        // rilanciamo per far gestire l'errore da safeRun
-		        throw new RuntimeException("Errore durante il logout: " + ex.getMessage(), ex);
-		    }
+			try {
+				LoginChefGUI loginGui = new LoginChefGUI();
+				loginGui.start(stage);
+			} catch (Exception ex) {
+
+				throw new RuntimeException("Errore durante il logout: " + ex.getMessage(), ex);
+			}
 		}, "Logout"));
 
 		for (Button btn : new Button[] { btnVisualizzaCorsi, btnCreaCorso, btnGestisciRicette, btnCreaRicetta,
@@ -375,49 +373,40 @@ public class ChefMenuGUI {
 	}
 
 	private void apriCreaRicetta() {
-    try {
-       
-        CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
-        
-       
-        creaGUI.setOnRicettaCreata(nuovaRicetta -> {
-            System.out.println("DEBUG: Ricetta creata: " + nuovaRicetta.getNome());
-            
-          
-            StyleHelper.showSuccessDialog("Successo",
-                    String.format("✅ Ricetta '%s' creata con successo!\n\n" 
-                            + "⏱️ Tempo preparazione: %d minuti\n"
-                            + "🥕 Ingredienti: %d",
-                            nuovaRicetta.getNome(), 
-                            nuovaRicetta.getTempoPreparazione(),
-                            nuovaRicetta.getNumeroIngredienti()));
-            
-          
-            mostraBenvenutoIniziale();
-            
-          
-        });
-        
-      
-        creaGUI.setOnAnnulla(() -> {
-            System.out.println("DEBUG: Creazione ricetta annullata dall'utente");
-            
-           
-            mostraBenvenutoIniziale();
-        });
-        
-       
-        VBox contenuto = creaGUI.getContent();
-        showInContentPane(contenuto);
-        
-    } catch (Exception e) {
-        System.err.println("ERROR: Errore durante la creazione della ricetta: " + e.getMessage());
-        e.printStackTrace();
-        StyleHelper.showErrorDialog("Errore", 
-            "Errore durante l'apertura della schermata crea ricetta:\n" + e.getMessage());
-    }
-}
+		try {
 
+			CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
+
+			creaGUI.setOnRicettaCreata(nuovaRicetta -> {
+				System.out.println("DEBUG: Ricetta creata: " + nuovaRicetta.getNome());
+
+				StyleHelper.showSuccessDialog("Successo",
+						String.format(
+								"✅ Ricetta '%s' creata con successo!\n\n" + "⏱️ Tempo preparazione: %d minuti\n"
+										+ "🥕 Ingredienti: %d",
+								nuovaRicetta.getNome(), nuovaRicetta.getTempoPreparazione(),
+								nuovaRicetta.getNumeroIngredienti()));
+
+				mostraBenvenutoIniziale();
+
+			});
+
+			creaGUI.setOnAnnulla(() -> {
+				System.out.println("DEBUG: Creazione ricetta annullata dall'utente");
+
+				mostraBenvenutoIniziale();
+			});
+
+			VBox contenuto = creaGUI.getContent();
+			showInContentPane(contenuto);
+
+		} catch (Exception e) {
+			System.err.println("ERROR: Errore durante la creazione della ricetta: " + e.getMessage());
+			e.printStackTrace();
+			StyleHelper.showErrorDialog("Errore",
+					"Errore durante l'apertura della schermata crea ricetta:\n" + e.getMessage());
+		}
+	}
 
 	private void apriReportMensile() {
 		try {
