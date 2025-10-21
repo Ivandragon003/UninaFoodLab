@@ -404,7 +404,7 @@ public class CreaSessioniGUI extends Stage {
 				}
 			}
 		} catch (Exception e) {
-			// ✅ Gestione unificata
+
 			StyleHelper.showErrorDialog("Errore", "❌ Errore nell'apertura del dialog: " + e.getMessage());
 		}
 	}
@@ -456,19 +456,17 @@ public class CreaSessioniGUI extends Stage {
 
 	private void salvaSessione() {
 		try {
-			// Validazione data
+
 			if (datePicker.getValue() == null) {
 				StyleHelper.showValidationDialog("Validazione", "⚠️ Seleziona una data");
 				return;
 			}
 
-			// Costruzione orari
 			LocalTime oraInizio = LocalTime.of(oraInizioBox.getValue(), minutiInizioBox.getValue());
 			LocalTime oraFine = LocalTime.of(oraFineBox.getValue(), minutiFineBox.getValue());
 			LocalDateTime dataInizio = LocalDateTime.of(datePicker.getValue(), oraInizio);
 			LocalDateTime dataFine = LocalDateTime.of(datePicker.getValue(), oraFine);
 
-			// Creazione sessione
 			if ("Online".equals(tipoCombo.getValue())) {
 				sessioneCreata = creaSessioneOnline(dataInizio, dataFine);
 			} else {
@@ -478,10 +476,9 @@ public class CreaSessioniGUI extends Stage {
 			close();
 
 		} catch (IllegalArgumentException e) {
-			// ✅ Gestione unificata: validazioni model + ValidationHelper
 			StyleHelper.showValidationDialog("Validazione", "⚠️ " + e.getMessage());
 		} catch (Exception e) {
-			// ✅ Gestione unificata: errori imprevisti
+
 			StyleHelper.showErrorDialog("Errore", "❌ Errore: " + e.getMessage());
 		}
 	}
@@ -502,22 +499,6 @@ public class CreaSessioniGUI extends Stage {
 		sessione.getRicette().addAll(ricetteSelezionate);
 
 		return sessione;
-	}
-
-	private int parseIntegerField(String value, String fieldName, int min, int max) {
-		if (value == null || value.trim().isEmpty()) {
-			throw new IllegalArgumentException("Il campo " + fieldName + " è obbligatorio");
-		}
-
-		try {
-			int parsed = Integer.parseInt(value.trim());
-			if (parsed < min || parsed > max) {
-				throw new IllegalArgumentException(fieldName + " deve essere tra " + min + " e " + max);
-			}
-			return parsed;
-		} catch (NumberFormatException e) {
-			throw new IllegalArgumentException(fieldName + " deve essere un numero valido");
-		}
 	}
 
 	public Sessione showDialog() {

@@ -209,7 +209,7 @@ public class ChefMenuGUI {
 		Button btnVisualizzaCorsi = StyleHelper.createStyledButtonWithWhiteBorder("📚 Visualizza Corsi",
 				StyleHelper.PRIMARY_LIGHT);
 		Button btnCreaCorso = StyleHelper.createStyledButtonWithWhiteBorder("➕ Crea Corso", StyleHelper.PRIMARY_LIGHT);
-		Button btnGestisciRicette = StyleHelper.createStyledButtonWithWhiteBorder("📖 Gestisci Ricette",
+		Button btnGestisciRicette = StyleHelper.createStyledButtonWithWhiteBorder("📖 Visualizza Ricette",
 				StyleHelper.PRIMARY_LIGHT);
 		Button btnCreaRicetta = StyleHelper.createStyledButtonWithWhiteBorder("✨ Crea Ricetta",
 				StyleHelper.PRIMARY_LIGHT);
@@ -221,7 +221,7 @@ public class ChefMenuGUI {
 
 		btnVisualizzaCorsi.setOnAction(e -> safeRun(this::apriVisualizzaCorsi, "Visualizza Corsi"));
 		btnCreaCorso.setOnAction(e -> safeRun(this::apriCreaCorso, "Crea Corso"));
-		btnGestisciRicette.setOnAction(e -> safeRun(this::apriVisualizzaRicette, "Gestisci Ricette"));
+		btnGestisciRicette.setOnAction(e -> safeRun(this::apriVisualizzaRicette, "Visualizza Ricette"));
 		btnCreaRicetta.setOnAction(e -> safeRun(this::apriCreaRicetta, "Crea Ricetta"));
 		btnReportMensile.setOnAction(e -> safeRun(this::apriReportMensile, "Report Mensile"));
 		btnEliminaAccount.setOnAction(e -> safeRun(this::eliminaAccount, "Elimina Account"));

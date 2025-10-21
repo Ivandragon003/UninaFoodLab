@@ -124,7 +124,7 @@ public class LoginChefGUI extends Application {
     VBox passwordContainer = createStylishTextField("Password", true);
     PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren().get(1);
 
-    // ✅ Listener manuali che nascondono SOLO l'errore, senza modificare lo stile
+  
     usernameField.textProperty().addListener((obs, oldV, newV) -> {
         if (newV != null && !newV.trim().isEmpty()) {
             errorLabel.setVisible(false);

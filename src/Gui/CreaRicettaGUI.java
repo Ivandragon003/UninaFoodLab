@@ -210,7 +210,7 @@ public class CreaRicettaGUI {
         mainContainer.getChildren().setAll(selezionaIngView);
     }
 
-    // ✅ OTTIMIZZATO: Rimossi controlli ridondanti
+    
     private void chiediQuantita(Ingrediente ing) {
         Stage dialogStage = new Stage();
         dialogStage.initModality(Modality.APPLICATION_MODAL);
@@ -334,7 +334,6 @@ public class CreaRicettaGUI {
         }
     }
 
-    // ✅ OTTIMIZZATO: Validazione delegata al service
     private void salva() {
         String nome = nomeField.getText();
         String tempoStr = tempoField.getText();
