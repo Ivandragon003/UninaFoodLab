@@ -1,147 +1,166 @@
 package controller;
 
-import model.Ricetta;
-import model.Ingrediente;
-import model.InPresenza;
-import service.GestioneRicette;
-import service.GestioneUsa;
-import service.GestioneCucina;
-import exceptions.ValidationException;
+import dao.*;
 import exceptions.DataAccessException;
+import model.*;
 
-import java.util.HashMap;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class RicettaController {
 
-	private final GestioneRicette gestioneRicette;
-	private final GestioneUsa gestioneUsa;
-	private final GestioneCucina gestioneCucina;
-	private final IngredienteController ingredienteController;
-	private List<Ricetta> cachedRicette = null;
+    private final RicettaDAO ricettaDAO;
+    private final IngredienteDAO ingredienteDAO;
+    private final UsaDAO usaDAO;
+    private final Chef chefLoggato;
 
-	public RicettaController(GestioneRicette gestioneRicette, GestioneUsa gestioneUsa, 
-	                         GestioneCucina gestioneCucina, IngredienteController ingredienteController) {
-		this.gestioneRicette = gestioneRicette;
-		this.gestioneUsa = gestioneUsa;
-		this.gestioneCucina = gestioneCucina;
-		this.ingredienteController = ingredienteController;
-	}
+    public RicettaController(RicettaDAO ricettaDAO, IngredienteDAO ingredienteDAO, UsaDAO usaDAO, Chef chefLoggato) {
+        this.ricettaDAO = ricettaDAO;
+        this.ingredienteDAO = ingredienteDAO;
+        this.usaDAO = usaDAO;
+        this.chefLoggato = chefLoggato;
+    }
 
-	
+    public Chef getChefLoggato() {
+        return chefLoggato;
+    }
 
-	public Ricetta creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti)
-			throws ValidationException, DataAccessException {
+    public List<Ricetta> visualizzaRicette() throws DataAccessException {
+        try {
+            return ricettaDAO.getAll();
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 
-		Ricetta ricetta = new Ricetta(nome, tempoPreparazione);
-		gestioneRicette.creaRicetta(ricetta);
+    public List<Ricetta> getRicetteDelChef() throws DataAccessException {
+        if (chefLoggato == null) {
+            throw new DataAccessException("Chef non autenticato");
+        }
+        try {
+            return ricettaDAO.getRicetteByChef(chefLoggato.getCodFiscale());
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 
-		if (ingredienti != null) {
-			for (Map.Entry<Ingrediente, Double> entry : ingredienti.entrySet()) {
-				Ingrediente ing = entry.getKey();
-				double q = entry.getValue();
-				gestioneUsa.aggiungiIngredienteARicetta(ricetta, ing, q);
-			}
-		}
+    public void creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti)
+            throws DataAccessException {
+        if (chefLoggato == null) {
+            throw new DataAccessException("Chef non autenticato");
+        }
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new DataAccessException("Il nome della ricetta non può essere vuoto");
+        }
+        if (tempoPreparazione <= 0) {
+            throw new DataAccessException("Il tempo di preparazione deve essere maggiore di zero");
+        }
+        if (ingredienti == null || ingredienti.isEmpty()) {
+            throw new DataAccessException("La ricetta deve contenere almeno un ingrediente");
+        }
 
-		invalidaCache();
-		return ricetta;
-	}
+        try {
+            Ricetta ricetta = new Ricetta(nome, tempoPreparazione);
+            ricetta.setChef(chefLoggato);
 
-	public void aggiornaRicetta(int idRicetta, String nuovoNome, int nuovoTempo,
-			Map<Ingrediente, Double> nuoviIngredienti) throws ValidationException, DataAccessException {
+            int idRicetta = ricettaDAO.save(ricetta);
+            ricetta.setIdRicetta(idRicetta);
 
-		
-		Ricetta vecchiaRicetta = gestioneRicette.getAllRicette().stream()
-				.filter(r -> r.getIdRicetta() == idRicetta)
-				.findFirst()
-				.orElseThrow(() -> new ValidationException("Ricetta non trovata"));
+            for (Map.Entry<Ingrediente, Double> entry : ingredienti.entrySet()) {
+                Ingrediente ing = entry.getKey();
+                Double quantita = entry.getValue();
 
-		
-		if (vecchiaRicetta.getIngredienti() != null) {
-			
-			List<Ingrediente> ingredientiDaRimuovere = List.copyOf(vecchiaRicetta.getIngredienti().keySet());
-			for (Ingrediente ing : ingredientiDaRimuovere) {
-				gestioneUsa.rimuoviIngredienteDaRicetta(vecchiaRicetta, ing);
-			}
-		}
+                if (quantita <= 0) {
+                    throw new DataAccessException("La quantità deve essere maggiore di zero");
+                }
 
-		
-		Ricetta ricetta = new Ricetta(nuovoNome, nuovoTempo);
-		ricetta.setIdRicetta(idRicetta);
-		gestioneRicette.aggiornaRicetta(idRicetta, ricetta);
+                Usa usa = new Usa(ricetta, ing, quantita);
+                usaDAO.save(usa);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile salvare i dati", e);
+        }
+    }
 
-		
-		Map<Ingrediente, Double> mappaIngredentiNormalizzati = new HashMap<>();
+    public void modificaRicetta(int idRicetta, String nuovoNome, int nuovoTempo,
+            Map<Ingrediente, Double> nuoviIngredienti) throws DataAccessException {
+        if (nuovoNome == null || nuovoNome.trim().isEmpty()) {
+            throw new DataAccessException("Il nome della ricetta non può essere vuoto");
+        }
+        if (nuovoTempo <= 0) {
+            throw new DataAccessException("Il tempo di preparazione deve essere maggiore di zero");
+        }
+        if (nuoviIngredienti == null || nuoviIngredienti.isEmpty()) {
+            throw new DataAccessException("La ricetta deve contenere almeno un ingrediente");
+        }
 
-		for (Map.Entry<Ingrediente, Double> entry : nuoviIngredienti.entrySet()) {
-			Ingrediente ing = entry.getKey();
-			Double quantita = entry.getValue();
+        try {
+            Ricetta ricetta = ricettaDAO.findById(idRicetta)
+                    .orElseThrow(() -> new DataAccessException("Ricetta non trovata"));
 
-			try {
-				
-				Optional<Ingrediente> ingredienteOpt = ingredienteController.trovaIngredientePerId(ing.getIdIngrediente());
-				
-				if (!ingredienteOpt.isPresent()) {
-					throw new ValidationException("Ingrediente non trovato: " + ing.getNome() + " (ID: " + ing.getIdIngrediente() + ")");
-				}
-				
-				Ingrediente ingredienteDB = ingredienteOpt.get();
+            ricetta.setNome(nuovoNome);
+            ricetta.setTempoPreparazione(nuovoTempo);
+            ricettaDAO.update(ricetta);
 
-				
-				gestioneUsa.aggiungiIngredienteARicetta(ricetta, ingredienteDB, quantita);
-				mappaIngredentiNormalizzati.put(ingredienteDB, quantita);
-				
-			} catch (ValidationException e) {
-				throw e;
-			} catch (Exception e) {
-				throw new DataAccessException("Errore aggiunta ingrediente '" + ing.getNome() + "': " + e.getMessage(), e);
-			}
-		}
+            usaDAO.deleteByRicetta(idRicetta);
 
-		ricetta.setIngredienti(mappaIngredentiNormalizzati);
-		invalidaCache();
-	}
+            for (Map.Entry<Ingrediente, Double> entry : nuoviIngredienti.entrySet()) {
+                if (entry.getValue() <= 0) {
+                    throw new DataAccessException("La quantità deve essere maggiore di zero");
+                }
+                Usa usa = new Usa(ricetta, entry.getKey(), entry.getValue());
+                usaDAO.save(usa);
+            }
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile salvare i dati", e);
+        }
+    }
 
-	public void eliminaRicetta(int idRicetta) throws ValidationException, DataAccessException {
-		gestioneRicette.cancellaRicetta(idRicetta);
-		invalidaCache();
-	}
+    public void eliminaRicetta(int idRicetta) throws DataAccessException {
+        try {
+            usaDAO.deleteByRicetta(idRicetta);
+            ricettaDAO.delete(idRicetta);
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile eliminare i dati", e);
+        }
+    }
 
+    public List<Ricetta> cercaPerNome(String nome) throws DataAccessException {
+        try {
+            return ricettaDAO.searchByNome(nome);
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 
+    public Ricetta getRicettaCompleta(int idRicetta) throws DataAccessException {
+        try {
+            Ricetta ricetta = ricettaDAO.findById(idRicetta)
+                    .orElseThrow(() -> new DataAccessException("Ricetta non trovata"));
 
-	public List<Ricetta> getAllRicette() throws DataAccessException {
-		if (cachedRicette == null) {
-			cachedRicette = gestioneRicette.getAllRicette();
-		}
-		return List.copyOf(cachedRicette);
-	}
+            Map<Ingrediente, Double> ingredienti = ricettaDAO.getIngredientiPerRicetta(idRicetta);
+            ricetta.setIngredienti(ingredienti);
 
-	public Ricetta getRicettaPerId(int idRicetta) throws DataAccessException {
-		return getAllRicette().stream()
-				.filter(r -> r.getIdRicetta() == idRicetta)
-				.findFirst()
-				.orElse(null);
-	}
+            return ricetta;
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 
-	
-	public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax, 
-			Integer ingredientiMin, Integer ingredientiMax) throws ValidationException, DataAccessException {
-		return gestioneRicette.filtraCombinato(nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax, getAllRicette());
-	}
+    public List<Ingrediente> getTuttiIngredienti() throws DataAccessException {
+        try {
+            return ingredienteDAO.getAll();
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 
-	public void invalidaCache() {
-		cachedRicette = null;
-	}
-
-	public void ricaricaCache() throws DataAccessException {
-		invalidaCache();
-		getAllRicette();
-	}
-
-	public GestioneRicette getGestioneRicette() {
-		return gestioneRicette;
-	}
+    public List<Ingrediente> cercaIngredientiPerNome(String nome) throws DataAccessException {
+        try {
+            return ingredienteDAO.searchByNome(nome);
+        } catch (SQLException e) {
+            throw new DataAccessException("Impossibile leggere i dati", e);
+        }
+    }
 }
