@@ -17,6 +17,7 @@ import javafx.collections.transformation.FilteredList;
 import model.*;
 import controller.RicettaController;
 import controller.IngredienteController;
+import exceptions.DataAccessException;
 import guihelper.StyleHelper;
 
 import java.util.List;
@@ -60,7 +61,6 @@ public class VisualizzaRicetteDialog extends Stage {
         StackPane root = new StackPane();
         root.setMinSize(1000, 750);
 
-        // ✅ Sfondo arancione gradiente
         Region bg = new Region();
         StyleHelper.applyBackgroundGradient(bg);
 
@@ -68,7 +68,6 @@ public class VisualizzaRicetteDialog extends Stage {
         main.setAlignment(Pos.TOP_CENTER);
         main.setPadding(new Insets(40, 35, 35, 35));
 
-        // Titolo bianco
         Label title = new Label("📚 Seleziona Ricette per Sessione");
         title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
         title.setTextFill(Color.WHITE);
@@ -82,7 +81,6 @@ public class VisualizzaRicetteDialog extends Stage {
         VBox titleBox = new VBox(10, title, subtitle);
         titleBox.setAlignment(Pos.CENTER);
 
-        // ✅ Card bianca per contenuto
         VBox contentCard = new VBox(20);
         contentCard.setPadding(new Insets(30));
         contentCard.setStyle(
@@ -98,7 +96,6 @@ public class VisualizzaRicetteDialog extends Stage {
         HBox footer = createFooter();
 
         contentCard.getChildren().addAll(mainContainer, footer);
-
         main.getChildren().addAll(titleBox, contentCard);
 
         HBox winBtns = buildWindowButtons();
@@ -224,9 +221,7 @@ public class VisualizzaRicetteDialog extends Stage {
         countSelezionateLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
         countSelezionateLabel.setTextFill(Color.web(StyleHelper.SUCCESS_GREEN));
 
-        ricetteSelezionate.addListener((javafx.collections.ListChangeListener<Ricetta>) c -> {
-            aggiornaContatori();
-        });
+        ricetteSelezionate.addListener((javafx.collections.ListChangeListener<Ricetta>) c -> aggiornaContatori());
 
         section.getChildren().addAll(titleLabel, listaSelezionate, countSelezionateLabel);
         return section;
@@ -309,7 +304,6 @@ public class VisualizzaRicetteDialog extends Stage {
                     timeLabel.setTextFill(Color.web(StyleHelper.TEXT_GRAY));
 
                     infoBox.getChildren().addAll(nameLabel, timeLabel);
-
                     cellContent.getChildren().addAll(iconLabel, infoBox);
 
                     setGraphic(cellContent);
@@ -424,7 +418,6 @@ public class VisualizzaRicetteDialog extends Stage {
         aggiornaContatori();
     }
 
-    // ✅ INTEGRAZIONE con CreaRicettaGUI come schermata continua
     private void creaRicettaDialog() {
         try {
             Stage dialogStage = new Stage();
@@ -446,19 +439,47 @@ public class VisualizzaRicetteDialog extends Stage {
             CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
 
             creaGUI.setOnRicettaCreata(nuovaRicetta -> {
-                caricaRicette();
-
-                if (!ricetteSelezionate.contains(nuovaRicetta)) {
-                    ricetteSelezionate.add(nuovaRicetta);
+                if (nuovaRicetta == null) {
+                    StyleHelper.showErrorDialog("Errore", "Ricetta non valida");
+                    dialogStage.close();
+                    return;
                 }
 
-                StyleHelper.showSuccessDialog("Successo", 
-                    String.format("✅ Ricetta '%s' creata e aggiunta!\n\n⏱️ Tempo: %d min\n🥕 Ingredienti: %d",
-                        nuovaRicetta.getNome(), nuovaRicetta.getTempoPreparazione(),
-                        nuovaRicetta.getNumeroIngredienti()));
+                if (nuovaRicetta.getNome() == null || nuovaRicetta.getNome().trim().isEmpty()) {
+                    StyleHelper.showValidationDialog("Attenzione", 
+                        "Il nome della ricetta non può essere vuoto");
+                    dialogStage.close();
+                    return;
+                }
 
-                aggiornaContatori();
-                dialogStage.close();
+                if (nuovaRicetta.getTempoPreparazione() <= 0) {
+                    StyleHelper.showValidationDialog("Attenzione", 
+                        "Il tempo di preparazione deve essere maggiore di zero");
+                    dialogStage.close();
+                    return;
+                }
+
+                try {
+                    caricaRicette();
+
+                    if (!ricetteSelezionate.contains(nuovaRicetta)) {
+                        ricetteSelezionate.add(nuovaRicetta);
+                    }
+
+                    StyleHelper.showSuccessDialog("Successo", 
+                        String.format("✅ Ricetta '%s' creata e aggiunta!\n\n⏱️ Tempo: %d min\n🥕 Ingredienti: %d",
+                            nuovaRicetta.getNome(), nuovaRicetta.getTempoPreparazione(),
+                            nuovaRicetta.getNumeroIngredienti()));
+
+                    aggiornaContatori();
+                    dialogStage.close();
+
+                } catch (Exception e) {
+                    StyleHelper.showErrorDialog("Errore", 
+                        "Errore durante il salvataggio della ricetta: " + e.getMessage());
+                    e.printStackTrace();
+                    dialogStage.close();
+                }
             });
 
             creaGUI.setOnAnnulla(dialogStage::close);
@@ -485,12 +506,13 @@ public class VisualizzaRicetteDialog extends Stage {
 
         } catch (Exception e) {
             StyleHelper.showErrorDialog("Errore", "Errore durante la creazione della ricetta: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private void caricaRicette() {
         try {
-            List<Ricetta> ricette = ricettaController.getAllRicette();
+            List<Ricetta> ricette = ricettaController.visualizzaRicette();
             ricetteDisponibili.clear();
 
             if (ricette != null && !ricette.isEmpty()) {
@@ -499,9 +521,10 @@ public class VisualizzaRicetteDialog extends Stage {
 
             aggiornaContatori();
 
-        } catch (Exception e) {
+        } catch (DataAccessException e) {
             StyleHelper.showErrorDialog("Errore Caricamento", 
                 "Errore durante il caricamento delle ricette: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
