@@ -115,11 +115,9 @@ public class LoginChefGUI extends Application {
 		VBox formContainer = new VBox(15);
 		formContainer.setAlignment(Pos.CENTER);
 
-		// Crea i campi con stile iniziale corretto
 		TextField usernameField = (TextField) createStyledField("Username", false);
 		PasswordField passwordField = (PasswordField) createStyledField("Password", true);
 
-		// Aggiungi listener per focus e reset errore
 		setupFieldBehavior(usernameField);
 		setupFieldBehavior(passwordField);
 
@@ -153,22 +151,16 @@ public class LoginChefGUI extends Application {
 		field.setPromptText(placeholder);
 		field.setPrefHeight(42);
 
-		// Imposta lo stile INIZIALE con bordo arancione
 		applyNormalStyle(field);
 
 		return field;
 	}
 
-	/**
-	 * Configura il comportamento del campo: focus e reset errore
-	 */
+	
 	private void setupFieldBehavior(TextInputControl field) {
-		// Flag per tracciare se il campo è in errore
 		final boolean[] hasError = { false };
 
-		// Listener per il FOCUS: cambia bordo tra arancione e arancione+shadow
 		field.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-			// NON modificare lo stile se il campo è in errore
 			if (hasError[0]) {
 				return;
 			}
@@ -180,14 +172,11 @@ public class LoginChefGUI extends Application {
 			}
 		});
 
-		// Listener per il TESTO: quando l'utente digita in un campo con errore
 		field.textProperty().addListener((obs, oldV, newV) -> {
 			if (hasError[0] && newV != null && !newV.trim().isEmpty()) {
-				// Reset dello stato di errore
 				hasError[0] = false;
 				errorLabel.setVisible(false);
 
-				// Applica lo stile corretto in base al focus
 				if (field.isFocused()) {
 					applyFocusStyle(field);
 				} else {
@@ -196,7 +185,6 @@ public class LoginChefGUI extends Application {
 			}
 		});
 
-		// Quando impostiamo manualmente l'errore, aggiorniamo il flag
 		field.styleProperty().addListener((obs, oldStyle, newStyle) -> {
 			if (newStyle != null && newStyle.contains(StyleHelper.ERROR_RED)) {
 				hasError[0] = true;
@@ -204,9 +192,7 @@ public class LoginChefGUI extends Application {
 		});
 	}
 
-	/**
-	 * Stile normale: bordo arancione sottile
-	 */
+	
 	private void applyNormalStyle(TextInputControl field) {
 		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
 				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 1.5;" + "-fx-border-radius: 12;"
@@ -214,9 +200,7 @@ public class LoginChefGUI extends Application {
 				+ "-fx-prompt-text-fill: gray;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 	}
 
-	/**
-	 * Stile focus: bordo arancione più spesso con ombra colorata
-	 */
+	
 	private void applyFocusStyle(TextInputControl field) {
 		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
 				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
@@ -235,35 +219,47 @@ public class LoginChefGUI extends Application {
 	}
 
 	private void handleLogin(TextField usernameField, PasswordField passwordField) {
-		errorLabel.setVisible(false);
+    errorLabel.setVisible(false);
 
-		if (!ValidationHelper.validateNotEmpty(usernameField, errorLabel, "il tuo username")) {
-			return;
-		}
-		if (!ValidationHelper.validateNotEmpty(passwordField, errorLabel, "la tua password")) {
-			return;
-		}
+    StyleHelper.applyNormalState(usernameField);
+    StyleHelper.applyNormalState(passwordField);
 
-		try {
-			Chef chef = chefController.login(usernameField.getText().trim(), passwordField.getText());
-			aprireMenuChef(chef);
-		} catch (ValidationException | DataAccessException ex) {
-			errorLabel.setText("❌ " + ex.getMessage());
-			errorLabel.setVisible(true);
+    boolean usernameOk = ValidationHelper.validateNotEmpty(usernameField, errorLabel, "il tuo username");
+    boolean passwordOk = ValidationHelper.validateNotEmpty(passwordField, errorLabel, "la tua password");
 
-			// ✅ Applica bordo rosso anche se il campo NON è vuoto ma è sbagliato
-			StyleHelper.applyErrorState(usernameField);
-			StyleHelper.applyErrorState(passwordField);
-		} catch (Exception ex) {
-			errorLabel.setText("❌ Errore durante il login: " + ex.getMessage());
-			errorLabel.setVisible(true);
+    if (!usernameOk) {
+        StyleHelper.applyErrorState(usernameField);
+    }
+    if (!passwordOk) {
+        StyleHelper.applyErrorState(passwordField);
+    }
 
-			StyleHelper.applyErrorState(usernameField);
-			StyleHelper.applyErrorState(passwordField);
+    if (!usernameOk || !passwordOk) return;
 
-			ex.printStackTrace();
-		}
-	}
+    try {
+        Chef chef = chefController.login(usernameField.getText().trim(), passwordField.getText());
+        aprireMenuChef(chef);
+    } catch (ValidationException | DataAccessException ex) {
+        errorLabel.setText("❌ " + ex.getMessage());
+        errorLabel.setVisible(true);
+
+        String msg = ex.getMessage().toLowerCase();
+        if (msg.contains("username")) {
+            StyleHelper.applyErrorState(usernameField);
+        } else if (msg.contains("password")) {
+            StyleHelper.applyErrorState(passwordField);
+        } else {
+            StyleHelper.applyErrorState(usernameField);
+            StyleHelper.applyErrorState(passwordField);
+        }
+    } catch (Exception ex) {
+        errorLabel.setText("❌ Errore durante il login: " + ex.getMessage());
+        errorLabel.setVisible(true);
+        StyleHelper.applyErrorState(usernameField);
+        StyleHelper.applyErrorState(passwordField);
+        ex.printStackTrace();
+    }
+}
 
 	private void aprireMenuChef(Chef chef) {
 		try {

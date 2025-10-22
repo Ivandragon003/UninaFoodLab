@@ -25,7 +25,7 @@ public final class StyleHelper {
 	public static final String SUCCESS_GREEN = "#06D6A0";
 	public static final String SECONDARY_BEIGE = "#F4A261";
 	public static final String CYAN_REGISTER = "#118AB2";
-	public static final String ERROR_RED = "#DC3545";
+	public static final String ERROR_RED = "#D93025";
 	public static final String INFO_BLUE = "#4ECDC4";
 	public static final String BORDER_LIGHT = "#E8E8E8";
 	public static final String TEXT_BLACK = "#2B2D42";
@@ -482,19 +482,12 @@ public final class StyleHelper {
 
 	public static Button createStyledButtonWithWhiteBorder(String text, String color) {
 		Button button = new Button(text);
-		button.setPrefSize(140, 45);
+		button.setMaxWidth(Double.MAX_VALUE);
+		button.setPrefHeight(46);
+		button.setMinHeight(40);
 		button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;" + "-fx-font-weight: bold;"
-				+ "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
+				+ "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-padding: 10 14;" + "-fx-cursor: hand;"
 				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);");
-
-		button.setOnMouseEntered(
-				e -> button.setStyle("-fx-background-color: derive(" + color + ", -12%);" + "-fx-text-fill: #FFFFFF;"
-						+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;"
-						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.22), 8, 0.4, 1.5, 3);"));
-
-		button.setOnMouseExited(e -> button.setStyle("-fx-background-color: " + color + ";" + "-fx-text-fill: #FFFFFF;"
-				+ "-fx-font-weight: bold;" + "-fx-font-size: 14px;" + "-fx-background-radius: 25;" + "-fx-cursor: hand;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 6, 0.3, 1, 2);"));
 
 		return button;
 	}
@@ -536,17 +529,15 @@ public final class StyleHelper {
 		return createWindowButton(icon, action, color);
 	}
 
-	// Stato normale: bordo arancione chiaro
 	public static void applyNormalState(TextInputControl field) {
 		if (field != null) {
 			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
-					+ PRIMARY_ORANGE + ";" + "-fx-border-width: 1.5;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+					+ PRIMARY_LIGHT + ";" + "-fx-border-width: 1.5;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
 					+ "-fx-font-size: 14px;" + "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
 					+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 		}
 	}
 
-	// Stato focus: bordo arancione più intenso + ombra
 	public static void applyFocusState(TextInputControl field) {
 		if (field != null) {
 			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
@@ -559,11 +550,9 @@ public final class StyleHelper {
 	public static void applyErrorState(TextInputControl field) {
 		if (field != null) {
 			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
-					+ ERROR_RED + ";" + // bordo rosso
-					"-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;" + "-fx-font-size: 14px;"
-					+ "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
-					+ "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.5), 8, 0, 0, 3);" // ombra più intensa
-			);
+					+ ERROR_RED + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+					+ "-fx-font-size: 14px;" + "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
+					+ "-fx-effect: dropshadow(gaussian, rgba(217,48,37,0.4), 6, 0, 0, 2);");
 		}
 	}
 

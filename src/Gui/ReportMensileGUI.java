@@ -299,20 +299,33 @@ public class ReportMensileGUI {
 
 	private HBox createChartsSection(DatiReportMensile d, Map<LocalDate, Integer> ricPerGiorno) {
 		HBox chartsBox = new HBox(25);
-		chartsBox.setAlignment(Pos.CENTER);
+		chartsBox.setAlignment(Pos.TOP_CENTER);
 		chartsBox.setPadding(new Insets(10, 0, 10, 0));
+		chartsBox.setFillHeight(true);
+		chartsBox.setMinWidth(0);
 
 		VBox leftColumn = new VBox(20);
 		leftColumn.setAlignment(Pos.TOP_CENTER);
-		leftColumn.setPrefWidth(450);
+		leftColumn.setMinWidth(0);
+		leftColumn.setMaxWidth(Double.MAX_VALUE);
+		HBox.setHgrow(leftColumn, Priority.ALWAYS);
 
 		VBox pieCard = createPieChartCard(d);
+		pieCard.setMinWidth(0);
+		pieCard.setMaxWidth(Double.MAX_VALUE);
+
 		VBox statsCard = creaStatisticheRicetteCard(d);
+		statsCard.setMinWidth(0);
+		statsCard.setMaxWidth(Double.MAX_VALUE);
 
 		leftColumn.getChildren().addAll(pieCard, statsCard);
 
+		// Card del bar chart
 		VBox barCard = createBarChartCard(ricPerGiorno);
-		barCard.setPrefWidth(600);
+		// rimosso: barCard.setPrefWidth(600);
+		barCard.setMinWidth(0);
+		barCard.setMaxWidth(Double.MAX_VALUE);
+		HBox.setHgrow(barCard, Priority.ALWAYS);
 
 		chartsBox.getChildren().addAll(leftColumn, barCard);
 		return chartsBox;
@@ -401,12 +414,10 @@ public class ReportMensileGUI {
 		DefaultCategoryDataset dataset = new DefaultCategoryDataset();
 
 		if (ricPerGiorno != null && !ricPerGiorno.isEmpty()) {
-			// ✅ ORDINA LE DATE E CREA DATASET
 			ricPerGiorno.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
 				LocalDate giorno = entry.getKey();
 				Integer count = entry.getValue();
 
-				// 🎯 FORMATO DATA: Giorno Mese Anno (es: "27 Gen 2025")
 				String meseAbbr = getMeseAbbreviato(giorno.getMonthValue());
 				String etichetta = String.format("%02d %s %d", giorno.getDayOfMonth(), meseAbbr, giorno.getYear());
 
@@ -416,13 +427,8 @@ public class ReportMensileGUI {
 			dataset.addValue(0, "Ricette", "N/A");
 		}
 
-		JFreeChart barChart = ChartFactory.createBarChart(null, // Nessun titolo
-				"Data", // Label asse X
-				"Numero Ricette", // Label asse Y
-				dataset, PlotOrientation.VERTICAL, false, // No legenda
-				true, // Tooltips
-				false // URLs
-		);
+		JFreeChart barChart = ChartFactory.createBarChart(null, "Data", "Numero Ricette", dataset,
+				PlotOrientation.VERTICAL, false, true, false);
 
 		barChart.setBackgroundPaint(null);
 		barChart.setBorderVisible(false);
@@ -452,11 +458,9 @@ public class ReportMensileGUI {
 		renderer.setItemMargin(0.15);
 		renderer.setMaximumBarWidth(0.08);
 
-		// ✅ TOOLTIP CON DATA COMPLETA
 		renderer.setDefaultToolTipGenerator(new org.jfree.chart.labels.StandardCategoryToolTipGenerator(
 				"{1}: {2} ricette", java.text.NumberFormat.getInstance()));
 
-		// ✅ CONFIGURAZIONE ASSE X (Date)
 		org.jfree.chart.axis.CategoryAxis domainAxis = plot.getDomainAxis();
 		domainAxis.setLabel("📅 Data");
 		domainAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -468,12 +472,10 @@ public class ReportMensileGUI {
 		domainAxis.setUpperMargin(0.02);
 		domainAxis.setCategoryMargin(0.25);
 
-		// ✅ ROTAZIONE ETICHETTE SE TROPPE DATE (più di 10)
 		if (ricPerGiorno != null && ricPerGiorno.size() > 10) {
 			domainAxis.setCategoryLabelPositions(org.jfree.chart.axis.CategoryLabelPositions.UP_45);
 		}
 
-		// ✅ CONFIGURAZIONE ASSE Y (Numero Ricette)
 		org.jfree.chart.axis.NumberAxis rangeAxis = (org.jfree.chart.axis.NumberAxis) plot.getRangeAxis();
 		rangeAxis.setLabel("📊 Numero Ricette");
 		rangeAxis.setLabelFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -488,7 +490,6 @@ public class ReportMensileGUI {
 		ChartViewer chartViewer = new ChartViewer(barChart);
 		chartViewer.setPrefSize(650, 420);
 
-		// ✅ ABILITA SCROLL SU SCROLLPANE QUANDO MOUSE SOPRA GRAFICO
 		chartViewer.getCanvas().setOnScroll(scrollEvent -> {
 			scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(javafx.scene.input.ScrollEvent.SCROLL,
 					scrollEvent.getX(), scrollEvent.getY(), scrollEvent.getScreenX(), scrollEvent.getScreenY(),

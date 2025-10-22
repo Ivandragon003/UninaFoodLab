@@ -32,9 +32,9 @@ public class ChefMenuGUI {
 	private static final double SIDEBAR_WIDTH = 240;
 	private static final double ANIMATION_DURATION = 250;
 
+
 	private Chef chefLoggato;
 
-	// DAO della prima classe
 	private CorsoCucinaDAO corsoDAO;
 	private ChefDAO chefDAO;
 	private TieneDAO tieneDAO;
@@ -46,7 +46,6 @@ public class ChefMenuGUI {
 	private UsaDAO usaDAO;
 	private IngredienteDAO ingredienteDAO;
 
-	// CONTROLLER della prima classe
 	private VisualizzaCorsiController corsiController;
 	private GestioneCorsoController gestioneCorsoController;
 	private RicettaController ricettaController;
@@ -54,7 +53,6 @@ public class ChefMenuGUI {
 	private ChefController chefController;
 	private ReportMensileController reportMensileController;
 
-	// GUI
 	private StackPane menuRoot;
 	private StackPane contentPane;
 	private VBox sidebar;
@@ -121,7 +119,6 @@ public class ChefMenuGUI {
 		}
 	}
 
-	// ===================== GUI =====================
 
 	public void start(Stage stage) {
 		if (chefLoggato == null)
@@ -187,7 +184,8 @@ public class ChefMenuGUI {
 		sidebar.setPadding(new Insets(30, 15, 30, 15));
 		sidebar.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + ";");
 		sidebar.setPrefWidth(SIDEBAR_WIDTH);
-
+		sidebar.setFillWidth(true);
+		
 		Label welcomeLabel = new Label("Benvenuto\n" + chefLoggato.getUsername());
 		welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
 		welcomeLabel.setTextFill(Color.WHITE);
@@ -272,7 +270,7 @@ public class ChefMenuGUI {
 		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
 		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
 				"rgba(255,107,53,0.8)");
-		Button maximizeButton = StyleHelper.createWindowButton("", () -> stage.setMaximized(!stage.isMaximized()),
+		Button maximizeButton = StyleHelper.createWindowButton("O", () -> stage.setMaximized(!stage.isMaximized()),
 				"rgba(255,107,53,0.8)");
 
 		HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);

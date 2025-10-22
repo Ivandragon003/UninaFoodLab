@@ -75,7 +75,10 @@ public class VisualizzaRicetteGUI {
 
 		ScrollPane scroll = new ScrollPane(scrollContent);
 		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(true);
+		scroll.setFitToHeight(false);
+		scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		scroll.setPannable(true);
 		scroll.setStyle("-fx-background-color: transparent;");
 		scroll.getContent().setStyle("-fx-background-color: transparent;");
 		scroll.skinProperty().addListener((obs, old, skin) -> {
@@ -186,7 +189,10 @@ public class VisualizzaRicetteGUI {
 
 		ScrollPane scroll = new ScrollPane(inner);
 		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(true);
+		scroll.setFitToHeight(false); // abilita lo scroll verticale della pagina di modifica
+		scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		scroll.setPannable(true);
 		scroll.setStyle("-fx-background-color: transparent;");
 		scroll.getContent().setStyle("-fx-background-color: transparent;");
 		scroll.skinProperty().addListener((obs, old, skin) -> {
@@ -200,7 +206,6 @@ public class VisualizzaRicetteGUI {
 		HBox buttons = buildModificaButtons(ricetta);
 
 		container.getChildren().addAll(title, scroll, bottomSep, buttons);
-		VBox.setVgrow(scroll, Priority.ALWAYS);
 		return container;
 	}
 
