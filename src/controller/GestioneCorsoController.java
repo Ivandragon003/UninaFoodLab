@@ -34,7 +34,6 @@ public class GestioneCorsoController {
 		return chefLoggato;
 	}
 
-	// Recupero tutti gli chef
 	public List<Chef> getTuttiGliChef() throws DataAccessException {
 		try {
 			return chefDAO.getAll();
@@ -43,7 +42,6 @@ public class GestioneCorsoController {
 		}
 	}
 
-	// Creazione corso
 	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotNull(corso, "Corso");
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
@@ -60,7 +58,6 @@ public class GestioneCorsoController {
 		}
 	}
 
-	// Modifica corso
 	public void modificaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotNull(corso, "Corso");
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
@@ -72,7 +69,6 @@ public class GestioneCorsoController {
 		}
 	}
 
-	// Eliminazione corso
 	public void eliminaCorso(int idCorso) throws DataAccessException {
 		try {
 			corsoDAO.delete(idCorso);
@@ -81,7 +77,6 @@ public class GestioneCorsoController {
 		}
 	}
 
-	// Assegna chef a corso
 	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password)
 			throws ValidationException, DataAccessException {
 

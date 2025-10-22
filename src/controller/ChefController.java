@@ -45,13 +45,9 @@ public class ChefController {
 		}
 	}
 
-	// ==============================================================
-	// REGISTRAZIONE CHEF
-	// ==============================================================
 	public Chef registraChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
 			boolean disponibilita, String username, String password) throws ValidationException, DataAccessException {
 
-		// Validazioni di base
 		ValidationUtils.validateNotEmpty(codFiscale, "Codice fiscale");
 		ValidationUtils.validateNotEmpty(nome, "Nome");
 		ValidationUtils.validateNotEmpty(cognome, "Cognome");
@@ -65,10 +61,8 @@ public class ChefController {
 			throw new ValidationException("Lo chef deve avere almeno 18 anni");
 
 		try {
-			// Controlli di unicità
 			checkUniqueConstraints(codFiscale, email, username);
 
-			// Creazione e salvataggio
 			Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
 			chef.setEmail(email);
 			chef.setDataNascita(dataNascita);
@@ -80,9 +74,6 @@ public class ChefController {
 		}
 	}
 
-	// ==============================================================
-	// ELIMINAZIONE ACCOUNT
-	// ==============================================================
 	public void eliminaAccount(Chef chef) throws ValidationException, DataAccessException {
 		if (chef == null)
 			throw new ValidationException("Chef non valido");

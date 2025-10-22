@@ -3,7 +3,6 @@ package controller;
 import dao.IngredienteDAO;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
-import exceptions.ValidationUtils;
 import model.Ingrediente;
 
 import java.sql.SQLException;
@@ -18,9 +17,6 @@ public class IngredienteController {
 		this.ingredienteDAO = ingredienteDAO;
 	}
 
-	// ==============================================================
-	// CREAZIONE NUOVO INGREDIENTE
-	// ==============================================================
 	public int creaIngrediente(String nome, String tipo) throws ValidationException, DataAccessException {
 		
 
@@ -29,7 +25,6 @@ public class IngredienteController {
 		try {
 			ingredienteDAO.save(ingrediente);
 
-			// Recupero dell'ID appena salvato
 			List<Ingrediente> tutti = ingredienteDAO.getAll();
 			return tutti.stream()
 					.filter(i -> i.getNome() != null && i.getNome().equalsIgnoreCase(ingrediente.getNome()))
@@ -42,9 +37,6 @@ public class IngredienteController {
 		}
 	}
 
-	// ==============================================================
-	// RECUPERO TUTTI GLI INGREDIENTI
-	// ==============================================================
 	public List<Ingrediente> getAllIngredienti() throws DataAccessException {
 		try {
 			return ingredienteDAO.getAll();
@@ -53,9 +45,6 @@ public class IngredienteController {
 		}
 	}
 
-	// ==============================================================
-	// CERCA INGREDIENTI PER NOME
-	// ==============================================================
 	public List<Ingrediente> cercaIngredientiPerNome(String nome) throws DataAccessException {
 		try {
 			List<Ingrediente> tutti = ingredienteDAO.getAll();
@@ -86,9 +75,6 @@ public class IngredienteController {
 		}
 	}
 
-	// ==============================================================
-	// TROVA INGREDIENTE PER ID
-	// ==============================================================
 	public Optional<Ingrediente> trovaIngredientePerId(int id) throws DataAccessException {
 		try {
 			return ingredienteDAO.findById(id);
