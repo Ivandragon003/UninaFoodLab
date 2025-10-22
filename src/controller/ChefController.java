@@ -28,9 +28,6 @@ public class ChefController {
 		this.tieneDAO = tieneDAO;
 	}
 
-	// ==============================================================
-	// LOGIN
-	// ==============================================================
 	public Chef login(String username, String password) throws ValidationException, DataAccessException {
 		ValidationUtils.validateNotEmpty(username, "Username");
 		ValidationUtils.validateNotEmpty(password, "Password");
