@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.*;
+import exceptions.DataAccessException;
 import guihelper.StyleHelper;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -20,7 +21,6 @@ import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 import model.CorsoCucina;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -465,77 +465,79 @@ public class VisualizzaCorsiGUI {
 
 
 	private void loadDataAsync(boolean tuttiICorsi) {
-		if (visualizzaController == null) {
-			progressIndicator.setVisible(false);
-			StyleHelper.showErrorDialog("Errore", "Controller non inizializzato");
-			return;
-		}
+    if (visualizzaController == null) {
+        progressIndicator.setVisible(false);
+        StyleHelper.showErrorDialog("Errore", "Controller non inizializzato");
+        return;
+    }
 
-		Task<List<CorsoCucina>> loadTask = new Task<>() {
-			@Override
-			protected List<CorsoCucina> call() throws Exception {
-				List<CorsoCucina> list = tuttiICorsi ? visualizzaController.getTuttiICorsi()
-						: visualizzaController.getCorsiDelChef();
+    Task<List<CorsoCucina>> loadTask = new Task<>() {
+        @Override
+        protected List<CorsoCucina> call() throws Exception {
+            List<CorsoCucina> list = tuttiICorsi 
+                ? visualizzaController.getTuttiICorsi()
+                : visualizzaController.getCorsiDelChef();
 
-				return list != null ? list : Collections.emptyList();
-			}
+            return list != null ? list : Collections.emptyList();
+        }
 
-			@Override
-			protected void succeeded() {
-				Platform.runLater(() -> {
-					List<CorsoCucina> result = getValue();
+        @Override
+        protected void succeeded() {
+            Platform.runLater(() -> {
+                List<CorsoCucina> result = getValue();
 
-					for (CorsoCucina corso : result) {
-						try {
-							int numSessioni = visualizzaController.getNumeroSessioniPerCorso(corso.getIdCorso());
-							corso.setNumeroSessioni(numSessioni);
-						} catch (SQLException e) {
-							corso.setNumeroSessioni(0);
-						}
-					}
+                for (CorsoCucina corso : result) {
+                    try {
+                        int numSessioni = visualizzaController.getNumeroSessioniPerCorso(corso.getIdCorso());
+                        corso.setNumeroSessioni(numSessioni);
+                    } catch (DataAccessException e) { // ⬅️ CORRETTO!
+                        corso.setNumeroSessioni(0);
+                    }
+                }
 
-					corsiData.setAll(result);
-					progressIndicator.setVisible(false);
-					applicaFiltriConStato();
-				});
-			}
+                corsiData.setAll(result);
+                progressIndicator.setVisible(false);
+                applicaFiltriConStato();
+            });
+        }
 
-			@Override
-			protected void failed() {
-				Platform.runLater(() -> {
-					progressIndicator.setVisible(false);
-					StyleHelper.showErrorDialog("Errore", "Errore caricamento corsi: " + getException().getMessage());
-				});
-			}
-		};
+        @Override
+        protected void failed() {
+            Platform.runLater(() -> {
+                progressIndicator.setVisible(false);
+                StyleHelper.showErrorDialog("Errore", "Errore caricamento corsi: " + getException().getMessage());
+            });
+        }
+    };
 
-		progressIndicator.setVisible(true);
-		new Thread(loadTask, "LoadCorsiThread").start();
-	}
+    progressIndicator.setVisible(true);
+    new Thread(loadTask, "LoadCorsiThread").start();
+}
 
 
 
 	private void loadAndShowDettagli(CorsoCucina corso) {
-		Task<CorsoCucina> loadDetailsTask = new Task<>() {
-			@Override
-			protected CorsoCucina call() throws Exception {
-				return gestioneCorsoController != null ? gestioneCorsoController.getCorsoCompleto(corso.getIdCorso())
-						: corso;
-			}
+	    Task<CorsoCucina> loadDetailsTask = new Task<>() {
+	        @Override
+	        protected CorsoCucina call() throws Exception {
+	            return visualizzaController != null 
+	                ? visualizzaController.getCorsoCompleto(corso.getIdCorso())
+	                : corso;
+	        }
 
-			@Override
-			protected void succeeded() {
-				Platform.runLater(() -> apriDettagliCorso(getValue()));
-			}
+	        @Override
+	        protected void succeeded() {
+	            Platform.runLater(() -> apriDettagliCorso(getValue()));
+	        }
 
-			@Override
-			protected void failed() {
-				Platform.runLater(() -> StyleHelper.showErrorDialog("Errore",
-						"Impossibile caricare i dettagli: " + getException().getMessage()));
-			}
-		};
+	        @Override
+	        protected void failed() {
+	            Platform.runLater(() -> StyleHelper.showErrorDialog("Errore",
+	                    "Impossibile caricare i dettagli: " + getException().getMessage()));
+	        }
+	    };
 
-		new Thread(loadDetailsTask, "LoadDettagliThread").start();
+	    new Thread(loadDetailsTask, "LoadDettagliThread").start();
 	}
 
 	private void apriDettagliCorso(CorsoCucina corso) {
