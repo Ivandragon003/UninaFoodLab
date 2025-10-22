@@ -7,13 +7,10 @@ import exceptions.ValidationException;
 import exceptions.ValidationUtils;
 import model.Chef;
 import model.CorsoCucina;
-import model.Frequenza;
-import model.Sessione;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +18,6 @@ public class ChefController {
 
 	private final ChefDAO chefDAO;
 	private final TieneDAO tieneDAO;
-	private GestioneCorsoController gestioneCorsoController;
 
 	public ChefController(ChefDAO chefDAO, TieneDAO tieneDAO) {
 		this.chefDAO = chefDAO;
@@ -48,15 +44,10 @@ public class ChefController {
 	public Chef registraChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
 			boolean disponibilita, String username, String password) throws ValidationException, DataAccessException {
 
-		ValidationUtils.validateNotEmpty(codFiscale, "Codice fiscale");
-		ValidationUtils.validateNotEmpty(nome, "Nome");
-		ValidationUtils.validateNotEmpty(cognome, "Cognome");
-		ValidationUtils.validateNotEmpty(email, "Email");
-		ValidationUtils.validateNotEmpty(username, "Username");
-		ValidationUtils.validateNotEmpty(password, "Password");
+		validateRequired(codFiscale, "Codice fiscale", nome, "Nome", cognome, "Cognome", email, "Email", username,
+				"Username", password, "Password");
+		ValidationUtils.validateNotNull(dataNascita, "Data di nascita");
 
-		if (dataNascita == null)
-			throw new ValidationException(ValidationUtils.campoObbligatorio("Data di nascita"));
 		if (dataNascita.isAfter(LocalDate.now().minusYears(18)))
 			throw new ValidationException("Lo chef deve avere almeno 18 anni");
 
@@ -66,6 +57,7 @@ public class ChefController {
 			Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
 			chef.setEmail(email);
 			chef.setDataNascita(dataNascita);
+
 			chefDAO.save(chef, password);
 			return chef;
 
@@ -75,40 +67,35 @@ public class ChefController {
 	}
 
 	public void eliminaAccount(Chef chef) throws ValidationException, DataAccessException {
-		if (chef == null)
-			throw new ValidationException("Chef non valido");
-
-		String username = chef.getUsername();
-		ValidationUtils.validateNotEmpty(username, "Username");
-
+		ValidationUtils.validateNotNull(chef, "Chef");
+		ValidationUtils.validateNotEmpty(chef.getUsername(), "Username");
 		try {
-			Optional<Chef> chefOpt = chefDAO.findByUsername(username);
+			Optional<Chef> chefOpt = chefDAO.findByUsername(chef.getUsername());
 			if (chefOpt.isEmpty())
-				throw new ValidationException("Chef non trovato nel sistema: " + username);
-
+				throw new ValidationException("Chef non trovato nel sistema: " + chef.getUsername());
 			chefDAO.delete(chefOpt.get().getCodFiscale());
 		} catch (SQLException e) {
 			throw new DataAccessException("Errore durante l'eliminazione dell'account chef dal database", e);
 		}
 	}
 
-	
-	public List<Chef> getAllChef() throws DataAccessException {
-		try {
-			return chefDAO.getAll();
-		} catch (SQLException e) {
-			throw new DataAccessException("Errore durante la lettura degli chef dal database", e);
-		}
-	}
-
 	public List<CorsoCucina> getCorsiByChef(Chef chef) throws ValidationException, DataAccessException {
-		if (chef == null)
-			throw new ValidationException("Chef non valido");
-
+		ValidationUtils.validateNotNull(chef, "Chef");
 		try {
 			return tieneDAO.getCorsiByChef(chef.getCodFiscale());
 		} catch (SQLException e) {
 			throw new DataAccessException("Errore durante il recupero dei corsi per lo chef", e);
+		}
+	}
+
+	private void validateRequired(Object... args) throws ValidationException {
+		for (int i = 0; i < args.length; i += 2) {
+			Object value = args[i];
+			String name = (String) args[i + 1];
+			if (value instanceof String s)
+				ValidationUtils.validateNotEmpty(s, name);
+			else
+				ValidationUtils.validateNotNull(value, name);
 		}
 	}
 
@@ -122,43 +109,12 @@ public class ChefController {
 			throw new ValidationException("Username già esistente");
 	}
 
-	public void setGestioneCorsoController(GestioneCorsoController gestioneCorsoController) {
-		this.gestioneCorsoController = gestioneCorsoController;
+	public List<Chef> getAllChef() throws DataAccessException {
+		try {
+			return chefDAO.getAll();
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante il recupero della lista degli chef", e);
+		}
 	}
 
-	public void saveCorsoFromForm(String nome, String prezzoText, String argomento, String postiText,
-			Frequenza frequenza, LocalDate dataInizio, Integer startHour, Integer startMinute, LocalDate dataFine,
-			Integer endHour, Integer endMinute, List<Chef> chefSelezionati, List<Sessione> sessioni)
-			throws ValidationException, DataAccessException {
-
-		if (gestioneCorsoController == null)
-			throw new IllegalStateException("GestioneCorsoController non impostato");
-
-		double prezzo = ValidationUtils.parseDoubleSafe(prezzoText);
-		int posti = ValidationUtils.parseIntegerSafe(postiText);
-
-		LocalDateTime inizio = LocalDateTime.of(dataInizio,
-				LocalTime.of(startHour != null ? startHour : 9, startMinute != null ? startMinute : 0));
-		LocalDateTime fine = LocalDateTime.of(dataFine,
-				LocalTime.of(endHour != null ? endHour : 17, endMinute != null ? endMinute : 0));
-
-		if (!inizio.isBefore(fine))
-			throw new ValidationException("La data di fine corso deve essere successiva alla data di inizio");
-
-		if (chefSelezionati == null || chefSelezionati.isEmpty())
-			throw new ValidationException("Selezionare almeno uno chef per il corso");
-
-		if (sessioni == null || sessioni.isEmpty())
-			throw new ValidationException("Aggiungere almeno una sessione al corso");
-
-		CorsoCucina corso = new CorsoCucina(nome.trim(), prezzo, argomento == null ? "" : argomento.trim(), frequenza,
-				posti);
-		corso.setDataInizioCorso(inizio);
-		corso.setDataFineCorso(fine);
-		corso.setNumeroSessioni(sessioni.size());
-		corso.setChef(List.copyOf(chefSelezionati));
-		corso.setSessioni(List.copyOf(sessioni));
-
-		gestioneCorsoController.creaCorso(corso);
-	}
 }

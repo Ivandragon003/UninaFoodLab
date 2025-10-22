@@ -43,11 +43,10 @@ public class GestioneCorsoController {
 	}
 
 	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-		ValidationUtils.validateNotNull(corso, "Corso");
+		validateRequired(corso, "Corso");
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-		ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti");
-
-		ValidationUtils.validateNotNull(chefLoggato, "Chef loggato");
+		ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti"); 
+		ensureChefLogged();
 
 		corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
 
@@ -59,9 +58,8 @@ public class GestioneCorsoController {
 	}
 
 	public void modificaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-		ValidationUtils.validateNotNull(corso, "Corso");
+		validateRequired(corso, "Corso");
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-
 		try {
 			corsoDAO.update(corso);
 		} catch (SQLException e) {
@@ -80,8 +78,7 @@ public class GestioneCorsoController {
 	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password)
 			throws ValidationException, DataAccessException {
 
-		ValidationUtils.validateNotNull(corso, "Corso");
-		ValidationUtils.validateNotNull(chef, "Chef");
+		validateRequired(corso, "Corso", chef, "Chef");
 
 		try {
 			Optional<Chef> esistente = chefDAO.findByCodFiscale(chef.getCodFiscale());
@@ -91,8 +88,7 @@ public class GestioneCorsoController {
 				chefDAO.save(chef, password);
 			}
 
-			List<Chef> giaAssegnati = tieneDAO.getChefByCorso(corso.getIdCorso());
-			if (giaAssegnati.stream().anyMatch(c -> c.getCodFiscale().equals(chef.getCodFiscale())))
+			if (isChefAlreadyAssigned(corso, chef.getCodFiscale()))
 				throw new ValidationException("Chef già assegnato al corso.");
 
 			tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
@@ -103,17 +99,12 @@ public class GestioneCorsoController {
 		}
 	}
 
-	
 	public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
 
-		ValidationUtils.validateNotNull(corso, "Corso");
-		ValidationUtils.validateNotNull(chef, "Chef");
+		validateRequired(corso, "Corso", chef, "Chef");
 
 		try {
-			List<Chef> assegnati = tieneDAO.getChefByCorso(corso.getIdCorso());
-			boolean presente = assegnati.stream().anyMatch(c -> c.getCodFiscale().equals(chef.getCodFiscale()));
-
-			if (!presente)
+			if (!isChefAlreadyAssigned(corso, chef.getCodFiscale()))
 				throw new ValidationException("Lo chef non è assegnato a questo corso.");
 
 			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
@@ -121,6 +112,25 @@ public class GestioneCorsoController {
 
 		} catch (SQLException e) {
 			throw new DataAccessException("Errore durante la rimozione dello chef dal corso.", e);
+		}
+	}
+
+	private void ensureChefLogged() throws ValidationException {
+		ValidationUtils.validateNotNull(chefLoggato, "Chef loggato");
+	}
+
+	private boolean isChefAlreadyAssigned(CorsoCucina corso, String codFiscale) throws SQLException {
+		return tieneDAO.getChefByCorso(corso.getIdCorso()).stream().anyMatch(c -> c.getCodFiscale().equals(codFiscale));
+	}
+
+	private void validateRequired(Object... args) throws ValidationException {
+		for (int i = 0; i < args.length; i += 2) {
+			Object value = args[i];
+			String name = (String) args[i + 1];
+			if (value instanceof String s)
+				ValidationUtils.validateNotEmpty(s, name);
+			else
+				ValidationUtils.validateNotNull(value, name);
 		}
 	}
 }

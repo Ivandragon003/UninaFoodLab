@@ -98,7 +98,7 @@ public class ChefMenuGUI {
 					inPresenzaDAO, chefLoggato);
 
 			this.chefController = new ChefController(chefDAO, tieneDAO);
-			this.chefController.setGestioneCorsoController(gestioneCorsoController);
+			
 
 			this.ricettaController = new RicettaController(ricettaDAO, ingredienteDAO, usaDAO, cucinaDAO, chefLoggato);
 			this.ingredienteController = new IngredienteController(ingredienteDAO);

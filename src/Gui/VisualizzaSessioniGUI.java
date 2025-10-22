@@ -137,7 +137,7 @@ public class VisualizzaSessioniGUI {
 
     private void applicaRestrizioniPermessi() {
         boolean sonoPartecipante = isChefPartecipante();
-        boolean corsoFinito = isCorsoFinito();
+      
 
         if (!sonoPartecipante) {
             avisoSolaVisualizzazioneLabel.setVisible(true);

@@ -3,7 +3,7 @@ package model;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
 
-import guihelper.ValidationHelper;
+
 
 abstract public class Persona {
 	private String codFiscale;

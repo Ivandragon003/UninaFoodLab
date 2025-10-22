@@ -2,6 +2,8 @@ package controller;
 
 import dao.*;
 import exceptions.DataAccessException;
+import exceptions.ValidationUtils;
+import exceptions.ValidationException;
 import model.*;
 
 import java.sql.SQLException;
@@ -66,6 +68,12 @@ public class VisualizzaCorsiController {
 
 	public int getNumeroSessioniPerCorso(int idCorso) throws DataAccessException {
 		try {
+			ValidationUtils.validatePositiveInt(idCorso, "ID corso");
+		} catch (ValidationException e) {
+			throw new DataAccessException(e.getMessage(), e);
+		}
+		
+		try {
 			return corsoDAO.getNumeroSessioniPerCorso(idCorso);
 		} catch (SQLException e) {
 			throw new DataAccessException("Impossibile leggere i dati", e);
@@ -73,6 +81,12 @@ public class VisualizzaCorsiController {
 	}
 
 	public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
+		try {
+			ValidationUtils.validatePositiveInt(idCorso, "ID corso");
+		} catch (ValidationException e) {
+			throw new DataAccessException(e.getMessage(), e);
+		}
+		
 		try {
 			CorsoCucina corso = corsoDAO.findById(idCorso)
 					.orElseThrow(() -> new DataAccessException("Corso non trovato nel sistema"));
@@ -95,6 +109,14 @@ public class VisualizzaCorsiController {
 
 	public List<Sessione> getSessioniPerCorsoInPeriodo(int idCorso, LocalDate inizio, LocalDate fine)
 			throws DataAccessException {
+		try {
+			ValidationUtils.validatePositiveInt(idCorso, "ID corso");
+			ValidationUtils.validateNotNull(inizio, "Data inizio");
+			ValidationUtils.validateNotNull(fine, "Data fine");
+		} catch (ValidationException e) {
+			throw new DataAccessException(e.getMessage(), e);
+		}
+		
 		try {
 			List<Sessione> sessioni = new ArrayList<>();
 			sessioni.addAll(onlineDAO.getByCorso(idCorso));

@@ -1,8 +1,8 @@
 package guihelper;
 
-import javafx.application.Platform;
+
 import javafx.scene.control.Label;
-import javafx.scene.control.TextFormatter;
+
 import javafx.scene.control.TextInputControl;
 
 public final class ValidationHelper {
@@ -66,40 +66,11 @@ public final class ValidationHelper {
         });
     }
 
-    public static TextFormatter<String> getLettersOnlyFormatter() {
-        return new TextFormatter<>(change -> {
-            String newText = change.getControlNewText();
-            if (newText.matches("[a-zA-ZàèéìòùÀÈÉÌÒÙáéíóúÁÉÍÓÚäëïöüÄËÏÖÜâêîôûÂÊÎÔÛçÇ' ]*")) {
-                return change;
-            }
-            return null;
-        });
-    }
+    
 
-    public static void hideError(TextInputControl field, Label errorLabel) {
-        runOnUiThread(() -> {
-            StyleHelper.applyNormalState(field);
-            if (errorLabel != null) {
-                errorLabel.setVisible(false);
-            }
-        });
-    }
+    
 
-    public static void addAutoResetListener(TextInputControl field, Label errorLabel) {
-        if (field == null) return;
-        
-        field.textProperty().addListener((obs, oldV, newV) -> {
-            if (newV != null && !newV.trim().isEmpty()) {
-                hideError(field, errorLabel);
-            }
-        });
-    }
+   
 
-    private static void runOnUiThread(Runnable r) {
-        if (Platform.isFxApplicationThread()) {
-            r.run();
-        } else {
-            Platform.runLater(r);
-        }
-    }
+    
 }

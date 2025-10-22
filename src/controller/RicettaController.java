@@ -6,6 +6,7 @@ import dao.RicettaDAO;
 import dao.UsaDAO;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
+import exceptions.ValidationUtils;
 import model.Chef;
 import model.Ingrediente;
 import model.Ricetta;
@@ -59,13 +60,17 @@ public class RicettaController {
 		}
 	}
 
-	
 	public Ricetta creaRicetta(String nome, int tempoPreparazione, Map<Ingrediente, Double> ingredienti)
 			throws ValidationException, DataAccessException {
-		if (chefLoggato == null)
-			throw new DataAccessException("Chef non autenticato");
-		if (ingredienti == null || ingredienti.isEmpty())
+
+		ValidationUtils.validateNotNull(chefLoggato, "Chef autenticato");
+		nome = ValidationUtils.validateNotEmpty(nome, "Nome ricetta");
+		ValidationUtils.validatePositiveInt(tempoPreparazione, "Tempo preparazione");
+		ValidationUtils.validateNotNull(ingredienti, "Ingredienti");
+
+		if (ingredienti.isEmpty()) {
 			throw new ValidationException("La ricetta deve contenere almeno un ingrediente");
+		}
 
 		try {
 			if (ricettaEsiste(nome)) {
@@ -92,10 +97,15 @@ public class RicettaController {
 		}
 	}
 
-	
 	public void modificaRicetta(int idRicetta, String nuovoNome, int nuovoTempo,
 			Map<Ingrediente, Double> nuoviIngredienti) throws ValidationException, DataAccessException {
-		if (nuoviIngredienti == null || nuoviIngredienti.isEmpty()) {
+
+		ValidationUtils.validatePositiveInt(idRicetta, "ID ricetta");
+		nuovoNome = ValidationUtils.validateNotEmpty(nuovoNome, "Nome ricetta");
+		ValidationUtils.validatePositiveInt(nuovoTempo, "Tempo preparazione");
+		ValidationUtils.validateNotNull(nuoviIngredienti, "Ingredienti");
+
+		if (nuoviIngredienti.isEmpty()) {
 			throw new ValidationException("La ricetta deve contenere almeno un ingrediente");
 		}
 
@@ -103,7 +113,6 @@ public class RicettaController {
 			Ricetta ricetta = ricettaDAO.findById(idRicetta)
 					.orElseThrow(() -> new ValidationException("Ricetta non trovata"));
 
-		
 			List<Ricetta> omonime = ricettaDAO.getByNome(nuovoNome);
 			for (Ricetta r : omonime) {
 				if (r.getIdRicetta() != idRicetta) {
@@ -115,7 +124,6 @@ public class RicettaController {
 			ricetta.setTempoPreparazione(nuovoTempo);
 			ricettaDAO.update(idRicetta, ricetta);
 
-			
 			usaDAO.deleteByRicetta(idRicetta);
 
 			for (Map.Entry<Ingrediente, Double> entry : nuoviIngredienti.entrySet()) {
@@ -131,8 +139,10 @@ public class RicettaController {
 		}
 	}
 
-	
 	public void eliminaRicetta(int idRicetta) throws ValidationException, DataAccessException {
+
+		ValidationUtils.validatePositiveInt(idRicetta, "ID ricetta");
+
 		try {
 			ricettaDAO.findById(idRicetta).orElseThrow(() -> new ValidationException("Ricetta non trovata"));
 
@@ -143,7 +153,6 @@ public class RicettaController {
 		}
 	}
 
-	
 	public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax, Integer ingredientiMin,
 			Integer ingredientiMax, List<Ricetta> tutteRicette) throws ValidationException {
 
@@ -176,13 +185,12 @@ public class RicettaController {
 		}
 	}
 
-	
 	public void aggiungiIngredienteARicetta(Ricetta ricetta, Ingrediente ingrediente, double quantita)
 			throws ValidationException, DataAccessException {
 
-		if (ricetta == null || ingrediente == null) {
-			throw new ValidationException("Parametri nulli");
-		}
+		ValidationUtils.validateNotNull(ricetta, "Ricetta");
+		ValidationUtils.validateNotNull(ingrediente, "Ingrediente");
+
 		if (quantita <= 0 || Double.isNaN(quantita) || Double.isInfinite(quantita)) {
 			throw new ValidationException("La quantità deve essere un numero positivo valido");
 		}
@@ -208,9 +216,8 @@ public class RicettaController {
 	public void rimuoviIngredienteDaRicetta(Ricetta ricetta, Ingrediente ingrediente)
 			throws ValidationException, DataAccessException {
 
-		if (ricetta == null || ingrediente == null) {
-			throw new ValidationException("Parametri nulli");
-		}
+		ValidationUtils.validateNotNull(ricetta, "Ricetta");
+		ValidationUtils.validateNotNull(ingrediente, "Ingrediente");
 
 		Ingrediente key = trovaIngredienteKey(ricetta.getIngredienti(), ingrediente);
 		if (key == null) {
@@ -225,7 +232,6 @@ public class RicettaController {
 		}
 	}
 
-	
 	private boolean ricettaEsiste(String nome) throws DataAccessException {
 		try {
 			return !ricettaDAO.getByNome(nome).isEmpty();

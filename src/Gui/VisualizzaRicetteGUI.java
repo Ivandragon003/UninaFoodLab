@@ -189,7 +189,7 @@ public class VisualizzaRicetteGUI {
 
 		ScrollPane scroll = new ScrollPane(inner);
 		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(false); // abilita lo scroll verticale della pagina di modifica
+		scroll.setFitToHeight(false); 
 		scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 		scroll.setPannable(true);
@@ -546,7 +546,6 @@ public class VisualizzaRicetteGUI {
 
 	private void mostraModifica(Ricetta ricetta) {
 		try {
-			// ✅ Cerca la ricetta nella lista già caricata
 			Ricetta ricettaAggiornata = ricetteData.stream().filter(r -> r.getIdRicetta() == ricetta.getIdRicetta())
 					.findFirst().orElse(null);
 
@@ -604,7 +603,7 @@ public class VisualizzaRicetteGUI {
 		}
 
 		try {
-			// ✅ Usa modificaRicetta che ESISTE nel tuo controller
+			
 			ricettaController.modificaRicetta(ricetta.getIdRicetta(), nome.trim(), tempo, modificaIngredientiMap);
 			StyleHelper.showSuccessDialog("✅ Successo", "Ricetta aggiornata!");
 			mostraLista();
@@ -625,7 +624,7 @@ public class VisualizzaRicetteGUI {
 
 	private void filtra() {
 		try {
-			// ✅ Filtraggio manuale con stream
+			
 			List<Ricetta> tutte = ricettaController.visualizzaRicette();
 
 			String nomeFilter = filtroNome.getText() != null ? filtroNome.getText().toLowerCase().trim() : "";
@@ -667,7 +666,7 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void ricarica() {
-		// ✅ Semplicemente ricarica senza cache
+	
 		carica();
 		StyleHelper.showSuccessDialog("✅ Successo", "Ricette ricaricate");
 	}

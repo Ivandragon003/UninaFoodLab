@@ -8,7 +8,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -49,7 +48,6 @@ public class SelezionaChefDialog {
         Scene scene = new Scene(root);
         stage.setScene(scene);
         
-        // Carica iniziale
         caricaChef();
         
         stage.showAndWait();
@@ -61,17 +59,12 @@ public class SelezionaChefDialog {
         root.setPrefSize(600, 500);
         root.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-border-color: #FF6600; -fx-border-width: 2; -fx-border-radius: 15;");
         
-        //DropShadow shadow = new DropShadow(20, Color.rgb(0, 0, 0, 0.2));
-        //root.setEffect(shadow);
 
-        // Header
         VBox header = createHeader();
         
-        // Content
         VBox content = createContent();
         VBox.setVgrow(content, Priority.ALWAYS);
         
-        // Footer
         HBox footer = createFooter();
 
         root.getChildren().addAll(header, content, footer);
@@ -83,7 +76,7 @@ public class SelezionaChefDialog {
         header.setPadding(new Insets(20, 20, 15, 20));
         header.setStyle("-fx-background-color: linear-gradient(to bottom, #FF6600, #FF8533); -fx-background-radius: 15 15 0 0;");
 
-        // Title con pulsante chiudi
+       
         HBox titleBox = new HBox();
         titleBox.setAlignment(Pos.CENTER_LEFT);
         
@@ -111,10 +104,10 @@ public class SelezionaChefDialog {
         
         titleBox.getChildren().addAll(title, spacer, closeBtn);
 
-        // Search e filtri
+       
         HBox searchRow = createSearchRow();
 
-        // Count label
+        
         countLabel = new Label("📊 Caricamento...");
         countLabel.setFont(Font.font("Roboto", FontWeight.NORMAL, 12));
         countLabel.setTextFill(Color.WHITE);
@@ -127,7 +120,7 @@ public class SelezionaChefDialog {
         HBox searchRow = new HBox(10);
         searchRow.setAlignment(Pos.CENTER_LEFT);
 
-        // Search field
+      
         searchField = new TextField();
         searchField.setPromptText("🔍 Cerca per nome, cognome o username...");
         searchField.setPrefHeight(35);
@@ -142,7 +135,7 @@ public class SelezionaChefDialog {
         );
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
-        // Filtro disponibilità
+       
         filtroDisponibilita = new ComboBox<>();
         filtroDisponibilita.getItems().addAll("Tutti", "✅ Disponibili", "❌ Non Disponibili");
         filtroDisponibilita.setValue("Tutti");
@@ -157,7 +150,7 @@ public class SelezionaChefDialog {
         );
         filtroDisponibilita.setPrefWidth(160);
 
-        // Refresh button
+       
         Button refreshBtn = new Button("🔄");
         refreshBtn.setPrefSize(35, 35);
         refreshBtn.setStyle(
@@ -180,7 +173,6 @@ public class SelezionaChefDialog {
         subtitle.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
         subtitle.setTextFill(Color.web("#2c3e50"));
 
-        // ListView con celle personalizzate
         chefListView = new ListView<>(chefData);
         chefListView.setPrefHeight(300);
         chefListView.setStyle(
@@ -247,7 +239,7 @@ public class SelezionaChefDialog {
         return button;
     }
 
-    // Cella personalizzata per chef
+   
     private class ChefListCell extends ListCell<Chef> {
         @Override
         protected void updateItem(Chef chef, boolean empty) {
@@ -262,11 +254,10 @@ public class SelezionaChefDialog {
                 cellBox.setAlignment(Pos.CENTER_LEFT);
                 cellBox.setPadding(new Insets(10));
 
-                // Icona disponibilità
                 Label iconLabel = new Label(Boolean.TRUE.equals(chef.getDisponibilita()) ? "✅" : "❌");
                 iconLabel.setFont(Font.font(16));
 
-                // Info chef
+               
                 VBox infoBox = new VBox(3);
                 
                 String nome = Optional.ofNullable(chef.getNome()).orElse("");
@@ -285,7 +276,6 @@ public class SelezionaChefDialog {
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
 
-                // Badge disponibilità
                 Label badgeLabel = new Label(
                     Boolean.TRUE.equals(chef.getDisponibilita()) ? "DISPONIBILE" : "NON DISPONIBILE"
                 );
@@ -311,7 +301,7 @@ public class SelezionaChefDialog {
                 setGraphic(cellBox);
                 setText(null);
                 
-                // Stile hover
+             
                 setStyle("-fx-background-color: transparent; -fx-padding: 5;");
                 setOnMouseEntered(e -> {
                     if (!isEmpty()) {
@@ -328,7 +318,6 @@ public class SelezionaChefDialog {
     }
 
     private void setupEventHandlers() {
-        // Doppio click per selezionare
         chefListView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 Chef sel = chefListView.getSelectionModel().getSelectedItem();
@@ -338,14 +327,14 @@ public class SelezionaChefDialog {
             }
         });
 
-        // Enter su search applica filtri
+       
         searchField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
                 applicaFiltri();
             }
         });
 
-        // Listener per filtri
+      
         searchField.textProperty().addListener((obs, oldValue, newValue) -> applicaFiltri());
         filtroDisponibilita.setOnAction(e -> applicaFiltri());
     }
@@ -361,7 +350,7 @@ public class SelezionaChefDialog {
             return;
         }
 
-        // VALIDAZIONE: Verifica disponibilità
+      
         if (!Boolean.TRUE.equals(sel.getDisponibilita())) {
             StyleHelper.showErrorDialog(
                 "Chef Non Disponibile", 
@@ -390,7 +379,7 @@ public class SelezionaChefDialog {
                 StyleHelper.showInfoDialog("Avviso", "Nessun chef disponibile nel sistema");
             }
 
-            // Setup eventi dopo primo caricamento
+          
             setupEventHandlers();
 
         } catch (DataAccessException e) {

@@ -490,7 +490,7 @@ public class VisualizzaCorsiGUI {
                     try {
                         int numSessioni = visualizzaController.getNumeroSessioniPerCorso(corso.getIdCorso());
                         corso.setNumeroSessioni(numSessioni);
-                    } catch (DataAccessException e) { // ⬅️ CORRETTO!
+                    } catch (DataAccessException e) { 
                         corso.setNumeroSessioni(0);
                     }
                 }

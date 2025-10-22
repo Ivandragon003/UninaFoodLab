@@ -45,13 +45,10 @@ public class VisualizzaIngredientiGUI {
 	}
 
 	public VBox getContent() {
-		if (root == null) {
+		if (root == null)
 			root = buildMain();
-		}
 		return root;
 	}
-
-	// ==================== BUILD ====================
 
 	private VBox buildMain() {
 		VBox container = new VBox(20);
@@ -59,13 +56,9 @@ public class VisualizzaIngredientiGUI {
 
 		VBox content = StyleHelper.createSection();
 		content.setSpacing(20);
-
 		content.getChildren().addAll(buildFiltri(), new Separator(), buildLista());
 
-		ScrollPane scroll = new ScrollPane(content);
-		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(true);
-		scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		ScrollPane scroll = scroller(content);
 		VBox.setVgrow(scroll, Priority.ALWAYS);
 
 		container.getChildren().add(scroll);
@@ -78,20 +71,14 @@ public class VisualizzaIngredientiGUI {
 
 		Label title = createTitle("🔍 Filtri Ingredienti");
 
-		filtroNome = StyleHelper.createTextField("Cerca per nome...");
-		filtroNome.setPrefWidth(250);
-		filtroNome.textProperty().addListener((obs, old, val) -> filtra());
-
-		filtroTipo = StyleHelper.createTextField("Cerca per tipo...");
-		filtroTipo.setPrefWidth(200);
-		filtroTipo.textProperty().addListener((obs, old, val) -> filtra());
+		filtroNome = tf("Cerca per nome...", 250);
+		filtroTipo = tf("Cerca per tipo...", 200);
 
 		Button resetBtn = StyleHelper.createInfoButton("🔄 Reset");
 		resetBtn.setOnAction(e -> reset());
 
-		HBox filtri = new HBox(15, StyleHelper.createLabel("Nome:"), filtroNome, StyleHelper.createLabel("Tipo:"),
+		HBox filtri = rowLeft(15, StyleHelper.createLabel("Nome:"), filtroNome, StyleHelper.createLabel("Tipo:"),
 				filtroTipo, resetBtn);
-		filtri.setAlignment(Pos.CENTER_LEFT);
 
 		section.getChildren().addAll(title, filtri);
 		return section;
@@ -101,43 +88,25 @@ public class VisualizzaIngredientiGUI {
 		VBox section = new VBox(15);
 
 		Label title = createTitle("📋 Lista Ingredienti");
-
-		Label info = new Label("💡 Doppio click su un ingrediente per selezionarlo rapidamente");
-		info.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
-		info.setTextFill(Color.WHITE);
-		info.setStyle(
-				"-fx-background-color: " + StyleHelper.INFO_BLUE + "; -fx-padding: 10; -fx-background-radius: 8;");
-		info.setWrapText(true);
+		Label info = infoBadge("💡 Doppio click su un ingrediente per selezionarlo rapidamente", StyleHelper.INFO_BLUE);
 
 		HBox header = new HBox(10);
 		header.setAlignment(Pos.CENTER_LEFT);
-		VBox titleBox = new VBox(8, title, info);
-
-		HBox actions = new HBox(10);
-		actions.setAlignment(Pos.CENTER_RIGHT);
+		Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
 
 		Button creaBtn = StyleHelper.createSuccessButton("➕ Crea Nuovo");
 		creaBtn.setOnAction(e -> apriCreaIngrediente());
-		actions.getChildren().add(creaBtn);
 
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		header.getChildren().addAll(titleBox, spacer, actions);
+		header.getChildren().addAll(new VBox(8, title, info), spacer, rightBox(10, creaBtn));
 
-		listView = new ListView<>(data);
-		listView.setMinHeight(300);
-		listView.setPrefHeight(Region.USE_COMPUTED_SIZE);
-		listView.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";"
-				+ "-fx-border-radius: 8;" + "-fx-background-radius: 8;" + "-fx-border-width: 1;");
-		listView.setCellFactory(lv -> new IngredienteCell());
+		listView = createListView();
 		VBox.setVgrow(listView, Priority.ALWAYS);
 
 		section.getChildren().addAll(header, listView);
 		VBox.setVgrow(listView, Priority.ALWAYS);
 		return section;
 	}
-
-	// ==================== LOGICA ====================
 
 	private void carica() {
 		try {
@@ -153,12 +122,14 @@ public class VisualizzaIngredientiGUI {
 			String tipo = filtroTipo.getText();
 
 			List<Ingrediente> filtrati;
+			boolean nomeVuoto = nome == null || nome.trim().isEmpty();
+			boolean tipoVuoto = tipo == null || tipo.trim().isEmpty();
 
-			if ((nome == null || nome.trim().isEmpty()) && (tipo == null || tipo.trim().isEmpty())) {
+			if (nomeVuoto && tipoVuoto) {
 				filtrati = controller.getAllIngredienti();
-			} else if (!nome.trim().isEmpty() && tipo.trim().isEmpty()) {
+			} else if (!nomeVuoto && tipoVuoto) {
 				filtrati = controller.cercaIngredientiPerNome(nome.trim());
-			} else if (nome.trim().isEmpty() && !tipo.trim().isEmpty()) {
+			} else if (nomeVuoto) {
 				filtrati = controller.cercaIngredientiPerTipo(tipo.trim());
 			} else {
 				List<Ingrediente> perNome = controller.cercaIngredientiPerNome(nome.trim());
@@ -179,35 +150,24 @@ public class VisualizzaIngredientiGUI {
 	}
 
 	private void apriCreaIngrediente() {
-		// ✅ Crea uno Stage UNDECORATED (senza barra grigia)
 		Stage dialogStage = new Stage();
 		dialogStage.initModality(Modality.APPLICATION_MODAL);
 		dialogStage.initOwner(root.getScene().getWindow());
-		dialogStage.initStyle(StageStyle.UNDECORATED); // ✅ Rimuove la barra grigia
+		dialogStage.initStyle(StageStyle.UNDECORATED);
 		dialogStage.setResizable(true);
 
 		CreaIngredientiGUI creaGUI = new CreaIngredientiGUI(controller);
-
 		creaGUI.setOnIngredienteSelezionato(ingrediente -> {
-			carica(); // Ricarica la lista
-			dialogStage.close(); // Chiudi il dialog
+			carica();
+			dialogStage.close();
 		});
+		creaGUI.setOnAnnulla(dialogStage::close);
 
-		creaGUI.setOnAnnulla(() -> {
-			dialogStage.close(); // Chiudi il dialog
-		});
-
-		// ✅ Crea il layout completo con bottoni finestra
 		StackPane dialogRoot = new StackPane();
-
-		// Sfondo arancione
 		Region bg = new Region();
 		StyleHelper.applyBackgroundGradient(bg);
 
-		// Contenuto
 		VBox content = creaGUI.getContent();
-
-		// ✅ Bottoni finestra (X, O, -)
 		HBox windowButtons = new HBox(5,
 				StyleHelper.createWindowButtonByType("minimize", () -> dialogStage.setIconified(true)),
 				StyleHelper.createWindowButtonByType("maximize",
@@ -220,15 +180,12 @@ public class VisualizzaIngredientiGUI {
 		StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
 		StackPane.setMargin(windowButtons, new Insets(10));
 
-		// ✅ Rendi draggable la finestra
 		final double[] xOffset = { 0 };
 		final double[] yOffset = { 0 };
-
 		dialogRoot.setOnMousePressed(event -> {
 			xOffset[0] = event.getSceneX();
 			yOffset[0] = event.getSceneY();
 		});
-
 		dialogRoot.setOnMouseDragged(event -> {
 			dialogStage.setX(event.getScreenX() - xOffset[0]);
 			dialogStage.setY(event.getScreenY() - yOffset[0]);
@@ -247,8 +204,6 @@ public class VisualizzaIngredientiGUI {
 		return lbl;
 	}
 
-	// ==================== CELL RENDERER ====================
-
 	private class IngredienteCell extends ListCell<Ingrediente> {
 		@Override
 		protected void updateItem(Ingrediente item, boolean empty) {
@@ -260,7 +215,6 @@ public class VisualizzaIngredientiGUI {
 			} else {
 				setGraphic(buildCell(item));
 				setText(null);
-
 				if (modalitaSelezione) {
 					setOnMouseClicked(e -> {
 						if (e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2) {
@@ -292,5 +246,50 @@ public class VisualizzaIngredientiGUI {
 			box.getChildren().addAll(info, spacer);
 			return box;
 		}
+	}
+
+	private TextField tf(String prompt, int width) {
+		TextField f = StyleHelper.createTextField(prompt);
+		f.setPrefWidth(width);
+		f.textProperty().addListener((obs, old, val) -> filtra());
+		return f;
+	}
+
+	private Label infoBadge(String text, String bg) {
+		Label l = new Label(text);
+		l.setFont(Font.font("Roboto", FontWeight.BOLD, 13));
+		l.setTextFill(Color.WHITE);
+		l.setStyle("-fx-background-color: " + bg + "; -fx-padding: 10; -fx-background-radius: 8;");
+		l.setWrapText(true);
+		return l;
+	}
+
+	private ScrollPane scroller(Region content) {
+		ScrollPane sp = new ScrollPane(content);
+		sp.setFitToWidth(true);
+		sp.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+		return sp;
+	}
+
+	private HBox rowLeft(double spacing, javafx.scene.Node... nodes) {
+		HBox h = new HBox(spacing, nodes);
+		h.setAlignment(Pos.CENTER_LEFT);
+		return h;
+	}
+
+	private HBox rightBox(double spacing, javafx.scene.Node... nodes) {
+		HBox h = new HBox(spacing, nodes);
+		h.setAlignment(Pos.CENTER_RIGHT);
+		return h;
+	}
+
+	private ListView<Ingrediente> createListView() {
+		ListView<Ingrediente> lv = new ListView<>(data);
+		lv.setMinHeight(300);
+		lv.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		lv.setStyle("-fx-background-color: white; -fx-border-color: " + StyleHelper.BORDER_LIGHT
+				+ "; -fx-border-radius: 8; -fx-background-radius: 8; -fx-border-width: 1;");
+		lv.setCellFactory(lv2 -> new IngredienteCell());
+		return lv;
 	}
 }

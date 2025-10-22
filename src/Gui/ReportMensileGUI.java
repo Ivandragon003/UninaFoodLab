@@ -320,9 +320,8 @@ public class ReportMensileGUI {
 
 		leftColumn.getChildren().addAll(pieCard, statsCard);
 
-		// Card del bar chart
 		VBox barCard = createBarChartCard(ricPerGiorno);
-		// rimosso: barCard.setPrefWidth(600);
+
 		barCard.setMinWidth(0);
 		barCard.setMaxWidth(Double.MAX_VALUE);
 		HBox.setHgrow(barCard, Priority.ALWAYS);
@@ -335,8 +334,8 @@ public class ReportMensileGUI {
 		VBox card = new VBox(15);
 		card.setPadding(new Insets(25));
 		card.setAlignment(Pos.TOP_CENTER);
-		card.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);");
+		card.setStyle(
+				"-fx-background-color: white; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 12, 0.0, 0.0, 4.0);");
 
 		Label title = new Label("Distribuzione Sessioni");
 		title.setFont(javafx.scene.text.Font.font("Segoe UI", javafx.scene.text.FontWeight.BOLD, 16));
@@ -346,54 +345,47 @@ public class ReportMensileGUI {
 		dataset.setValue("Online", d.getSessioniOnline());
 		dataset.setValue("In Presenza", d.getSessioniPratiche());
 
-		JFreeChart pieChart = ChartFactory.createPieChart3D(null, dataset, true, true, false);
+	
+		JFreeChart pieChart = ChartFactory.createPieChart(null, dataset, true, true, false);
 
 		pieChart.setBackgroundPaint(null);
 		pieChart.setBorderVisible(false);
 		pieChart.setAntiAlias(true);
 
-		org.jfree.chart.plot.PiePlot3D plot = (org.jfree.chart.plot.PiePlot3D) pieChart.getPlot();
+		@SuppressWarnings("unchecked")
+		org.jfree.chart.plot.PiePlot<String> plot = (org.jfree.chart.plot.PiePlot<String>) pieChart.getPlot();
+
 		plot.setBackgroundPaint(Color.WHITE);
 		plot.setOutlineVisible(false);
 		plot.setShadowPaint(null);
-		plot.setDepthFactor(0.08);
-		plot.setStartAngle(290);
-		plot.setCircular(true);
-		plot.setLabelGap(0.02);
-
 		plot.setLabelFont(new Font("Segoe UI", Font.BOLD, 13));
 		plot.setLabelBackgroundPaint(new Color(255, 255, 255, 200));
 		plot.setLabelOutlinePaint(null);
 		plot.setLabelShadowPaint(null);
+		plot.setLabelGap(0.02);
 
 		plot.setSectionPaint("Online", new Color(33, 150, 243));
 		plot.setSectionPaint("In Presenza", new Color(76, 175, 80));
 
-		plot.setSectionOutlinesVisible(true);
-		plot.setSectionOutlinePaint("Online", Color.WHITE);
-		plot.setSectionOutlinePaint("In Presenza", Color.WHITE);
-		plot.setSectionOutlineStroke("Online", new BasicStroke(3.0f));
-		plot.setSectionOutlineStroke("In Presenza", new BasicStroke(3.0f));
-
 		org.jfree.chart.title.LegendTitle legend = pieChart.getLegend();
-		legend.setFrame(org.jfree.chart.block.BlockBorder.NONE);
-		legend.setBackgroundPaint(Color.WHITE);
-		legend.setItemFont(new Font("Segoe UI", Font.PLAIN, 13));
-		legend.setPosition(org.jfree.chart.ui.RectangleEdge.BOTTOM);
-		legend.setPadding(10, 10, 5, 10);
+		if (legend != null) {
+			legend.setFrame(org.jfree.chart.block.BlockBorder.NONE);
+			legend.setBackgroundPaint(Color.WHITE);
+			legend.setItemFont(new Font("Segoe UI", Font.PLAIN, 13));
+			legend.setPosition(org.jfree.chart.ui.RectangleEdge.BOTTOM);
+			legend.setPadding(10, 10, 5, 10);
+		}
 
 		ChartViewer chartViewer = new ChartViewer(pieChart);
 		chartViewer.setPrefSize(400, 350);
 
-		chartViewer.getCanvas().setOnScroll(scrollEvent -> {
-			scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(javafx.scene.input.ScrollEvent.SCROLL,
-					scrollEvent.getX(), scrollEvent.getY(), scrollEvent.getScreenX(), scrollEvent.getScreenY(),
-					scrollEvent.isShiftDown(), scrollEvent.isControlDown(), scrollEvent.isAltDown(),
-					scrollEvent.isMetaDown(), scrollEvent.isDirect(), scrollEvent.isInertia(), scrollEvent.getDeltaX(),
-					scrollEvent.getDeltaY(), scrollEvent.getTotalDeltaX(), scrollEvent.getTotalDeltaY(),
-					scrollEvent.getMultiplierX(), scrollEvent.getMultiplierY(), scrollEvent.getTextDeltaXUnits(),
-					scrollEvent.getTextDeltaX(), scrollEvent.getTextDeltaYUnits(), scrollEvent.getTextDeltaY(),
-					scrollEvent.getTouchCount(), scrollEvent.getPickResult()));
+		chartViewer.getCanvas().setOnScroll(ev -> {
+			scrollPane.fireEvent(new javafx.scene.input.ScrollEvent(javafx.scene.input.ScrollEvent.SCROLL, ev.getX(),
+					ev.getY(), ev.getScreenX(), ev.getScreenY(), ev.isShiftDown(), ev.isControlDown(), ev.isAltDown(),
+					ev.isMetaDown(), ev.isDirect(), ev.isInertia(), ev.getDeltaX(), ev.getDeltaY(), ev.getTotalDeltaX(),
+					ev.getTotalDeltaY(), ev.getMultiplierX(), ev.getMultiplierY(), ev.getTextDeltaXUnits(),
+					ev.getTextDeltaX(), ev.getTextDeltaYUnits(), ev.getTextDeltaY(), ev.getTouchCount(),
+					ev.getPickResult()));
 		});
 
 		card.getChildren().addAll(title, chartViewer);

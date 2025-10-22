@@ -118,7 +118,6 @@ public class GestioneSessioniController {
 		}
 	}
 
-
 	public boolean validaDataSessione(LocalDate dataSelezionata) throws ValidationException {
 
 		if (dataSelezionata == null) {
@@ -133,7 +132,6 @@ public class GestioneSessioniController {
 		}
 
 		LocalDate inizioCorso = corso.getDataInizioCorso().toLocalDate();
-		LocalDate fineCorsoDate = fineCorso.toLocalDate();
 
 		if (dataSelezionata.isBefore(inizioCorso)) {
 			throw new ValidationException("La sessione non può essere prima della data di inizio corso.\n\n"
@@ -219,7 +217,10 @@ public class GestioneSessioniController {
 
 		try {
 			if (sessione instanceof InPresenza ip) {
-				validaSessioneInPresenza(ip);
+				ValidationUtils.validateNotNull(ip.getRicette(), "Lista ricette");
+				if (ip.getRicette().isEmpty()) {
+					throw new ValidationException("Le sessioni in presenza richiedono almeno una ricetta");
+				}
 				inPresenzaDAO.save(ip);
 			} else if (sessione instanceof Online o) {
 				onlineDAO.save(o);
@@ -258,21 +259,15 @@ public class GestioneSessioniController {
 	}
 
 	private void validaOrari(LocalDateTime inizio, LocalDateTime fine) throws ValidationException {
-		ValidationUtils.validateNotNull(inizio, "Data inizio");
-		ValidationUtils.validateNotNull(fine, "Data fine");
+	    ValidationUtils.validateNotNull(inizio, "Data inizio");
+	    ValidationUtils.validateNotNull(fine, "Data fine");
 
-		if (!fine.isAfter(inizio)) {
-			throw new ValidationException("L'ora di fine deve essere dopo l'inizio");
-		}
+	    if (!fine.isAfter(inizio)) {
+	        throw new ValidationException("L'ora di fine deve essere dopo l'inizio");
+	    }
 	}
 
-	private void validaSessioneInPresenza(InPresenza sessione) throws ValidationException {
-		ValidationUtils.validateNotNull(sessione, "Sessione");
-
-		if (sessione.getRicette() == null || sessione.getRicette().isEmpty()) {
-			throw new ValidationException("Le sessioni in presenza richiedono almeno una ricetta");
-		}
-	}
+	
 
 	public void aggiungiSessioneARicetta(Ricetta ricetta, Sessione sessione)
 			throws ValidationException, DataAccessException {
