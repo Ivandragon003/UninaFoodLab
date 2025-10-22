@@ -1,7 +1,6 @@
 import Gui.LoginChefGUI;
 import controller.ChefController;
 import dao.*;
-import service.*;
 import util.DBConnection;
 import javafx.application.Application;
 
@@ -11,33 +10,12 @@ public class Main {
             // ======== CREAZIONE DAO ========
             ChefDAO chefDAO = new ChefDAO();
             TieneDAO tieneDAO = new TieneDAO();
-            CorsoCucinaDAO corsoDAO = new CorsoCucinaDAO();
-            IscrizioneDAO iscrizioneDAO = new IscrizioneDAO();
-            OnlineDAO onlineDAO = new OnlineDAO();
-            CucinaDAO cucinaDAO = new CucinaDAO();
-            InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
-            RicettaDAO ricettaDAO = new RicettaDAO();
-            IngredienteDAO ingredienteDAO = new IngredienteDAO();
-            UsaDAO usaDAO = new UsaDAO();
 
-            // ======== CREAZIONE SERVIZI ========
-            GestioneRicette gestioneRicette = new GestioneRicette(ricettaDAO);
-            GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-            GestioneCorsiCucina corsiService = new GestioneCorsiCucina(
-                corsoDAO, chefDAO, tieneDAO, iscrizioneDAO, onlineDAO, inPresenzaDAO,
-                gestioneRicette, gestioneCucina
-            );
+            // ======== CREAZIONE CONTROLLER ========
+            ChefController chefController = new ChefController(chefDAO, tieneDAO);
 
-            GestioneChef chefService = new GestioneChef(chefDAO, tieneDAO);
-            GestioneIngrediente gestioneIngrediente = new GestioneIngrediente(ingredienteDAO);
-            GestioneUsa gestioneUsa = new GestioneUsa(usaDAO, ingredienteDAO);
-            GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-
-            ChefController chefController = new ChefController(chefService);
-
-            // ======== PASSAGGIO CONTROLLER E SERVICE A LOGIN ========
-            LoginChefGUI.setController(chefController, corsiService);
-
+            // ======== AVVIO LOGIN GUI ========
+            LoginChefGUI.setController(chefController);
             Application.launch(LoginChefGUI.class, args);
 
         } catch (Exception e) {
