@@ -2,13 +2,14 @@ package Gui;
 
 import controller.RicettaController;
 import controller.IngredienteController;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -336,40 +337,36 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private HBox buildModificaButtons(Ricetta ricetta) {
-    Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
-    indietroBtn.setPrefWidth(140);
-    indietroBtn.setOnAction(e -> mostraLista());
+		Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
+		indietroBtn.setPrefWidth(140);
+		indietroBtn.setOnAction(e -> mostraLista());
 
-    Button eliminaBtn = StyleHelper.createDangerButton("🗑️ Elimina");
-    eliminaBtn.setPrefWidth(140);
-    eliminaBtn.setOnAction(e -> {
-        StyleHelper.showCustomConfirmationDialog(
-            "Conferma Eliminazione",
-            String.format("Sei sicuro di voler eliminare '%s'?", ricetta.getNome()),
-            () -> {
-                try {
-                    ricettaController.eliminaRicetta(ricetta.getIdRicetta());
-                    carica();
-                    StyleHelper.showSuccessDialog("✅ Successo", "Ricetta eliminata");
-                    mostraLista();
-                } catch (Exception ex) {
-                    StyleHelper.showErrorDialog("❌ Errore", ex.getMessage());
-                }
-            }
-        );
-    });
+		Button eliminaBtn = StyleHelper.createDangerButton("🗑️ Elimina");
+		eliminaBtn.setPrefWidth(140);
+		eliminaBtn.setOnAction(e -> {
+			StyleHelper.showCustomConfirmationDialog("Conferma Eliminazione",
+					String.format("Sei sicuro di voler eliminare '%s'?", ricetta.getNome()), () -> {
+						try {
+							ricettaController.eliminaRicetta(ricetta.getIdRicetta());
+							carica();
+							StyleHelper.showSuccessDialog("✅ Successo", "Ricetta eliminata");
+							mostraLista();
+						} catch (ValidationException | DataAccessException ex) {
+							StyleHelper.showErrorDialog("❌ Errore", ex.getMessage());
+							ex.printStackTrace();
+						}
+					});
+		});
 
-    Button salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
-    salvaBtn.setPrefWidth(140);
-    salvaBtn.setOnAction(e -> salvaModifica(ricetta));
+		Button salvaBtn = StyleHelper.createSuccessButton("💾 Salva");
+		salvaBtn.setPrefWidth(140);
+		salvaBtn.setOnAction(e -> salvaModifica(ricetta));
 
-    HBox box = new HBox(15, indietroBtn, eliminaBtn, salvaBtn);
-    box.setAlignment(Pos.CENTER);
-    box.setPadding(new Insets(15, 0, 5, 0));
-    return box;
-}
-
-
+		HBox box = new HBox(15, indietroBtn, eliminaBtn, salvaBtn);
+		box.setAlignment(Pos.CENTER);
+		box.setPadding(new Insets(15, 0, 5, 0));
+		return box;
+	}
 
 	private void mostraSelezinaIngredientePerModifica(Ricetta ricetta) {
 		VBox selezionaView = new VBox(20);
@@ -485,7 +482,6 @@ public class VisualizzaRicetteGUI {
 		VBox fieldContainer = new VBox(8, quantField, unitLabel);
 		fieldContainer.setAlignment(Pos.CENTER);
 
-		// Pulsanti
 		HBox buttons = new HBox(15);
 		buttons.setAlignment(Pos.CENTER);
 
@@ -538,7 +534,6 @@ public class VisualizzaRicetteGUI {
 		dialogStage.showAndWait();
 	}
 
-
 	private void mostraLista() {
 		carica();
 		mainContainer.getChildren().setAll(listaView);
@@ -546,7 +541,9 @@ public class VisualizzaRicetteGUI {
 
 	private void mostraModifica(Ricetta ricetta) {
 		try {
-			Ricetta ricettaAggiornata = ricettaController.getRicettaPerId(ricetta.getIdRicetta());
+			// ✅ Cerca la ricetta nella lista già caricata
+			Ricetta ricettaAggiornata = ricetteData.stream().filter(r -> r.getIdRicetta() == ricetta.getIdRicetta())
+					.findFirst().orElse(null);
 
 			if (ricettaAggiornata == null) {
 				StyleHelper.showErrorDialog("Errore", "Ricetta non trovata");
@@ -567,6 +564,7 @@ public class VisualizzaRicetteGUI {
 
 		} catch (Exception e) {
 			StyleHelper.showErrorDialog("Errore", "Errore caricamento ricetta: " + e.getMessage());
+			e.printStackTrace();
 			mostraLista();
 		}
 	}
@@ -601,12 +599,14 @@ public class VisualizzaRicetteGUI {
 		}
 
 		try {
-			ricettaController.aggiornaRicetta(ricetta.getIdRicetta(), nome.trim(), tempo, modificaIngredientiMap);
+			// ✅ Usa modificaRicetta che ESISTE nel tuo controller
+			ricettaController.modificaRicetta(ricetta.getIdRicetta(), nome.trim(), tempo, modificaIngredientiMap);
 			StyleHelper.showSuccessDialog("✅ Successo", "Ricetta aggiornata!");
 			mostraLista();
 
-		} catch (Exception e) {
+		} catch (ValidationException | DataAccessException e) {
 			StyleHelper.showErrorDialog("Errore", e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -620,20 +620,35 @@ public class VisualizzaRicetteGUI {
 
 	private void filtra() {
 		try {
-			List<Ricetta> filtrate = ricettaController.filtraCombinato(filtroNome.getText(),
-					parseIntSafe(filtroTempoMin.getText()), parseIntSafe(filtroTempoMax.getText()),
-					parseIntSafe(filtroIngMin.getText()), parseIntSafe(filtroIngMax.getText()));
+			// ✅ Filtraggio manuale con stream
+			List<Ricetta> tutte = ricettaController.visualizzaRicette();
+
+			String nomeFilter = filtroNome.getText() != null ? filtroNome.getText().toLowerCase().trim() : "";
+			Integer tempoMin = parseIntSafe(filtroTempoMin.getText());
+			Integer tempoMax = parseIntSafe(filtroTempoMax.getText());
+			Integer ingMin = parseIntSafe(filtroIngMin.getText());
+			Integer ingMax = parseIntSafe(filtroIngMax.getText());
+
+			List<Ricetta> filtrate = tutte.stream()
+					.filter(r -> nomeFilter.isEmpty() || r.getNome().toLowerCase().contains(nomeFilter))
+					.filter(r -> tempoMin == null || r.getTempoPreparazione() >= tempoMin)
+					.filter(r -> tempoMax == null || r.getTempoPreparazione() <= tempoMax)
+					.filter(r -> ingMin == null || r.getNumeroIngredienti() >= ingMin)
+					.filter(r -> ingMax == null || r.getNumeroIngredienti() <= ingMax).toList();
+
 			ricetteData.setAll(filtrate);
-		} catch (Exception e) {
+		} catch (DataAccessException e) {
 			StyleHelper.showErrorDialog("Errore", e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
 	private void carica() {
 		try {
-			ricetteData.setAll(ricettaController.getAllRicette());
-		} catch (Exception e) {
+			ricetteData.setAll(ricettaController.visualizzaRicette());
+		} catch (DataAccessException e) {
 			StyleHelper.showErrorDialog("Errore", e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -647,13 +662,9 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void ricarica() {
-		try {
-			ricettaController.ricaricaCache();
-			carica();
-			StyleHelper.showSuccessDialog("✅ Successo", "Ricette ricaricate");
-		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", e.getMessage());
-		}
+		// ✅ Semplicemente ricarica senza cache
+		carica();
+		StyleHelper.showSuccessDialog("✅ Successo", "Ricette ricaricate");
 	}
 
 	private Label createTitle(String text) {
