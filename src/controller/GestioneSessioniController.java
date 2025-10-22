@@ -42,9 +42,6 @@ public class GestioneSessioniController {
 		this.ricettaDAO = ricettaDAO;
 	}
 
-	// ==============================================================
-	// AGGIUNTA DI UNA SESSIONE
-	// ==============================================================
 	public void aggiungiSessione(Sessione sessione, List<Ricetta> ricette)
 			throws ValidationException, DataAccessException {
 
@@ -70,7 +67,6 @@ public class GestioneSessioniController {
 		}
 
 		try {
-			// Salvataggio sessione in base al tipo
 			if (sessione instanceof InPresenza ip) {
 				inPresenzaDAO.save(ip);
 			} else if (sessione instanceof Online o) {
@@ -82,7 +78,6 @@ public class GestioneSessioniController {
 
 			corso.getSessioni().add(sessione);
 
-			// Se la sessione è in presenza, aggiungiamo anche le ricette collegate
 			if (sessione instanceof InPresenza ip && ricette != null) {
 				for (Ricetta r : ricette) {
 					if (r.getIdRicetta() == 0) {
@@ -98,9 +93,6 @@ public class GestioneSessioniController {
 		}
 	}
 
-	// ==============================================================
-	// ELIMINAZIONE DI UNA SESSIONE
-	// ==============================================================
 	public void eliminaSessione(Sessione sessione) throws ValidationException, DataAccessException {
 
 		ValidationUtils.validateNotNull(sessione, "La sessione non può essere nulla");
@@ -176,14 +168,12 @@ public class GestioneSessioniController {
 
 			Frequenza freq = corso.getFrequenzaCorso();
 
-			// Caso: corso a sessione unica
 			if (freq == Frequenza.unica) {
 				throw new ValidationException(
 						"❌ Il corso ha frequenza 'Sessione Unica'\n\n" + "Non puoi aggiungere altre sessioni.\n"
 								+ "Esiste già 1 sessione terminata il " + dataFineUltima);
 			}
 
-			// Caso: corso settimanale
 			if (freq == Frequenza.settimanale) {
 				LocalDate primoLunediSuccessivo = dataFineUltima.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
 				LocalDate fineSettimana = primoLunediSuccessivo.plusDays(6);
@@ -200,7 +190,6 @@ public class GestioneSessioniController {
 				return true;
 			}
 
-			// Caso: altre frequenze
 			long giorniDistanza = ChronoUnit.DAYS.between(dataFineUltima, dataSelezionata);
 			int giorniMinimi = switch (freq) {
 			case giornaliero -> 1;
@@ -268,7 +257,6 @@ public class GestioneSessioniController {
 		}
 	}
 
-	// Metodi di validazione privati
 	private void validaOrari(LocalDateTime inizio, LocalDateTime fine) throws ValidationException {
 		ValidationUtils.validateNotNull(inizio, "Data inizio");
 		ValidationUtils.validateNotNull(fine, "Data fine");

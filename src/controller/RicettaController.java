@@ -86,7 +86,7 @@ public class RicettaController {
 				usaDAO.save(new Usa(ricetta, ing, quantita));
 			}
 
-			return ricetta; // ← restituisci la ricetta creata
+			return ricetta;
 		} catch (SQLException e) {
 			throw new DataAccessException("Impossibile salvare i dati", e);
 		}
