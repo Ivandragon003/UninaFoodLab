@@ -565,6 +565,7 @@ public class VisualizzaCorsiGUI {
 	private DettagliCorsoGUI creaDettagliGUI(CorsoCucina corso) {
 		DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
 		dettagliGUI.setController(gestioneCorsoController);
+		dettagliGUI.setVisualizzaController(visualizzaController);
 		dettagliGUI.setChefController(chefController);
 		dettagliGUI.setRicettaController(ricettaController);
 		dettagliGUI.setIngredienteController(ingredienteController);
