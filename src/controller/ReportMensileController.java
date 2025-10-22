@@ -1,54 +1,65 @@
 package controller;
 
+import dao.*;
 import exceptions.DataAccessException;
-import model.CorsoCucina;
-import model.Sessione;
-import model.InPresenza;
-import model.Online;
-import model.Chef;
-import service.GestioneCorsiCucina;
-import service.GestioneSessioni;
 
+
+import model.*;
+
+import java.sql.SQLException;
 import java.time.LocalDate;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReportMensileController {
 
-	private final GestioneCorsiCucina corsiService;
-	private final GestioneSessioni sessioniService;
+	// DAOs necessari
+	
+	private final TieneDAO tieneDAO;
+	private final OnlineDAO onlineDAO;
+	private final InPresenzaDAO inPresenzaDAO;
+	private final CucinaDAO cucinaDAO;
+	
 	private final Chef chefLoggato;
 
-	public ReportMensileController(GestioneCorsiCucina corsiService, GestioneSessioni sessioniService,
+	public ReportMensileController( TieneDAO tieneDAO, 
+			OnlineDAO onlineDAO, InPresenzaDAO inPresenzaDAO, CucinaDAO cucinaDAO,
 			Chef chefLoggato) {
-		this.corsiService = Objects.requireNonNull(corsiService);
-		this.sessioniService = Objects.requireNonNull(sessioniService);
+		
+		this.tieneDAO = Objects.requireNonNull(tieneDAO);
+		this.onlineDAO = Objects.requireNonNull(onlineDAO);
+		this.inPresenzaDAO = Objects.requireNonNull(inPresenzaDAO);
+		this.cucinaDAO = Objects.requireNonNull(cucinaDAO);
 		this.chefLoggato = Objects.requireNonNull(chefLoggato);
 	}
 
 	public DatiReportMensile generaReport(LocalDate inizio, LocalDate fine) throws DataAccessException {
-		List<CorsoCucina> corsiDelChef = corsiService.getCorsiByChef(chefLoggato);
+		// Recupera corsi dello chef (logica da GestioneCorsiCucina)
+		List<CorsoCucina> corsiDelChef = getCorsiByChef(chefLoggato);
+		
 		if (corsiDelChef == null || corsiDelChef.isEmpty()) {
 			return new DatiReportMensile(inizio, fine, 0, 0, 0, 0.0, 0, 0);
 		}
 
 		// Raccogli tutti gli ID dei corsi in una sola operazione
-		List<Integer> idsCorsi = corsiDelChef.stream().filter(Objects::nonNull).map(CorsoCucina::getIdCorso)
+		List<Integer> idsCorsi = corsiDelChef.stream()
+				.filter(Objects::nonNull)
+				.map(CorsoCucina::getIdCorso)
 				.collect(Collectors.toList());
 
 		if (idsCorsi.isEmpty()) {
 			return new DatiReportMensile(inizio, fine, 0, 0, 0, 0.0, 0, 0);
 		}
 
-		// Una sola query per tutte le sessioni (se disponibile nel service)
-		// Altrimenti cache i risultati
+		// Recupera sessioni per periodo
 		Map<Integer, List<Sessione>> sessioniPerCorso = new HashMap<>();
 		Set<Integer> corsiNelPeriodo = new HashSet<>();
 		List<Integer> sessioniInPresenzaIds = new ArrayList<>();
 		int sessioniOnline = 0;
 
 		for (Integer idCorso : idsCorsi) {
-			List<Sessione> sessioni = corsiService.getSessioniPerCorsoInPeriodo(idCorso, inizio, fine);
+			List<Sessione> sessioni = getSessioniPerCorsoInPeriodo(idCorso, inizio, fine);
 			if (sessioni != null && !sessioni.isEmpty()) {
 				sessioniPerCorso.put(idCorso, sessioni);
 				corsiNelPeriodo.add(idCorso);
@@ -70,10 +81,9 @@ public class ReportMensileController {
 		int maxRicette = 0;
 		double mediaRicette = 0.0;
 
-		// Una sola query per tutte le ricette invece di query multiple
+		// Recupera numero ricette per sessioni (logica da GestioneSessioni)
 		if (!sessioniInPresenzaIds.isEmpty()) {
-			Map<Integer, Integer> ricettePerSessione = sessioniService
-					.getNumeroRicettePerSessioni(sessioniInPresenzaIds);
+			Map<Integer, Integer> ricettePerSessione = getNumeroRicettePerSessioni(sessioniInPresenzaIds);
 
 			List<Integer> ricetteValide = new ArrayList<>();
 
@@ -94,13 +104,15 @@ public class ReportMensileController {
 			}
 		}
 
-		return new DatiReportMensile(inizio, fine, numeroCorsi, sessioniOnline, sessioniPratiche, mediaRicette,
-				minRicette, maxRicette);
+		return new DatiReportMensile(inizio, fine, numeroCorsi, sessioniOnline, sessioniPratiche, 
+				mediaRicette, minRicette, maxRicette);
 	}
 
 	public Map<LocalDate, Integer> getRicettePerGiorno(LocalDate inizio, LocalDate fine) throws DataAccessException {
 		Map<LocalDate, Integer> result = new TreeMap<>();
-		List<CorsoCucina> corsiDelChef = corsiService.getCorsiByChef(chefLoggato);
+		
+		// Recupera corsi dello chef
+		List<CorsoCucina> corsiDelChef = getCorsiByChef(chefLoggato);
 
 		if (corsiDelChef == null || corsiDelChef.isEmpty())
 			return result;
@@ -112,7 +124,7 @@ public class ReportMensileController {
 			if (corso == null)
 				continue;
 
-			List<Sessione> sessioni = corsiService.getSessioniPerCorsoInPeriodo(corso.getIdCorso(), inizio, fine);
+			List<Sessione> sessioni = getSessioniPerCorsoInPeriodo(corso.getIdCorso(), inizio, fine);
 
 			if (sessioni != null) {
 				for (Sessione s : sessioni) {
@@ -125,7 +137,7 @@ public class ReportMensileController {
 		}
 
 		if (!sessioniIds.isEmpty()) {
-			Map<Integer, Integer> ricettePerSessione = sessioniService.getNumeroRicettePerSessioni(sessioniIds);
+			Map<Integer, Integer> ricettePerSessione = getNumeroRicettePerSessioni(sessioniIds);
 
 			for (Map.Entry<Integer, Integer> entry : ricettePerSessione.entrySet()) {
 				LocalDate giorno = sessioneToDate.get(entry.getKey());
@@ -138,10 +150,14 @@ public class ReportMensileController {
 		return result;
 	}
 
+
+	
 	public Chef getChefLoggato() {
 		return chefLoggato;
 	}
 
+	// ========== CLASSE DATI REPORT ==========
+	
 	public static class DatiReportMensile {
 		private final LocalDate inizio;
 		private final LocalDate fine;
