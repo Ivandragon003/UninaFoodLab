@@ -1,96 +1,179 @@
 package controller;
 
+import dao.ChefDAO;
+import dao.TieneDAO;
+import exceptions.DataAccessException;
+import exceptions.ValidationException;
+import exceptions.ValidationUtils;
 import model.Chef;
 import model.CorsoCucina;
 import model.Frequenza;
 import model.Sessione;
-import service.GestioneChef;
-import exceptions.ValidationException;
-import exceptions.DataAccessException;
-import exceptions.ErrorMessages;
-import exceptions.ValidationUtils;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 public class ChefController {
 
-	private final GestioneChef gestioneChef;
-	private GestioneCorsoController gestioneCorsoController;
+    private final ChefDAO chefDAO;
+    private GestioneCorsoController gestioneCorsoController;
 
-	public ChefController(GestioneChef gestioneChef) {
-		this.gestioneChef = gestioneChef;
-	}
+    public ChefController(ChefDAO chefDAO) {
+        this.chefDAO = chefDAO;      
+    }
 
-	public Chef login(String username, String password) throws ValidationException, DataAccessException {
-		return gestioneChef.login(username, password);
-	}
+    // ==============================================================
+    // LOGIN
+    // ==============================================================
+    public Chef login(String username, String password) throws ValidationException, DataAccessException {
+        ValidationUtils.validateNotEmpty(username, "Username");
+        ValidationUtils.validateNotEmpty(password, "Password");
 
-	public Chef registraChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
-			boolean disponibilita, String username, String password) throws ValidationException, DataAccessException {
-		return gestioneChef.creaChef(codFiscale, nome, cognome, email, dataNascita, disponibilita, username, password);
-	}
+        try {
+            Chef chef = chefDAO.findByUsername(username)
+                    .orElseThrow(() -> new ValidationException("Username non esistente"));
 
-	public void eliminaAccount(Chef chef) throws ValidationException, DataAccessException {
-		if (chef == null) {
-			throw new ValidationException("Chef non valido");
-		}
-		gestioneChef.eliminaChef(chef.getUsername());
-	}
+            if (!chef.getPassword().equals(password))
+                throw new ValidationException("Password non corretta");
 
-	public void setGestioneCorsoController(GestioneCorsoController gestioneCorsoController) {
-		this.gestioneCorsoController = gestioneCorsoController;
-	}
+            return chef;
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore di connessione al database durante il login", e);
+        }
+    }
 
-	public List<Chef> getAllChef() throws DataAccessException {
-		return gestioneChef.getAll();
-	}
+    // ==============================================================
+    // REGISTRAZIONE CHEF
+    // ==============================================================
+    public Chef registraChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
+                             boolean disponibilita, String username, String password)
+            throws ValidationException, DataAccessException {
 
-	public void saveCorsoFromForm(String nome, String prezzoText, String argomento, String postiText,
-			Frequenza frequenza, LocalDate dataInizio, Integer startHour, Integer startMinute, LocalDate dataFine,
-			Integer endHour, Integer endMinute, List<Chef> chefSelezionati, List<Sessione> sessioni)
-			throws ValidationException, DataAccessException {
+        // Validazioni di base
+        ValidationUtils.validateNotEmpty(codFiscale, "Codice fiscale");
+        ValidationUtils.validateNotEmpty(nome, "Nome");
+        ValidationUtils.validateNotEmpty(cognome, "Cognome");
+        ValidationUtils.validateNotEmpty(email, "Email");
+        ValidationUtils.validateNotEmpty(username, "Username");
+        ValidationUtils.validateNotEmpty(password, "Password");
 
-		if (gestioneCorsoController == null)
-			throw new IllegalStateException("GestioneCorsoController non impostato: impossibile salvare corso");
+        if (dataNascita == null)
+            throw new ValidationException("La data di nascita è obbligatoria");
+        if (dataNascita.isAfter(LocalDate.now().minusYears(18)))
+            throw new ValidationException("Lo chef deve avere almeno 18 anni");
 
-		double prezzo = ValidationUtils.parseDoubleSafe(prezzoText);
-		int posti = ValidationUtils.parseIntegerSafe(postiText);
+        try {
+            // Controlli di unicità
+            if (chefDAO.existsByCodFiscale(codFiscale))
+                throw new ValidationException("Codice fiscale già presente nel sistema");
+            if (chefDAO.existsByEmail(email))
+                throw new ValidationException("Email già utilizzata da un altro account");
+            if (chefDAO.findByUsername(username).isPresent())
+                throw new ValidationException("Username già esistente, scegline un altro");
 
-		if (prezzo <= 0)
-			throw new ValidationException(ErrorMessages.PREZZO_NON_VALIDO);
-		if (posti <= 0)
-			throw new ValidationException(ErrorMessages.NUMERO_POSTI_NON_VALIDO);
-		if (dataInizio == null || dataFine == null)
-			throw new ValidationException(ErrorMessages.DATE_CORSO_MANCANTI);
-		if (frequenza == null)
-			throw new ValidationException("Selezionare una frequenza");
+            // Creazione e salvataggio
+            Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
+            chef.setEmail(email);
+            chef.setDataNascita(dataNascita);
+            chefDAO.save(chef, password);
+            return chef;
 
-		LocalDateTime inizio = LocalDateTime.of(dataInizio,
-				LocalTime.of(startHour != null ? startHour : 9, startMinute != null ? startMinute : 0));
-		LocalDateTime fine = LocalDateTime.of(dataFine,
-				LocalTime.of(endHour != null ? endHour : 17, endMinute != null ? endMinute : 0));
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante il salvataggio del nuovo chef nel database", e);
+        }
+    }
 
-		if (!inizio.isBefore(fine))
-			throw new ValidationException(ErrorMessages.DATA_FINE_PRECEDENTE);
+    // ==============================================================
+    // ELIMINAZIONE ACCOUNT
+    // ==============================================================
+    public void eliminaAccount(Chef chef) throws ValidationException, DataAccessException {
+        if (chef == null)
+            throw new ValidationException("Chef non valido");
 
-		if (chefSelezionati == null || chefSelezionati.isEmpty())
-			throw new ValidationException("Selezionare almeno uno chef per il corso");
+        String username = chef.getUsername();
+        ValidationUtils.validateNotEmpty(username, "Username");
 
-		if (sessioni == null || sessioni.isEmpty())
-			throw new ValidationException("Aggiungere almeno una sessione al corso");
+        try {
+            Optional<Chef> chefOpt = chefDAO.findByUsername(username);
+            if (chefOpt.isEmpty())
+                throw new ValidationException("Chef non trovato nel sistema: " + username);
 
-		CorsoCucina corso = new CorsoCucina(nome.trim(), prezzo, argomento == null ? "" : argomento.trim(), frequenza,
-				posti);
-		corso.setDataInizioCorso(inizio);
-		corso.setDataFineCorso(fine);
-		corso.setNumeroSessioni(sessioni.size());
-		corso.setChef(List.copyOf(chefSelezionati));
-		corso.setSessioni(List.copyOf(sessioni));
+            chefDAO.delete(chefOpt.get().getCodFiscale());
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante l'eliminazione dell'account chef dal database", e);
+        }
+    }
 
-		gestioneCorsoController.creaCorso(corso);
-	}
+    // ==============================================================
+    // GET TUTTI GLI CHEF
+    // ==============================================================
+    public List<Chef> getAllChef() throws DataAccessException {
+        try {
+            return chefDAO.getAll();
+        } catch (SQLException e) {
+            throw new DataAccessException("Errore durante la lettura degli chef dal database", e);
+        }
+    }
 
+    // ==============================================================
+    // GESTIONE CORSO (come prima, invariato)
+    // ==============================================================
+    public void setGestioneCorsoController(GestioneCorsoController gestioneCorsoController) {
+        this.gestioneCorsoController = gestioneCorsoController;
+    }
+
+    public void saveCorsoFromForm(String nome, String prezzoText, String argomento, String postiText,
+                                  Frequenza frequenza, LocalDate dataInizio, Integer startHour, Integer startMinute,
+                                  LocalDate dataFine, Integer endHour, Integer endMinute,
+                                  List<Chef> chefSelezionati, List<Sessione> sessioni)
+            throws ValidationException, DataAccessException {
+
+        if (gestioneCorsoController == null)
+            throw new IllegalStateException("GestioneCorsoController non impostato: impossibile salvare corso");
+
+        double prezzo = ValidationUtils.parseDoubleSafe(prezzoText);
+        int posti = ValidationUtils.parseIntegerSafe(postiText);
+
+        if (prezzo <= 0)
+            throw new ValidationException("Il prezzo deve essere un valore positivo");
+        if (posti <= 0)
+            throw new ValidationException("Il numero di posti deve essere maggiore di zero");
+        if (dataInizio == null || dataFine == null)
+            throw new ValidationException("Specificare sia la data di inizio che quella di fine corso");
+        if (frequenza == null)
+            throw new ValidationException("Devi selezionare una frequenza per il corso");
+
+        LocalDateTime inizio = LocalDateTime.of(
+                dataInizio, LocalTime.of(startHour != null ? startHour : 9, startMinute != null ? startMinute : 0));
+        LocalDateTime fine = LocalDateTime.of(
+                dataFine, LocalTime.of(endHour != null ? endHour : 17, endMinute != null ? endMinute : 0));
+
+        if (!inizio.isBefore(fine))
+            throw new ValidationException("La data di fine corso deve essere successiva alla data di inizio");
+
+        if (chefSelezionati == null || chefSelezionati.isEmpty())
+            throw new ValidationException("Selezionare almeno uno chef per il corso");
+        if (sessioni == null || sessioni.isEmpty())
+            throw new ValidationException("Aggiungere almeno una sessione al corso");
+
+        CorsoCucina corso = new CorsoCucina(
+                nome.trim(),
+                prezzo,
+                argomento == null ? "" : argomento.trim(),
+                frequenza,
+                posti
+        );
+
+        corso.setDataInizioCorso(inizio);
+        corso.setDataFineCorso(fine);
+        corso.setNumeroSessioni(sessioni.size());
+        corso.setChef(List.copyOf(chefSelezionati));
+        corso.setSessioni(List.copyOf(sessioni));
+
+        gestioneCorsoController.creaCorso(corso);
+    }
 }
