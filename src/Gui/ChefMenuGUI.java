@@ -2,7 +2,6 @@ package Gui;
 
 import controller.*;
 import dao.*;
-import service.*;
 import guihelper.StyleHelper;
 import exceptions.ValidationException;
 import exceptions.DataAccessException;
@@ -43,12 +42,7 @@ public class ChefMenuGUI {
 	private InPresenzaDAO inPresenzaDAO;
 	private RicettaDAO ricettaDAO;
 	private CucinaDAO cucinaDAO;
-
-	private GestioneCorsiCucina gestioneCorsiService;
-	private GestioneChef gestioneChefService;
-	private GestioneRicette gestioneRicetteService;
-	private GestioneCucina gestioneCucinaService;
-	private GestioneSessioni gestioneSessioniService;
+	
 
 	private VisualizzaCorsiController corsiController;
 	private GestioneCorsoController gestioneCorsoController;

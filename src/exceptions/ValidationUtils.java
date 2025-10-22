@@ -1,115 +1,70 @@
 package exceptions;
 
-import model.Ingrediente;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 public class ValidationUtils {
-    
-    public static void validateNotEmpty(String value, String fieldName) throws ValidationException {
-        if (value == null || value.trim().isEmpty()) {
-            throw new ValidationException(ErrorMessages.campoObbligatorio(fieldName));
-        }
-    }
-    
-    public static void validateTextLength(String value, String fieldName, int minLength, int maxLength) 
-            throws ValidationException {
-        if (value == null) {
-            throw new ValidationException(ErrorMessages.campoObbligatorio(fieldName));
-        }
-        
-        int length = value.trim().length();
-        
-        if (length < minLength) {
-            throw new ValidationException(
-                fieldName + " deve contenere almeno " + minLength + " caratteri"
-            );
-        }
-        
-        if (length > maxLength) {
-            throw new ValidationException(
-                fieldName + " non può superare " + maxLength + " caratteri"
-            );
-        }
-    }
-    
-    public static void validateNomeRicetta(String nome) throws ValidationException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new ValidationException(ErrorMessages.NOME_RICETTA_MANCANTE);
-        }
-        if (nome.trim().length() < 3) {
-            throw new ValidationException(ErrorMessages.NOME_RICETTA_TROPPO_CORTO);
-        }
-        if (nome.trim().length() > 100) {
-            throw new ValidationException(ErrorMessages.NOME_RICETTA_TROPPO_LUNGO);
-        }
-    }
 
-    public static void validateTempoPreparazione(int tempo) throws ValidationException {
-        if (tempo <= 0) {
-            throw new ValidationException(ErrorMessages.TEMPO_NON_VALIDO);
-        }
-        if (tempo > 1440) {
-            throw new ValidationException(ErrorMessages.TEMPO_TROPPO_LUNGO);
-        }
-    }
-    
-    public static void validateNotNull(Object obj, String fieldName) throws ValidationException {
-        if (obj == null) {
-            throw new ValidationException(fieldName + " non può essere nullo");
-        }
-    }
+	// ==================== CAMPPI OBBLIGATORI ====================
+	public static void validateNotNull(Object value, String fieldName) throws ValidationException {
+		if (value == null) {
+			throw new ValidationException(campoObbligatorio(fieldName));
+		}
+	}
 
-    
+	public static void validateNotEmpty(String value, String fieldName) throws ValidationException {
+		if (value == null || value.trim().isEmpty()) {
+			throw new ValidationException(campoObbligatorio(fieldName));
+		}
+	}
 
-    public static void validateQuantita(double quantita) throws ValidationException {
-        if (quantita <= 0) {
-            throw new ValidationException(ErrorMessages.QUANTITA_NON_VALIDA);
-        }
-    }
-    
-    public static void validateNomeIngrediente(String nome) throws ValidationException {
-        if (nome == null || nome.trim().isEmpty()) {
-            throw new ValidationException("Nome ingrediente mancante");
-        }
-        int len = nome.trim().length();
-        if (len < 2) {
-            throw new ValidationException("Nome ingrediente troppo corto");
-        }
-        if (len > 100) {
-            throw new ValidationException("Nome ingrediente troppo lungo");
-        }
-    }
-    
-    public static void validateIntRange(Integer min, Integer max, String fieldName) throws ValidationException {
-        if (min != null && max != null && min > max) {
-            throw new ValidationException(fieldName + ": valore minimo maggiore del massimo");
-        }
-    }
-    
-    public static Integer parseIntegerSafe(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(text.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
+	// ==================== LUNGHEZZA TESTO ====================
+	public static void validateTextLength(String value, String fieldName, int minLength, int maxLength)
+			throws ValidationException {
+		if (value == null || value.trim().length() < minLength) {
+			throw new ValidationException(fieldName + " deve contenere almeno " + minLength + " caratteri");
+		}
+		if (value.trim().length() > maxLength) {
+			throw new ValidationException(fieldName + " non può superare " + maxLength + " caratteri");
+		}
+	}
 
-    public static boolean isValidInteger(String text) {
-        return parseIntegerSafe(text) != null || text == null || text.trim().isEmpty();
-    }
-    
-    public static Double parseDoubleSafe(String text) {
-        if (text == null || text.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return Double.parseDouble(text.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
+	// ==================== INTERI E RANGE ====================
+	public static void validatePositiveInt(Integer value, String fieldName) throws ValidationException {
+		if (value == null || value <= 0) {
+			throw new ValidationException(fieldName + " deve essere maggiore di zero");
+		}
+	}
+
+	// ==================== VALIDAZIONI SPECIALI ====================
+	public static void validateChefLogged(Object chef) throws ValidationException {
+		if (chef == null) {
+			throw new ValidationException("Nessuno chef loggato. Impossibile completare l'operazione.");
+		}
+	}
+
+	public static String campoObbligatorio(String fieldName) {
+		return "Il campo '" + fieldName + "' è obbligatorio";
+	}
+
+	public static Double parseDoubleSafe(String text) {
+		if (text == null || text.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return Double.parseDouble(text.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+
+	}
+
+	public static Integer parseIntegerSafe(String text) {
+		if (text == null || text.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return Integer.parseInt(text.trim());
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
 }
