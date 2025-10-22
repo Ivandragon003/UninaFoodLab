@@ -110,9 +110,6 @@ public class ChefController {
 		}
 	}
 
-	// ==============================================================
-	// GET CORSI PER CHEF
-	// ==============================================================
 	public List<CorsoCucina> getCorsiByChef(Chef chef) throws ValidationException, DataAccessException {
 		if (chef == null)
 			throw new ValidationException("Chef non valido");
@@ -124,9 +121,6 @@ public class ChefController {
 		}
 	}
 
-	// ==============================================================
-	// METODI PRIVATI DI VALIDAZIONE
-	// ==============================================================
 	private void checkUniqueConstraints(String codFiscale, String email, String username)
 			throws ValidationException, SQLException {
 		if (chefDAO.existsByCodFiscale(codFiscale))
@@ -137,9 +131,6 @@ public class ChefController {
 			throw new ValidationException("Username già esistente");
 	}
 
-	// ==============================================================
-	// GESTIONE CORSO
-	// ==============================================================
 	public void setGestioneCorsoController(GestioneCorsoController gestioneCorsoController) {
 		this.gestioneCorsoController = gestioneCorsoController;
 	}
@@ -152,17 +143,14 @@ public class ChefController {
 		if (gestioneCorsoController == null)
 			throw new IllegalStateException("GestioneCorsoController non impostato");
 
-		// Parse valori
 		double prezzo = ValidationUtils.parseDoubleSafe(prezzoText);
 		int posti = ValidationUtils.parseIntegerSafe(postiText);
 
-		// Costruzione date/ore
 		LocalDateTime inizio = LocalDateTime.of(dataInizio,
 				LocalTime.of(startHour != null ? startHour : 9, startMinute != null ? startMinute : 0));
 		LocalDateTime fine = LocalDateTime.of(dataFine,
 				LocalTime.of(endHour != null ? endHour : 17, endMinute != null ? endMinute : 0));
 
-		// Solo validazioni di business logic non nel model
 		if (!inizio.isBefore(fine))
 			throw new ValidationException("La data di fine corso deve essere successiva alla data di inizio");
 
@@ -172,7 +160,6 @@ public class ChefController {
 		if (sessioni == null || sessioni.isEmpty())
 			throw new ValidationException("Aggiungere almeno una sessione al corso");
 
-		// Il costruttore e i setter faranno le loro validazioni
 		CorsoCucina corso = new CorsoCucina(nome.trim(), prezzo, argomento == null ? "" : argomento.trim(), frequenza,
 				posti);
 		corso.setDataInizioCorso(inizio);
