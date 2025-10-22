@@ -34,14 +34,7 @@ public class GestioneCorsoController {
 		return chefLoggato;
 	}
 
-	// Recupero tutti i corsi
-	public List<CorsoCucina> getTuttiICorsi() throws DataAccessException {
-		try {
-			return corsoDAO.getAll();
-		} catch (SQLException e) {
-			throw new DataAccessException("Errore durante il recupero dei corsi.", e);
-		}
-	}
+	
 
 	// Recupero tutti gli chef
 	public List<Chef> getTuttiGliChef() throws DataAccessException {
@@ -137,13 +130,5 @@ public class GestioneCorsoController {
 			throw new DataAccessException("Errore durante la rimozione dello chef dal corso.", e);
 		}
 	}
-
-	// Recupera corso completo
-	public CorsoCucina getCorsoCompleto(int idCorso) throws DataAccessException {
-		try {
-			return corsoDAO.getCorsoCompleto(idCorso);
-		} catch (SQLException e) {
-			throw new DataAccessException("Errore durante il recupero del corso.", e);
-		}
-	}
 }
+
