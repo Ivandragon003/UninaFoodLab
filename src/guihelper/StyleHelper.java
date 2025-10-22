@@ -536,32 +536,35 @@ public final class StyleHelper {
 		return createWindowButton(icon, action, color);
 	}
 
+	// Stato normale: bordo arancione chiaro
+	public static void applyNormalState(TextInputControl field) {
+		if (field != null) {
+			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+					+ PRIMARY_ORANGE + ";" + "-fx-border-width: 1.5;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+					+ "-fx-font-size: 14px;" + "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
+					+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
+		}
+	}
 
-public static void applyErrorState(TextInputControl field) {
-    if (field != null) {
-        field.setStyle("-fx-background-color: white;" 
-            + "-fx-background-radius: 12;" 
-            + "-fx-border-color: " + ERROR_RED + ";" 
-            + "-fx-border-width: 2;" 
-            + "-fx-border-radius: 12;" 
-            + "-fx-padding: 10 15;"
-            + "-fx-font-size: 14px;" 
-            + "-fx-text-fill: " + TEXT_BLACK + ";"  
-            + "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.3), 6, 0, 0, 2);");
-    }
-}
+	// Stato focus: bordo arancione più intenso + ombra
+	public static void applyFocusState(TextInputControl field) {
+		if (field != null) {
+			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+					+ PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;"
+					+ "-fx-font-size: 14px;" + "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
+					+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);");
+		}
+	}
 
-public static void applyNormalState(TextInputControl field) {
-    if (field != null) {
-        field.setStyle("-fx-background-color: white;" 
-            + "-fx-background-radius: 12;" 
-            + "-fx-border-color: " + BORDER_LIGHT + ";" 
-            + "-fx-border-width: 2;" 
-            + "-fx-border-radius: 12;" 
-            + "-fx-padding: 10 15;"
-            + "-fx-font-size: 14px;" 
-            + "-fx-text-fill: " + TEXT_BLACK + ";" 
-            + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
-    }
-}
+	public static void applyErrorState(TextInputControl field) {
+		if (field != null) {
+			field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+					+ ERROR_RED + ";" + // bordo rosso
+					"-fx-border-width: 2;" + "-fx-border-radius: 12;" + "-fx-padding: 10 15;" + "-fx-font-size: 14px;"
+					+ "-fx-text-fill: " + TEXT_BLACK + ";" + "-fx-prompt-text-fill: gray;"
+					+ "-fx-effect: dropshadow(gaussian, rgba(220,53,69,0.5), 8, 0, 0, 3);" // ombra più intensa
+			);
+		}
+	}
+
 }

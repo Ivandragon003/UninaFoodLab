@@ -115,21 +115,13 @@ public class LoginChefGUI extends Application {
 		VBox formContainer = new VBox(15);
 		formContainer.setAlignment(Pos.CENTER);
 
-		VBox usernameContainer = createStylishTextField("Username", false);
-		TextField usernameField = (TextField) ((StackPane) usernameContainer.getChildren().get(0)).getChildren().get(1);
+		// Crea i campi con stile iniziale corretto
+		TextField usernameField = (TextField) createStyledField("Username", false);
+		PasswordField passwordField = (PasswordField) createStyledField("Password", true);
 
-		VBox passwordContainer = createStylishTextField("Password", true);
-		PasswordField passwordField = (PasswordField) ((StackPane) passwordContainer.getChildren().get(0)).getChildren()
-				.get(1);
-
-		usernameField.textProperty().addListener((obs, o, n) -> {
-			if (n != null && !n.isBlank())
-				errorLabel.setVisible(false);
-		});
-		passwordField.textProperty().addListener((obs, o, n) -> {
-			if (n != null && !n.isBlank())
-				errorLabel.setVisible(false);
-		});
+		// Aggiungi listener per focus e reset errore
+		setupFieldBehavior(usernameField);
+		setupFieldBehavior(passwordField);
 
 		passwordField.setOnAction(e -> handleLogin(usernameField, passwordField));
 
@@ -141,7 +133,7 @@ public class LoginChefGUI extends Application {
 		loginButton.setOnAction(e -> handleLogin(usernameField, passwordField));
 		registerButton.setOnAction(e -> handleRegister());
 
-		formContainer.getChildren().addAll(usernameContainer, passwordContainer);
+		formContainer.getChildren().addAll(usernameField, passwordField);
 
 		HBox buttonContainer = new HBox(15);
 		buttonContainer.setAlignment(Pos.CENTER);
@@ -156,33 +148,81 @@ public class LoginChefGUI extends Application {
 		return card;
 	}
 
-	private VBox createStylishTextField(String placeholder, boolean isPassword) {
-		VBox container = new VBox(3);
-		StackPane fieldContainer = new StackPane();
-		fieldContainer.setPrefHeight(45);
+	private TextInputControl createStyledField(String placeholder, boolean isPassword) {
+		TextInputControl field = isPassword ? new PasswordField() : new TextField();
+		field.setPromptText(placeholder);
+		field.setPrefHeight(42);
 
-		Region background = new Region();
-		String bgBaseStyle = "-fx-background-color: white; -fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: #FF9966; -fx-border-width: 1.5;";
-		String bgFocusStyle = "-fx-background-color: white; -fx-background-radius: 15; -fx-border-radius: 15; -fx-border-color: #FF9966; -fx-border-width: 2; -fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 4, 0, 0, 1);";
-		background.setStyle(bgBaseStyle);
+		// Imposta lo stile INIZIALE con bordo arancione
+		applyNormalStyle(field);
 
-		TextInputControl inputField = isPassword ? new PasswordField() : new TextField();
-		inputField.setPromptText(placeholder);
-		inputField.setStyle("""
-				    -fx-background-color: transparent;
-				    -fx-text-fill: black;
-				    -fx-prompt-text-fill: gray;
-				    -fx-font-size: 14px;
-				    -fx-padding: 0 15 0 15;
-				""");
-		inputField.setPrefWidth(300);
+		return field;
+	}
 
-		inputField.focusedProperty()
-				.addListener((obs, was, isNow) -> background.setStyle(isNow ? bgFocusStyle : bgBaseStyle));
+	/**
+	 * Configura il comportamento del campo: focus e reset errore
+	 */
+	private void setupFieldBehavior(TextInputControl field) {
+		// Flag per tracciare se il campo è in errore
+		final boolean[] hasError = { false };
 
-		fieldContainer.getChildren().addAll(background, inputField);
-		container.getChildren().add(fieldContainer);
-		return container;
+		// Listener per il FOCUS: cambia bordo tra arancione e arancione+shadow
+		field.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+			// NON modificare lo stile se il campo è in errore
+			if (hasError[0]) {
+				return;
+			}
+
+			if (isNowFocused) {
+				applyFocusStyle(field);
+			} else {
+				applyNormalStyle(field);
+			}
+		});
+
+		// Listener per il TESTO: quando l'utente digita in un campo con errore
+		field.textProperty().addListener((obs, oldV, newV) -> {
+			if (hasError[0] && newV != null && !newV.trim().isEmpty()) {
+				// Reset dello stato di errore
+				hasError[0] = false;
+				errorLabel.setVisible(false);
+
+				// Applica lo stile corretto in base al focus
+				if (field.isFocused()) {
+					applyFocusStyle(field);
+				} else {
+					applyNormalStyle(field);
+				}
+			}
+		});
+
+		// Quando impostiamo manualmente l'errore, aggiorniamo il flag
+		field.styleProperty().addListener((obs, oldStyle, newStyle) -> {
+			if (newStyle != null && newStyle.contains(StyleHelper.ERROR_RED)) {
+				hasError[0] = true;
+			}
+		});
+	}
+
+	/**
+	 * Stile normale: bordo arancione sottile
+	 */
+	private void applyNormalStyle(TextInputControl field) {
+		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 1.5;" + "-fx-border-radius: 12;"
+				+ "-fx-padding: 10 15;" + "-fx-font-size: 14px;" + "-fx-text-fill: " + StyleHelper.TEXT_BLACK + ";"
+				+ "-fx-prompt-text-fill: gray;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
+	}
+
+	/**
+	 * Stile focus: bordo arancione più spesso con ombra colorata
+	 */
+	private void applyFocusStyle(TextInputControl field) {
+		field.setStyle("-fx-background-color: white;" + "-fx-background-radius: 12;" + "-fx-border-color: "
+				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 2;" + "-fx-border-radius: 12;"
+				+ "-fx-padding: 10 15;" + "-fx-font-size: 14px;" + "-fx-text-fill: " + StyleHelper.TEXT_BLACK + ";"
+				+ "-fx-prompt-text-fill: gray;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.2), 6, 0, 0, 2);");
 	}
 
 	private HBox createWindowButtons(Stage stage) {
@@ -210,9 +250,17 @@ public class LoginChefGUI extends Application {
 		} catch (ValidationException | DataAccessException ex) {
 			errorLabel.setText("❌ " + ex.getMessage());
 			errorLabel.setVisible(true);
+
+			// ✅ Applica bordo rosso anche se il campo NON è vuoto ma è sbagliato
+			StyleHelper.applyErrorState(usernameField);
+			StyleHelper.applyErrorState(passwordField);
 		} catch (Exception ex) {
 			errorLabel.setText("❌ Errore durante il login: " + ex.getMessage());
 			errorLabel.setVisible(true);
+
+			StyleHelper.applyErrorState(usernameField);
+			StyleHelper.applyErrorState(passwordField);
+
 			ex.printStackTrace();
 		}
 	}
