@@ -1,7 +1,6 @@
 package Gui;
 
 import dao.*;
-import service.*;
 import controller.*;
 import model.*;
 import guihelper.StyleHelper;
@@ -24,6 +23,7 @@ import java.util.List;
 
 public class DettagliCorsoGUI {
 	private GestioneCorsoController gestioneController;
+	private VisualizzaCorsiController visualizzaController;
 	private ChefController chefController;
 	private RicettaController ricettaController;
 	private IngredienteController ingredienteController;
@@ -41,7 +41,10 @@ public class DettagliCorsoGUI {
 	private Button addChefBtn, modificaBtn, salvaBtn, eliminaCorsoBtn;
 	private Label selezionatoLabel, avisoCorsoFinitoLabel, avisoSolaVisualizzazioneLabel;
 
-
+	public void setVisualizzaController(VisualizzaCorsiController controller) {
+		this.visualizzaController = controller;
+	}
+	
 	public void setController(GestioneCorsoController controller) {
 		this.gestioneController = controller;
 	}
@@ -596,17 +599,16 @@ public class DettagliCorsoGUI {
 		CucinaDAO cucinaDAO = new CucinaDAO();
 		InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
 		OnlineDAO onlineDAO = new OnlineDAO();
-		GestioneSessioni gestioneSessioni = new GestioneSessioni(inPresenzaDAO, onlineDAO, cucinaDAO);
-		GestioneCucina gestioneCucina = new GestioneCucina(cucinaDAO);
-		GestioneRicette gestioneRicette = ricettaController.getGestioneRicette();
+		RicettaDAO ricettaDAO = new RicettaDAO();
+		return new GestioneSessioniController(corso, inPresenzaDAO, onlineDAO, cucinaDAO, ricettaDAO);
 
-		return new GestioneSessioniController(corso, gestioneSessioni, gestioneCucina, gestioneRicette);
 	}
 
 	private void tornaADettagliDaSessioni(StackPane contentPane) {
 		try {
-			CorsoCucina corsoAggiornato = gestioneController.getCorsoCompleto(corso.getIdCorso());
-
+			CorsoCucina corsoAggiornato = visualizzaController != null 
+					? visualizzaController.getCorsoCompleto(corso.getIdCorso())
+					: corso;
 			DettagliCorsoGUI dettagliGUI = new DettagliCorsoGUI();
 			dettagliGUI.setController(gestioneController);
 			dettagliGUI.setChefController(chefController);
