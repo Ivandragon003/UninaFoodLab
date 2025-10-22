@@ -111,7 +111,7 @@ public class ReportMensileController {
 	public Map<LocalDate, Integer> getRicettePerGiorno(LocalDate inizio, LocalDate fine) throws DataAccessException {
 		Map<LocalDate, Integer> result = new TreeMap<>();
 		
-		// Recupera corsi dello chef
+		
 		List<CorsoCucina> corsiDelChef = getCorsiByChef(chefLoggato);
 
 		if (corsiDelChef == null || corsiDelChef.isEmpty())

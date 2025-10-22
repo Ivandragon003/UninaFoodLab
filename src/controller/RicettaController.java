@@ -35,9 +35,7 @@ public class RicettaController {
         return chefLoggato;
     }
 
-    // =========================
-    // VISUALIZZAZIONE RICETTE
-    // =========================
+   
     public List<Ricetta> visualizzaRicette() throws DataAccessException {
         try {
             return ricettaDAO.getAll();

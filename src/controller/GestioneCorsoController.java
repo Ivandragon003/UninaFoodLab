@@ -34,8 +34,6 @@ public class GestioneCorsoController {
 		return chefLoggato;
 	}
 
-	
-
 	// Recupero tutti gli chef
 	public List<Chef> getTuttiGliChef() throws DataAccessException {
 		try {
@@ -110,7 +108,7 @@ public class GestioneCorsoController {
 		}
 	}
 
-	// Rimuovi chef dal corso
+	
 	public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
 
 		ValidationUtils.validateNotNull(corso, "Corso");
@@ -131,4 +129,3 @@ public class GestioneCorsoController {
 		}
 	}
 }
-

@@ -105,10 +105,6 @@ public class ChefController {
 	}
 
 	
-
-	// ==============================================================
-	// GET TUTTI GLI CHEF
-	// ==============================================================
 	public List<Chef> getAllChef() throws DataAccessException {
 		try {
 			return chefDAO.getAll();

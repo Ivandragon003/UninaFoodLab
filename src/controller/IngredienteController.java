@@ -71,9 +71,6 @@ public class IngredienteController {
 		}
 	}
 
-	// ==============================================================
-	// CERCA INGREDIENTI PER TIPO
-	// ==============================================================
 	public List<Ingrediente> cercaIngredientiPerTipo(String tipo) throws DataAccessException {
 		try {
 			List<Ingrediente> tutti = ingredienteDAO.getAll();

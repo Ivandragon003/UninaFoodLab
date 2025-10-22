@@ -126,9 +126,7 @@ public class GestioneSessioniController {
 		}
 	}
 
-	// ==============================================================
-	// VALIDAZIONE DATA DELLA SESSIONE
-	// ==============================================================
+
 	public boolean validaDataSessione(LocalDate dataSelezionata) throws ValidationException {
 
 		if (dataSelezionata == null) {
