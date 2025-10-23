@@ -32,13 +32,11 @@ public class ChefMenuGUI {
 	private static final double SIDEBAR_WIDTH = 240;
 	private static final double ANIMATION_DURATION = 250;
 
-
 	private Chef chefLoggato;
 
 	private CorsoCucinaDAO corsoDAO;
 	private ChefDAO chefDAO;
 	private TieneDAO tieneDAO;
-	private IscrizioneDAO iscrizioneDAO;
 	private OnlineDAO onlineDAO;
 	private InPresenzaDAO inPresenzaDAO;
 	private RicettaDAO ricettaDAO;
@@ -80,7 +78,6 @@ public class ChefMenuGUI {
 		this.corsoDAO = new CorsoCucinaDAO();
 		this.chefDAO = new ChefDAO();
 		this.tieneDAO = new TieneDAO();
-		this.iscrizioneDAO = new IscrizioneDAO();
 		this.onlineDAO = new OnlineDAO();
 		this.cucinaDAO = new CucinaDAO();
 		this.inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
@@ -94,21 +91,18 @@ public class ChefMenuGUI {
 			this.gestioneCorsoController = new GestioneCorsoController(chefDAO, tieneDAO, corsoDAO);
 			this.gestioneCorsoController.setChefLoggato(chefLoggato);
 
-			this.corsiController = new VisualizzaCorsiController(corsoDAO, tieneDAO, iscrizioneDAO, onlineDAO,
+			this.corsiController = new VisualizzaCorsiController(corsoDAO, tieneDAO, onlineDAO,
 					inPresenzaDAO, chefLoggato);
 
 			this.chefController = new ChefController(chefDAO, tieneDAO);
-			
 
 			this.ricettaController = new RicettaController(ricettaDAO, ingredienteDAO, usaDAO, cucinaDAO, chefLoggato);
 			this.ingredienteController = new IngredienteController(ingredienteDAO);
 
-			
-			GestioneSessioniController gestioneSessioniController = new GestioneSessioniController(null, 
-																											
+			GestioneSessioniController gestioneSessioniController = new GestioneSessioniController(null,
+
 					inPresenzaDAO, onlineDAO, cucinaDAO, ricettaDAO);
 
-		
 			this.reportMensileController = new ReportMensileController(chefController, corsiController,
 					gestioneSessioniController, chefLoggato);
 
@@ -118,7 +112,6 @@ public class ChefMenuGUI {
 			throw new RuntimeException("Errore inizializzazione controller", e);
 		}
 	}
-
 
 	public void start(Stage stage) {
 		if (chefLoggato == null)
@@ -185,7 +178,7 @@ public class ChefMenuGUI {
 		sidebar.setStyle("-fx-background-color: " + StyleHelper.PRIMARY_ORANGE + ";");
 		sidebar.setPrefWidth(SIDEBAR_WIDTH);
 		sidebar.setFillWidth(true);
-		
+
 		Label welcomeLabel = new Label("Benvenuto\n" + chefLoggato.getUsername());
 		welcomeLabel.setFont(Font.font("Roboto", FontWeight.BOLD, 16));
 		welcomeLabel.setTextFill(Color.WHITE);
@@ -267,11 +260,11 @@ public class ChefMenuGUI {
 	}
 
 	private HBox createWindowButtons(Stage stage) {
-		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
 		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
-				"rgba(255,107,53,0.8)");
-		Button maximizeButton = StyleHelper.createWindowButton("O", () -> stage.setMaximized(!stage.isMaximized()),
-				"rgba(255,107,53,0.8)");
+				StyleHelper.PRIMARY_ORANGE);
+		Button maximizeButton = StyleHelper.createWindowButton("☐", () -> stage.setMaximized(!stage.isMaximized()),
+				StyleHelper.PRIMARY_ORANGE);
+		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
 
 		HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);
 		box.setAlignment(Pos.TOP_RIGHT);

@@ -16,16 +16,14 @@ public class VisualizzaCorsiController {
 
 	private final CorsoCucinaDAO corsoDAO;
 	private final TieneDAO tieneDAO;
-	private final IscrizioneDAO iscrizioneDAO;
 	private final OnlineDAO onlineDAO;
 	private final InPresenzaDAO inPresenzaDAO;
 	private final Chef chefLoggato;
 
-	public VisualizzaCorsiController(CorsoCucinaDAO corsoDAO, TieneDAO tieneDAO, IscrizioneDAO iscrizioneDAO,
+	public VisualizzaCorsiController(CorsoCucinaDAO corsoDAO, TieneDAO tieneDAO,
 			OnlineDAO onlineDAO, InPresenzaDAO inPresenzaDAO, Chef chefLoggato) {
 		this.corsoDAO = corsoDAO;
 		this.tieneDAO = tieneDAO;
-		this.iscrizioneDAO = iscrizioneDAO;
 		this.onlineDAO = onlineDAO;
 		this.inPresenzaDAO = inPresenzaDAO;
 		this.chefLoggato = chefLoggato;
@@ -96,9 +94,7 @@ public class VisualizzaCorsiController {
 			sessioni.addAll(inPresenzaDAO.getByCorso(idCorso));
 			corso.setSessioni(sessioni);
 
-			corso.setIscrizioni(
-					iscrizioneDAO.getAllFull().stream().filter(i -> i.getCorso().getIdCorso() == idCorso).toList());
-
+			
 			corso.setChef(tieneDAO.getChefByCorso(idCorso));
 
 			return corso;

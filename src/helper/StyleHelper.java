@@ -239,26 +239,27 @@ public final class StyleHelper {
 	}
 
 	public static void showConfirmationDialog(String title, String message, Runnable onConfirm) {
-		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-		alert.setTitle("");
-		alert.setHeaderText(null);
-		alert.setContentText(null);
+		Stage dialogStage = new Stage();
+		dialogStage.initModality(Modality.APPLICATION_MODAL);
+		dialogStage.initStyle(StageStyle.TRANSPARENT);
+		dialogStage.setResizable(false);
 
-		DialogPane dialogPane = alert.getDialogPane();
-		dialogPane.getStyleClass().remove("alert");
-
-		dialogPane.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-border-color: " + PRIMARY_ORANGE + ";"
-				+ "-fx-border-width: 3px;" + "-fx-border-radius: 12px;" + "-fx-background-radius: 12px;"
-				+ "-fx-padding: 30px;");
-
-		dialogPane.setMinWidth(500);
-		dialogPane.setMinHeight(280);
-
-		VBox content = new VBox(18);
+		VBox content = new VBox(20);
+		content.setPadding(new Insets(30));
 		content.setAlignment(Pos.CENTER);
+		content.setStyle("-fx-background-color: " + BG_WHITE + ";" + "-fx-background-radius: 20;" + "-fx-border-color: "
+				+ PRIMARY_ORANGE + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(255,107,53,0.3), 15, 0, 0, 6);");
 
 		Label iconLabel = new Label("❓");
 		iconLabel.setStyle("-fx-font-size: 50px;");
+
+		Label titleLabel = new Label(title);
+		titleLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 20));
+		titleLabel.setTextFill(Color.web(TEXT_BLACK));
+		titleLabel.setAlignment(Pos.CENTER);
+		titleLabel.setWrapText(true);
+		titleLabel.setMaxWidth(450);
 
 		Label messageLabel = new Label(message);
 		messageLabel.setWrapText(true);
@@ -267,28 +268,46 @@ public final class StyleHelper {
 		messageLabel.setAlignment(Pos.CENTER);
 		messageLabel.setMaxWidth(450);
 
-		content.getChildren().addAll(iconLabel, messageLabel);
-		dialogPane.setContent(content);
+		HBox buttonsBox = new HBox(15);
+		buttonsBox.setAlignment(Pos.CENTER);
 
-		Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-		okButton.setText("Sì");
-		okButton.setStyle(
-				"-fx-background-color: " + SUCCESS_GREEN + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
-						+ "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;" + "-fx-background-radius: 10px;"
-						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
-
-		Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);
-		cancelButton.setText("No");
-		cancelButton
-				.setStyle("-fx-background-color: " + ERROR_RED + ";" + "-fx-text-fill: white;" + "-fx-font-size: 14px;"
-						+ "-fx-font-weight: bold;" + "-fx-padding: 12 30 12 30;" + "-fx-background-radius: 10px;"
-						+ "-fx-cursor: hand;" + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 5, 0.3, 1, 2);");
-
-		alert.showAndWait().ifPresent(response -> {
-			if (response == ButtonType.OK && onConfirm != null) {
-				onConfirm.run();
+		Button confirmButton = createStyledButton("Sì", SUCCESS_GREEN, "#FFFFFF");
+		confirmButton.setPrefWidth(130);
+		confirmButton.setOnAction(e -> {
+			dialogStage.close();
+			if (onConfirm != null) {
+				javafx.application.Platform.runLater(() -> {
+					try {
+						onConfirm.run();
+					} catch (Exception ex) {
+						System.err.println("Errore nel callback di conferma: " + ex.getMessage());
+						ex.printStackTrace();
+					}
+				});
 			}
 		});
+
+		Button cancelButton = createStyledButton("No", ERROR_RED, "#FFFFFF");
+		cancelButton.setPrefWidth(130);
+		cancelButton.setOnAction(e -> dialogStage.close());
+
+		buttonsBox.getChildren().addAll(confirmButton, cancelButton);
+
+		content.getChildren().addAll(iconLabel, titleLabel, messageLabel, buttonsBox);
+
+		StackPane root = new StackPane(content);
+		root.setStyle("-fx-background-color: transparent;");
+		Scene scene = new Scene(root);
+		scene.setFill(Color.TRANSPARENT);
+		dialogStage.setScene(scene);
+
+		content.setOpacity(0);
+		FadeTransition fadeIn = new FadeTransition(Duration.millis(300), content);
+		fadeIn.setFromValue(0.0);
+		fadeIn.setToValue(1.0);
+		fadeIn.play();
+
+		dialogStage.showAndWait();
 	}
 
 	public static void showCustomConfirmationDialog(String title, String message, Runnable onConfirm) {

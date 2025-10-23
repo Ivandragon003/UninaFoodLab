@@ -5,19 +5,12 @@ import java.util.Objects;
 import java.util.Set;
 
 public class Utente extends Persona {
-	private Set<Iscrizione> iscrizioni;
+
 	private Set<Sessione> sessioniSeguite;
 
 	public Utente(String codFiscale, String nome, String cognome) {
 		super(codFiscale, nome, cognome);
-		this.iscrizioni = new HashSet<>();
 		this.sessioniSeguite = new HashSet<>();
-	}
-
-
-
-	public Set<Iscrizione> getIscrizioni() {
-		return iscrizioni;
 	}
 
 	public Set<Sessione> getSessioniSeguite() {
