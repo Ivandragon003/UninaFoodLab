@@ -196,7 +196,7 @@ public class SelezionaChefDialog {
         footer.setPadding(new Insets(15, 20, 20, 20));
         footer.setAlignment(Pos.CENTER_RIGHT);
 
-        Button cancelBtn = createStyledButton("Annulla", "#6c757d");
+        Button cancelBtn = createStyledButton("Annulla", StyleHelper.ERROR_RED);
         cancelBtn.setOnAction(e -> {
             selectedChef = null;
             stage.close();

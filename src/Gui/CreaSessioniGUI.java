@@ -398,29 +398,36 @@ public class CreaSessioniGUI extends Stage {
 	}
 
 	private HBox createRicettaCell(Ricetta ricetta) {
-		HBox cell = new HBox(10);
+		HBox cell = new HBox(15);
 		cell.setAlignment(Pos.CENTER_LEFT);
-		cell.setPadding(new Insets(8));
-		cell.setStyle("-fx-background-color: white; -fx-background-radius: 8; "
-				+ "-fx-border-color: #28a745; -fx-border-width: 1; -fx-border-radius: 8;");
+		cell.setPadding(new Insets(15, 20, 15, 20));
+		cell.setMinHeight(70);
+		cell.setStyle("-fx-background-color: white;" + "-fx-background-radius: 10;" + "-fx-border-color: #28a745;"
+				+ "-fx-border-width: 2;" + "-fx-border-radius: 10;");
 
 		Label icon = new Label("🍽️");
-		icon.setStyle("-fx-font-size: 16px;");
+		icon.setStyle("-fx-font-size: 24px;");
+		icon.setMinWidth(35);
 
-		VBox info = new VBox(3);
+		VBox info = new VBox(6);
+		info.setMinWidth(350);
+
 		Label name = new Label(ricetta.getNome());
-		name.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-		Label details = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min | 🥕 " + ricetta.getNumeroIngredienti()
-				+ " ingredienti");
-		details.setStyle("-fx-font-size: 11px; -fx-text-fill: #666666;");
+		name.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+		Label details = new Label("⏱️ " + ricetta.getTempoPreparazione() + " min  |  🥕 "
+				+ ricetta.getNumeroIngredienti() + " ingredienti");
+		details.setStyle("-fx-font-size: 13px; -fx-text-fill: #666666;");
+
 		info.getChildren().addAll(name, details);
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 
-		Button remove = new Button("❌");
-		remove.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; "
-				+ "-fx-padding: 5 10; -fx-border-radius: 5; -fx-cursor: hand; -fx-font-size: 12px;");
+		Button remove = new Button("✕");
+		remove.setPrefSize(45, 45);
+		remove.setStyle("-fx-background-color: #dc3545;" + "-fx-text-fill: white;" + "-fx-font-size: 18px;"
+				+ "-fx-font-weight: bold;" + "-fx-background-radius: 10;" + "-fx-cursor: hand;");
 		remove.setTooltip(new Tooltip("Rimuovi ricetta"));
 		remove.setOnAction(e -> {
 			ricetteSelezionate.remove(ricetta);
@@ -445,8 +452,7 @@ public class CreaSessioniGUI extends Stage {
 
 	private void apriDialogRicette() {
 		try {
-			VisualizzaRicetteDialog dialog = new VisualizzaRicetteDialog(ricettaController, ingredienteController);
-			dialog.initOwner(this);
+			VisualizzaRicetteGUI dialog = new VisualizzaRicetteGUI(ricettaController, ingredienteController, true);			dialog.initOwner(this);
 
 			if (!ricetteSelezionate.isEmpty()) {
 				dialog.preSelezionaRicette(ricetteSelezionate);
