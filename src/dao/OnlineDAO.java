@@ -148,36 +148,35 @@ public class OnlineDAO {
 		return sessione;
 	}
 
+	public List<Online> getByCorsoInPeriodo(int idCorso, LocalDateTime inizio, LocalDateTime fine) throws SQLException {
+		String sql = """
+				SELECT s.idsessione, s.datainiziosessione, s.datafinesessione, s.tipo,
+				       s.piattaformastreaming, s.idcorsocucina,
+				       c.idCorsoCucina, c.nomeCorso, c.argomento, c.prezzo,
+				       c.numeroPosti AS numeroposti, c.frequenzaCorso
+				FROM sessione s
+				LEFT JOIN corsocucina c ON s.idcorsocucina = c.idCorsoCucina
+				WHERE s.tipo = 'online'
+				  AND s.idcorsocucina = ?
+				  AND s.datainiziosessione >= ?
+				  AND s.datainiziosessione <= ?
+				ORDER BY s.datainiziosessione
+				""";
 
-	public List<Online> getByCorsoInPeriodo(int idCorso, 
-                                        LocalDateTime inizio, 
-                                        LocalDateTime fine) 
-        throws SQLException {
-    
-    String sql = """
-        SELECT * FROM online 
-        WHERE idCorsoCucina = ? 
-          AND datainiziosessione >= ? 
-          AND datainiziosessione <= ?
-        ORDER BY datainiziosessione
-        """;
-    
-    try (Connection conn = DBConnection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(sql)) {
-        
-        stmt.setInt(1, idCorso);
-        stmt.setTimestamp(2, Timestamp.valueOf(inizio));
-        stmt.setTimestamp(3, Timestamp.valueOf(fine));
-        
-        try (ResultSet rs = stmt.executeQuery()) {
-            List<Online> sessioni = new ArrayList<>();
-            while (rs.next()) {
-                sessioni.add(mapResultSetToOnline(rs));
-            }
-            return sessioni;
-        }
-    }
-}
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
 
+			stmt.setInt(1, idCorso);
+			stmt.setTimestamp(2, Timestamp.valueOf(inizio));
+			stmt.setTimestamp(3, Timestamp.valueOf(fine));
+
+			try (ResultSet rs = stmt.executeQuery()) {
+				List<Online> sessioni = new ArrayList<>();
+				while (rs.next()) {
+					sessioni.add(mapResultSetToOnline(rs));
+				}
+				return sessioni;
+			}
+		}
+	}
 
 }

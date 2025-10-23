@@ -93,6 +93,7 @@ public class CorsoCucinaDAO {
 	public List<CorsoCucina> getAll() throws SQLException {
 		List<CorsoCucina> list = new ArrayList<>();
 		String sql = "SELECT * FROM corsocucina ORDER BY nomecorso";
+
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql);
 				ResultSet rs = ps.executeQuery()) {
@@ -103,6 +104,7 @@ public class CorsoCucinaDAO {
 				list.add(corso);
 			}
 		}
+
 		return list;
 	}
 
@@ -117,6 +119,7 @@ public class CorsoCucinaDAO {
 	public List<CorsoCucina> findByNomeOrArgomento(String filtro) throws SQLException {
 		List<CorsoCucina> list = new ArrayList<>();
 		String sql = "SELECT * FROM corsocucina WHERE nomecorso ILIKE ? OR argomento ILIKE ? ORDER BY datainiziocorso";
+
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
 			ps.setString(1, "%" + filtro + "%");
@@ -130,6 +133,7 @@ public class CorsoCucinaDAO {
 				}
 			}
 		}
+
 		return list;
 	}
 
@@ -158,14 +162,18 @@ public class CorsoCucinaDAO {
 
 	public int getNumeroSessioniPerCorso(int idCorso) throws SQLException {
 		String sql = "SELECT COUNT(*) AS num_sessioni FROM sessione WHERE idcorsocucina = ?";
+
 		try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+
 			ps.setInt(1, idCorso);
+
 			try (ResultSet rs = ps.executeQuery()) {
 				if (rs.next()) {
 					return rs.getInt("num_sessioni");
 				}
 			}
 		}
+
 		return 0;
 	}
 
@@ -186,26 +194,22 @@ public class CorsoCucinaDAO {
 		}
 	}
 
-	public List<CorsoCucina> getCorsiByFondatore(String codfiscaleFondatore) 
-        throws SQLException {
-    
-    String sql = "SELECT * FROM corsocucina WHERE codfiscalefondatore = ?";
-    
-    try (Connection conn = DBConnection.getConnection();
-         PreparedStatement stmt = conn.prepareStatement(sql)) {
-        
-        stmt.setString(1, codfiscaleFondatore);
-        
-        try (ResultSet rs = stmt.executeQuery()) {
-            List<CorsoCucina> corsi = new ArrayList<>();
-            while (rs.next()) {
-                corsi.add(mapResultSetToCorso(rs));
-            }
-            return corsi;
-        }
-    }
-}
+	public List<CorsoCucina> getCorsiByFondatore(String codfiscaleFondatore) throws SQLException {
 
+		String sql = "SELECT * FROM corsocucina WHERE codfiscalefondatore = ?";
 
+		try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+			stmt.setString(1, codfiscaleFondatore);
+
+			try (ResultSet rs = stmt.executeQuery()) {
+				List<CorsoCucina> corsi = new ArrayList<>();
+				while (rs.next()) {
+					corsi.add(mapResultSetToCorso(rs));
+				}
+				return corsi;
+			}
+		}
+	}
 
 }
