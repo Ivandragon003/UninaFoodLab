@@ -52,4 +52,15 @@ public class ValidationUtils {
 		}
 	}
 
+	
+	public static void validatePostiSessione(int postiSessione, int postiCorso, String fieldName) 
+			throws ValidationException {
+		if (postiSessione > postiCorso) {
+			throw new ValidationException(
+				fieldName + " (" + postiSessione + ") non può superare il numero di posti del corso (" + postiCorso + ")"
+			);
+		}
+	}
+
+	
 }
