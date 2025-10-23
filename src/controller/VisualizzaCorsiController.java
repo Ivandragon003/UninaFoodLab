@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 public class VisualizzaCorsiController {
@@ -41,16 +42,37 @@ public class VisualizzaCorsiController {
 		}
 	}
 
-	public List<CorsoCucina> getCorsiDelChef() throws DataAccessException {
-		if (chefLoggato == null) {
-			return Collections.emptyList();
-		}
-		try {
-			return tieneDAO.getCorsiByChef(chefLoggato.getCodFiscale());
-		} catch (SQLException e) {
-			throw new DataAccessException("Impossibile leggere i dati", e);
-		}
-	}
+	
+public List<CorsoCucina> getCorsiDelChef() throws DataAccessException {
+    if (chefLoggato == null) {
+        return Collections.emptyList();
+    }
+    try {
+        String cf = chefLoggato.getCodFiscale();
+
+        
+        List<CorsoCucina> assegnati = tieneDAO.getCorsiByChef(cf);
+
+      
+        List<CorsoCucina> tutti = corsoDAO.getAll();
+        List<CorsoCucina> fondati = new ArrayList<>();
+        for (CorsoCucina c : tutti) {
+            if (c.getCodfiscaleFondatore() != null && c.getCodfiscaleFondatore().equalsIgnoreCase(cf)) {
+                fondati.add(c);
+            }
+        }
+
+    
+        LinkedHashMap<Integer, CorsoCucina> byId = new LinkedHashMap<>();
+        for (CorsoCucina c : assegnati) byId.put(c.getIdCorso(), c);
+        for (CorsoCucina c : fondati) byId.putIfAbsent(c.getIdCorso(), c);
+
+        return new ArrayList<>(byId.values());
+    } catch (Exception e) {
+        throw new DataAccessException("Impossibile leggere i dati", e);
+    }
+}
+
 
 	public List<CorsoCucina> visualizzaCorsiChef() throws DataAccessException {
 		return getCorsiDelChef();

@@ -67,7 +67,7 @@ public class VisualizzaRicetteGUI {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
 
-		Label title = StyleHelper.createTitleLabel("📖 Gestione Ricette");
+		Label title = StyleHelper.createTitleLabel("📖 Visualizza Ricette");
 		title.setAlignment(Pos.CENTER);
 		title.setTextFill(Color.WHITE);
 
@@ -239,7 +239,7 @@ public class VisualizzaRicetteGUI {
 
 	private VBox buildModificaIngredientiSection(Ricetta ricetta) {
 		VBox section = StyleHelper.createSection();
-		Label title = createTitle("🥕 Gestione Ingredienti");
+		Label title = createTitle("🥕 Visualizza Ingredienti");
 
 		Button aggiungiBtn = StyleHelper.createSuccessButton("➕ Aggiungi Ingrediente");
 		aggiungiBtn.setPrefWidth(220);

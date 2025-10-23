@@ -10,6 +10,7 @@ import model.Chef;
 import model.CorsoCucina;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,12 +43,27 @@ public class GestioneCorsoController {
 		}
 	}
 
+	
 	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-		validateRequired(corso, "Corso");
+		if (corso == null) {
+			throw new ValidationException("Corso obbligatorio");
+		}
 		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-		ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti"); 
-		ensureChefLogged();
+		ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti");
 
+		if (corso.getDataInizioCorso() == null || corso.getDataFineCorso() == null) {
+			throw new ValidationException("Date del corso obbligatorie");
+		}
+		if (corso.getDataInizioCorso().isBefore(LocalDateTime.now())) {
+			throw new ValidationException("La data di inizio corso non può essere nel passato");
+		}
+		if (corso.getDataFineCorso().isBefore(corso.getDataInizioCorso())) {
+			throw new ValidationException("La data di fine corso non può essere precedente all'inizio");
+		}
+
+		if (chefLoggato == null) {
+			throw new ValidationException("Chef non autenticato");
+		}
 		corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
 
 		try {

@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.GestioneCorsoController;
+import controller.GestioneSessioniController;
 import controller.ChefController;
 import controller.RicettaController;
 import controller.IngredienteController;
@@ -18,6 +19,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.StringConverter;
 import model.*;
+import dao.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -117,6 +119,20 @@ public class CreaCorsoGUI {
 		endDatePicker.setPromptText("Data fine (calcolata automaticamente)");
 		endDatePicker.setDisable(true);
 
+		// Disabilita le date passate sul DatePicker di inizio
+		startDatePicker.setDayCellFactory(dp -> new DateCell() {
+			@Override
+			public void updateItem(LocalDate item, boolean empty) {
+				super.updateItem(item, empty);
+				LocalDate today = LocalDate.now();
+				boolean disable = empty || item.isBefore(today);
+				setDisable(disable);
+				if (!empty && item.isBefore(today)) {
+					setStyle("-fx-background-color: #f5c6cb;");
+				}
+			}
+		});
+
 		numeroSessioniField = StyleHelper.createTextField("Es. 12");
 		numeroSessioniField.textProperty().addListener((obs, oldVal, newVal) -> {
 			if (!newVal.matches("\\d*"))
@@ -149,10 +165,18 @@ public class CreaCorsoGUI {
 		try {
 			LocalDate inizio = startDatePicker.getValue();
 			Frequenza freq = frequenzaBox.getValue();
-			String numSessioniStr = numeroSessioniField.getText().trim();
+			String numSessioniStr = numeroSessioniField.getText() != null ? numeroSessioniField.getText().trim() : "";
 
 			if (inizio == null || freq == null || numSessioniStr.isEmpty()) {
 				updateSessioniLabel("Seleziona data inizio, frequenza e numero sessioni", "#e74c3c", false);
+				endDatePicker.setValue(null);
+				return;
+			}
+
+			// Blocco anti-passato
+			LocalDate today = LocalDate.now();
+			if (inizio.isBefore(today)) {
+				updateSessioniLabel("La data di inizio non può essere nel passato", "#e74c3c", false);
 				endDatePicker.setValue(null);
 				return;
 			}
@@ -237,31 +261,47 @@ public class CreaCorsoGUI {
 	}
 
 	private void salvaCorso() {
-		try {
+    try {
+        validaCampiObbligatori();
 
-			validaCampiObbligatori();
+        // 1) Salva il corso e assicurati che le liste non siano null
+        CorsoCucina corso = creaCorsoFromForm();
+        corso.setChef(new ArrayList<>());           // evita NPE nel controller
+        corso.setSessioni(new ArrayList<>());       // solo per stato UI
+        corsoController.creaCorso(corso);           // persiste il corso (assegna id)
 
-			CorsoCucina corso = creaCorsoFromForm();
+        // 2) Persiste le associazioni Chef–Corso (Tiene)
+        for (Chef ch : chefSelezionati) {
+            corsoController.aggiungiChefACorso(corso, ch, null);
+        }
 
-			corso.setChef(new ArrayList<>(chefSelezionati));
-			corso.setSessioni(new ArrayList<>(corsoSessioni));
+        // 3) Persiste le sessioni del corso
+        CucinaDAO cucinaDAO = new CucinaDAO();
+        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
+        OnlineDAO onlineDAO = new OnlineDAO();
+        RicettaDAO ricettaDAO = new RicettaDAO();
+        GestioneSessioniController sessioniController =
+                new GestioneSessioniController(corso, inPresenzaDAO, onlineDAO, cucinaDAO, ricettaDAO);
 
-			corsoController.creaCorso(corso);
+        for (Sessione s : corsoSessioni) {
+            List<Ricetta> ricette = (s instanceof InPresenza ip && ip.getRicette() != null)
+                    ? new ArrayList<>(ip.getRicette()) : Collections.emptyList();
+            sessioniController.aggiungiSessione(s, ricette);
+        }
 
-			StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
-			clearForm();
+        StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
+        clearForm();
+    } catch (ValidationException | IllegalArgumentException ve) {
+        StyleHelper.showValidationDialog("Errore", ve.getMessage());
+    } catch (Exception e) {
+        StyleHelper.showErrorDialog("Errore", "Errore durante il salvataggio: " + e.getMessage());
+        e.printStackTrace();
+    }
+}
 
-		} catch (ValidationException | IllegalArgumentException ve) {
-			StyleHelper.showValidationDialog("Errore", ve.getMessage());
-		} catch (Exception e) {
-			StyleHelper.showErrorDialog("Errore", "Errore durante il salvataggio: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}
 
 	private CorsoCucina creaCorsoFromForm() {
 		try {
-
 			CorsoCucina corso = new CorsoCucina(nomeField.getText(), Double.parseDouble(prezzoField.getText()),
 					argomentoField.getText(), frequenzaBox.getValue(), Integer.parseInt(postiField.getText()));
 
@@ -271,9 +311,19 @@ public class CreaCorsoGUI {
 			LocalTime oraInizio = LocalTime.of(startHour.getValue(), startMinute.getValue());
 			LocalTime oraFine = LocalTime.of(endHour.getValue(), endMinute.getValue());
 
-			corso.setDataInizioCorso(LocalDateTime.of(dataInizio, oraInizio));
-			corso.setDataFineCorso(LocalDateTime.of(dataFine, oraFine));
+			LocalDateTime inizioDT = LocalDateTime.of(dataInizio, oraInizio);
+			LocalDateTime fineDT = LocalDateTime.of(dataFine, oraFine);
 
+			// Guardie su data/ora
+			if (inizioDT.isBefore(LocalDateTime.now())) {
+				throw new ValidationException("L'inizio del corso non può essere nel passato");
+			}
+			if (fineDT.isBefore(inizioDT)) {
+				throw new ValidationException("La fine del corso non può essere precedente all'inizio");
+			}
+
+			corso.setDataInizioCorso(inizioDT);
+			corso.setDataFineCorso(fineDT);
 			corso.setNumeroSessioni(Integer.parseInt(numeroSessioniField.getText()));
 
 			return corso;
@@ -282,6 +332,8 @@ public class CreaCorsoGUI {
 			throw new IllegalArgumentException("Inserisci valori numerici validi per prezzo e posti");
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException(e.getMessage());
+		} catch (ValidationException ve) {
+			throw new IllegalArgumentException(ve.getMessage());
 		}
 	}
 
@@ -300,6 +352,18 @@ public class CreaCorsoGUI {
 
 		if (frequenzaBox.getValue() == null) {
 			throw new ValidationException("Seleziona la frequenza del corso");
+		}
+
+		// Validazioni su calendario
+		LocalDate inizio = startDatePicker.getValue();
+		LocalDate fine = endDatePicker.getValue();
+		LocalDate oggi = LocalDate.now();
+
+		if (inizio.isBefore(oggi)) {
+			throw new ValidationException("La data di inizio non può essere nel passato");
+		}
+		if (fine.isBefore(inizio)) {
+			throw new ValidationException("La data di fine non può essere precedente alla data di inizio");
 		}
 
 		int numeroSessioniPreviste = Integer.parseInt(numeroSessioniField.getText());
@@ -438,7 +502,6 @@ public class CreaCorsoGUI {
 				throw new ValidationException("Numero posti del corso non valido");
 			}
 
-			
 			Set<LocalDate> dateOccupate = new HashSet<>();
 			for (Sessione s : corsoSessioni) {
 				if (s.getDataInizioSessione() != null) {
@@ -446,8 +509,8 @@ public class CreaCorsoGUI {
 				}
 			}
 
-			// Apri il dialog per creare la sessione, passando i parametri nell'ordine
-			// corretto
+			// Ordine corretto parametri: inizio, fine, frequenza, maxPartecipanti,
+			// dateOccupate, ricettaCtrl, ingredienteCtrl
 			Sessione nuovaSessione = new CreaSessioniGUI(inizio, fine, freq, maxPartecipantiCorso, dateOccupate,
 					ricettaController, ingredienteController).showDialog();
 
