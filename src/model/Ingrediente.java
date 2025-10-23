@@ -60,17 +60,15 @@ public class Ingrediente {
 
 	@Override
 	public int hashCode() {
-		// Se ha un ID valido, usa SOLO quello per l'hashCode
 		if (idIngrediente > 0) {
 			return Integer.hashCode(idIngrediente);
 		}
-		// Altrimenti usa nome e tipo
 		return Objects.hash(nome.toLowerCase(), tipo.toLowerCase());
 	}
 
 	@Override
 	public String toString() {
-		return nome; // Mostra solo il nome dell'ingrediente
+		return nome;
 	}
 
 	public String toStringIdIngrediente() {
