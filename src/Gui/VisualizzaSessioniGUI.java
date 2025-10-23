@@ -350,12 +350,17 @@ public class VisualizzaSessioniGUI {
 		boolean sonoPartecipante = isChefPartecipante();
 		boolean corsoFinito = isCorsoFinito();
 
-		creaBtn.setDisable(!sonoPartecipante || corsoFinito);
+		boolean frequenzaUnicaEsaurita = corso.getFrequenzaCorso() == Frequenza.unica && corso.getSessioni() != null
+				&& !corso.getSessioni().isEmpty();
+
+		creaBtn.setDisable(!sonoPartecipante || corsoFinito || frequenzaUnicaEsaurita);
 
 		if (!sonoPartecipante) {
 			creaBtn.setTooltip(new Tooltip("Solo i partecipanti possono creare sessioni"));
 		} else if (corsoFinito) {
 			creaBtn.setTooltip(new Tooltip("Il corso è terminato"));
+		} else if (frequenzaUnicaEsaurita) {
+			creaBtn.setTooltip(new Tooltip("Frequenza unica: sessione già presente"));
 		}
 
 		pulsantiBox.getChildren().addAll(creaBtn, indietroBtn);
@@ -375,13 +380,20 @@ public class VisualizzaSessioniGUI {
 			return;
 		}
 
+		if (corso.getFrequenzaCorso() == Frequenza.unica) {
+			if (corso.getSessioni() != null && !corso.getSessioni().isEmpty()) {
+				StyleHelper.showErrorDialog("⚠️ Frequenza Unica",
+						"Questo corso ha frequenza UNICA.\n\nÈ già presente una sessione e non è possibile aggiungerne altre.");
+				return;
+			}
+		}
+
 		try {
 			if (ricettaController == null || ingredienteController == null) {
 				StyleHelper.showErrorDialog("Errore", "Controller non inizializzati");
 				return;
 			}
 
-			
 			Set<LocalDate> dateSessioni = new HashSet<>();
 			LocalDate dataUltimaSessione = null;
 
@@ -417,10 +429,8 @@ public class VisualizzaSessioniGUI {
 				nuovaDataFineCorso = corso.getDataInizioCorso().toLocalDate();
 			}
 
-		
 			int maxPartecipantiCorso = corso.getNumeroPosti();
 
-		
 			CreaSessioniGUI creaGUI = new CreaSessioniGUI(corso.getDataInizioCorso().toLocalDate(), nuovaDataFineCorso,
 					corso.getFrequenzaCorso(), maxPartecipantiCorso, dateSessioni, ricettaController,
 					ingredienteController);
@@ -435,14 +445,15 @@ public class VisualizzaSessioniGUI {
 
 				controller.aggiungiSessione(nuovaSessione, ricette);
 				aggiornaLista();
-				StyleHelper.showSuccessDialog("Successo", "Sessione creata!");
+				StyleHelper.showSuccessDialog("✅ Successo", "Sessione creata!");
 			}
-
 		} catch (Exception ex) {
 			StyleHelper.showErrorDialog("Errore", ex.getMessage());
 			ex.printStackTrace();
 		}
 	}
+
+	
 
 	private void applicaFiltri() {
 		ObservableList<Sessione> sessioniFiltrate = FXCollections.observableArrayList();
