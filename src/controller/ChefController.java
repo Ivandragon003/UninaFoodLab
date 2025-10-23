@@ -48,7 +48,6 @@ public class ChefController {
                             String password, int anniEsperienza)
             throws ValidationException, DataAccessException {
 
-        // Validazione campi required
         ValidationUtils.validateNotEmpty(codFiscale, "Codice fiscale");
         ValidationUtils.validateNotEmpty(nome, "Nome");
         ValidationUtils.validateNotEmpty(cognome, "Cognome");
@@ -57,17 +56,14 @@ public class ChefController {
         ValidationUtils.validateNotEmpty(password, "Password");
         ValidationUtils.validateNotNull(dataNascita, "Data di nascita");
 
-        // Validazione formato
         ValidationUtils.validateLettersMin2(nome, "Nome");
         ValidationUtils.validateLettersMin2(cognome, "Cognome");
 
-        // Validazione età
         int eta = LocalDate.now().getYear() - dataNascita.getYear();
         if (dataNascita.isAfter(LocalDate.now().minusYears(18))) {
             throw new ValidationException("Lo chef deve avere almeno 18 anni");
         }
 
-        // Validazione esperienza
         if (anniEsperienza < 0) {
             throw new ValidationException("Gli anni di esperienza non possono essere negativi");
         }
@@ -80,7 +76,6 @@ public class ChefController {
                              eta, anniEsperienzaMassimi));
         }
 
-        // Validazione password
         if (password == null || password.length() <= 6) {
             throw new ValidationException("La password deve contenere almeno 7 caratteri");
         }
