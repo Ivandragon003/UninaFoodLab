@@ -163,16 +163,24 @@ public class CreaCorsoGUI {
 	private void calcolaDataFine() {
 		try {
 			LocalDate inizio = startDatePicker.getValue();
-			Frequenza freq = (Frequenza) frequenzaBox.getValue();
-			String numSessioniStr = numeroSessioniField.getText() != null ? numeroSessioniField.getText().trim() : "";
+			Frequenza freq = frequenzaBox.getValue();
 
-			if (inizio == null || freq == null || (freq != Frequenza.unica && numSessioniStr.isEmpty())) {
-				updateSessioniLabel("Seleziona data inizio, frequenza e numero sessioni", "#e74c3c", false);
+			if (freq == null || inizio == null) {
+				updateSessioniLabel("Seleziona data inizio e frequenza", "#e74c3c", false);
 				endDatePicker.setValue(null);
 				return;
 			}
 
+			if (freq == Frequenza.unica) {
+				numeroSessioniField.setText("1");
+				numeroSessioniField.setDisable(true);
+			} else {
+				numeroSessioniField.setDisable(false);
+			}
+
+			String numSessioniStr = numeroSessioniField.getText().trim();
 			int numeroSessioni = (freq == Frequenza.unica) ? 1 : Integer.parseInt(numSessioniStr);
+
 			if (numeroSessioni <= 0) {
 				updateSessioniLabel("Il numero di sessioni deve essere maggiore di 0", "#e74c3c", false);
 				endDatePicker.setValue(null);
@@ -183,6 +191,7 @@ public class CreaCorsoGUI {
 			endDatePicker.setValue(dataFine);
 			updateSessioniLabel(String.format("Sessioni: %d | Periodo: %s -> %s", numeroSessioni, inizio, dataFine),
 					"#28a745", true);
+
 		} catch (NumberFormatException e) {
 			updateSessioniLabel("Numero sessioni non valido", "#e74c3c", false);
 			endDatePicker.setValue(null);
@@ -255,16 +264,14 @@ public class CreaCorsoGUI {
 			validaCampiObbligatori();
 
 			CorsoCucina corso = creaCorsoFromForm();
-			corso.setChef(new ArrayList<>()); 
-			corso.setSessioni(new ArrayList<>()); 
+			corso.setChef(new ArrayList<>());
+			corso.setSessioni(new ArrayList<>());
 			corsoController.creaCorso(corso);
 
-			
 			for (Chef ch : chefSelezionati) {
 				corsoController.aggiungiChefACorso(corso, ch, null);
 			}
 
-			 
 			CucinaDAO cucinaDAO = new CucinaDAO();
 			InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
 			OnlineDAO onlineDAO = new OnlineDAO();

@@ -153,17 +153,19 @@ public class RicettaController {
 		}
 	}
 
-	public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax, Integer ingredientiMin,
-			Integer ingredientiMax, List<Ricetta> tutteRicette) throws ValidationException {
+	public List<Ricetta> filtraCombinato(String nome, Integer tempoMin, Integer tempoMax,
+                                     Integer ingredientiMin, Integer ingredientiMax) throws ValidationException, DataAccessException {
 
-		checkRange(tempoMin, tempoMax, "Tempo preparazione");
-		checkRange(ingredientiMin, ingredientiMax, "Numero ingredienti");
+    checkRange(tempoMin, tempoMax, "Tempo preparazione");
+    checkRange(ingredientiMin, ingredientiMax, "Numero ingredienti");
 
-		return tutteRicette.stream().filter(r -> matchNome(r, nome))
-				.filter(r -> matchRange(r.getTempoPreparazione(), tempoMin, tempoMax))
-				.filter(r -> matchRange(r.getNumeroIngredienti(), ingredientiMin, ingredientiMax))
-				.collect(Collectors.toList());
-	}
+    try {
+        return ricettaDAO.filtraRicette(nome, tempoMin, tempoMax, ingredientiMin, ingredientiMax);
+    } catch (SQLException e) {
+        throw new DataAccessException("Errore durante il filtraggio delle ricette", e);
+    }
+}
+
 
 	public List<Ingrediente> getTuttiIngredienti() throws DataAccessException {
 		try {
