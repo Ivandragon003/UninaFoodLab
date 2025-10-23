@@ -1,7 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
-import java.util.*;
+
 
 abstract public class Sessione {
 	private int idSessione;

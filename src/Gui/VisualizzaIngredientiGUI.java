@@ -1,6 +1,7 @@
 package Gui;
 
 import controller.IngredienteController;
+import helper.StyleHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -16,7 +17,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ingrediente;
-import guihelper.StyleHelper;
 
 import java.util.List;
 import java.util.function.Consumer;

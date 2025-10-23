@@ -3,6 +3,7 @@ package Gui;
 import controller.RicettaController;
 import controller.IngredienteController;
 import exceptions.ValidationException;
+import helper.StyleHelper;
 import exceptions.DataAccessException;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,7 +18,7 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ricetta;
 import model.Ingrediente;
-import guihelper.StyleHelper;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;

@@ -9,10 +9,10 @@ import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.*;
-import guihelper.StyleHelper;
 import controller.RicettaController;
+import helper.StyleHelper;
+import helper.ValidationHelper;
 import controller.IngredienteController;
-import guihelper.ValidationHelper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

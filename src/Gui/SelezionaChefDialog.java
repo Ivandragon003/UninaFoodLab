@@ -2,6 +2,7 @@ package Gui;
 
 import controller.ChefController;
 import exceptions.DataAccessException;
+import helper.StyleHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -17,7 +18,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
-import guihelper.StyleHelper;
 
 import java.util.List;
 import java.util.Optional;

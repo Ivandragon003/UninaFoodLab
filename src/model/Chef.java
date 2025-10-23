@@ -59,7 +59,7 @@ public class Chef extends Persona {
 			throw new IllegalArgumentException("La password non può essere nulla.");
 		}
 		if (password.length() < 6) {
-			throw new IllegalArgumentException("La password deve contenere almeno 6 caratteri.");
+			throw new IllegalArgumentException("La password deve contenere almeno 7 caratteri.");
 		}
 		this.password = password;
 	}

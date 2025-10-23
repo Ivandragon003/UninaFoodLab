@@ -4,7 +4,7 @@ import dao.ChefDAO;
 import dao.TieneDAO;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
-import exceptions.ValidationUtils;
+import helper.ValidationUtils;
 import model.Chef;
 import model.CorsoCucina;
 
@@ -36,20 +36,45 @@ public class ChefController {
 				throw new ValidationException("Password non corretta");
 
 			return chef;
+		} catch (IllegalArgumentException e) {
+			throw new ValidationException(e.getMessage());
 		} catch (SQLException e) {
 			throw new DataAccessException("Errore di connessione al database durante il login", e);
 		}
 	}
 
 	public Chef registraChef(String codFiscale, String nome, String cognome, String email, LocalDate dataNascita,
-			boolean disponibilita, String username, String password) throws ValidationException, DataAccessException {
+			boolean disponibilita, String username, String password, int anniEsperienza)
+			throws ValidationException, DataAccessException {
 
 		validateRequired(codFiscale, "Codice fiscale", nome, "Nome", cognome, "Cognome", email, "Email", username,
 				"Username", password, "Password");
 		ValidationUtils.validateNotNull(dataNascita, "Data di nascita");
 
-		if (dataNascita.isAfter(LocalDate.now().minusYears(18)))
+		ValidationUtils.validateLettersMin2(nome, "Nome");
+		ValidationUtils.validateLettersMin2(cognome, "Cognome");
+
+		int eta = LocalDate.now().getYear() - dataNascita.getYear();
+		if (dataNascita.isAfter(LocalDate.now().minusYears(18))) {
 			throw new ValidationException("Lo chef deve avere almeno 18 anni");
+		}
+
+		if (anniEsperienza < 0) {
+			throw new ValidationException("Gli anni di esperienza non possono essere negativi");
+		}
+
+		int etaMinimaLavorativa = 16;
+		int anniEsperienzaMassimi = eta - etaMinimaLavorativa;
+		if (anniEsperienza > anniEsperienzaMassimi) {
+			throw new ValidationException(
+					String.format("Con %d anni puoi avere al massimo %d anni di esperienza (si lavora dai 16 anni)",
+							eta, anniEsperienzaMassimi));
+		}
+
+		
+		if (password == null || password.length() <= 6) {
+			throw new ValidationException("La password deve contenere almeno 7 caratteri");
+		}
 
 		try {
 			checkUniqueConstraints(codFiscale, email, username);
@@ -57,11 +82,17 @@ public class ChefController {
 			Chef chef = new Chef(codFiscale, nome, cognome, disponibilita, username, password);
 			chef.setEmail(email);
 			chef.setDataNascita(dataNascita);
+			chef.setAnniEsperienza(anniEsperienza);
 
 			chefDAO.save(chef, password);
 			return chef;
 
+		} catch (IllegalArgumentException e) {
+			throw new ValidationException(e.getMessage());
 		} catch (SQLException e) {
+			if (e.getMessage().contains("chef_password_check")) {
+				throw new ValidationException("La password deve contenere almeno 7 caratteri");
+			}
 			throw new DataAccessException("Errore durante il salvataggio del nuovo chef nel database", e);
 		}
 	}

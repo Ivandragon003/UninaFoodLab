@@ -2,11 +2,10 @@ package Gui;
 
 import controller.GestioneSessioniController;
 import controller.RicettaController;
+import helper.StyleHelper;
 import controller.IngredienteController;
 import controller.GestioneCorsoController;
 import model.*;
-import guihelper.StyleHelper;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

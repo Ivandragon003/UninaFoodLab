@@ -6,7 +6,7 @@ import dao.RicettaDAO;
 import dao.UsaDAO;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
-import exceptions.ValidationUtils;
+import helper.ValidationUtils;
 import model.Chef;
 import model.Ingrediente;
 import model.Ricetta;

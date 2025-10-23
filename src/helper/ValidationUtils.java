@@ -1,4 +1,6 @@
-package exceptions;
+package helper;
+
+import exceptions.ValidationException;
 
 public class ValidationUtils {
 
@@ -33,6 +35,21 @@ public class ValidationUtils {
 
 	public static String campoObbligatorio(String fieldName) {
 		return "Il campo '" + fieldName + "' è obbligatorio";
+	}
+
+	public static void validateLettersMin2(String value, String fieldName) throws ValidationException {
+		if (value == null || value.trim().isEmpty()) {
+			throw new ValidationException("Il campo '" + fieldName + "' è obbligatorio");
+		}
+
+		String trimmed = value.trim();
+		if (trimmed.length() < 2) {
+			throw new ValidationException(fieldName + " deve contenere almeno 2 caratteri");
+		}
+
+		if (!trimmed.matches("^[a-zA-ZàèéìòùÀÈÉÌÒÙ\\s'-]+$")) {
+			throw new ValidationException(fieldName + " deve contenere solo lettere");
+		}
 	}
 
 }

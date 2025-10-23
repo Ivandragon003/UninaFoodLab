@@ -4,6 +4,7 @@ import controller.RicettaController;
 import controller.IngredienteController;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
+import helper.StyleHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -19,7 +20,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Ricetta;
 import model.Ingrediente;
-import guihelper.StyleHelper;
 
 import java.util.HashMap;
 import java.util.List;

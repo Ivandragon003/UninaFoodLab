@@ -5,7 +5,7 @@ import dao.CorsoCucinaDAO;
 import dao.TieneDAO;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
-import exceptions.ValidationUtils;
+import helper.ValidationUtils;
 import model.Chef;
 import model.CorsoCucina;
 

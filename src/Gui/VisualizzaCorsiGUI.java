@@ -2,7 +2,7 @@ package Gui;
 
 import controller.*;
 import exceptions.DataAccessException;
-import guihelper.StyleHelper;
+import helper.StyleHelper;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.*;

@@ -2,7 +2,7 @@ package controller;
 
 import dao.*;
 import exceptions.DataAccessException;
-import exceptions.ValidationUtils;
+import helper.ValidationUtils;
 import exceptions.ValidationException;
 import model.*;
 

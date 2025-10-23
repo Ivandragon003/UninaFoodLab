@@ -1,8 +1,8 @@
 package Gui;
 
 import controller.IngredienteController;
-import guihelper.StyleHelper;
-import guihelper.ValidationHelper;
+import helper.StyleHelper;
+import helper.ValidationHelper;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

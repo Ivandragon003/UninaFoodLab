@@ -18,7 +18,7 @@ import model.*;
 import controller.RicettaController;
 import controller.IngredienteController;
 import exceptions.DataAccessException;
-import guihelper.StyleHelper;
+import helper.StyleHelper;
 
 import java.util.List;
 import java.util.ArrayList;

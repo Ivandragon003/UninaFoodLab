@@ -5,7 +5,7 @@ import controller.ChefController;
 import controller.RicettaController;
 import controller.IngredienteController;
 import exceptions.ValidationException;
-import guihelper.StyleHelper;
+import helper.StyleHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;

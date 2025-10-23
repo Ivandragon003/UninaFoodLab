@@ -2,9 +2,9 @@ package Gui;
 
 import controller.*;
 import dao.*;
-import guihelper.StyleHelper;
 import exceptions.DataAccessException;
 import exceptions.ValidationException;
+import helper.StyleHelper;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
