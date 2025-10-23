@@ -480,17 +480,81 @@ public class CreaRicettaGUI {
 	}
 
 	public Ricetta showAndReturn() {
+		return showAndReturn(false, null);
+	}
+
+	public Ricetta showAndReturn(boolean useUndecoratedStyle, Stage owner) {
 		dialog = new Stage();
 		dialog.initModality(Modality.APPLICATION_MODAL);
-		dialog.setTitle("Crea Nuova Ricetta");
-		dialog.setResizable(true);
-		dialog.setMinWidth(700);
-		dialog.setMinHeight(750);
 
-		Scene scene = new Scene(getContent(), 700, 800);
-		dialog.setScene(scene);
+		if (owner != null) {
+			dialog.initOwner(owner);
+		}
+
+		if (useUndecoratedStyle) {
+			dialog.initStyle(StageStyle.UNDECORATED);
+			dialog.setResizable(false);
+
+			StackPane root = new StackPane();
+			root.setMinSize(900, 850);
+
+			Region bg = new Region();
+			StyleHelper.applyBackgroundGradient(bg);
+
+			VBox content = getContent();
+			content.setPadding(new Insets(30));
+
+			HBox windowButtons = buildWindowButtons(dialog);
+			StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+			StackPane.setMargin(windowButtons, new Insets(10));
+
+			makeDraggableDialog(root, dialog);
+
+			root.getChildren().addAll(bg, content, windowButtons);
+
+			Scene scene = new Scene(root, 900, 850);
+			scene.setFill(Color.TRANSPARENT);
+			dialog.setScene(scene);
+		} else {
+
+			dialog.setTitle("Crea Nuova Ricetta");
+			dialog.setResizable(true);
+			dialog.setMinWidth(700);
+			dialog.setMinHeight(750);
+
+			Scene scene = new Scene(getContent(), 700, 800);
+			dialog.setScene(scene);
+		}
+
 		dialog.showAndWait();
-
 		return ricettaCreata;
 	}
+
+	private HBox buildWindowButtons(Stage dialogStage) {
+		Button close = StyleHelper.createWindowButtonByType("close", dialogStage::close);
+		Button minimize = StyleHelper.createWindowButtonByType("minimize", () -> dialogStage.setIconified(true));
+		Button maximize = StyleHelper.createWindowButtonByType("maximize",
+				() -> dialogStage.setMaximized(!dialogStage.isMaximized()));
+
+		HBox box = new HBox(3, minimize, maximize, close);
+		box.setAlignment(Pos.TOP_RIGHT);
+		box.setPickOnBounds(false);
+		return box;
+	}
+
+	private void makeDraggableDialog(StackPane root, Stage dialogStage) {
+		final double[] xOffset = { 0 };
+		final double[] yOffset = { 0 };
+
+		root.setOnMousePressed(e -> {
+			xOffset[0] = e.getSceneX();
+			yOffset[0] = e.getSceneY();
+		});
+
+		root.setOnMouseDragged(e -> {
+			dialogStage.setX(e.getScreenX() - xOffset[0]);
+			dialogStage.setY(e.getScreenY() - yOffset[0]);
+		});
+	}
+
 }

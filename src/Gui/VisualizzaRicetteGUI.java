@@ -32,7 +32,7 @@ public class VisualizzaRicetteGUI extends Stage {
 	private final IngredienteController ingredienteController;
 	private final ObservableList<Ricetta> ricetteData;
 	private final ObservableList<Ricetta> ricetteSelezionate;
-	
+
 	private ListView<Ricetta> ricetteListView;
 	private TextField filtroNome, filtroTempoMin, filtroTempoMax;
 	private TextField filtroIngMin, filtroIngMax;
@@ -48,7 +48,7 @@ public class VisualizzaRicetteGUI extends Stage {
 	private VBox listaIngredientiModifica;
 	private Map<Ingrediente, Double> modificaIngredientiMap;
 	private javafx.animation.Timeline debounceTimer;
-	
+
 	private boolean modalitaSelezione = false;
 	private List<Ricetta> risultatoSelezione = new ArrayList<>();
 
@@ -56,7 +56,8 @@ public class VisualizzaRicetteGUI extends Stage {
 		this(ricettaController, ingredienteController, false);
 	}
 
-	public VisualizzaRicetteGUI(RicettaController ricettaController, IngredienteController ingredienteController, boolean modalitaSelezione) {
+	public VisualizzaRicetteGUI(RicettaController ricettaController, IngredienteController ingredienteController,
+			boolean modalitaSelezione) {
 		if (ricettaController == null || ingredienteController == null) {
 			throw new IllegalArgumentException("I controller non possono essere null");
 		}
@@ -65,14 +66,14 @@ public class VisualizzaRicetteGUI extends Stage {
 		this.ricetteData = FXCollections.observableArrayList();
 		this.ricetteSelezionate = FXCollections.observableArrayList();
 		this.modalitaSelezione = modalitaSelezione;
-		
+
 		if (modalitaSelezione) {
 			initStyle(StageStyle.UNDECORATED);
 			initModality(Modality.APPLICATION_MODAL);
 			setResizable(false);
 			createSelectionDialog();
 		}
-		
+
 		carica();
 	}
 
@@ -262,19 +263,7 @@ public class VisualizzaRicetteGUI extends Stage {
 	}
 
 	private void mostraCreaRicettaInterna() {
-		VBox creaView = new VBox(20);
-		creaView.setAlignment(Pos.TOP_CENTER);
-
-		Label title = new Label("➕ Crea Nuova Ricetta");
-		title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
-		title.setTextFill(Color.WHITE);
-		title.setAlignment(Pos.CENTER);
-
-		VBox contentCard = new VBox(20);
-		contentCard.setPadding(new Insets(30));
-		contentCard.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;" + "-fx-border-color: "
-				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
-				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 8);");
+		VBox vistaCorrente = selezioneView;
 
 		CreaRicettaGUI creaGUI = new CreaRicettaGUI(ricettaController, ingredienteController);
 
@@ -295,10 +284,25 @@ public class VisualizzaRicetteGUI extends Stage {
 		});
 
 		creaGUI.setOnAnnulla(() -> {
-			mainContainer.getChildren().setAll(selezioneView);
+			mainContainer.getChildren().setAll(vistaCorrente);
 		});
 
+		VBox creaView = new VBox(20);
+		creaView.setAlignment(Pos.TOP_CENTER);
+
+		Label title = new Label("✨ Crea Nuova Ricetta");
+		title.setFont(Font.font("Roboto", FontWeight.BOLD, 28));
+		title.setTextFill(Color.WHITE);
+		title.setAlignment(Pos.CENTER);
+
+		VBox contentCard = new VBox(20);
+		contentCard.setPadding(new Insets(30));
+		contentCard.setStyle("-fx-background-color: white;" + "-fx-background-radius: 20;" + "-fx-border-color: "
+				+ StyleHelper.PRIMARY_ORANGE + ";" + "-fx-border-width: 3;" + "-fx-border-radius: 20;"
+				+ "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 8);");
+
 		VBox content = creaGUI.getContent();
+		content.setStyle("-fx-background-color: transparent;");
 		VBox.setVgrow(content, Priority.ALWAYS);
 
 		HBox buttons = new HBox(15);
@@ -307,7 +311,7 @@ public class VisualizzaRicetteGUI extends Stage {
 
 		Button indietroBtn = StyleHelper.createSecondaryButton("← Indietro");
 		indietroBtn.setPrefSize(150, 45);
-		indietroBtn.setOnAction(e -> mainContainer.getChildren().setAll(selezioneView));
+		indietroBtn.setOnAction(e -> mainContainer.getChildren().setAll(vistaCorrente));
 
 		buttons.getChildren().add(indietroBtn);
 
@@ -488,7 +492,8 @@ public class VisualizzaRicetteGUI extends Stage {
 		VBox section = StyleHelper.createSection();
 
 		Label title = createTitle("📋 Lista Ricette");
-		Label info = new Label(modalitaSelezione ? "💡 Doppio click per aggiungere alla selezione" : "💡 Doppio click per modificare una ricetta");
+		Label info = new Label(modalitaSelezione ? "💡 Doppio click per aggiungere alla selezione"
+				: "💡 Doppio click per modificare una ricetta");
 		info.setFont(Font.font("Roboto", 12));
 		info.setTextFill(Color.web(StyleHelper.INFO_BLUE));
 
@@ -501,7 +506,7 @@ public class VisualizzaRicetteGUI extends Stage {
 		ricetteListView.setStyle("-fx-background-color: white;" + "-fx-border-color: " + StyleHelper.BORDER_LIGHT + ";"
 				+ "-fx-border-radius: 8;" + "-fx-background-radius: 8;" + "-fx-border-width: 1;");
 		ricetteListView.setCellFactory(lv -> new RicettaCell());
-		
+
 		if (!modalitaSelezione) {
 			ricetteListView.setOnMouseClicked(e -> {
 				if (e.getClickCount() == 2) {
