@@ -1,7 +1,7 @@
 package Gui;
 
 import controller.ReportMensileController;
-import controller.ReportMensileController.DatiReportMensile;
+import model.DatiReportMensile;
 import exceptions.DataAccessException;
 import helper.StyleHelper;
 import javafx.animation.FadeTransition;
