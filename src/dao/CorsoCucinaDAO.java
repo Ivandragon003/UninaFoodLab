@@ -186,4 +186,26 @@ public class CorsoCucinaDAO {
 		}
 	}
 
+	public List<CorsoCucina> getCorsiByFondatore(String codfiscaleFondatore) 
+        throws SQLException {
+    
+    String sql = "SELECT * FROM corsocucina WHERE codfiscalefondatore = ?";
+    
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+        
+        stmt.setString(1, codfiscaleFondatore);
+        
+        try (ResultSet rs = stmt.executeQuery()) {
+            List<CorsoCucina> corsi = new ArrayList<>();
+            while (rs.next()) {
+                corsi.add(mapResultSetToCorso(rs));
+            }
+            return corsi;
+        }
+    }
+}
+
+
+
 }
