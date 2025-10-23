@@ -24,7 +24,6 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import model.Chef;
-import util.DBConnection;
 
 public class LoginChefGUI extends Application {
 
@@ -76,10 +75,7 @@ public class LoginChefGUI extends Application {
 		primaryStage.show();
 	}
 
-	@Override
-	public void stop() {
-		DBConnection.closeDataSource();
-	}
+	
 
 	private VBox createLoginCard() {
 		VBox card = new VBox(20);
