@@ -41,6 +41,7 @@ public class VisualizzaRicetteGUI {
 	private TextField tempoFieldModifica;
 	private VBox listaIngredientiModifica;
 	private Map<Ingrediente, Double> modificaIngredientiMap;
+	private javafx.animation.Timeline debounceTimer;
 
 	public VisualizzaRicetteGUI(RicettaController ricettaController, IngredienteController ingredienteController) {
 		if (ricettaController == null || ingredienteController == null) {
@@ -189,7 +190,7 @@ public class VisualizzaRicetteGUI {
 
 		ScrollPane scroll = new ScrollPane(inner);
 		scroll.setFitToWidth(true);
-		scroll.setFitToHeight(false); 
+		scroll.setFitToHeight(false);
 		scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 		scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 		scroll.setPannable(true);
@@ -511,8 +512,7 @@ public class VisualizzaRicetteGUI {
 					dialogStage.close();
 
 					javafx.application.Platform.runLater(() -> {
-						StyleHelper.showSuccessDialog("Ingrediente Aggiunto",
-								String.format("%s aggiunto con %.0fg", ing.getNome(), q));
+						
 					});
 				} else {
 					StyleHelper.showValidationDialog("Errore", "La quantità deve essere maggiore di zero");
@@ -546,8 +546,7 @@ public class VisualizzaRicetteGUI {
 
 	private void mostraModifica(Ricetta ricetta) {
 		try {
-			Ricetta ricettaAggiornata = ricetteData.stream().filter(r -> r.getIdRicetta() == ricetta.getIdRicetta())
-					.findFirst().orElse(null);
+			Ricetta ricettaAggiornata = ricettaController.getRicettaCompleta(ricetta.getIdRicetta());
 
 			if (ricettaAggiornata == null) {
 				StyleHelper.showErrorDialog("Errore", "Ricetta non trovata");
@@ -565,7 +564,6 @@ public class VisualizzaRicetteGUI {
 
 			modificaView = buildModificaLayout(ricettaAggiornata);
 			mainContainer.getChildren().setAll(modificaView);
-
 		} catch (Exception e) {
 			StyleHelper.showErrorDialog("Errore", "Errore caricamento ricetta: " + e.getMessage());
 			e.printStackTrace();
@@ -603,7 +601,7 @@ public class VisualizzaRicetteGUI {
 		}
 
 		try {
-			
+
 			ricettaController.modificaRicetta(ricetta.getIdRicetta(), nome.trim(), tempo, modificaIngredientiMap);
 			StyleHelper.showSuccessDialog("✅ Successo", "Ricetta aggiornata!");
 			mostraLista();
@@ -615,33 +613,39 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void setupListeners() {
-		filtroNome.textProperty().addListener((obs, old, val) -> filtra());
-		filtroTempoMin.textProperty().addListener((obs, old, val) -> filtra());
-		filtroTempoMax.textProperty().addListener((obs, old, val) -> filtra());
-		filtroIngMin.textProperty().addListener((obs, old, val) -> filtra());
-		filtroIngMax.textProperty().addListener((obs, old, val) -> filtra());
+
+		javafx.beans.value.ChangeListener<String> debounceListener = (obs, oldVal, newVal) -> {
+
+			if (debounceTimer != null) {
+				debounceTimer.stop();
+			}
+
+			debounceTimer = new javafx.animation.Timeline(
+					new javafx.animation.KeyFrame(javafx.util.Duration.millis(300), event -> filtra()));
+			debounceTimer.setCycleCount(1);
+			debounceTimer.play();
+		};
+
+		filtroNome.textProperty().addListener(debounceListener);
+		filtroTempoMin.textProperty().addListener(debounceListener);
+		filtroTempoMax.textProperty().addListener(debounceListener);
+		filtroIngMin.textProperty().addListener(debounceListener);
+		filtroIngMax.textProperty().addListener(debounceListener);
 	}
 
 	private void filtra() {
 		try {
-			
-			List<Ricetta> tutte = ricettaController.visualizzaRicette();
-
-			String nomeFilter = filtroNome.getText() != null ? filtroNome.getText().toLowerCase().trim() : "";
+			String nomeFilter = filtroNome.getText() != null ? filtroNome.getText().trim() : "";
 			Integer tempoMin = parseIntSafe(filtroTempoMin.getText());
 			Integer tempoMax = parseIntSafe(filtroTempoMax.getText());
 			Integer ingMin = parseIntSafe(filtroIngMin.getText());
 			Integer ingMax = parseIntSafe(filtroIngMax.getText());
 
-			List<Ricetta> filtrate = tutte.stream()
-					.filter(r -> nomeFilter.isEmpty() || r.getNome().toLowerCase().contains(nomeFilter))
-					.filter(r -> tempoMin == null || r.getTempoPreparazione() >= tempoMin)
-					.filter(r -> tempoMax == null || r.getTempoPreparazione() <= tempoMax)
-					.filter(r -> ingMin == null || r.getNumeroIngredienti() >= ingMin)
-					.filter(r -> ingMax == null || r.getNumeroIngredienti() <= ingMax).toList();
+			List<Ricetta> filtrate = ricettaController.filtraCombinato(nomeFilter.isEmpty() ? null : nomeFilter,
+					tempoMin, tempoMax, ingMin, ingMax);
 
 			ricetteData.setAll(filtrate);
-		} catch (DataAccessException e) {
+		} catch (ValidationException | DataAccessException e) {
 			StyleHelper.showErrorDialog("Errore", e.getMessage());
 			e.printStackTrace();
 		}
@@ -666,7 +670,7 @@ public class VisualizzaRicetteGUI {
 	}
 
 	private void ricarica() {
-	
+
 		carica();
 		StyleHelper.showSuccessDialog("✅ Successo", "Ricette ricaricate");
 	}

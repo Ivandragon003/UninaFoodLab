@@ -149,13 +149,10 @@ public class RicettaDAO {
 
 	public List<Ricetta> filtraRicette(String nome, Integer tempoMin, Integer tempoMax, Integer ingredientiMin,
 			Integer ingredientiMax) throws SQLException {
-
 		StringBuilder sql = new StringBuilder(
 				"SELECT r.idRicetta, r.nome, r.tempoPreparazione, COUNT(u.idIngrediente) AS numIng " + "FROM ricetta r "
 						+ "LEFT JOIN Usa u ON r.idRicetta = u.idRicetta " + "WHERE 1=1 ");
-
 		List<Object> params = new ArrayList<>();
-
 		if (nome != null && !nome.trim().isEmpty()) {
 			sql.append("AND r.nome ILIKE ? ");
 			params.add("%" + nome.trim() + "%");
@@ -168,9 +165,7 @@ public class RicettaDAO {
 			sql.append("AND r.tempoPreparazione <= ? ");
 			params.add(tempoMax);
 		}
-
 		sql.append("GROUP BY r.idRicetta, r.nome, r.tempoPreparazione ");
-
 		boolean hasHaving = false;
 		if (ingredientiMin != null) {
 			sql.append("HAVING COUNT(u.idIngrediente) >= ? ");
@@ -185,7 +180,6 @@ public class RicettaDAO {
 
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-
 			for (int i = 0; i < params.size(); i++) {
 				ps.setObject(i + 1, params.get(i));
 			}
@@ -195,8 +189,14 @@ public class RicettaDAO {
 			while (rs.next()) {
 				Ricetta r = new Ricetta(rs.getString("nome"), rs.getInt("tempoPreparazione"));
 				r.setIdRicetta(rs.getInt("idRicetta"));
+
+			
+				Map<Ingrediente, Double> ingredienti = getIngredientiPerRicetta(r.getIdRicetta());
+				r.setIngredienti(ingredienti);
+
 				result.add(r);
 			}
+
 			return result;
 		}
 	}

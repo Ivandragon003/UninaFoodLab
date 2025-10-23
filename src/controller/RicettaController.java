@@ -255,17 +255,7 @@ public class RicettaController {
 		return m.keySet().stream().filter(i -> i.equals(ingrediente)).findFirst().orElse(null);
 	}
 
-	private boolean matchNome(Ricetta r, String nome) {
-		if (nome == null || nome.trim().isEmpty())
-			return true;
-		return r.getNome() != null && r.getNome().toLowerCase().contains(nome.toLowerCase().trim());
-	}
 
-	private boolean matchRange(int value, Integer min, Integer max) {
-		if (min != null && value < min)
-			return false;
-		return max == null || value <= max;
-	}
 
 	private void checkRange(Integer min, Integer max, String label) throws ValidationException {
 		if (min != null && min < 0)

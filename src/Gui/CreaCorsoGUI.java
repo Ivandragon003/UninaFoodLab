@@ -61,8 +61,16 @@ public class CreaCorsoGUI {
 	public VBox getRoot() {
 		if (root == null) {
 			root = createMainLayout();
+			inizializzaChefLoggato();
 		}
 		return root;
+	}
+
+	private void inizializzaChefLoggato() {
+		Chef chefLoggato = corsoController.getChefLoggato();
+		if (chefLoggato != null && !chefSelezionati.contains(chefLoggato)) {
+			chefSelezionati.add(chefLoggato);
+		}
 	}
 
 	private VBox createMainLayout() {
@@ -217,15 +225,25 @@ public class CreaCorsoGUI {
 	private VBox createChefSection() {
 		VBox section = StyleHelper.createSection();
 
-		Button selezionaChefBtn = StyleHelper.createPrimaryButton("Seleziona Chef");
+		Button selezionaChefBtn = StyleHelper.createPrimaryButton("Aggiungi Altri Chef");
 		selezionaChefBtn.setOnAction(e -> apriDialogSelezionaChef());
 
 		listaChefContainer = createListContainer();
 		chefSelezionati.addListener((ListChangeListener<Chef>) c -> updateChefDisplay());
+
+		if (chefSelezionati.isEmpty()) {
+			inizializzaChefLoggato();
+		}
+
 		updateChefDisplay();
 
-		section.getChildren().addAll(createSectionTitle("Selezione Chef"), selezionaChefBtn,
-				StyleHelper.createLabel("Chef Selezionati:"), listaChefContainer);
+		Label fondatoreLabel = createInfoLabel("Chef fondatore: " + (corsoController.getChefLoggato() != null
+				? corsoController.getChefLoggato().getNome() + " " + corsoController.getChefLoggato().getCognome()
+				: "Non disponibile"), "#FF6600");
+		fondatoreLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #FF6600;");
+
+		section.getChildren().addAll(createSectionTitle("Selezione Chef"), fondatoreLabel, selezionaChefBtn,
+				StyleHelper.createLabel("Chef del Corso:"), listaChefContainer);
 		return section;
 	}
 
@@ -334,7 +352,7 @@ public class CreaCorsoGUI {
 
 	private void validaCampiObbligatori() throws ValidationException {
 		if (chefSelezionati.isEmpty()) {
-			throw new ValidationException("Seleziona almeno uno chef per il corso");
+			throw new ValidationException("Errore: lo chef fondatore non è stato caricato correttamente");
 		}
 
 		if (corsoSessioni.isEmpty()) {
@@ -520,14 +538,25 @@ public class CreaCorsoGUI {
 
 	private void updateChefDisplay() {
 		listaChefContainer.getChildren().clear();
+		Chef chefLoggato = corsoController.getChefLoggato();
+
 		if (chefSelezionati.isEmpty()) {
 			listaChefContainer.getChildren().add(createEmptyLabel("Nessuno chef selezionato"));
 		} else {
-			chefSelezionati.forEach(c -> listaChefContainer.getChildren()
-					.add(createItemBox(String.format("%s %s", c.getNome(), c.getCognome()), () -> {
+			chefSelezionati.forEach(c -> {
+				boolean isFondatore = chefLoggato != null && c.getCodFiscale().equals(chefLoggato.getCodFiscale());
+				String nomeCompleto = String.format("%s %s%s", c.getNome(), c.getCognome(),
+						isFondatore ? " (Fondatore)" : "");
+
+				if (isFondatore) {
+					listaChefContainer.getChildren().add(createItemBoxNoRemove(nomeCompleto, "#FF6600"));
+				} else {
+					listaChefContainer.getChildren().add(createItemBox(nomeCompleto, () -> {
 						chefSelezionati.remove(c);
 						updateChefDisplay();
-					}, "#FF6600")));
+					}, "#FF6600"));
+				}
+			});
 		}
 	}
 
@@ -592,6 +621,23 @@ public class CreaCorsoGUI {
 		return box;
 	}
 
+	private HBox createItemBoxNoRemove(String text, String borderColor) {
+		HBox box = new HBox(10);
+		box.setAlignment(Pos.CENTER_LEFT);
+		box.setPadding(new Insets(8));
+		box.setStyle(String.format("-fx-background-color: #FFF3E0; " + "-fx-background-radius: 6; "
+				+ "-fx-border-color: %s; " + "-fx-border-radius: 6; " + "-fx-border-width: 2;", borderColor));
+
+		Label badge = new Label("👨‍🍳");
+		badge.setStyle("-fx-font-size: 16px;");
+
+		Label label = new Label(text);
+		label.setStyle("-fx-font-size: 13px; -fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+
+		box.getChildren().addAll(badge, label);
+		return box;
+	}
+
 	private HBox createSessioneBox(int numero, Sessione s) {
 		HBox box = new HBox(10);
 		box.setAlignment(Pos.CENTER_LEFT);
@@ -652,7 +698,10 @@ public class CreaCorsoGUI {
 		startMinute.setValue(DEFAULT_START_MINUTE);
 		endHour.setValue(DEFAULT_END_HOUR);
 		endMinute.setValue(DEFAULT_END_MINUTE);
+
 		chefSelezionati.clear();
+		inizializzaChefLoggato();
+
 		corsoSessioni.clear();
 		updateChefDisplay();
 		updateSessioniDisplay();

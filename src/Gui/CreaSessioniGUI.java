@@ -8,6 +8,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import model.*;
 import controller.RicettaController;
 import helper.StyleHelper;
@@ -31,7 +32,7 @@ public class CreaSessioniGUI extends Stage {
 	private final LocalDate corsoInizio;
 	private final LocalDate corsoFine;
 	private final Frequenza frequenzaCorso;
-	private final int maxPartecipantiCorso; // NUOVO: numero posti del corso
+	private final int maxPartecipantiCorso;
 	private Set<LocalDate> dateOccupate;
 	private final RicettaController ricettaController;
 	private final IngredienteController ingredienteController;
@@ -43,9 +44,12 @@ public class CreaSessioniGUI extends Stage {
 	private TextField viaField, cittaField, postiField, capField;
 	private Button selezionaRicetteBtn;
 	private Label ricetteLabel;
-	private Label postiInfoLabel; // NUOVO: label info posti
+	private Label postiInfoLabel;
 	private ListView<Ricetta> ricetteListView;
 	private List<Ricetta> ricetteSelezionate = new ArrayList<>();
+
+	private double xOffset = 0;
+	private double yOffset = 0;
 
 	public CreaSessioniGUI(LocalDate corsoInizio, LocalDate corsoFine, Frequenza frequenzaCorso,
 			int maxPartecipantiCorso, Set<LocalDate> dateOccupate, RicettaController ricettaController,
@@ -74,7 +78,8 @@ public class CreaSessioniGUI extends Stage {
 	private void initializeDialog() {
 		setTitle("Crea Sessione");
 		initModality(Modality.APPLICATION_MODAL);
-		setResizable(true);
+		initStyle(StageStyle.TRANSPARENT);
+		setResizable(false);
 		createLayout();
 	}
 
@@ -88,6 +93,10 @@ public class CreaSessioniGUI extends Stage {
 		VBox main = new VBox(20);
 		main.setPadding(new Insets(30));
 		main.setAlignment(Pos.TOP_CENTER);
+
+		HBox windowButtons = createWindowButtons();
+		StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
+		StackPane.setMargin(windowButtons, new Insets(10));
 
 		Label title = StyleHelper.createTitleLabel("🎯 Crea Nuova Sessione");
 		title.setTextFill(Color.WHITE);
@@ -103,11 +112,38 @@ public class CreaSessioniGUI extends Stage {
 
 		scroll.setContent(form);
 		main.getChildren().addAll(title, scroll);
-		root.getChildren().addAll(bg, main);
+
+		makeDraggable(main);
+
+		root.getChildren().addAll(bg, main, windowButtons);
 
 		Scene scene = new Scene(root);
 		scene.setFill(Color.TRANSPARENT);
 		setScene(scene);
+	}
+
+	private HBox createWindowButtons() {
+		HBox box = new HBox(5);
+		box.setAlignment(Pos.TOP_RIGHT);
+		box.setPickOnBounds(false);
+
+		Button minimizeBtn = StyleHelper.createWindowButtonByType("minimize", () -> setIconified(true));
+		Button maximizeBtn = StyleHelper.createWindowButtonByType("maximize", () -> setMaximized(!isMaximized()));
+		Button closeBtn = StyleHelper.createWindowButtonByType("close", this::close);
+
+		box.getChildren().addAll(minimizeBtn, maximizeBtn, closeBtn);
+		return box;
+	}
+
+	private void makeDraggable(VBox node) {
+		node.setOnMousePressed(e -> {
+			xOffset = e.getSceneX();
+			yOffset = e.getSceneY();
+		});
+		node.setOnMouseDragged(e -> {
+			setX(e.getScreenX() - xOffset);
+			setY(e.getScreenY() - yOffset);
+		});
 	}
 
 	private VBox createDateSection() {
@@ -303,14 +339,12 @@ public class CreaSessioniGUI extends Stage {
 		postiField = StyleHelper.createTextField("Numero posti");
 		capField = StyleHelper.createTextField("CAP");
 
-		// NUOVO: Label informativa sui posti disponibili
 		postiInfoLabel = new Label("💡 Posti disponibili nel corso: " + maxPartecipantiCorso);
 		postiInfoLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-size: 11px; -fx-font-weight: bold; "
 				+ "-fx-background-color: #E3F2FD; -fx-padding: 8; -fx-background-radius: 5;");
 
 		box.getChildren().addAll(StyleHelper.createLabel("🏢 Dettagli In Presenza"), viaField, cittaField, postiField,
-				postiInfoLabel, // Label info posti
-				capField);
+				postiInfoLabel, capField);
 		return box;
 	}
 
@@ -480,7 +514,7 @@ public class CreaSessioniGUI extends Stage {
 
 	private void salvaSessione() {
 		try {
-			// Validazione data
+
 			if (datePicker.getValue() == null) {
 				StyleHelper.showValidationDialog("Validazione", "⚠️ Seleziona una data");
 				return;
@@ -491,7 +525,6 @@ public class CreaSessioniGUI extends Stage {
 			LocalDateTime dataInizio = LocalDateTime.of(datePicker.getValue(), oraInizio);
 			LocalDateTime dataFine = LocalDateTime.of(datePicker.getValue(), oraFine);
 
-			// REQUISITO 3: Validazione orari
 			if (!dataFine.isAfter(dataInizio)) {
 				StyleHelper.showValidationDialog("Validazione",
 						"⚠️ L'ora di fine deve essere successiva all'ora di inizio\n\n" + "🕐 Inizio: " + oraInizio
