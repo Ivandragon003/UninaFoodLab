@@ -130,9 +130,7 @@ public class GestioneCorsoController {
 		} catch (SQLException e) {
 			throw new DataAccessException("Errore durante la rimozione dello chef dal corso.", e);
 		}
-	}
-
-	
+	}	
 
 	private boolean isChefAlreadyAssigned(CorsoCucina corso, String codFiscale) throws SQLException {
 		return tieneDAO.getChefByCorso(corso.getIdCorso()).stream().anyMatch(c -> c.getCodFiscale().equals(codFiscale));

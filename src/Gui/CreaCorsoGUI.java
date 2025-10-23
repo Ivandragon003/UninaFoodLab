@@ -119,7 +119,6 @@ public class CreaCorsoGUI {
 		endDatePicker.setPromptText("Data fine (calcolata automaticamente)");
 		endDatePicker.setDisable(true);
 
-		// Disabilita le date passate sul DatePicker di inizio
 		startDatePicker.setDayCellFactory(dp -> new DateCell() {
 			@Override
 			public void updateItem(LocalDate item, boolean empty) {
@@ -164,24 +163,16 @@ public class CreaCorsoGUI {
 	private void calcolaDataFine() {
 		try {
 			LocalDate inizio = startDatePicker.getValue();
-			Frequenza freq = frequenzaBox.getValue();
+			Frequenza freq = (Frequenza) frequenzaBox.getValue();
 			String numSessioniStr = numeroSessioniField.getText() != null ? numeroSessioniField.getText().trim() : "";
 
-			if (inizio == null || freq == null || numSessioniStr.isEmpty()) {
+			if (inizio == null || freq == null || (freq != Frequenza.unica && numSessioniStr.isEmpty())) {
 				updateSessioniLabel("Seleziona data inizio, frequenza e numero sessioni", "#e74c3c", false);
 				endDatePicker.setValue(null);
 				return;
 			}
 
-			// Blocco anti-passato
-			LocalDate today = LocalDate.now();
-			if (inizio.isBefore(today)) {
-				updateSessioniLabel("La data di inizio non può essere nel passato", "#e74c3c", false);
-				endDatePicker.setValue(null);
-				return;
-			}
-
-			int numeroSessioni = Integer.parseInt(numSessioniStr);
+			int numeroSessioni = (freq == Frequenza.unica) ? 1 : Integer.parseInt(numSessioniStr);
 			if (numeroSessioni <= 0) {
 				updateSessioniLabel("Il numero di sessioni deve essere maggiore di 0", "#e74c3c", false);
 				endDatePicker.setValue(null);
@@ -192,7 +183,6 @@ public class CreaCorsoGUI {
 			endDatePicker.setValue(dataFine);
 			updateSessioniLabel(String.format("Sessioni: %d | Periodo: %s -> %s", numeroSessioni, inizio, dataFine),
 					"#28a745", true);
-
 		} catch (NumberFormatException e) {
 			updateSessioniLabel("Numero sessioni non valido", "#e74c3c", false);
 			endDatePicker.setValue(null);
@@ -261,44 +251,43 @@ public class CreaCorsoGUI {
 	}
 
 	private void salvaCorso() {
-    try {
-        validaCampiObbligatori();
+		try {
+			validaCampiObbligatori();
 
-        // 1) Salva il corso e assicurati che le liste non siano null
-        CorsoCucina corso = creaCorsoFromForm();
-        corso.setChef(new ArrayList<>());           // evita NPE nel controller
-        corso.setSessioni(new ArrayList<>());       // solo per stato UI
-        corsoController.creaCorso(corso);           // persiste il corso (assegna id)
+			CorsoCucina corso = creaCorsoFromForm();
+			corso.setChef(new ArrayList<>()); 
+			corso.setSessioni(new ArrayList<>()); 
+			corsoController.creaCorso(corso);
 
-        // 2) Persiste le associazioni Chef–Corso (Tiene)
-        for (Chef ch : chefSelezionati) {
-            corsoController.aggiungiChefACorso(corso, ch, null);
-        }
+			
+			for (Chef ch : chefSelezionati) {
+				corsoController.aggiungiChefACorso(corso, ch, null);
+			}
 
-        // 3) Persiste le sessioni del corso
-        CucinaDAO cucinaDAO = new CucinaDAO();
-        InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
-        OnlineDAO onlineDAO = new OnlineDAO();
-        RicettaDAO ricettaDAO = new RicettaDAO();
-        GestioneSessioniController sessioniController =
-                new GestioneSessioniController(corso, inPresenzaDAO, onlineDAO, cucinaDAO, ricettaDAO);
+			 
+			CucinaDAO cucinaDAO = new CucinaDAO();
+			InPresenzaDAO inPresenzaDAO = new InPresenzaDAO(cucinaDAO);
+			OnlineDAO onlineDAO = new OnlineDAO();
+			RicettaDAO ricettaDAO = new RicettaDAO();
+			GestioneSessioniController sessioniController = new GestioneSessioniController(corso, inPresenzaDAO,
+					onlineDAO, cucinaDAO, ricettaDAO);
 
-        for (Sessione s : corsoSessioni) {
-            List<Ricetta> ricette = (s instanceof InPresenza ip && ip.getRicette() != null)
-                    ? new ArrayList<>(ip.getRicette()) : Collections.emptyList();
-            sessioniController.aggiungiSessione(s, ricette);
-        }
+			for (Sessione s : corsoSessioni) {
+				List<Ricetta> ricette = (s instanceof InPresenza ip && ip.getRicette() != null)
+						? new ArrayList<>(ip.getRicette())
+						: Collections.emptyList();
+				sessioniController.aggiungiSessione(s, ricette);
+			}
 
-        StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
-        clearForm();
-    } catch (ValidationException | IllegalArgumentException ve) {
-        StyleHelper.showValidationDialog("Errore", ve.getMessage());
-    } catch (Exception e) {
-        StyleHelper.showErrorDialog("Errore", "Errore durante il salvataggio: " + e.getMessage());
-        e.printStackTrace();
-    }
-}
-
+			StyleHelper.showSuccessDialog("Successo", "Corso creato con successo");
+			clearForm();
+		} catch (ValidationException | IllegalArgumentException ve) {
+			StyleHelper.showValidationDialog("Errore", ve.getMessage());
+		} catch (Exception e) {
+			StyleHelper.showErrorDialog("Errore", "Errore durante il salvataggio: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
 
 	private CorsoCucina creaCorsoFromForm() {
 		try {
@@ -314,7 +303,6 @@ public class CreaCorsoGUI {
 			LocalDateTime inizioDT = LocalDateTime.of(dataInizio, oraInizio);
 			LocalDateTime fineDT = LocalDateTime.of(dataFine, oraFine);
 
-			// Guardie su data/ora
 			if (inizioDT.isBefore(LocalDateTime.now())) {
 				throw new ValidationException("L'inizio del corso non può essere nel passato");
 			}
@@ -354,7 +342,6 @@ public class CreaCorsoGUI {
 			throw new ValidationException("Seleziona la frequenza del corso");
 		}
 
-		// Validazioni su calendario
 		LocalDate inizio = startDatePicker.getValue();
 		LocalDate fine = endDatePicker.getValue();
 		LocalDate oggi = LocalDate.now();
@@ -509,8 +496,6 @@ public class CreaCorsoGUI {
 				}
 			}
 
-			// Ordine corretto parametri: inizio, fine, frequenza, maxPartecipanti,
-			// dateOccupate, ricettaCtrl, ingredienteCtrl
 			Sessione nuovaSessione = new CreaSessioniGUI(inizio, fine, freq, maxPartecipantiCorso, dateOccupate,
 					ricettaController, ingredienteController).showDialog();
 
