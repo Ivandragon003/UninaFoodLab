@@ -10,121 +10,131 @@ import model.Chef;
 import model.CorsoCucina;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public class GestioneCorsoController {
 
-    private final CorsoCucinaDAO corsoDAO;
-    private final ChefDAO chefDAO;
-    private final TieneDAO tieneDAO;
-    private Chef chefLoggato;
+	private final CorsoCucinaDAO corsoDAO;
+	private final ChefDAO chefDAO;
+	private final TieneDAO tieneDAO;
+	private Chef chefLoggato;
 
-    public GestioneCorsoController(ChefDAO chefDAO, TieneDAO tieneDAO, CorsoCucinaDAO corsoDAO) {
-        this.chefDAO = chefDAO;
-        this.tieneDAO = tieneDAO;
-        this.corsoDAO = corsoDAO;
-    }
+	public GestioneCorsoController(ChefDAO chefDAO, TieneDAO tieneDAO, CorsoCucinaDAO corsoDAO) {
+		this.chefDAO = chefDAO;
+		this.tieneDAO = tieneDAO;
+		this.corsoDAO = corsoDAO;
+	}
 
-    public void setChefLoggato(Chef chef) {
-        this.chefLoggato = chef;
-    }
+	public void setChefLoggato(Chef chef) {
+		this.chefLoggato = chef;
+	}
 
-    public Chef getChefLoggato() {
-        return chefLoggato;
-    }
+	public Chef getChefLoggato() {
+		return chefLoggato;
+	}
 
-    public List<Chef> getTuttiGliChef() throws DataAccessException {
-        try {
-            return chefDAO.getAll();
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante il recupero degli chef.", e);
-        }
-    }
+	public List<Chef> getTuttiGliChef() throws DataAccessException {
+		try {
+			return chefDAO.getAll();
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante il recupero degli chef.", e);
+		}
+	}
 
-    public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-        ValidationUtils.validateNotNull(corso, "Corso");
-        ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-        ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti");
-        ensureChefLogged();
+	public void creaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
+		if (corso == null) {
+			throw new ValidationException("Corso obbligatorio");
+		}
+		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
+		ValidationUtils.validatePositiveInt(corso.getNumeroPosti(), "Numero posti");
 
-        corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
+		if (corso.getDataInizioCorso() == null || corso.getDataFineCorso() == null) {
+			throw new ValidationException("Date del corso obbligatorie");
+		}
+		if (corso.getDataInizioCorso().isBefore(LocalDateTime.now())) {
+			throw new ValidationException("La data di inizio corso non può essere nel passato");
+		}
+		if (corso.getDataFineCorso().isBefore(corso.getDataInizioCorso())) {
+			throw new ValidationException("La data di fine corso non può essere precedente all'inizio");
+		}
 
-        try {
-            corsoDAO.save(corso);
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante la creazione del corso.", e);
-        }
-    }
+		if (chefLoggato == null) {
+			throw new ValidationException("Chef non autenticato");
+		}
+		corso.setCodfiscaleFondatore(chefLoggato.getCodFiscale());
 
-    public void modificaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
-        ValidationUtils.validateNotNull(corso, "Corso");
-        ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
-        try {
-            corsoDAO.update(corso);
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante la modifica del corso.", e);
-        }
-    }
+		try {
+			corsoDAO.save(corso);
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante la creazione del corso.", e);
+		}
+	}
 
-    public void eliminaCorso(int idCorso) throws DataAccessException {
-        try {
-            corsoDAO.delete(idCorso);
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante l'eliminazione del corso.", e);
-        }
-    }
+	public void modificaCorso(CorsoCucina corso) throws ValidationException, DataAccessException {
+		ValidationUtils.validateNotNull(corso, "Corso");
+		ValidationUtils.validateNotEmpty(corso.getNomeCorso(), "Nome corso");
+		try {
+			corsoDAO.update(corso);
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante la modifica del corso.", e);
+		}
+	}
 
-    public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password)
-            throws ValidationException, DataAccessException {
+	public void eliminaCorso(int idCorso) throws DataAccessException {
+		try {
+			corsoDAO.delete(idCorso);
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante l'eliminazione del corso.", e);
+		}
+	}
 
-        ValidationUtils.validateNotNull(corso, "Corso");
-        ValidationUtils.validateNotNull(chef, "Chef");
+	public void aggiungiChefACorso(CorsoCucina corso, Chef chef, String password)
+			throws ValidationException, DataAccessException {
 
-        try {
-            Optional<Chef> esistente = chefDAO.findByCodFiscale(chef.getCodFiscale());
-            if (esistente.isEmpty()) {
-                ValidationUtils.validateNotEmpty(password, "Password");
-                ValidationUtils.validateTextLength(password, "Password", 6, 128);
-                chefDAO.save(chef, password);
-            }
+		ValidationUtils.validateNotNull(corso, "Corso");
+		ValidationUtils.validateNotNull(chef, "Chef");
 
-            if (isChefAlreadyAssigned(corso, chef.getCodFiscale()))
-                throw new ValidationException("Chef già assegnato al corso.");
+		try {
+			Optional<Chef> esistente = chefDAO.findByCodFiscale(chef.getCodFiscale());
+			if (esistente.isEmpty()) {
+				ValidationUtils.validateNotEmpty(password, "Password");
+				ValidationUtils.validateTextLength(password, "Password", 6, 128);
+				chefDAO.save(chef, password);
+			}
 
-            tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
-            corso.getChef().add(chef);
+			if (isChefAlreadyAssigned(corso, chef.getCodFiscale()))
+				throw new ValidationException("Chef già assegnato al corso.");
 
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante l'assegnazione dello chef al corso.", e);
-        }
-    }
+			tieneDAO.save(chef.getCodFiscale(), corso.getIdCorso());
+			corso.getChef().add(chef);
 
-    public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) 
-            throws ValidationException, DataAccessException {
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante l'assegnazione dello chef al corso.", e);
+		}
+	}
 
-        ValidationUtils.validateNotNull(corso, "Corso");
-        ValidationUtils.validateNotNull(chef, "Chef");
+	public void rimuoviChefDaCorso(CorsoCucina corso, Chef chef) throws ValidationException, DataAccessException {
 
-        try {
-            if (!isChefAlreadyAssigned(corso, chef.getCodFiscale()))
-                throw new ValidationException("Lo chef non è assegnato a questo corso.");
+		ValidationUtils.validateNotNull(corso, "Corso");
+		ValidationUtils.validateNotNull(chef, "Chef");
 
-            tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
-            corso.getChef().removeIf(c -> c.getCodFiscale().equals(chef.getCodFiscale()));
+		try {
+			if (!isChefAlreadyAssigned(corso, chef.getCodFiscale()))
+				throw new ValidationException("Lo chef non è assegnato a questo corso.");
 
-        } catch (SQLException e) {
-            throw new DataAccessException("Errore durante la rimozione dello chef dal corso.", e);
-        }
-    }
+			tieneDAO.delete(chef.getCodFiscale(), corso.getIdCorso());
+			corso.getChef().removeIf(c -> c.getCodFiscale().equals(chef.getCodFiscale()));
 
-    private void ensureChefLogged() throws ValidationException {
-        ValidationUtils.validateNotNull(chefLoggato, "Chef loggato");
-    }
+		} catch (SQLException e) {
+			throw new DataAccessException("Errore durante la rimozione dello chef dal corso.", e);
+		}
+	}
 
-    private boolean isChefAlreadyAssigned(CorsoCucina corso, String codFiscale) throws SQLException {
-        return tieneDAO.getChefByCorso(corso.getIdCorso())
-                       .stream()
-                       .anyMatch(c -> c.getCodFiscale().equals(codFiscale));
-    }
+	
+
+	private boolean isChefAlreadyAssigned(CorsoCucina corso, String codFiscale) throws SQLException {
+		return tieneDAO.getChefByCorso(corso.getIdCorso()).stream().anyMatch(c -> c.getCodFiscale().equals(codFiscale));
+	}
 }
