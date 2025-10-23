@@ -262,7 +262,7 @@ public class ChefMenuGUI {
 	private HBox createWindowButtons(Stage stage) {
 		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
 				StyleHelper.PRIMARY_ORANGE);
-		Button maximizeButton = StyleHelper.createWindowButton("☐", () -> stage.setMaximized(!stage.isMaximized()), "rgba(255,140,0,0.8)");				StyleHelper.PRIMARY_ORANGE);
+		Button maximizeButton = StyleHelper.createWindowButton("☐", () -> stage.setMaximized(!stage.isMaximized()), "rgba(255,140,0,0.8)");			
 		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
 
 		HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);
