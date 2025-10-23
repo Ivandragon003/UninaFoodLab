@@ -19,9 +19,9 @@ public class DBConnection {
             
             config.setMaximumPoolSize(3);
             config.setMinimumIdle(1);
-            config.setIdleTimeout(5 * 60_000);     // 5 minuti
-            config.setMaxLifetime(10 * 60_000);    // 10 minuti
-            config.setConnectionTimeout(10_000);   // 10 secondi
+            config.setIdleTimeout(5 * 60_000);     
+            config.setMaxLifetime(10 * 60_000);    
+            config.setConnectionTimeout(10_000);   
             config.setLeakDetectionThreshold(30_000);
             config.setConnectionTestQuery("SELECT 1");
             config.setValidationTimeout(3_000);
