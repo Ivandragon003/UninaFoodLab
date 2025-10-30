@@ -57,7 +57,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/javafx/jdk.jsobject.jar"/>
-	<classpathentry kind="lib" path="lib/jakarta.persistence-api-3.1.0.jar"/>
 	<classpathentry kind="lib" path="lib/postgresql-42.7.7.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
@@ -68,6 +67,5 @@
 	<classpathentry kind="lib" path="lib/jfreechart-1.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/org.jfree.chart.fx-2.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/org.jfree.fxgraphics2d-2.1.5.jar"/>
-	<classpathentry kind="lib" path="lib/HikariCP-5.0.1.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

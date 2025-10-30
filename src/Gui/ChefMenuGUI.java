@@ -260,15 +260,14 @@ public class ChefMenuGUI {
 	}
 
 	private HBox createWindowButtons(Stage stage) {
-		Button minimizeButton = StyleHelper.createWindowButton("−", () -> stage.setIconified(true),
-				StyleHelper.PRIMARY_ORANGE);
-		Button maximizeButton = StyleHelper.createWindowButton("☐", () -> stage.setMaximized(!stage.isMaximized()), "rgba(255,140,0,0.8)");			
-		Button closeButton = StyleHelper.createWindowButton("✕", stage::close, StyleHelper.ERROR_RED);
-
-		HBox box = new HBox(3, minimizeButton, maximizeButton, closeButton);
-		box.setAlignment(Pos.TOP_RIGHT);
-		box.setPickOnBounds(false);
-		return box;
+	    HBox box = new HBox(3, 
+	        StyleHelper.createWindowButtonByType("minimize", () -> stage.setIconified(true)),
+	        StyleHelper.createWindowButtonByType("maximize", () -> stage.setMaximized(!stage.isMaximized())),
+	        StyleHelper.createWindowButtonByType("close", stage::close)
+	    );
+	    box.setAlignment(Pos.TOP_RIGHT);
+	    box.setPickOnBounds(false);
+	    return box;
 	}
 
 	private void mostraBenvenutoIniziale() {

@@ -63,7 +63,10 @@ public class CreaRicettaGUI {
 	public VBox getContent() {
 		if (mainContainer == null) {
 			mainContainer = new VBox();
+			mainContainer.setMaxHeight(Double.MAX_VALUE);
+			VBox.setVgrow(mainContainer, Priority.ALWAYS);
 			creaView = buildMainLayout();
+			VBox.setVgrow(creaView, Priority.ALWAYS);
 			mainContainer.getChildren().add(creaView);
 		}
 		return mainContainer;
@@ -72,6 +75,9 @@ public class CreaRicettaGUI {
 	private VBox buildMainLayout() {
 		VBox container = new VBox(15);
 		container.setPadding(new Insets(20));
+		container.setMinHeight(Region.USE_COMPUTED_SIZE);
+		container.setPrefHeight(Region.USE_COMPUTED_SIZE);
+		container.setMaxHeight(Double.MAX_VALUE);
 		StyleHelper.applyBackgroundGradient(container);
 
 		Label title = StyleHelper.createTitleLabel("✨ Crea Nuova Ricetta");
@@ -87,8 +93,9 @@ public class CreaRicettaGUI {
 
 		HBox buttons = buildButtons();
 
-		container.getChildren().addAll(title, scroll, new Separator(), buttons);
+		container.getChildren().addAll(title, scroll, buttons);
 		VBox.setVgrow(scroll, Priority.ALWAYS);
+		VBox.setVgrow(container, Priority.ALWAYS);
 		return container;
 	}
 
@@ -155,7 +162,7 @@ public class CreaRicettaGUI {
 	}
 
 	private HBox buildButtons() {
-		Button resetBtn = StyleHelper.createSecondaryButton("🔄 Reset Form");
+		Button resetBtn = StyleHelper.createSecondaryButton("← Indietro");
 		resetBtn.setPrefWidth(150);
 		resetBtn.setOnAction(e -> handleReset());
 
@@ -495,7 +502,6 @@ public class CreaRicettaGUI {
 			dialog.initStyle(StageStyle.UNDECORATED);
 			dialog.setResizable(false);
 
-			
 			StackPane root = new StackPane();
 			root.setMinSize(900, 850);
 
@@ -505,12 +511,10 @@ public class CreaRicettaGUI {
 			VBox content = getContent();
 			content.setPadding(new Insets(30));
 
-			
 			HBox windowButtons = buildWindowButtons(dialog);
 			StackPane.setAlignment(windowButtons, Pos.TOP_RIGHT);
 			StackPane.setMargin(windowButtons, new Insets(10));
 
-			
 			makeDraggableDialog(root, dialog);
 
 			root.getChildren().addAll(bg, content, windowButtons);
@@ -519,7 +523,7 @@ public class CreaRicettaGUI {
 			scene.setFill(Color.TRANSPARENT);
 			dialog.setScene(scene);
 		} else {
-	
+
 			dialog.setTitle("Crea Nuova Ricetta");
 			dialog.setResizable(true);
 			dialog.setMinWidth(700);
