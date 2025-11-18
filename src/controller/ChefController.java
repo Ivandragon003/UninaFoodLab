@@ -68,7 +68,7 @@ public class ChefController {
             throw new ValidationException("Gli anni di esperienza non possono essere negativi");
         }
 
-        int etaMinimaLavorativa = 16;
+        int etaMinimaLavorativa = 18;
         int anniEsperienzaMassimi = eta - etaMinimaLavorativa;
         if (anniEsperienza > anniEsperienzaMassimi) {
             throw new ValidationException(
@@ -77,7 +77,7 @@ public class ChefController {
         }
 
         if (password == null || password.length() <= 6) {
-            throw new ValidationException("La password deve contenere almeno 7 caratteri");
+            throw new ValidationException("La password deve contenere almeno 6 caratteri");
         }
 
         try {

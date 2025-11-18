@@ -130,7 +130,7 @@ public class VisualizzaCorsiController {
 				throw new ValidationException("La data di inizio non può essere successiva alla data di fine");
 			}
 		} catch (ValidationException e) {
-			throw new DataAccessException(e.getMessage(), e);
+			throw new DataAccessException("Errore durante il recupero delle sessioni per il corso " + idCorso, e);
 		}
 
 		try {
